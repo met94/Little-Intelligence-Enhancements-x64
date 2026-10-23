@@ -20,6 +20,8 @@ Type in chat:
 | `!lies alarm` | Force `on_police_called` + `on_police_weapons_hot` + `set_assault_mode(true)`. |
 | `!lies assault` | `set_assault_mode(true)` only; weaker than `alarm`. |
 | `!lies state` | Dump group AI state: server, police called, weapons hot, assault, scheduler, groups, spawning, cops. |
+| `!lies gen probe [nsegs] [ncands]` | Dry-run Nav-B cover generation on `nsegs` (default 1) segments, up to `ncands` (default 8) candidates each; logs the funnel, ships nothing. |
+| `!lies gen run [nsegs] [ncands]` | Schedule the real Nav-B generation pass (defaults: whole map, 8 candidates/segment); funnel line when it finishes. |
 | `!lies setting <key> <value>` | Change a LIES setting at runtime. |
 | `!lies dump` | Log LIES settings, cached-nav size, cover count. |
 | `!lies help` | List commands. |

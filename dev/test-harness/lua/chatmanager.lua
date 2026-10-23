@@ -1,5 +1,5 @@
 -- LIES 248.2 port test harness. Dev-only; not shipped.
--- Chat commands: !lies help | nav | cover | assault | setting <key> <value> | dump
+-- Chat commands: !lies help | nav | cover | gen probe|run | assault | setting <key> <value> | dump
 
 LIES_TestHarness = LIES_TestHarness or {}
 local TH = LIES_TestHarness
@@ -157,6 +157,62 @@ function TH.cover_probe()
 	end
 end
 
+function TH.gen_covers(args)
+	local nav = managers and managers.navigation
+
+	if not nav or not nav._LIES_cover_gen_start then
+		say('gen: navigation manager missing (Nav-B not loaded)')
+		return
+	end
+
+	local mode = args[1]
+	local nsegs = tonumber(args[2])
+	local ncands = tonumber(args[3])
+
+	if mode == 'probe' then
+		nsegs = math_clamp(nsegs or 1, 1, 8)
+		ncands = math_clamp(ncands or 8, 1, 32)
+	elseif mode == 'run' then
+		if nsegs then
+			nsegs = math_clamp(nsegs, 1, 256)
+		end
+		ncands = math_clamp(ncands or 8, 1, 32)
+	else
+		say('gen: usage !lies gen probe|run [nsegs] [ncands]')
+		return
+	end
+
+	if nsegs and nsegs < 1 then
+		nsegs = 1
+	end
+
+	if ncands and ncands < 1 then
+		ncands = 1
+	end
+
+	local covers_before = #(nav._covers or {})
+	local cover_mode = tonumber(LIES and LIES.settings and LIES.settings.lua_cover) or 1
+
+	if cover_mode < 2 then
+		say('gen: lua_cover=' .. tostring(cover_mode) .. ' (<2): automatic generation stays off, this manual dev pass still runs')
+	end
+
+	local ok, err = pcall(function()
+		return nav:_LIES_cover_gen_start(mode == 'probe', nsegs, ncands)
+	end)
+
+	if not ok then
+		say('gen: failed: ' .. tostring(err))
+		return
+	end
+
+	if mode == 'probe' then
+		say(string.format('gen probe: done segs=%d ncands=%d covers=%d before=%d (funnel line above)', nsegs, ncands, #(nav._covers or {}), covers_before))
+	else
+		say(string.format('gen run: scheduled segs=%s ncands=%d covers_before=%d (funnel line when the pass finishes)', tostring(nsegs or 'all'), ncands, covers_before))
+	end
+end
+
 function TH.set_setting(key, value)
 	if not LIES or not LIES.settings then
 		say('setting: LIES not loaded')
@@ -269,7 +325,7 @@ function TH.dump()
 end
 
 function TH.help()
-	say('commands: nav | cover | alarm | assault | state | setting <key> <value> | dump | help')
+	say('commands: nav | cover | alarm | assault | state | gen probe|run [nsegs] [ncands] | setting <key> <value> | dump | help')
 end
 
 function TH.execute_string(message)
@@ -297,6 +353,8 @@ function TH.execute(command)
 		TH.force_assault()
 	elseif name == 'state' then
 		TH.dump_state()
+	elseif name == 'gen' then
+		TH.gen_covers(args)
 	elseif name == 'setting' then
 		TH.set_setting(args[1], args[2])
 	elseif name == 'dump' then

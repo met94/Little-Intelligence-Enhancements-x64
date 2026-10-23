@@ -31,6 +31,7 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Smoke 5 (build `db45f63`): success. `!lies alarm`, waited 60 s, then shot a guard. State: `assault_active=true`, `groups=3->4`, `spawning=0`, `cops=12->11`, scheduler timestamp. SWAT arrived; guard death did not crash; `%LOCALAPPDATA%\PAYDAY 2\crash.txt` timestamp unchanged. Basic loud flow works.
 - Next: opt-in Nav-A test. Re-enable the custom LUA cover search branch (`lua_cover >= 2`) over vanilla `_covers`; leave default off. Harness `!lies setting lua_cover 2` calls `_change_funcs`, and `!lies cover` exercises the custom search.
 - Smoke 6 (build `1cd6baa`): success. `lua_cover=2`, custom LUA search ran (`mode=2`, seg 15/20), found cover, SWAT reached 16 cops / 7 groups / assault active, no crash; `crash.txt` unchanged. Nav-A custom search over vanilla v6 covers works.
+- Nav-B implemented behind `lua_cover >= 2`: delayed/sliced generation from nav segments, doorway seeds + engine sampler + wall fan, 90-unit spatial-hash dedupe, per-segment 16 / total 2048 caps, tracker ownership via `insert_cover`. Harness `!lies gen probe|run`. Spec: `dev/reports/nav-b-feasibility.md`. Gates pass; reviewer findings fixed (Path A door cache, per-segment cap, candidate budget, jitter, sample-fail counting, probe clamp).
 
 
 ## Rulings

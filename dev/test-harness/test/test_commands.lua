@@ -34,8 +34,16 @@ assert(cmd and cmd.command == 'spawn' and cmd.args[1] == 'taser', 'spawn command
 
 assert(type(LIES_TestHarness.force_alarm) == 'function', 'force_alarm missing')
 assert(type(LIES_TestHarness.dump_state) == 'function', 'dump_state missing')
+assert(type(LIES_TestHarness.gen_covers) == 'function', 'gen_covers missing')
 assert(parse('!lies alarm').command == 'alarm', 'alarm command not parsed')
 assert(parse('!lies state').command == 'state', 'state command not parsed')
+
+cmd = parse('!lies gen probe 1 8')
+assert(cmd and cmd.command == 'gen', 'gen command not parsed')
+assert(cmd.args[1] == 'probe' and cmd.args[2] == '1' and cmd.args[3] == '8', 'gen probe args wrong')
+
+cmd = parse('!lies gen run')
+assert(cmd and cmd.command == 'gen' and cmd.args[1] == 'run', 'gen run not parsed')
 
 cmd = parse('!lies')
 assert(cmd and cmd.command == 'help', 'bare !lies should map to help')

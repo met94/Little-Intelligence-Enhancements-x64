@@ -227,14 +227,14 @@ function NavigationManager:draw_coarse_path(path, alt_color)
 	end
 end
 
-function NavigationManager:generate_cover_fwd(tracker)
+function NavigationManager:generate_cover_fwd(tracker, door_list)
 	local all_nav_segs = self._nav_segments
 	local m_seg_id = tracker:nav_segment()
 	
 	if all_nav_segs[m_seg_id] then
 		local new_fwd = temp_vec1
 		local v3_dis_sq = mvec3_dis_sq
-		local doors = self:find_segment_doors_with_nav_links(m_seg_id, nil, true)
+		local doors = door_list or self:find_segment_doors(m_seg_id, nil, true)
 		local best_door_pos = all_nav_segs[m_seg_id].pos
 		local field_pos = tracker:field_position()
 		local best_door_dis = nil
@@ -247,7 +247,7 @@ function NavigationManager:generate_cover_fwd(tracker)
 			local door_on_z = door.center:with_z(field_pos.z)			
 			local dis = v3_dis_sq(field_pos, door_on_z)			
 			
-			local ray = door.end_pos and true or self:raycast({trace = false, pos_from = field_pos, pos_to = door_on_z})
+			local ray = door.end_pos and true or self:raycast({pos_from = field_pos, pos_to = door_on_z})
 				
 			if (not best_door_dis or dis < best_door_dis) and (not best_door_has_ray or ray) then
 				second_best_pos = best_door_pos
@@ -265,7 +265,22 @@ function NavigationManager:generate_cover_fwd(tracker)
 			end
 		end
 		
+		-- Nav-B: doorless segments (e.g. closet-like pockets) still need a
+		-- meaningful sweep; fall back to the segment centre.
+		if #doors == 0 then
+			best_door_pos = all_nav_segs[m_seg_id].pos
+		end
+		
 		mvec3_dir(new_fwd, field_pos, best_door_pos)
+		
+		-- A candidate standing on the seed point yields a zero-length (or NaN)
+		-- direction; use a random yaw so the 12-ray sweep still samples.
+		local seed_len = mvec3_length(new_fwd)
+		
+		if seed_len < 0.01 or seed_len ~= seed_len then
+			mvec3_set(new_fwd, Vector3(1, 0, 0))
+			mvec3_rot(new_fwd, Rotation(math.random() * 360))
+		end
 		
 		local ray_params = {
 			pos_from = field_pos
@@ -422,7 +437,7 @@ function NavigationManager:register_cover_units()
 
 	local covers = {}
 	local cover_data = managers.worlddefinition:get_cover_data()
-	local v3_dis_sq = mvec3_dis_sq
+	local door_cache = {}
 
 	if cover_data then
 		local function _register_cover(pos, fwd)
@@ -433,11 +448,19 @@ function NavigationManager:register_cover_units()
 				return
 			end
 
-			local room_nav_seg = self._nav_segments[nav_tracker:nav_segment()]
+			local seg_id = nav_tracker:nav_segment()
+			local room_nav_seg = self._nav_segments[seg_id]
 
 			if not room_nav_seg or not room_nav_seg.pos then
 				self:destroy_nav_tracker(nav_tracker)
 				return
+			end
+
+			local doors = door_cache[seg_id]
+
+			if not doors then
+				doors = self:find_segment_doors(seg_id, nil, true)
+				door_cache[seg_id] = doors
 			end
 
 			local navseg_tracker = self._quad_field:create_nav_tracker(room_nav_seg.pos, true)
@@ -448,7 +471,7 @@ function NavigationManager:register_cover_units()
 				nav_tracker
 			}
 			
-			local valid_fwd = self:generate_cover_fwd(nav_tracker)
+			local valid_fwd = self:generate_cover_fwd(nav_tracker, doors)
 			
 			if not valid_fwd or not self:check_cover_close_to_wall(field_pos) then
 				self:destroy_nav_tracker(nav_tracker)
@@ -511,101 +534,6 @@ function NavigationManager:register_cover_units()
 		end
 	end
 	
-	-- 248.2 nav v6: runtime cover generation used the removed _rooms/_room_doors
-	-- model. Disabled for the bootstrap build; Nav-B rebuilds it from nav segments.
-	if false and Network:is_server() then
-		local max_cover_points = #covers <= 0 and 5000 or math.round(16 * table.size(self._nav_segments))
-
-		max_cover_points = math_clamp(max_cover_points, 1, 5000)
-		
-		log("Map has " .. tostring(#covers) .. " cover points, setting generation limit to " .. tostring(max_cover_points) .. " cover points.")
-		
-		if #covers < max_cover_points then
-			local insert_cover_func = self.insert_cover
-		
-			for key, res in pairs(self._nav_segments) do
-				if res.pos and res.neighbours and next(res.neighbours) then	
-					local tracker = self._quad_field:create_nav_tracker(res.pos, true)
-
-					local location_script_data = self._quad_field:get_script_data(tracker, true)
-
-					if not location_script_data.covers or #location_script_data.covers < 16 then
-						if not location_script_data.covers then
-							location_script_data.covers = {}
-						end
-			
-						for _, room in pairs(res.rooms) do
-							local room_pos = NavFieldBuilder._calculate_room_center(self, room)
-
-							local across_vec = temp_vec1
-							mvec3_set_st(across_vec, room.borders.x_pos, room.borders.y_pos, 0)
-							mvec3_add(across_vec, room_pos)
-							local try_tracker = self._quad_field:create_nav_tracker(room_pos, true)
-							local new_positions = self:find_walls_accross_tracker(try_tracker, across_vec, 360, 12)
-									
-							if new_positions then
-								for i = 1, #new_positions do
-									local good_cover = true
-											
-									if good_cover then
-										local try_pos = new_positions[i][1]
-
-										for i = 1, #covers do
-											local other_cover_pos = covers[i][1]
-													
-											if v3_dis_sq(try_pos, other_cover_pos) <= 8100 then
-												good_cover = nil
-											end
-										end
-												
-										if good_cover and self:check_cover_close_to_wall(try_pos) then
-											local inserted
-											local zingus_tracker = self._quad_field:create_nav_tracker(try_pos, true)
-													
-											if not zingus_tracker:lost() and zingus_tracker:nav_segment() == key then
-												local try_fwd = self:generate_cover_fwd(zingus_tracker)
-														
-												if try_fwd then
-													local to_insert_cover = {
-														zingus_tracker:field_position(),
-														try_fwd,
-														zingus_tracker
-													}
-													inserted = true
-													insert_cover_func(self, covers, location_script_data, to_insert_cover)
-												end
-											end
-											
-											if not inserted then
-												self:destroy_nav_tracker(zingus_tracker)
-											end
-										end
-									end
-								
-									if #covers >= max_cover_points or #location_script_data.covers >= 16 then
-										break
-									end
-								end
-							end
-						
-							self:destroy_nav_tracker(try_tracker)
-							
-							if #covers >= max_cover_points or #location_script_data.covers >= 16 then
-								break
-							end
-						end
-					end
-					
-					self:destroy_nav_tracker(tracker)
-					
-					if #covers >= max_cover_points then
-						break
-					end
-				end
-			end
-		end
-	end
-	
 	self._covers = covers
 	
 	if not self.has_registered_cover_units_for_LIES then
@@ -619,6 +547,7 @@ function NavigationManager:register_cover_units()
 	end
 	
 	self:_change_funcs()
+	self:_schedule_LIES_cover_generation()
 	
 	trace("cover registration complete covers=" .. tostring(#covers))
 	managers.enemy:add_delayed_clbk("NavigationManager._do_nav_fixes", callback(self, self, "_do_nav_fixes"), TimerManager:game():time() + 2)
@@ -631,6 +560,593 @@ function NavigationManager:insert_cover(covers_table, location_script_data, cove
 	
 	t_ins(location_script_data.covers, cover)
 	t_ins(covers_table, cover)
+end
+
+-- Nav-B: runtime cover generation rebuilt on nav v6 segments (248.2).
+-- Algorithm, risks and probe design: dev/reports/nav-b-feasibility.md.
+-- Delayed, sliced and host-only. Covers are visible to the LIES Lua search
+-- only: 248.2 exposes no engine add_cover, so lua_cover < 2 must not pay for it.
+local LIES_COVER_GEN_PER_SEGMENT = 16
+local LIES_COVER_GEN_TOTAL_CAP = 2048
+local LIES_COVER_GEN_SEGMENTS_PER_SLICE = 8
+local LIES_COVER_GEN_CANDIDATES_PER_SLICE = 64
+local LIES_COVER_GEN_DEDUPE_DIS = 90
+local LIES_COVER_GEN_RANDOM_SAMPLES = 4
+local LIES_COVER_GEN_MIN_CANDIDATES = 6
+local LIES_COVER_GEN_FAN_RAYS = 8
+local LIES_COVER_GEN_FAN_LENGTH = 1000
+local LIES_COVER_GEN_WALL_RAYS = 8
+local LIES_COVER_GEN_WALL_DIS = 100
+local LIES_COVER_GEN_START_DELAY = 1
+local LIES_COVER_GEN_SLICE_DELAY = 0.05
+local LIES_COVER_GEN_CLBK_ID = "NavigationManager.LIES_cover_gen"
+
+local function _lies_cover_mode()
+	local mode = LIES and LIES.settings and LIES.settings.lua_cover
+	
+	if type(mode) ~= "number" then
+		return mode and 2 or 1
+	end
+	
+	return mode
+end
+
+local function _lies_grid_key(x, y)
+	return x .. ":" .. y
+end
+
+local function _lies_cover_too_close(grid, pos, dis)
+	dis = dis or LIES_COVER_GEN_DEDUPE_DIS
+	local gx = math_floor(pos.x / dis)
+	local gy = math_floor(pos.y / dis)
+	local dis_sq = dis * dis
+	
+	for x = gx - 1, gx + 1 do
+		for y = gy - 1, gy + 1 do
+			local bucket = grid[_lies_grid_key(x, y)]
+			
+			if bucket then
+				for i = 1, #bucket do
+					if mvec3_dis_sq(pos, bucket[i]) <= dis_sq then
+						return true
+					end
+				end
+			end
+		end
+	end
+	
+	return false
+end
+
+local function _lies_cover_grid_add(grid, pos, dis)
+	dis = dis or LIES_COVER_GEN_DEDUPE_DIS
+	local key = _lies_grid_key(math_floor(pos.x / dis), math_floor(pos.y / dis))
+	local bucket = grid[key]
+	
+	if not bucket then
+		bucket = {}
+		grid[key] = bucket
+	end
+	
+	bucket[#bucket + 1] = pos
+end
+
+function NavigationManager:_LIES_cover_gen_state_new(dry_run, nsegs, ncands)
+	if not self._LIES_cover_gen_key_type_checked then
+		self._LIES_cover_gen_key_type_checked = true
+		local first_key = next(self._nav_segments)
+		
+		if first_key ~= nil and type(first_key) ~= "string" then
+			log("LIES: cover gen expected string nav segment keys, got " .. type(first_key) .. " (" .. tostring(first_key) .. "); tracker:nav_segment() is compared against these keys.")
+		end
+	end
+	
+	local queue = {}
+	
+	for seg_id, seg in pairs(self._nav_segments) do
+		if seg.pos and seg.neighbours and next(seg.neighbours) then
+			queue[#queue + 1] = seg_id
+		end
+	end
+	
+	table.sort(queue, function(a, b)
+		return tostring(a) < tostring(b)
+	end)
+	
+	local state = {
+		token = self._LIES_cover_gen_token,
+		dry_run = dry_run and true or false,
+		queue = queue,
+		cursor = 1,
+		segments_requested = nsegs or #queue,
+		segments_done = 0,
+		ncands = ncands or LIES_COVER_GEN_PER_SEGMENT,
+		total_limit = math.min(LIES_COVER_GEN_PER_SEGMENT * table.size(self._nav_segments), LIES_COVER_GEN_TOTAL_CAP),
+		grid = {},
+		door_cache = {},
+		seg_inserted = {},
+		sample_arg = nil,
+		sample_failures = 0,
+		first_seg_id = nil,
+		first_seg_type = nil,
+		started_t = TimerManager:game():time(),
+		candidates = 0,
+		door_centers = 0,
+		samples = 0,
+		fan_hits = 0,
+		tracker_lost = 0,
+		tracker_ok = 0,
+		seg_match = 0,
+		seg_mismatch = 0,
+		dedupe_skip = 0,
+		wall_ok = 0,
+		wall_fail = 0,
+		fwd_ok = 0,
+		fwd_fail = 0,
+		valid = 0,
+		inserted = 0,
+		segments_full = 0,
+		script_covers_max = 0,
+		limit_reached = nil
+	}
+	
+	-- Seed the dedupe grid with the covers Path A already registered so a
+	-- generated cover never lands on top of a vanilla one.
+	for i = 1, #self._covers do
+		local cover = self._covers[i]
+		
+		if cover and cover[1] then
+			_lies_cover_grid_add(state.grid, cover[1], LIES_COVER_GEN_DEDUPE_DIS)
+		end
+	end
+	
+	return state
+end
+
+function NavigationManager:_LIES_cover_gen_cover_total(state)
+	return #self._covers + (state.dry_run and state.valid or 0)
+end
+
+function NavigationManager:_LIES_cover_gen_sample_position(state, seg_id, seg)
+	if state.sample_arg == nil then
+		state.sample_arg = "key"
+	end
+	
+	local arg
+	if state.sample_arg == "key" then
+		arg = seg_id
+	elseif state.sample_arg == "id" then
+		arg = seg.id
+	else
+		return nil
+	end
+	
+	if arg == nil then
+		state.sample_arg = false
+		
+		return nil
+	end
+	
+	-- The engine binding's argument form is undocumented in game Lua; try the
+	-- string key first, then the numeric id, then give up (fan filler remains).
+	local ok, pos = pcall(self._quad_field.random_position_in_nav_segment, self._quad_field, arg)
+	
+	if ok then
+		if pos then
+			return pos
+		end
+		
+		state.sample_failures = state.sample_failures + 1
+		
+		return nil
+	end
+	
+	state.sample_failures = state.sample_failures + 1
+	state.sample_arg = state.sample_arg == "key" and "id" or false
+	
+	return nil
+end
+
+function NavigationManager:_LIES_cover_gen_collect_candidates(state, seg_id, seg, seg_tracker, doors)
+	local candidates = {}
+	local max_candidates = state.ncands
+	local dedupe_sq = LIES_COVER_GEN_DEDUPE_DIS * LIES_COVER_GEN_DEDUPE_DIS
+	
+	local function _add(pos)
+		if not pos or #candidates >= max_candidates then
+			return
+		end
+		
+		for i = 1, #candidates do
+			if mvec3_dis_sq(pos, candidates[i]) <= dedupe_sq then
+				return
+			end
+		end
+		
+		candidates[#candidates + 1] = mvec3_cpy(pos)
+	end
+	
+	-- (a) Doorway centres: deterministic, matches the case generate_cover_fwd
+	-- was written for, fed from the already-ported door lookup. Jitter into the
+	-- segment so the cover does not sit inside the doorway opening.
+	for i = 1, #doors do
+		local center = doors[i].center
+
+		if center then
+			local angle = math.random() * math.pi * 2
+			local dis = 60 + math.random() * 60
+
+			_add(center + Vector3(math.cos(angle) * dis, math.sin(angle) * dis, 0))
+		end
+	end
+	
+	-- (b) Engine sampler: uniform walkable points inside this segment.
+	for i = 1, LIES_COVER_GEN_RANDOM_SAMPLES do
+		if #candidates >= max_candidates then
+			break
+		end
+		
+		local sample = self:_LIES_cover_gen_sample_position(state, seg_id, seg)
+		
+		if sample then
+			state.samples = state.samples + 1
+			_add(sample)
+		end
+	end
+	
+	-- (c) Radial wall scan from the segment centre, filler only: on maps where
+	-- the sampler is sparse this still yields wall-adjacent points.
+	if #candidates < LIES_COVER_GEN_MIN_CANDIDATES and #candidates < max_candidates then
+		local fan_ref
+		
+		if #candidates > 0 then
+			fan_ref = Vector3(candidates[1].x - seg.pos.x, candidates[1].y - seg.pos.y, 0)
+		else
+			fan_ref = Vector3(1, 0, 0)
+			mvec3_rot(fan_ref, Rotation(math.random() * 360))
+		end
+		
+		local fan_len = mvec3_length(fan_ref)
+		
+		if fan_len < 0.01 or fan_len ~= fan_len then
+			fan_ref = Vector3(1, 0, 0)
+			mvec3_rot(fan_ref, Rotation(math.random() * 360))
+		else
+			mvec3_set_l(fan_ref, LIES_COVER_GEN_FAN_LENGTH)
+		end
+		
+		local wall_positions = self:find_walls_accross_tracker(seg_tracker, fan_ref, 360, LIES_COVER_GEN_FAN_RAYS)
+		
+		if wall_positions then
+			for i = 1, #wall_positions do
+				local hit_pos = wall_positions[i] and wall_positions[i][1]
+				
+				if hit_pos then
+					state.fan_hits = state.fan_hits + 1
+					_add(hit_pos)
+				end
+			end
+		end
+	end
+	
+	return candidates
+end
+
+function NavigationManager:_LIES_cover_gen_try_candidate(state, seg_id, candidate, location_script_data, doors)
+	state.candidates = state.candidates + 1
+	
+	local tracker = self._quad_field:create_nav_tracker(candidate, true)
+	
+	if not tracker then
+		state.tracker_lost = state.tracker_lost + 1
+		
+		return false
+	end
+	
+	if tracker:lost() then
+		state.tracker_lost = state.tracker_lost + 1
+		self:destroy_nav_tracker(tracker)
+		
+		return false
+	end
+	
+	state.tracker_ok = state.tracker_ok + 1
+	
+	local tracker_seg_id = tracker:nav_segment()
+	
+	if state.first_seg_id == nil then
+		state.first_seg_id = tostring(seg_id)
+		state.first_seg_type = type(tracker_seg_id)
+	end
+	
+	if tracker_seg_id ~= seg_id then
+		if not self._LIES_cover_gen_seg_type_warned and type(tracker_seg_id) ~= type(seg_id) then
+			self._LIES_cover_gen_seg_type_warned = true
+			log("LIES: cover gen segment key type mismatch: tracker:nav_segment() is " .. type(tracker_seg_id) .. ", _nav_segments key is " .. type(seg_id) .. ". Generation will insert nothing.")
+		end
+		
+		state.seg_mismatch = state.seg_mismatch + 1
+		self:destroy_nav_tracker(tracker)
+		
+		return false
+	end
+	
+	state.seg_match = state.seg_match + 1
+	
+	local field_pos = mvec3_cpy(tracker:field_position())
+	
+	if _lies_cover_too_close(state.grid, field_pos, LIES_COVER_GEN_DEDUPE_DIS) then
+		state.dedupe_skip = state.dedupe_skip + 1
+		self:destroy_nav_tracker(tracker)
+		
+		return false
+	end
+	
+	if not self:check_cover_close_to_wall(field_pos, LIES_COVER_GEN_WALL_RAYS, LIES_COVER_GEN_WALL_DIS) then
+		state.wall_fail = state.wall_fail + 1
+		self:destroy_nav_tracker(tracker)
+		
+		return false
+	end
+	
+	state.wall_ok = state.wall_ok + 1
+	
+	local fwd = self:generate_cover_fwd(tracker, doors)
+	
+	if not fwd then
+		state.fwd_fail = state.fwd_fail + 1
+		self:destroy_nav_tracker(tracker)
+		
+		return false
+	end
+	
+	state.fwd_ok = state.fwd_ok + 1
+	state.valid = state.valid + 1
+	
+	if state.dry_run then
+		-- Probe: reserve the spot for dedupe realism, ship nothing.
+		_lies_cover_grid_add(state.grid, field_pos, LIES_COVER_GEN_DEDUPE_DIS)
+		self:destroy_nav_tracker(tracker)
+		
+		return true
+	end
+	
+	local cover = {
+		field_pos,
+		mvec3_cpy(fwd),
+		tracker
+	}
+	
+	self:insert_cover(self._covers, location_script_data, cover)
+	_lies_cover_grid_add(state.grid, field_pos, LIES_COVER_GEN_DEDUPE_DIS)
+	state.inserted = state.inserted + 1
+	
+	return true
+end
+
+function NavigationManager:_LIES_cover_gen_process_segment(state, seg_id)
+	local seg = self._nav_segments[seg_id]
+	
+	if not seg or not seg.pos then
+		return
+	end
+	
+	local seg_tracker = self._quad_field:create_nav_tracker(seg.pos, true)
+	
+	if not seg_tracker or seg_tracker:lost() then
+		if seg_tracker then
+			self:destroy_nav_tracker(seg_tracker)
+		end
+		
+		state.tracker_lost = state.tracker_lost + 1
+		
+		return
+	end
+	
+	local location_script_data = self._quad_field:get_script_data(seg_tracker, true)
+	
+	if not location_script_data then
+		self:destroy_nav_tracker(seg_tracker)
+		
+		return
+	end
+	
+	if not location_script_data.covers then
+		location_script_data.covers = {}
+	end
+	
+	state.script_covers_max = math.max(state.script_covers_max, #location_script_data.covers)
+	
+	local seg_inserted = state.seg_inserted[seg_id] or 0
+	
+	if seg_inserted >= LIES_COVER_GEN_PER_SEGMENT then
+		state.segments_full = state.segments_full + 1
+		self:destroy_nav_tracker(seg_tracker)
+		
+		return
+	end
+	
+	local doors = state.door_cache[seg_id]
+	
+	if not doors then
+		doors = self:find_segment_doors(seg_id, nil, true)
+		state.door_cache[seg_id] = doors
+	end
+	
+	state.door_centers = state.door_centers + #doors
+	
+	local candidates = self:_LIES_cover_gen_collect_candidates(state, seg_id, seg, seg_tracker, doors)
+	
+	self:destroy_nav_tracker(seg_tracker)
+	
+	local seg_cover_count = seg_inserted
+	
+	for i = 1, #candidates do
+		if seg_cover_count >= LIES_COVER_GEN_PER_SEGMENT then
+			break
+		end
+		
+		if self:_LIES_cover_gen_cover_total(state) >= state.total_limit then
+			state.limit_reached = true
+			
+			break
+		end
+		
+		if self:_LIES_cover_gen_try_candidate(state, seg_id, candidates[i], location_script_data, doors) then
+			seg_cover_count = seg_cover_count + 1
+			state.seg_inserted[seg_id] = seg_cover_count
+		end
+	end
+end
+
+function NavigationManager:_LIES_cover_gen_log(state, reason)
+	local elapsed_ms = 0
+	
+	if TimerManager and TimerManager.game then
+		local ok, t = pcall(function()
+			return TimerManager:game():time()
+		end)
+		
+		if ok and t then
+			elapsed_ms = (t - state.started_t) * 1000
+		end
+	end
+	
+	log(string.format(
+		"LIES: cover gen %s %s segs=%d/%d queue_left=%d seg0=%s seg0_type=%s cands=%d door_centers=%d samples=%d fan_hits=%d tracker_ok=%d seg_match=%d seg_mismatch=%d dedupe_skip=%d wall_ok=%d wall_fail=%d fwd_ok=%d fwd_fail=%d valid=%d inserted=%d covers=%d/%d per_seg=%d script_max=%d sample_fail=%d elapsed_ms=%.0f",
+		state.dry_run and "probe" or "run",
+		tostring(reason),
+		state.segments_done,
+		state.segments_requested,
+		math.max(#state.queue - state.cursor + 1, 0),
+		tostring(state.first_seg_id),
+		tostring(state.first_seg_type),
+		state.candidates,
+		state.door_centers,
+		state.samples,
+		state.fan_hits,
+		state.tracker_ok,
+		state.seg_match,
+		state.seg_mismatch,
+		state.dedupe_skip,
+		state.wall_ok,
+		state.wall_fail,
+		state.fwd_ok,
+		state.fwd_fail,
+		state.valid,
+		state.inserted,
+		#self._covers,
+		state.total_limit,
+		LIES_COVER_GEN_PER_SEGMENT,
+		state.script_covers_max,
+		state.sample_failures,
+		elapsed_ms
+	))
+end
+
+function NavigationManager:_LIES_cover_gen_step(token)
+	local state = self._LIES_cover_gen_state
+	
+	if not state or state.token ~= token or self._LIES_cover_gen_token ~= token then
+		return
+	end
+	
+	if not self:is_data_ready() then
+		self:_LIES_cover_gen_log(state, "not_ready")
+		self._LIES_cover_gen_state = nil
+		
+		return
+	end
+	
+	local processed = 0
+	local candidates_used = 0
+	
+	while processed < LIES_COVER_GEN_SEGMENTS_PER_SLICE and state.segments_done < state.segments_requested and state.cursor <= #state.queue do
+		if self:_LIES_cover_gen_cover_total(state) >= state.total_limit then
+			state.limit_reached = true
+			
+			break
+		end
+		
+		local seg_id = state.queue[state.cursor]
+		local candidates_before = state.candidates
+		
+		state.cursor = state.cursor + 1
+		processed = processed + 1
+		
+		self:_LIES_cover_gen_process_segment(state, seg_id)
+		
+		candidates_used = candidates_used + (state.candidates - candidates_before)
+		state.segments_done = state.segments_done + 1
+		
+		if candidates_used >= LIES_COVER_GEN_CANDIDATES_PER_SLICE then
+			break
+		end
+	end
+	
+	local finished = state.limit_reached or state.segments_done >= state.segments_requested or state.cursor > #state.queue
+	
+	if finished then
+		self:_LIES_cover_gen_log(state, state.limit_reached and "limit" or "done")
+		self._LIES_cover_gen_state = nil
+		
+		return
+	end
+	
+	if state.dry_run then
+		return
+	end
+	
+	managers.enemy:add_delayed_clbk(LIES_COVER_GEN_CLBK_ID, callback(self, self, "_LIES_cover_gen_step", token), TimerManager:game():time() + LIES_COVER_GEN_SLICE_DELAY)
+end
+
+function NavigationManager:_LIES_cover_gen_start(dry_run, nsegs, ncands)
+	if not self:is_data_ready() then
+		return
+	end
+	
+	self._LIES_cover_gen_token = (self._LIES_cover_gen_token or 0) + 1
+	self._LIES_cover_gen_state = nil
+	
+	-- A pending slice from an older pass would only abort on its token; drop it
+	-- so it cannot occupy a frame.
+	if managers.enemy and managers.enemy.is_clbk_registered then
+		while managers.enemy:is_clbk_registered(LIES_COVER_GEN_CLBK_ID) do
+			managers.enemy:remove_delayed_clbk(LIES_COVER_GEN_CLBK_ID)
+		end
+	end
+	
+	local state = self:_LIES_cover_gen_state_new(dry_run, nsegs, ncands)
+	
+	self._LIES_cover_gen_state = state
+	
+	if dry_run then
+		-- Probe: synchronous, bounded by the requested segment count.
+		while self._LIES_cover_gen_state == state do
+			local cursor_before = state.cursor
+			
+			self:_LIES_cover_gen_step(state.token)
+			
+			if self._LIES_cover_gen_state == state and state.cursor == cursor_before then
+				self:_LIES_cover_gen_log(state, "stalled")
+				self._LIES_cover_gen_state = nil
+			end
+		end
+	else
+		managers.enemy:add_delayed_clbk(LIES_COVER_GEN_CLBK_ID, callback(self, self, "_LIES_cover_gen_step", state.token), TimerManager:game():time() + LIES_COVER_GEN_START_DELAY)
+	end
+end
+
+function NavigationManager:_schedule_LIES_cover_generation()
+	if not Network:is_server() then
+		return
+	end
+	
+	if _lies_cover_mode() < 2 then
+		return
+	end
+	
+	self:_LIES_cover_gen_start(false, nil, LIES_COVER_GEN_PER_SEGMENT)
 end
 
 local nav_fixes_on_init = {
