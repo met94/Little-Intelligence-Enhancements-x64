@@ -30,18 +30,10 @@ local temp_vec3 = Vector3()
 local temp_vec4 = Vector3()
 local math_up = math.UP
 local t_ins = table.insert
-local trace_count = 0
-local function trace(message)
-	trace_count = trace_count + 1
-	if trace_count <= 40 then
-		log("[LIES-TRACE] " .. tostring(message))
-	end
-end
 NavigationManager.has_registered_cover_units_for_LIES = nil
 NavigationManager._LIES_navlink_elements = {}
 
 function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)
-	trace("find_segment_doors")
 	local all_nav_segs = self._nav_segments
 	local from_seg = all_nav_segs[from_seg_id]
 	local found_doors = {}
@@ -134,70 +126,6 @@ function NavigationManager:get_nav_segments_in_direction(from_seg_id, dir)
 	return result
 end
 
-function NavigationManager:find_segment_doors_with_nav_links(from_seg_id, approve_clbk, get_center)
-	local all_doors = self._room_doors
-	local all_nav_segs = self._nav_segments
-	local from_seg = all_nav_segs[from_seg_id]
-	local all_navlink_elements = self._LIES_navlink_elements
-	local found_doors = {}
-
-	for neighbour_seg_id, _ in pairs(from_seg.neighbours) do
-		for neighbours_neighbour_id, door_list in pairs(all_nav_segs[neighbour_seg_id].neighbours) do
-			if neighbours_neighbour_id == from_seg_id then
-				if get_center then
-					local door_central = Vector3()
-					local number_of_doors = 0
-					
-					for _, i_door in ipairs(door_list) do
-						if type(i_door) == "number" then
-							mvector3.add(door_central, all_doors[i_door].center)
-							number_of_doors = number_of_doors + 1
-						end
-					end
-					
-					if number_of_doors > 0 then
-						mvector3.divide(door_central, number_of_doors)
-						
-						local fake_door = {
-							center = door_central
-						}
-						
-						table.insert(found_doors, fake_door)
-					end
-				else
-					for _, i_door in ipairs(door_list) do
-						if type(i_door) == "number" then
-							table.insert(found_doors, all_doors[i_door])
-						end
-					end
-				end
-			end
-		end
-	end
-	
-	if not get_center then
-		for nl_id, nl_element in pairs(all_navlink_elements) do
-			if nl_element then
-				local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true) 
-				
-				if nl_tracker:nav_segment() == from_seg_id then
-					local fake_door = {
-						center = nl_element:value("position"),
-						end_pos = nl_element:nav_link_end_pos()
-					}
-					
-					table.insert(found_doors, fake_door)
-				end
-				
-				self:destroy_nav_tracker(nl_tracker)
-			else
-				self._LIES_navlink_elements[nl_id] = nil
-			end
-		end
-	end
-
-	return found_doors
-end
 
 function NavigationManager:draw_coarse_path(path, alt_color)
 	if not path then
@@ -549,7 +477,6 @@ function NavigationManager:register_cover_units()
 	self:_change_funcs()
 	self:_schedule_LIES_cover_generation()
 	
-	trace("cover registration complete covers=" .. tostring(#covers))
 	managers.enemy:add_delayed_clbk("NavigationManager._do_nav_fixes", callback(self, self, "_do_nav_fixes"), TimerManager:game():time() + 2)
 end
 
@@ -568,8 +495,8 @@ end
 -- only: 248.2 exposes no engine add_cover, so lua_cover < 2 must not pay for it.
 local LIES_COVER_GEN_PER_SEGMENT = 16
 local LIES_COVER_GEN_TOTAL_CAP = 2048
-local LIES_COVER_GEN_SEGMENTS_PER_SLICE = 8
-local LIES_COVER_GEN_CANDIDATES_PER_SLICE = 64
+local LIES_COVER_GEN_SEGMENTS_PER_SLICE = 4
+local LIES_COVER_GEN_CANDIDATES_PER_SLICE = 32
 local LIES_COVER_GEN_DEDUPE_DIS = 90
 local LIES_COVER_GEN_RANDOM_SAMPLES = 4
 local LIES_COVER_GEN_MIN_CANDIDATES = 6
@@ -578,7 +505,7 @@ local LIES_COVER_GEN_FAN_LENGTH = 1000
 local LIES_COVER_GEN_WALL_RAYS = 8
 local LIES_COVER_GEN_WALL_DIS = 100
 local LIES_COVER_GEN_START_DELAY = 1
-local LIES_COVER_GEN_SLICE_DELAY = 0.05
+local LIES_COVER_GEN_SLICE_DELAY = 0.1
 local LIES_COVER_GEN_CLBK_ID = "NavigationManager.LIES_cover_gen"
 
 local function _lies_cover_mode()
@@ -1167,7 +1094,6 @@ local nav_fixes_on_init = {
 }
 
 function NavigationManager:_do_nav_fixes()
-	trace("do_nav_fixes")
 	if nav_fixes_on_init[Global.level_data.level_id] then
 		local stuff = nav_fixes_on_init[Global.level_data.level_id]
 		
@@ -1277,7 +1203,6 @@ local access_inclusions = {
 }
 
 function NavigationManager:search_pos_to_pos(params)
-	trace("search_pos_to_pos")
 	if params.access_pos then
 		params.blocked_nav_segs = params.access_pos
 	end
@@ -1630,55 +1555,7 @@ function NavigationManager:_draw_coarse_graph_areas()
 	end
 end
 
-function NavigationManager:_draw_rooms_LIES()
-	if not self._rooms_to_draw then
-		self._rooms_to_draw = {}
-		
-		for seg_id, seg_info in pairs(self._nav_segments) do
-			if seg_info.rooms then
-				for room_i, room in pairs(seg_info.rooms) do				
-					self._rooms_to_draw[#self._rooms_to_draw + 1] = room.room_pos
-				end
-			end
-		end
-	end
-	
-	local rooms_to_draw = self._rooms_to_draw
-	
-	for i = 1, #rooms_to_draw do
-		local room_pos = rooms_to_draw[i]
-		
-		Application:draw_sphere(room_pos, 10, 1, 1, 1)
-	end
-end
 
-function NavigationManager:_draw_doors_LIES()
-	if not self._doors_to_draw then
-		self._doors_to_draw = {}
-		
-		for seg_id, seg_info in pairs(self._nav_segments) do
-			local doors = self:find_segment_doors_with_nav_links(seg_id, nil, true)
-			
-			for i = 1, #doors do
-				self._doors_to_draw[#self._doors_to_draw + 1] = doors[i]
-			end
-		end
-	end
-	
-	local doors_to_draw = self._doors_to_draw
-	
-	for i = 1, #doors_to_draw do
-		local door = doors_to_draw[i]
-		local door_pos = door.center
-		
-		Application:draw_sphere(door_pos, 20, 1, 1, 1)
-		
-		if door.end_pos then
-			Application:draw_line(door_pos, door.end_pos, 0, 0, 1)
-			Application:draw_sphere(door.end_pos, 10, 0, 0, 1)
-		end
-	end
-end
 
 function NavigationManager:_change_funcs()
 	if LIES.settings.lua_cover < 2 and self._funcs_replaced then
@@ -1702,29 +1579,6 @@ function NavigationManager:_change_funcs()
 	end
 end
 
-function NavigationManager:_LIES_register_cover()	
-	for key, res in pairs(self._nav_segments) do
-		if res.pos then
-			local tracker = self._quad_field:create_nav_tracker(res.pos, true)
-			
-			local location_script_data = self._quad_field:get_script_data(tracker)
-			
-			if location_script_data and location_script_data.covers then
-				local covers = location_script_data.covers
-				
-				for i = 1, #covers do
-					local cover = covers[i]
-					
-					self._covers[#self._covers + 1] = cover
-				end
-			end
-			
-			self:destroy_nav_tracker(tracker)
-		end
-	end
-	
-	self.has_registered_cover_units_for_LIES = true
-end
 
 function NavigationManager:find_cover_in_cone_from_threat_pos_1_LUA(threat_pos, furthest_pos, near_pos, search_from_pos, angle, min_dis, nav_seg, optimal_threat_dis, rsrv_filter)
 	local v3_dis_sq = mvec3_dis_sq
@@ -2136,120 +1990,9 @@ function NavigationManager:check_cover_close_to_wall(position, nr_rays, dis)
 	end
 end
 
-function NavigationManager:send_nav_field_to_engine()
-	local t_ins = table.insert
-	local send_data = {
-		rooms = self._rooms
-	}
-	local nr_rooms = #send_data.rooms
 
-	send_data.doors = self._room_doors
-	send_data.nav_segments = self._nav_segments
-	send_data.quad_grid_size = self._grid_size
-	send_data.sector_grid_offset = self._geog_segment_offset or Vector3()
-	send_data.sector_grid_size = self._geog_segment_size
-	send_data.sector_max_x = self._nr_geog_segments and self._nr_geog_segments.x or 0
-	send_data.sector_max_y = self._nr_geog_segments and self._nr_geog_segments.y or 0
-	local vis_groups = {}
-	send_data.visibility_groups = vis_groups
-
-	for i_vis_group, vis_group in ipairs(self._visibility_groups) do
-		local new_vis_group = {
-			seg = vis_group.seg
-		}
-		local rooms = {}
-
-		for i_room, _ in pairs(vis_group.rooms) do
-			if self._nav_segments[vis_group.seg] and self._nav_segments[vis_group.seg].pos then
-				if not self._nav_segments[vis_group.seg].rooms then 
-					self._nav_segments[vis_group.seg].rooms = {}
-				end
-				
-				self._nav_segments[vis_group.seg].rooms[i_room] = self._rooms[i_room]
-				--self._nav_segments[vis_group.seg].rooms[i_room].room_pos = NavFieldBuilder._calculate_room_center(self, self._rooms[i_room])
-			end
-		
-			if i_room <= nr_rooms then
-				t_ins(rooms, i_room)	
-			else
-				Application:error("[NavigationManager:send_nav_field_to_engine] Navgraph needs to be rebuilt!")
-			end
-		end
-
-		new_vis_group.rooms = rooms
-		local visible_groups = {}
-
-		for i_visible_group, _ in pairs(vis_group.vis_groups) do
-			t_ins(visible_groups, i_visible_group)
-		end
-
-		new_vis_group.vis_groups = visible_groups
-
-		t_ins(vis_groups, new_vis_group)
-	end
-
-	local nav_sectors = {}
-	send_data.nav_sectors = nav_sectors
-
-	for sector_id, sector in pairs(self._geog_segments) do
-		local rooms = {}
-		local new_sector = {
-			rooms = rooms
-		}
-
-		for i_room, _ in pairs(sector.rooms) do
-			if i_room <= nr_rooms then
-				t_ins(rooms, i_room)
-			else
-				Application:error("[NavigationManager:send_nav_field_to_engine] Navgraph needs to be rebuilt!")
-			end
-		end
-
-		nav_sectors[sector_id] = new_sector
-	end
-
-	local nav_field = World:quad_field()
-
-	nav_field:set_navfield(send_data, callback(self, self, "clbk_navfield"))
-	nav_field:set_nav_link_filter(NavigationManager.ACCESS_FLAGS)
-end
-
-function NavigationManager:_strip_nav_field_for_gameplay()
-	local all_doors = self._room_doors
-	local all_rooms = self._rooms
-	local i_door = #all_doors
-
-	while i_door ~= 0 do
-		local door = all_doors[i_door]
-		local seg_1 = self:get_nav_seg_from_i_room(door.rooms[1])
-		local seg_2 = self:get_nav_seg_from_i_room(door.rooms[2])
-
-		if seg_1 == seg_2 then
-			all_doors[i_door] = nil
-		else
-			local stripped_door = {
-				center = door.pos,
-			}
-
-			mvector3.lerp(stripped_door.center, door.pos, door.pos1, 0.5)
-
-			all_doors[i_door] = stripped_door
-		end
-
-		i_door = i_door - 1
-	end
-
-	self._rooms = {}
-	self._geog_segments = {}
-	self._geog_segment_offset = nil
-	self._visibility_groups = {}
-	self._helper_blockers = nil
-	self._builder = nil
-	self._covers = {}
-end
 
 function NavigationManager:_execute_coarce_search(search_data)
-	trace("coarse search")
 	local search_id = search_data.id
 	local i = 0
 
@@ -2361,7 +2104,6 @@ function NavigationManager:_execute_coarce_search(search_data)
 end
 
 function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)
-	trace("sort_nav_segs_after_pos")
 	local all_segs = self._nav_segments
 	local seg = all_segs[i_seg]
 	local neighbours = seg.neighbours

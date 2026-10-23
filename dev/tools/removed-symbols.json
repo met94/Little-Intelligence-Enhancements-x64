@@ -4,7 +4,6 @@
   { "symbol": "_geog_segments", "severity": "error", "reason": "Removed in nav v6" },
   { "symbol": "_nr_geog_segments", "severity": "error", "reason": "Removed in nav v6" },
   { "symbol": "_visibility_groups", "severity": "error", "reason": "Never assigned in nav v6" },
-  { "symbol": "get_nav_segments_in_direction", "severity": "error", "reason": "Removed; use _quad_field/nav_segment_neighbours" },
   { "symbol": "find_cover_in_set", "severity": "error", "reason": "Removed; use _quad_field:find_cover" },
   { "symbol": "_strip_nav_field_for_gameplay", "severity": "error", "reason": "Function removed in nav v6" },
   { "symbol": "no_dispose", "severity": "error", "reason": "Renamed to no_disposal" },

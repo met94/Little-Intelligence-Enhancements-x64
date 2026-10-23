@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T18:01:45.482Z
+Generated: 2026-10-23T18:39:40.111Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,8 +13,8 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 39 |
-| MOD_ONLY | 198 |
-| VANISHED_IN_NEW | 3 |
+| MOD_ONLY | 192 |
+| VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 2 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
 | LIES_EDIT_CLEAN | 287 |
@@ -98,11 +98,11 @@ No function definitions (hook/overlay file).
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
 | [ ] | **PORT** | `NavigationManager._draw_covers` | 34 | 27 | 38 |  |
-| [ ] | **PORT** | `NavigationManager._execute_coarce_search` | 111 | 103 | 95 |  |
-| [ ] | **PORT** | `NavigationManager._sort_nav_segs_after_pos` | 52 | 89 | 47 |  |
+| [ ] | **PORT** | `NavigationManager._execute_coarce_search` | 110 | 103 | 95 |  |
+| [ ] | **PORT** | `NavigationManager._sort_nav_segs_after_pos` | 51 | 89 | 47 |  |
 | [ ] | **PORT** | `NavigationManager.add_obstacle` | 43 | 20 | 25 |  |
-| [ ] | **PORT** | `NavigationManager.find_segment_doors` | 68 | 18 | 17 |  |
-| [ ] | **PORT** | `NavigationManager.register_cover_units` | 126 | 80 | 75 |  |
+| [ ] | **PORT** | `NavigationManager.find_segment_doors` | 67 | 18 | 17 |  |
+| [ ] | **PORT** | `NavigationManager.register_cover_units` | 125 | 80 | 75 |  |
 | [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 90 | 36 | 38 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager.update:lies_cover` | 10 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `_lies_cover_grid_add` | 12 | 0 | 0 |  |
@@ -113,10 +113,8 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `NavigationManager._add_LIES_cached_path` | 7 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._change_funcs` | 21 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._check_LIES_invalidated_navlink_cached_paths` | 25 | 0 | 0 |  |
-| [ ] | audit | `NavigationManager._do_nav_fixes` | 22 | 0 | 0 |  |
+| [ ] | audit | `NavigationManager._do_nav_fixes` | 21 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._draw_coarse_graph_areas` | 24 | 0 | 0 |  |
-| [ ] | audit | `NavigationManager._draw_doors_LIES` | 27 | 0 | 0 |  |
-| [ ] | audit | `NavigationManager._draw_rooms_LIES` | 21 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._LIES_cover_gen_collect_candidates` | 84 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._LIES_cover_gen_cover_total` | 3 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._LIES_cover_gen_log` | 44 | 0 | 0 |  |
@@ -126,7 +124,6 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `NavigationManager._LIES_cover_gen_state_new` | 71 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._LIES_cover_gen_step` | 55 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._LIES_cover_gen_try_candidate` | 91 | 0 | 0 |  |
-| [ ] | audit | `NavigationManager._LIES_register_cover` | 23 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._schedule_LIES_cover_generation` | 11 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._update_LIES_cached_paths` | 19 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager.check_cover_close_to_wall` | 36 | 0 | 0 |  |
@@ -135,17 +132,13 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `NavigationManager.find_cover_from_threat_LUA` | 96 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager.find_cover_in_cone_from_threat_pos_1_LUA` | 94 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager.find_cover_in_nav_seg_3_LUA` | 104 | 0 | 0 |  |
-| [ ] | audit | `NavigationManager.find_segment_doors_with_nav_links` | 64 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager.find_walls_across_pos` | 58 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager.generate_cover_fwd` | 163 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager.insert_cover` | 8 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager.pad_out_position` | 61 | 0 | 0 |  |
-| [ ] | audit | `trace` | 6 | 0 | 0 |  |
-| [ ] | drop/rewrite | `NavigationManager._strip_nav_field_for_gameplay` | 33 | 38 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
 | [ ] | drop/rewrite | `NavigationManager.get_nav_segments_in_direction` | 24 | 55 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
-| [ ] | drop/rewrite | `NavigationManager.send_nav_field_to_engine` | 77 | 73 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
 | [ ] | keep | `NavigationManager.draw_path` | 59 | 36 | 36 |  |
-| [ ] | keep | `NavigationManager.search_pos_to_pos` | 86 | 7 | 7 |  |
+| [ ] | keep | `NavigationManager.search_pos_to_pos` | 85 | 7 | 7 |  |
 
 ## lua/characters/characterattentionobject.lua
 
@@ -509,7 +502,6 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopLogicTravel._pathing_complete_clbk` | 9 | 0 | 0 |  |
 | [ ] | audit | `CopLogicTravel._upd_focus_on_undetected_criminal` | 173 | 0 | 0 |  |
 | [ ] | audit | `CopLogicTravel._upd_pose` | 39 | 0 | 0 |  |
-| [ ] | audit | `CopLogicTravel.find_door_pos_nearest_to_next_nav_seg` | 99 | 0 | 0 |  |
 | [ ] | audit | `CopLogicTravel.queue_detection_update` | 7 | 0 | 0 |  |
 | [ ] | audit | `CopLogicTravel.queued_detection_update` | 10 | 0 | 0 |  |
 | [ ] | audit | `CopLogicTravel.update` | 7 | 0 | 0 |  |
