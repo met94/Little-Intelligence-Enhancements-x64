@@ -30,6 +30,7 @@ local temp_vec4 = Vector3()
 local math_up = math.UP
 local t_ins = table.insert
 NavigationManager.has_registered_cover_units_for_LIES = nil
+NavigationManager._LIES_navlink_elements = {}
 
 function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)
 	local all_nav_segs = self._nav_segments
@@ -1483,6 +1484,7 @@ function NavigationManager:set_nav_segment_state(id, state, filter_group)
 	local unique_id = tostring(id)
 
 	if not self._nav_segments[unique_id] then
+		log("[NavigationManager:set_nav_segment_state] nonexistent nav_segment " .. tostring(unique_id))
 		debug_pause("[NavigationManager:set_nav_segment_state] nonexistent nav_segment", unique_id)
 
 		return

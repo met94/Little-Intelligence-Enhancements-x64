@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T19:04:14.515Z
+Generated: 2026-10-23T19:11:55.235Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -103,7 +103,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `NavigationManager.add_obstacle` | 57 | 20 | 25 |  |
 | [ ] | **PORT** | `NavigationManager.find_segment_doors` | 67 | 18 | 17 |  |
 | [ ] | **PORT** | `NavigationManager.register_cover_units` | 132 | 80 | 75 |  |
-| [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 92 | 36 | 38 |  |
+| [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 93 | 36 | 38 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._clear:LIES_nav_gen_abort_clear` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._unregister_cover_units:LIES_nav_gen_abort_unregister` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager.update:lies_cover` | 8 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
