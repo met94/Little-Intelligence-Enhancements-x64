@@ -1,0 +1,2071 @@
+{
+  "targetRev": "e3a8b616",
+  "hookChecks": [
+    {
+      "hook": "lib/managers/menumanager",
+      "file": "menumanager.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/menu/menunodegui",
+      "file": "menunodegui.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/tweak_data/attentiontweakdata",
+      "file": "lua/tweak_data/attentiontweakdata.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/tweak_data/weapontweakdata",
+      "file": "lua/tweak_data/weapontweakdata.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/tweak_data/charactertweakdata",
+      "file": "lua/tweak_data/charactertweakdata.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/tweak_data/levelstweakdata",
+      "file": "lua/tweak_data/levelstweakdata.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/tweak_data/groupaitweakdata",
+      "file": "lua/tweak_data/groupaitweakdata.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/tweak_data/skirmishtweakdata",
+      "file": "lua/tweak_data/skirmishtweakdata.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/enemymanager",
+      "file": "lua/managers/enemymanager.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/navigationmanager",
+      "file": "lua/managers/navigationmanager.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/characters/characterattentionobject",
+      "file": "lua/characters/characterattentionobject.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/props/securitycamera",
+      "file": "lua/props/securitycamera.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/props/carrydata",
+      "file": "lua/props/carrydata.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/props/drill",
+      "file": "lua/props/drill.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/groupaimanager",
+      "file": "lua/groupaistate/groupaimanager.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/missionscriptelement",
+      "file": "lua/managers/mapelements/missionscriptelement.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/elementenemyprefered",
+      "file": "lua/managers/mapelements/elementenemyprefered.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/elementspawnenemydummy",
+      "file": "lua/managers/mapelements/elementspawnenemydummy.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/elementspawncivilian",
+      "file": "lua/managers/mapelements/elementspawncivilian.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/elementspawnciviliangroup",
+      "file": "lua/managers/mapelements/elementspawnciviliangroup.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/elementdifficulty",
+      "file": "lua/managers/mapelements/elementdifficulty.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/elementspawnenemygroup",
+      "file": "lua/managers/mapelements/elementspawnenemygroup.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/elementspecialobjective",
+      "file": "lua/managers/mapelements/elementspecialobjective.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/elementspecialobjectivegroup",
+      "file": "lua/managers/mapelements/elementspecialobjectivegroup.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/mission/elementaiglobalevent",
+      "file": "lua/managers/mapelements/elementaiglobalevent.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/group_ai_states/groupaistatebase",
+      "file": "lua/groupaistate/groupaistatebase.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/managers/group_ai_states/groupaistatebesiege",
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/copdamage",
+      "file": "lua/copextensions/copdamage.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/tank/tankcopdamage",
+      "file": "lua/copextensions/tankcopdamage.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/copbase",
+      "file": "lua/copextensions/copbase.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/copmovement",
+      "file": "lua/copextensions/copmovement.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/copbrain",
+      "file": "lua/copextensions/copbrain.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/copsound",
+      "file": "lua/copextensions/copsound.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/actions/upper_body/copactionshoot",
+      "file": "lua/copactions/copactionshoot.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/actions/lower_body/copactionwalk",
+      "file": "lua/copactions/copactionwalk.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/logics/coplogicintimidated",
+      "file": "lua/coplogics/coplogicintimidated.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/logics/coplogicbase",
+      "file": "lua/coplogics/coplogicbase.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/logics/coplogictravel",
+      "file": "lua/coplogics/coplogictravel.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/logics/coplogicidle",
+      "file": "lua/coplogics/coplogicidle.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/logics/coplogicarrest",
+      "file": "lua/coplogics/coplogicarrest.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/logics/coplogicattack",
+      "file": "lua/coplogics/coplogicattack.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/logics/coplogicsniper",
+      "file": "lua/coplogics/coplogicsniper.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/logics/coplogicphalanxminion",
+      "file": "lua/coplogics/coplogicphalanxminion.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/cop/logics/coplogicphalanxvip",
+      "file": "lua/coplogics/coplogicphalanxvip.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/tank/logics/tankcoplogicattack",
+      "file": "lua/coplogics/specials/tankcoplogicattack.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/shield/logics/shieldlogicattack",
+      "file": "lua/coplogics/specials/shieldlogicattack.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/taser/logics/taserlogicattack",
+      "file": "lua/coplogics/specials/taserlogicattack.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/spooc/logics/spooclogicattack",
+      "file": "lua/coplogics/specials/spooc/spooclogicattack.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/spooc/logics/spooclogicidle",
+      "file": "lua/coplogics/specials/spooc/spooclogicidle.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/enemies/boss/logics/bosslogicattack",
+      "file": "lua/coplogics/boss/bosslogicattack.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/player_team/teamaidamage",
+      "file": "lua/teamaiextensions/teamaidamage.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/player_team/teamaimovement",
+      "file": "lua/teamaiextensions/teamaimovement.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/player_team/teamaibrain",
+      "file": "lua/teamaiextensions/teamaibrain.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/player_team/teamaiinventory",
+      "file": "lua/teamaiextensions/teamaiinventory.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/player_team/logics/teamailogicbase",
+      "file": "lua/teamailogics/teamailogicbase.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/player_team/logics/teamailogicidle",
+      "file": "lua/teamailogics/teamailogicidle.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/player_team/logics/teamailogictravel",
+      "file": "lua/teamailogics/teamailogictravel.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/player_team/logics/teamailogicassault",
+      "file": "lua/teamailogics/teamailogicassault.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/player_team/logics/teamailogicdisabled",
+      "file": "lua/teamailogics/teamailogicdisabled.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/beings/player/states/playerbleedout",
+      "file": "lua/player/states/playerbleedout.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/beings/player/states/playerdriving",
+      "file": "lua/player/states/playerdriving.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/civilians/logics/civilianlogicflee",
+      "file": "lua/civlogics/civilianlogicflee.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/civilians/logics/civilianlogicidle",
+      "file": "lua/civlogics/civilianlogicidle.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/civilians/logics/civilianlogictravel",
+      "file": "lua/civlogics/civilianlogictravel.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/civilians/logics/civilianlogicescort",
+      "file": "lua/civlogics/civilianlogicescort.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/civilians/logics/civilianlogicsurrender",
+      "file": "lua/civlogics/civilianlogicsurrender.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "lib/units/equipment/sentry_gun/sentrygunbase",
+      "file": "lua/equipment/sentry_gun/sentrygunbase.lua",
+      "ok": true,
+      "reason": ""
+    },
+    {
+      "hook": "core/lib/utils/dev/editor/coreworlddefinition",
+      "file": "lua/managers/core/coreworlddefinition.lua",
+      "ok": true,
+      "reason": ""
+    }
+  ],
+  "findings": [
+    {
+      "file": "lua/civlogics/civilianlogicescort.lua",
+      "line": 45,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.outline_detection_task_key, CivilianLogicIdle._upd_outline_detection, data, data.t + 2)"
+    },
+    {
+      "file": "lua/civlogics/civilianlogicflee.lua",
+      "line": 81,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.outline_detection_task_key, CivilianLogicIdle._upd_outline_detection, data, data.t + 2)"
+    },
+    {
+      "file": "lua/civlogics/civilianlogicflee.lua",
+      "line": 783,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.cover_search_task_key, CivilianLogicFlee._find_hide_cover, data, data.t + 0.5)"
+    },
+    {
+      "file": "lua/civlogics/civilianlogicflee.lua",
+      "line": 916,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/civlogics/civilianlogicidle.lua",
+      "line": 30,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CivilianLogicIdle._upd_detection, data, data.t + 1)"
+    },
+    {
+      "file": "lua/civlogics/civilianlogicidle.lua",
+      "line": 35,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.outline_detection_task_key, CivilianLogicIdle._upd_outline_detection, data, data.t + 2)"
+    },
+    {
+      "file": "lua/civlogics/civilianlogicidle.lua",
+      "line": 218,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CivilianLogicIdle._upd_detection, data, data.t + delay)"
+    },
+    {
+      "file": "lua/civlogics/civilianlogicsurrender.lua",
+      "line": 67,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.outline_detection_task_key, CivilianLogicIdle._upd_outline_detection, data, data.t + 2)"
+    },
+    {
+      "file": "lua/civlogics/civilianlogictravel.lua",
+      "line": 19,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "return CopLogicTravel._get_pos_on_wall(managers.navigation._nav_segments[objective.nav_seg].pos, 700, nil, nil, nil, data.pos_rsrv_id)"
+    },
+    {
+      "file": "lua/copextensions/copbrain.lua",
+      "line": 872,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "return managers.navigation:search_coarse(params)"
+    },
+    {
+      "file": "lua/copextensions/copbrain.lua",
+      "line": 894,
+      "symbol": "search_pos_to_pos",
+      "severity": "review",
+      "reason": "Delegates to _quad_field:detailed_search(params)",
+      "text": "managers.navigation:search_pos_to_pos(params)"
+    },
+    {
+      "file": "lua/copextensions/copbrain.lua",
+      "line": 917,
+      "symbol": "search_pos_to_pos",
+      "severity": "review",
+      "reason": "Delegates to _quad_field:detailed_search(params)",
+      "text": "managers.navigation:search_pos_to_pos(params)"
+    },
+    {
+      "file": "lua/copextensions/copbrain.lua",
+      "line": 945,
+      "symbol": "search_pos_to_pos",
+      "severity": "review",
+      "reason": "Delegates to _quad_field:detailed_search(params)",
+      "text": "managers.navigation:search_pos_to_pos(params)"
+    },
+    {
+      "file": "lua/copextensions/copbrain.lua",
+      "line": 1368,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "managers.navigation:search_coarse(params)"
+    },
+    {
+      "file": "lua/coplogics/boss/bosslogicattack.lua",
+      "line": 163,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_queue_id, LIESBossLogicAttack.queued_update, data, data.t + delay, true)"
+    },
+    {
+      "file": "lua/coplogics/boss/bosslogicattack.lua",
+      "line": 938,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, LIESBossLogicAttack._upd_enemy_detection, data, data.t + delay, true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicarrest.lua",
+      "line": 245,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_task_key, CopLogicArrest.queued_update, data, data.t + delay, data.important)"
+    },
+    {
+      "file": "lua/coplogics/coplogicarrest.lua",
+      "line": 312,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_task_key, CopLogicArrest.queued_update, data, data.t + delay, data.important)"
+    },
+    {
+      "file": "lua/coplogics/coplogicattack.lua",
+      "line": 117,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_queue_id, data.logic.queued_update, data, data.t + (data.important and 0 or 0.2), true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicattack.lua",
+      "line": 188,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicAttack._upd_enemy_detection, data, delay and data.t + delay, data.important and true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicattack.lua",
+      "line": 1116,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segs = managers.navigation._nav_segments"
+    },
+    {
+      "file": "lua/coplogics/coplogicattack.lua",
+      "line": 1123,
+      "symbol": "find_segment_doors",
+      "severity": "review",
+      "reason": "Returns position vectors, not door tables",
+      "text": "local doors = managers.navigation:find_segment_doors(enemy_nav_seg)"
+    },
+    {
+      "file": "lua/coplogics/coplogicattack.lua",
+      "line": 1342,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/coplogics/coplogicattack.lua",
+      "line": 1398,
+      "symbol": "find_segment_doors",
+      "severity": "review",
+      "reason": "Returns position vectors, not door tables",
+      "text": "local found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, \"_chk_is_right_segment\", to_nav_seg), true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicattack.lua",
+      "line": 1402,
+      "symbol": "find_segment_doors",
+      "severity": "review",
+      "reason": "Returns position vectors, not door tables",
+      "text": "found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, \"_chk_is_right_segment\", enemy_seg), true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicattack.lua",
+      "line": 2862,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "found_cover = managers.navigation._quad_field:find_cover(search_params)"
+    },
+    {
+      "file": "lua/coplogics/coplogicbase.lua",
+      "line": 263,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segs = managers.navigation._nav_segments"
+    },
+    {
+      "file": "lua/coplogics/coplogicbase.lua",
+      "line": 417,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "function CopLogicBase.queue_task(internal_data, id, func, data, exec_t, asap)"
+    },
+    {
+      "file": "lua/coplogics/coplogicbase.lua",
+      "line": 448,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "managers.enemy:queue_task(id, func, data, exec_t, callback(CopLogicBase, CopLogicBase, \"on_queued_task\", internal_data), asap)"
+    },
+    {
+      "file": "lua/coplogics/coplogicidle.lua",
+      "line": 76,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicIdle.queued_update, data, data.t, data.important and true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicidle.lua",
+      "line": 93,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.wall_stare_task_key, CopLogicIdle._chk_stare_into_wall_1, data, data.t)"
+    },
+    {
+      "file": "lua/coplogics/coplogicidle.lua",
+      "line": 184,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicIdle.queued_update, data, data.t + delay, data.important and true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicidle.lua",
+      "line": 275,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicIdle.queued_update, data, data.t + delay, data.important and true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicidle.lua",
+      "line": 1923,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.wall_stare_task_key, CopLogicIdle._chk_stare_into_wall_1, data, data.t)"
+    },
+    {
+      "file": "lua/coplogics/coplogicintimidated.lua",
+      "line": 45,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_task_key, CopLogicIntimidated.queued_update, data, data.t + 0.2)"
+    },
+    {
+      "file": "lua/coplogics/coplogicintimidated.lua",
+      "line": 148,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_task_key, CopLogicIntimidated.queued_update, data, data.t + 0.2)"
+    },
+    {
+      "file": "lua/coplogics/coplogicphalanxminion.lua",
+      "line": 33,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicPhalanxMinion.queued_update, data, data.t)"
+    },
+    {
+      "file": "lua/coplogics/coplogicphalanxminion.lua",
+      "line": 77,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicPhalanxMinion.queued_update, data, data.t + delay, data.important and true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicphalanxminion.lua",
+      "line": 102,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicPhalanxMinion.queued_update, data, data.t + delay, data.important and true)"
+    },
+    {
+      "file": "lua/coplogics/coplogicphalanxvip.lua",
+      "line": 33,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicPhalanxVip.queued_update, data, data.t)"
+    },
+    {
+      "file": "lua/coplogics/coplogicsniper.lua",
+      "line": 31,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicSniper._upd_enemy_detection, data, data.t)"
+    },
+    {
+      "file": "lua/coplogics/coplogicsniper.lua",
+      "line": 157,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicSniper._upd_enemy_detection, data, data.t + delay)"
+    },
+    {
+      "file": "lua/coplogics/coplogictravel.lua",
+      "line": 187,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicTravel.queued_detection_update, data, data.t + delay, data.important and true)"
+    },
+    {
+      "file": "lua/coplogics/coplogictravel.lua",
+      "line": 287,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segments = managers.navigation._nav_segments"
+    },
+    {
+      "file": "lua/coplogics/coplogictravel.lua",
+      "line": 460,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segments = managers.navigation._nav_segments"
+    },
+    {
+      "file": "lua/coplogics/coplogictravel.lua",
+      "line": 1330,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local near_pos = objective.follow_unit and alive(objective.follow_unit) and objective.follow_unit:movement():nav_tracker():field_position() or data.internal_data.coarse_path[#data.internal_data.coarse"
+    },
+    {
+      "file": "lua/coplogics/coplogictravel.lua",
+      "line": 1393,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "follow_pos = my_data.coarse_path[#my_data.coarse_path][2] or managers.navigation._nav_segments[dest_nav_seg_id].pos"
+    },
+    {
+      "file": "lua/coplogics/coplogictravel.lua",
+      "line": 2000,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local nav_seg_data = managers.navigation._nav_segments[coarse_path[nav_index + 1][1]]"
+    },
+    {
+      "file": "lua/coplogics/coplogictravel.lua",
+      "line": 2002,
+      "symbol": "_room_doors",
+      "severity": "error",
+      "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
+      "text": "local all_doors = managers.navigation._room_doors"
+    },
+    {
+      "file": "lua/coplogics/coplogictravel.lua",
+      "line": 2116,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.upd_task_key, CopLogicTravel.queued_update, data, data.t + delay, data.important and true)"
+    },
+    {
+      "file": "lua/coplogics/specials/shieldlogicattack.lua",
+      "line": 430,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_queue_id, ShieldLogicAttack.queued_update, data, data.t + delay, data.important and true)"
+    },
+    {
+      "file": "lua/coplogics/specials/spooc/spooclogicattack.lua",
+      "line": 28,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicAttack._upd_enemy_detection, data, data.t)"
+    },
+    {
+      "file": "lua/coplogics/specials/tankcoplogicattack.lua",
+      "line": 21,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicAttack._upd_enemy_detection, data)"
+    },
+    {
+      "file": "lua/coplogics/specials/taserlogicattack.lua",
+      "line": 28,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_task_key, TaserLogicAttack.queued_update, data, data.t, data.important)"
+    },
+    {
+      "file": "lua/coplogics/specials/taserlogicattack.lua",
+      "line": 65,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_task_key, TaserLogicAttack.queued_update, data, data.t + delay, data.important)"
+    },
+    {
+      "file": "lua/coplogics/specials/taserlogicattack.lua",
+      "line": 75,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_task_key, TaserLogicAttack.queued_update, data, data.t + delay, data.important)"
+    },
+    {
+      "file": "lua/coplogics/specials/taserlogicattack.lua",
+      "line": 105,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_task_key, TaserLogicAttack.queued_update, data, data.t + delay, data.important)"
+    },
+    {
+      "file": "lua/coplogics/specials/taserlogicattack.lua",
+      "line": 127,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.update_task_key, TaserLogicAttack.queued_update, data, data.t + delay, data.important)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebase.lua",
+      "line": 86,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local quadfield = managers.navigation._quad_field"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 169,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "obj_pos = managers.navigation._nav_segments[objective.nav_seg].pos"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 551,
+      "symbol": "_police_upd_task_queued",
+      "severity": "review",
+      "reason": "Boolean -> timestamp in 247",
+      "text": "self._police_upd_task_queued = false"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 662,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local nav_segments = managers.navigation._nav_segments"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 960,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local path = managers.navigation:search_coarse(params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 1131,
+      "symbol": "_police_upd_task_queued",
+      "severity": "review",
+      "reason": "Boolean -> timestamp in 247",
+      "text": "if not self._police_upd_task_queued then"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 1132,
+      "symbol": "_police_upd_task_queued",
+      "severity": "review",
+      "reason": "Boolean -> timestamp in 247",
+      "text": "self._police_upd_task_queued = true"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 1334,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 1369,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 2378,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 2422,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 2476,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 2532,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 2595,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 2926,
+      "symbol": "get_nav_segments_in_direction",
+      "severity": "error",
+      "reason": "Removed; use _quad_field/nav_segment_neighbours",
+      "text": "local navsegs = managers.navigation:get_nav_segments_in_direction(other_group.objective.area.pos_nav_seg, fwd_vec)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3004,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3088,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "push_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3121,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "push_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3240,
+      "symbol": "get_nav_segments_in_direction",
+      "severity": "error",
+      "reason": "Removed; use _quad_field/nav_segment_neighbours",
+      "text": "local navsegs = managers.navigation:get_nav_segments_in_direction(other_group.objective.area.pos_nav_seg, fwd_vec)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3318,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3412,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3416,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3437,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3441,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3810,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3833,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3995,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 4105,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segs = nav_manager._nav_segments"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 4107,
+      "symbol": "get_nav_segments_in_direction",
+      "severity": "error",
+      "reason": "Removed; use _quad_field/nav_segment_neighbours",
+      "text": "local get_dir_navsegs_f = nav_manager.get_nav_segments_in_direction"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 4149,
+      "symbol": "_room_doors",
+      "severity": "error",
+      "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
+      "text": "test_pos = managers.navigation._room_doors[door_id].center"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 4266,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segs = nav_manager._nav_segments"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 4268,
+      "symbol": "get_nav_segments_in_direction",
+      "severity": "error",
+      "reason": "Removed; use _quad_field/nav_segment_neighbours",
+      "text": "local get_dir_navsegs_f = nav_manager.get_nav_segments_in_direction"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 4310,
+      "symbol": "_room_doors",
+      "severity": "error",
+      "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
+      "text": "test_pos = managers.navigation._room_doors[door_id].center"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 4503,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 4531,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 4594,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local path = managers.navigation:search_coarse(coarse_params)"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 18,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "local corpse_disposal_id = self._corpse_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 21,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self._corpse_disposal_id = nil"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 32,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "local corpse_disposal_id = self._corpse_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 40,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self._corpse_disposal_id = corpse_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 53,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "local corpse_disposal_id = self._corpse_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 57,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self._corpse_disposal_id = nil"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 63,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self._corpse_disposal_id = corpse_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 92,
+      "symbol": "no_dispose",
+      "severity": "error",
+      "reason": "Renamed to no_disposal",
+      "text": "if not corpse_data.no_dispose then"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 95,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "local corpse_disposal_id = self._corpse_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 98,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self._corpse_disposal_id = nil"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 130,
+      "symbol": "no_dispose",
+      "severity": "error",
+      "reason": "Renamed to no_disposal",
+      "text": "if not corpse_data.no_dispose then"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 133,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "local corpse_disposal_id = self._corpse_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 136,
+      "symbol": "_corpse_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self._corpse_disposal_id = nil"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 162,
+      "symbol": "_shield_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "local shield_disposal_id = self._shield_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 166,
+      "symbol": "_shield_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self._shield_disposal_id = shield_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 169,
+      "symbol": "_fast_shield_disposal",
+      "severity": "error",
+      "reason": "Removed in 247",
+      "text": "self._fast_shield_disposal = true"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 171,
+      "symbol": "_upd_shield_disposal_fast",
+      "severity": "error",
+      "reason": "Removed in 247",
+      "text": "self:add_delayed_clbk(shield_disposal_id, callback(self, self, \"_upd_shield_disposal_fast\"), t)"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 175,
+      "symbol": "_fast_shield_disposal",
+      "severity": "error",
+      "reason": "Removed in 247",
+      "text": "elseif not self._fast_shield_disposal and self:shield_limit() < nr_shields then"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 176,
+      "symbol": "_fast_shield_disposal",
+      "severity": "error",
+      "reason": "Removed in 247",
+      "text": "self._fast_shield_disposal = false"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 194,
+      "symbol": "_shield_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "local shield_disposal_id = self._shield_disposal_id"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 201,
+      "symbol": "_shield_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self._shield_disposal_id = nil"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 202,
+      "symbol": "_fast_shield_disposal",
+      "severity": "error",
+      "reason": "Removed in 247",
+      "text": "self._fast_shield_disposal = false"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 205,
+      "symbol": "_fast_shield_disposal",
+      "severity": "error",
+      "reason": "Removed in 247",
+      "text": "elseif self._fast_shield_disposal and nr_shields <= self:shield_limit() then"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 206,
+      "symbol": "_fast_shield_disposal",
+      "severity": "error",
+      "reason": "Removed in 247",
+      "text": "self._fast_shield_disposal = false"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 341,
+      "symbol": "_shield_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self:add_delayed_clbk(self._shield_disposal_id, callback(self, self, \"_upd_shield_disposal\"), delay)"
+    },
+    {
+      "file": "lua/managers/enemymanager.lua",
+      "line": 343,
+      "symbol": "_shield_disposal_id",
+      "severity": "error",
+      "reason": "Timer-based disposal in 248.2",
+      "text": "self._shield_disposal_id = nil"
+    },
+    {
+      "file": "lua/managers/mapelements/elementspecialobjective.lua",
+      "line": 373,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 36,
+      "symbol": "find_segment_doors",
+      "severity": "review",
+      "reason": "Returns position vectors, not door tables",
+      "text": "function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 37,
+      "symbol": "_room_doors",
+      "severity": "error",
+      "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
+      "text": "local all_doors = self._room_doors"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 38,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segs = self._nav_segments"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 54,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value(\"position\"), true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 85,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value(\"position\"), true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 108,
+      "symbol": "_room_doors",
+      "severity": "error",
+      "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
+      "text": "local all_doors = self._room_doors"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 109,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segs = self._nav_segments"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 151,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value(\"position\"), true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 177,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segs = self._nav_segments"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 201,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segs = self._nav_segments"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 365,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "elseif tracker:obstructed() or not self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 393,
+      "symbol": "_rooms",
+      "severity": "error",
+      "reason": "Removed at runtime in nav v6",
+      "text": "local rooms = self._rooms"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 400,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local nav_tracker = self._quad_field:create_nav_tracker(pos, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 403,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local room_nav_seg = self._nav_segments[nav_tracker:nav_segment()]"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 404,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local navseg_tracker = self._quad_field:create_nav_tracker(room_nav_seg.pos, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 418,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local location_script_data = self._quad_field:get_script_data(navseg_tracker, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 454,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local nav_tracker = self._quad_field:create_nav_tracker(pos, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 466,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local location_script_data = self._quad_field:get_script_data(nav_tracker)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 478,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local max_cover_points = #covers <= 0 and 5000 or math.round(16 * table.size(self._nav_segments))"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 487,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "for key, res in pairs(self._nav_segments) do"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 489,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local tracker = self._quad_field:create_nav_tracker(res.pos, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 491,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local location_script_data = self._quad_field:get_script_data(tracker, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 504,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local try_tracker = self._quad_field:create_nav_tracker(room_pos, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 524,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local zingus_tracker = self._quad_field:create_nav_tracker(try_pos, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 722,
+      "symbol": "search_pos_to_pos",
+      "severity": "review",
+      "reason": "Delegates to _quad_field:detailed_search(params)",
+      "text": "function NavigationManager:search_pos_to_pos(params)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 805,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "self._quad_field:detailed_search(params)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 903,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local id = self._quad_field:add_obstacle(obstacle_obj)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 960,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "if not self._nav_segments[id] then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 969,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "self._quad_field:set_nav_segment_blocked_filter(id, access_filter)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 971,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "self._nav_segments[id].blocked_group = filter_group"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 973,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "if self._nav_segments[id].blocked_group and self._cached_paths and #self._cached_paths > 0 then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1006,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "self._quad_field:set_nav_segment_blocked_filter(id, 0)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1008,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "self._nav_segments[id].blocked_group = nil"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1010,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local cur_state = self._quad_field:is_nav_segment_enabled(id)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1017,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "self._nav_segments[id].disabled = seg_disabled_state"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1020,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "self._quad_field:set_nav_segment_enabled(id, wanted_state)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1079,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "for seg_id, seg_info in pairs(self._nav_segments) do"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1101,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "for seg_id, seg_info in pairs(self._nav_segments) do"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1146,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "for key, res in pairs(self._nav_segments) do"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1148,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local tracker = self._quad_field:create_nav_tracker(res.pos, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1150,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local location_script_data = self._quad_field:get_script_data(tracker)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1213,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "if not cover[self.COVER_RESERVED] and self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) and not cover[3]:obstructed() and not cover[3]:lost() then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1231,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "if self._quad_field:is_position_unreserved({radius = 40, position = cover[1], filter = rsrv_filter}) then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1308,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "if not cover[self.COVER_RESERVED] and self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) and not cover[3]:obstructed() and not cover[3]:lost() then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1330,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "if self._quad_field:is_position_unreserved({radius = 40, position = cover[1], filter = rsrv_filter}) then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1407,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "if not cover[self.COVER_RESERVED] and self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) and not cover[3]:obstructed() and not cover[3]:lost() then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1432,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "if self._quad_field:is_position_unreserved({radius = 40, position = cover[1], filter = rsrv_filter}) then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1471,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local position_tracker = self._quad_field:create_nav_tracker(position)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1475,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "self._quad_field:destroy_nav_tracker(position_tracker)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1526,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local position_tracker = self._quad_field:create_nav_tracker(altered_pos, true)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1532,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "self._quad_field:destroy_nav_tracker(position_tracker)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1579,
+      "symbol": "send_nav_field_to_engine",
+      "severity": "review",
+      "reason": "Renamed _send_nav_field_to_engine(load_data); v5 data format",
+      "text": "function NavigationManager:send_nav_field_to_engine()"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1582,
+      "symbol": "_rooms",
+      "severity": "error",
+      "reason": "Removed at runtime in nav v6",
+      "text": "rooms = self._rooms"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1586,
+      "symbol": "_room_doors",
+      "severity": "error",
+      "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
+      "text": "send_data.doors = self._room_doors"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1587,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "send_data.nav_segments = self._nav_segments"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1591,
+      "symbol": "_nr_geog_segments",
+      "severity": "error",
+      "reason": "Removed in nav v6",
+      "text": "send_data.sector_max_x = self._nr_geog_segments and self._nr_geog_segments.x or 0"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1592,
+      "symbol": "_nr_geog_segments",
+      "severity": "error",
+      "reason": "Removed in nav v6",
+      "text": "send_data.sector_max_y = self._nr_geog_segments and self._nr_geog_segments.y or 0"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1596,
+      "symbol": "_visibility_groups",
+      "severity": "error",
+      "reason": "Never assigned in nav v6",
+      "text": "for i_vis_group, vis_group in ipairs(self._visibility_groups) do"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1603,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "if self._nav_segments[vis_group.seg] and self._nav_segments[vis_group.seg].pos then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1604,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "if not self._nav_segments[vis_group.seg].rooms then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1605,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "self._nav_segments[vis_group.seg].rooms = {}"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1608,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "self._nav_segments[vis_group.seg].rooms[i_room] = self._rooms[i_room]"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1608,
+      "symbol": "_rooms",
+      "severity": "error",
+      "reason": "Removed at runtime in nav v6",
+      "text": "self._nav_segments[vis_group.seg].rooms[i_room] = self._rooms[i_room]"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1615,
+      "symbol": "send_nav_field_to_engine",
+      "severity": "review",
+      "reason": "Renamed _send_nav_field_to_engine(load_data); v5 data format",
+      "text": "Application:error(\"[NavigationManager:send_nav_field_to_engine] Navgraph needs to be rebuilt!\")"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1634,
+      "symbol": "_geog_segments",
+      "severity": "error",
+      "reason": "Removed in nav v6",
+      "text": "for sector_id, sector in pairs(self._geog_segments) do"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1644,
+      "symbol": "send_nav_field_to_engine",
+      "severity": "review",
+      "reason": "Renamed _send_nav_field_to_engine(load_data); v5 data format",
+      "text": "Application:error(\"[NavigationManager:send_nav_field_to_engine] Navgraph needs to be rebuilt!\")"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1657,
+      "symbol": "_strip_nav_field_for_gameplay",
+      "severity": "error",
+      "reason": "Function removed in nav v6",
+      "text": "function NavigationManager:_strip_nav_field_for_gameplay()"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1658,
+      "symbol": "_room_doors",
+      "severity": "error",
+      "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
+      "text": "local all_doors = self._room_doors"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1659,
+      "symbol": "_rooms",
+      "severity": "error",
+      "reason": "Removed at runtime in nav v6",
+      "text": "local all_rooms = self._rooms"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1682,
+      "symbol": "_rooms",
+      "severity": "error",
+      "reason": "Removed at runtime in nav v6",
+      "text": "self._rooms = {}"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1683,
+      "symbol": "_geog_segments",
+      "severity": "error",
+      "reason": "Removed in nav v6",
+      "text": "self._geog_segments = {}"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1685,
+      "symbol": "_visibility_groups",
+      "severity": "error",
+      "reason": "Never assigned in nav v6",
+      "text": "self._visibility_groups = {}"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1709,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_nav_segments = self._nav_segments"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1772,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "if self._quad_field:is_nav_segment_blocked(i_seg, search_data.access_pos) then"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1803,
+      "symbol": "_nav_segments",
+      "severity": "review",
+      "reason": "Keyed by tostring(id); neighbours are door vectors",
+      "text": "local all_segs = self._nav_segments"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1804,
+      "symbol": "_room_doors",
+      "severity": "error",
+      "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
+      "text": "local all_doors = self._room_doors"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1805,
+      "symbol": "_rooms",
+      "severity": "error",
+      "reason": "Removed at runtime in nav v6",
+      "text": "local all_rooms = self._rooms"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1897,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "local from_tracker = self._quad_field:create_nav_tracker(pos)"
+    },
+    {
+      "file": "lua/managers/navigationmanager.lua",
+      "line": 1950,
+      "symbol": "_quad_field",
+      "severity": "review",
+      "reason": "New engine surface; verify method/arg shapes",
+      "text": "self._quad_field:destroy_nav_tracker(from_tracker)"
+    },
+    {
+      "file": "lua/teamailogics/teamailogicassault.lua",
+      "line": 28,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicAssault._upd_enemy_detection, data, data.t)"
+    },
+    {
+      "file": "lua/teamailogics/teamailogicassault.lua",
+      "line": 334,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicAssault._upd_enemy_detection, data, data.t + delay)"
+    },
+    {
+      "file": "lua/teamailogics/teamailogicidle.lua",
+      "line": 404,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.wall_stare_task_key, CopLogicIdle._chk_stare_into_wall_1, data, data.t)"
+    },
+    {
+      "file": "lua/teamailogics/teamailogicidle.lua",
+      "line": 533,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicIdle._upd_enemy_detection, data, data.t + delay)"
+    },
+    {
+      "file": "lua/teamailogics/teamailogictravel.lua",
+      "line": 33,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicTravel._upd_enemy_detection, data, data.t)"
+    },
+    {
+      "file": "lua/teamailogics/teamailogictravel.lua",
+      "line": 202,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, key, TeamAILogicTravel._remove_enemy_attention, {"
+    },
+    {
+      "file": "lua/teamailogics/teamailogictravel.lua",
+      "line": 214,
+      "symbol": "queue_task",
+      "severity": "review",
+      "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
+      "text": "CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicTravel._upd_enemy_detection, data, data.t + delay)"
+    }
+  ]
+}
