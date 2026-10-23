@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-23T19:52:53.921Z",
+  "generated": "2026-10-23T20:09:28.009Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -622,7 +622,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1436
+          "startLine": 1535
         },
         {
           "name": "Hooks.PostHook:NavigationManager._clear:LIES_nav_gen_abort_clear",
@@ -697,7 +697,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1604
+          "startLine": 1703
         },
         {
           "name": "NavigationManager._check_LIES_invalidated_navlink_cached_paths",
@@ -742,7 +742,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1577
+          "startLine": 1676
         },
         {
           "name": "NavigationManager._draw_covers",
@@ -772,7 +772,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 2039
+          "startLine": 2138
         },
         {
           "name": "NavigationManager._LIES_cover_gen_abort",
@@ -967,7 +967,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 2150
+          "startLine": 2249
         },
         {
           "name": "NavigationManager._update_LIES_cached_paths",
@@ -1012,7 +1012,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 2000
+          "startLine": 2099
         },
         {
           "name": "NavigationManager.clamp_position_to_field",
@@ -1027,7 +1027,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1924
+          "startLine": 2023
         },
         {
           "name": "NavigationManager.draw_coarse_path",
@@ -1072,7 +1072,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1722
+          "startLine": 1821
         },
         {
           "name": "NavigationManager.find_cover_in_cone_from_threat_pos_1_LUA",
@@ -1087,7 +1087,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1627
+          "startLine": 1726
         },
         {
           "name": "NavigationManager.find_cover_in_nav_seg_3_LUA",
@@ -1102,7 +1102,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1819
+          "startLine": 1918
         },
         {
           "name": "NavigationManager.find_segment_doors",
@@ -1132,7 +1132,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 2202
+          "startLine": 2301
         },
         {
           "name": "NavigationManager.generate_cover_fwd",
@@ -1192,7 +1192,22 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1938
+          "startLine": 2037
+        },
+        {
+          "name": "NavigationManager.register_anim_nav_link",
+          "category": "LIES_EDIT_CLEAN",
+          "modLines": 51,
+          "oldLines": 45,
+          "newLines": 45,
+          "modParams": "element",
+          "oldParams": "element",
+          "newParams": "element",
+          "isLocal": false,
+          "isHook": false,
+          "form": "colon",
+          "note": "",
+          "startLine": 1436
         },
         {
           "name": "NavigationManager.register_cover_units",
@@ -1208,6 +1223,21 @@
           "form": "colon",
           "note": "",
           "startLine": 350
+        },
+        {
+          "name": "NavigationManager.remove_obstacle",
+          "category": "LIES_EDIT_VANILLA_CHANGED",
+          "modLines": 46,
+          "oldLines": 15,
+          "newLines": 46,
+          "modParams": "obstacle_unit, obstacle_obj_name",
+          "oldParams": "obstacle_unit, obstacle_obj_name",
+          "newParams": "obstacle_unit, obstacle_obj_name",
+          "isLocal": false,
+          "isHook": false,
+          "form": "colon",
+          "note": "",
+          "startLine": 1488
         },
         {
           "name": "NavigationManager.search_pos_to_pos",
@@ -1237,15 +1267,15 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1483
+          "startLine": 1582
         }
       ],
       "errors": [],
       "totals": {
         "MOD_ONLY": 33,
         "MOD_ONLY_HOOK": 3,
-        "LIES_EDIT_VANILLA_CHANGED": 7,
-        "LIES_EDIT_CLEAN": 2,
+        "LIES_EDIT_VANILLA_CHANGED": 8,
+        "LIES_EDIT_CLEAN": 3,
         "VANISHED_IN_NEW": 1
       }
     },

@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T19:52:53.918Z
+Generated: 2026-10-23T20:09:28.007Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -11,13 +11,13 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 
 | category | count |
 |---|---:|
-| LIES_EDIT_VANILLA_CHANGED | 23 |
+| LIES_EDIT_VANILLA_CHANGED | 24 |
 | MOD_ONLY_HOOK | 41 |
 | MOD_ONLY | 194 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 2 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 287 |
+| LIES_EDIT_CLEAN | 288 |
 
 ## menumanager.lua
 
@@ -103,6 +103,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `NavigationManager.add_obstacle` | 57 | 20 | 25 |  |
 | [ ] | **PORT** | `NavigationManager.find_segment_doors` | 67 | 18 | 17 |  |
 | [ ] | **PORT** | `NavigationManager.register_cover_units` | 132 | 80 | 75 |  |
+| [ ] | **PORT** | `NavigationManager.remove_obstacle` | 46 | 15 | 46 |  |
 | [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 93 | 36 | 38 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._clear:LIES_nav_gen_abort_clear` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._unregister_cover_units:LIES_nav_gen_abort_unregister` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
@@ -142,6 +143,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `NavigationManager.pad_out_position` | 61 | 0 | 0 |  |
 | [ ] | drop/rewrite | `NavigationManager.get_nav_segments_in_direction` | 24 | 55 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
 | [ ] | keep | `NavigationManager.draw_path` | 59 | 36 | 36 |  |
+| [ ] | keep | `NavigationManager.register_anim_nav_link` | 51 | 45 | 45 |  |
 | [ ] | keep | `NavigationManager.search_pos_to_pos` | 85 | 7 | 7 |  |
 
 ## lua/characters/characterattentionobject.lua

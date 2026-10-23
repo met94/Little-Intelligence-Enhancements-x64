@@ -1433,6 +1433,105 @@ function NavigationManager:add_obstacle(obstacle_unit, obstacle_obj_name)
 	})
 end
 
+function NavigationManager:register_anim_nav_link(element)
+	if element:nav_link() then
+		if Application:editor() then
+			managers.editor:output_error("[NavigationManager:register_anim_nav_link] Navigation link is already registered id: " .. tostring(element._id))
+		else
+			Application:error("[NavigationManager:register_anim_nav_link] Navigation link is already registered", element._id)
+		end
+
+		return
+	end
+
+	if self._nav_links then
+		self._nav_links[element] = true
+	end
+
+	local nav_link = self._quad_field:add_nav_link(element:value("position"), element:nav_link_end_pos(), {
+		element = element
+	}, element:nav_link_access(), element:chance(), element._id)
+	local is_obstructed = nav_link:is_obstructed()
+
+	element:set_nav_link(nav_link)
+
+	local start_nav_seg_id = nav_link:start_nav_segment()
+	local end_nav_seg_id = nav_link:end_nav_segment()
+	local start_nav_seg = self._nav_segments[start_nav_seg_id]
+
+	if not start_nav_seg or not self._nav_segments[end_nav_seg_id] then
+		Application:error("[NavigationManager:register_anim_nav_link] Nav link start or end point is not in the navigation mesh. Element id: ", element._id, " nav_link ", nav_link)
+
+		return
+	end
+
+	if start_nav_seg_id ~= end_nav_seg_id then
+		local new_neighbour
+
+		if not is_obstructed and (not start_nav_seg.neighbours[end_nav_seg_id] or not next(start_nav_seg.neighbours[end_nav_seg_id])) then
+			new_neighbour = true
+		end
+
+		local neighbours_list_name = is_obstructed and "disabled_neighbours" or "neighbours"
+
+		start_nav_seg[neighbours_list_name] = start_nav_seg[neighbours_list_name] or {}
+		start_nav_seg[neighbours_list_name][end_nav_seg_id] = start_nav_seg[neighbours_list_name][end_nav_seg_id] or {}
+
+		table.insert(start_nav_seg[neighbours_list_name][end_nav_seg_id], nav_link)
+
+		if new_neighbour then
+			managers.groupai:state():on_nav_seg_neighbour_state(start_nav_seg_id, end_nav_seg_id, true)
+		end
+	end
+end
+
+function NavigationManager:remove_obstacle(obstacle_unit, obstacle_obj_name)
+	local obstacle_obj = obstacle_unit:get_object(obstacle_obj_name)
+
+	if not obstacle_obj then
+		Application:error("[NavigationManager:remove_obstacle] There was no obj to reference in this unit!", obstacle_unit, obstacle_obj_name)
+
+		return
+	end
+
+	local scriptdata_ext = obstacle_unit:unit_data()
+
+	if scriptdata_ext and scriptdata_ext.remove_destroy_listener then
+		scriptdata_ext:remove_destroy_listener(NavigationManager._OBSTACLE_DESTROY_KEY)
+	end
+
+	local temp_array = {}
+	local removed_any = false
+	local u_key = obstacle_unit:key()
+
+	for i, obs_data in ipairs(self._obstacles) do
+		local removed = false
+
+		if not alive(obs_data.unit) then
+			Application:debug("[NavigationManager:remove_obstacle] Found dead unit in obstacle list, removing it:", i)
+
+			self._quad_field:remove_obstacle(obs_data.id)
+
+			removed = true
+			removed_any = true
+		elseif obs_data.unit:key() == u_key and obs_data.obstacle_obj_name == obstacle_obj_name then
+			Application:debug("[NavigationManager:remove_obstacle] obstacle removed", obs_data.obstacle_obj_name, obs_data.id)
+			self._quad_field:remove_obstacle(obs_data.id)
+
+			removed = true
+			removed_any = true
+		end
+
+		if not removed then
+			table.insert(temp_array, self._obstacles[i])
+		end
+	end
+
+	Application:debug("[NavigationManager:remove_obstacle] Inspecting obstacles removed:", removed_any, removed_any and inspect(temp_array) or nil)
+
+	self._obstacles = temp_array
+end
+
 local function convert_bastards(ai_group_name)
 	if ai_group_name == "chavez" or ai_group_name == "bank_manager_old_man" or ai_group_name == "escort_guy_1" or ai_group_name == "escort_guy_2" or ai_group_name == "escort_guy_3" or ai_group_name == "escort_guy_5" then
 		return "bastards"
