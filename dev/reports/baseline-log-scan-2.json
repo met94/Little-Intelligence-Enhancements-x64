@@ -1,0 +1,40 @@
+{
+  "file": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\PAYDAY 2\\mods\\logs\\2026_10_23_log.txt",
+  "setup": [
+    {
+      "line": 55,
+      "text": "05:11:31 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 127,
+      "text": "05:11:31 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 211,
+      "text": "05:11:32 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 358,
+      "text": "05:11:48 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 430,
+      "text": "05:11:48 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 502,
+      "text": "05:11:48 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    }
+  ],
+  "harness": [],
+  "harnessErrors": [],
+  "fatal": [],
+  "luaErrors": [
+    {
+      "line": 317,
+      "text": "05:11:37 PM Log:  (D:\\a\\PAYDAY2-SuperBLT\\PAYDAY2-SuperBLT\\src\\InitiateState.cpp:98) mods/BeardLib/Modules/Utils/ModAssetsModule.lua:156: attempt to compare number with nil"
+    }
+  ],
+  "liesErrors": [],
+  "ok": true
+}

@@ -30,70 +30,75 @@ local temp_vec3 = Vector3()
 local temp_vec4 = Vector3()
 local math_up = math.UP
 local t_ins = table.insert
+local trace_count = 0
+local function trace(message)
+	trace_count = trace_count + 1
+	if trace_count <= 40 then
+		log("[LIES-TRACE] " .. tostring(message))
+	end
+end
 NavigationManager.has_registered_cover_units_for_LIES = nil
 NavigationManager._LIES_navlink_elements = {}
 
 function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)
-	local all_doors = self._room_doors
+	trace("find_segment_doors")
 	local all_nav_segs = self._nav_segments
 	local from_seg = all_nav_segs[from_seg_id]
 	local found_doors = {}
 
+	if not from_seg then
+		return found_doors
+	end
+
 	for neighbour_seg_id, door_list in pairs(from_seg.neighbours) do
-		if not all_nav_segs[neighbour_seg_id].disabled and (not approve_clbk or approve_clbk(neighbour_seg_id)) then
+		local neighbour_seg = all_nav_segs[neighbour_seg_id]
+
+		if neighbour_seg and not neighbour_seg.disabled and (not approve_clbk or approve_clbk(neighbour_seg_id)) then
 			if center_only then
 				local door_central = Vector3()
 				local number_of_doors = 0
-				
-				for _, i_door in ipairs(door_list) do
-					if type(i_door) == "number" then
-						mvector3.add(door_central, all_doors[i_door].center)
+
+				for _, door in ipairs(door_list) do
+					if door.x then
+						mvector3.add(door_central, door)
 						number_of_doors = number_of_doors + 1
-					elseif alive(i_door) and not i_door:is_obstructed() then
-						local nl_element = i_door:script_data().element
-						local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true) 
-				
+					elseif alive(door) and not door:is_obstructed() then
+						local nl_element = door:script_data().element
+						local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true)
+
 						if nl_tracker:nav_segment() == from_seg_id then
-							local end_pos = nl_element:nav_link_end_pos()
-							local fake_door = {
+							table.insert(found_doors, {
 								center = nl_element:value("position"),
 								end_pos = nl_element:nav_link_end_pos()
-							}
-							
-							table.insert(found_doors, fake_door)
+							})
 						end
-						
+
 						self:destroy_nav_tracker(nl_tracker)
 					end
 				end
-				
+
 				if number_of_doors > 0 then
 					mvector3.divide(door_central, number_of_doors)
-					
-					local fake_door = {
+
+					table.insert(found_doors, {
 						center = door_central
-					}
-					
-					table.insert(found_doors, fake_door)
+					})
 				end
 			else
-				for _, i_door in ipairs(door_list) do
-					if type(i_door) == "number" then
-						table.insert(found_doors, all_doors[i_door])
-					elseif alive(i_door) and not i_door:is_obstructed() then
-						local nl_element = i_door:script_data().element
-						local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true) 
-				
+				for _, door in ipairs(door_list) do
+					if door.x then
+						table.insert(found_doors, door)
+					elseif alive(door) and not door:is_obstructed() then
+						local nl_element = door:script_data().element
+						local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true)
+
 						if nl_tracker:nav_segment() == from_seg_id then
-							local end_pos = nl_element:nav_link_end_pos()
-							local fake_door = {
+							table.insert(found_doors, {
 								center = nl_element:value("position"),
 								end_pos = nl_element:nav_link_end_pos()
-							}
-							
-							table.insert(found_doors, fake_door)
+							})
 						end
-						
+
 						self:destroy_nav_tracker(nl_tracker)
 					end
 				end
@@ -590,6 +595,7 @@ function NavigationManager:register_cover_units()
 	
 	self:_change_funcs()
 	
+	trace("cover registration complete covers=" .. tostring(#covers))
 	managers.enemy:add_delayed_clbk("NavigationManager._do_nav_fixes", callback(self, self, "_do_nav_fixes"), TimerManager:game():time() + 2)
 end
 
@@ -620,6 +626,7 @@ local nav_fixes_on_init = {
 }
 
 function NavigationManager:_do_nav_fixes()
+	trace("do_nav_fixes")
 	if nav_fixes_on_init[Global.level_data.level_id] then
 		local stuff = nav_fixes_on_init[Global.level_data.level_id]
 		
@@ -729,6 +736,7 @@ local access_inclusions = {
 }
 
 function NavigationManager:search_pos_to_pos(params)
+	trace("search_pos_to_pos")
 	if params.access_pos then
 		params.blocked_nav_segs = params.access_pos
 	end
@@ -1700,6 +1708,7 @@ function NavigationManager:_strip_nav_field_for_gameplay()
 end
 
 function NavigationManager:_execute_coarce_search(search_data)
+	trace("coarse search")
 	local search_id = search_data.id
 	local i = 0
 
@@ -1724,7 +1733,7 @@ function NavigationManager:_execute_coarce_search(search_data)
 			local entry_found, nav_link_element, has_multiple_navlink_elements
 
 			for _, i_door in ipairs(neighbours[search_data.end_i_seg]) do
-				if type(i_door) == "number" then
+				if i_door.x then
 					entry_found = true
 					nav_link_element = nil
 
@@ -1811,9 +1820,8 @@ function NavigationManager:_execute_coarce_search(search_data)
 end
 
 function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)
+	trace("sort_nav_segs_after_pos")
 	local all_segs = self._nav_segments
-	local all_doors = self._room_doors
-	local all_rooms = self._rooms
 	local seg = all_segs[i_seg]
 	local neighbours = seg.neighbours
 	from_pos = from_pos or seg.pos
@@ -1821,78 +1829,38 @@ function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ign
 
 	for neighbour_seg_id, door_list in pairs(neighbours) do
 		if not ignore_seg[neighbour_seg_id] and not all_segs[neighbour_seg_id].disabled and (not verify_clbk or verify_clbk(neighbour_seg_id)) then
-			for _, i_door in ipairs(door_list) do
-				if type(i_door) == "number" then
-					local door = all_doors[i_door]
-					local door_pos = door.center
+			for _, door in ipairs(door_list) do
+				local door_pos, nav_link
+
+				if door.x then
+					door_pos = door
+				elseif alive(door) and not door:is_obstructed() and door:check_access(access_pos, access_neg) then
+					door_pos = door:script_data().element:nav_link_end_pos()
+					nav_link = door
+				end
+
+				if door_pos then
 					local weight = mvec3_dis(from_pos, door_pos) + mvec3_dis(door_pos, to_pos)
+					local segment_data = {
+						weight = weight,
+						from = i_seg,
+						i_seg = neighbour_seg_id,
+						pos = door_pos,
+						nav_link = nav_link
+					}
 
 					if found_segs then
 						if found_segs[neighbour_seg_id] then
 							if weight < found_segs[neighbour_seg_id].weight then
-								found_segs[neighbour_seg_id] = {
-									weight = weight,
-									from = i_seg,
-									i_seg = neighbour_seg_id,
-									pos = door_pos
-								}
+								found_segs[neighbour_seg_id] = segment_data
 							end
 						else
-							found_segs[neighbour_seg_id] = {
-								weight = weight,
-								from = i_seg,
-								i_seg = neighbour_seg_id,
-								pos = door_pos
-							}
+							found_segs[neighbour_seg_id] = segment_data
 							ignore_seg[neighbour_seg_id] = true
 						end
 					else
 						found_segs = {
-							[neighbour_seg_id] = {
-								weight = weight,
-								from = i_seg,
-								i_seg = neighbour_seg_id,
-								pos = door_pos
-							}
-						}
-						ignore_seg[neighbour_seg_id] = true
-					end
-				elseif not alive(i_door) then
-					debug_pause("[NavigationManager:_sort_nav_segs_after_pos] dead nav_link! between NavSegments", i_seg, "-", neighbour_seg_id)
-				elseif not i_door:is_obstructed() and i_door:check_access(access_pos, access_neg) then
-					local end_pos = i_door:script_data().element:nav_link_end_pos()
-					local my_weight = mvec3_dis(from_pos, end_pos) + mvec3_dis(end_pos, to_pos)
-
-					if found_segs then
-						if found_segs[neighbour_seg_id] then
-							if my_weight < found_segs[neighbour_seg_id].weight then
-								found_segs[neighbour_seg_id] = {
-									weight = my_weight,
-									from = i_seg,
-									i_seg = neighbour_seg_id,
-									pos = end_pos,
-									nav_link = i_door
-								}
-							end
-						else
-							found_segs[neighbour_seg_id] = {
-								weight = my_weight,
-								from = i_seg,
-								i_seg = neighbour_seg_id,
-								pos = end_pos,
-								nav_link = i_door
-							}
-							ignore_seg[neighbour_seg_id] = true
-						end
-					else
-						found_segs = {
-							[neighbour_seg_id] = {
-								weight = my_weight,
-								from = i_seg,
-								i_seg = neighbour_seg_id,
-								pos = end_pos,
-								nav_link = i_door
-							}
+							[neighbour_seg_id] = segment_data
 						}
 						ignore_seg[neighbour_seg_id] = true
 					end
