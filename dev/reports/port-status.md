@@ -2,6 +2,8 @@
 
 Last updated: 2026-10-23 (after Nav-B smoke + static cleanup).
 
+Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
+
 ## Green
 
 - Import: LIES V8.57 (`4215a39`), baseline 246.1 (`a3180fc`), target 248.2 (`e3a8b616`).
