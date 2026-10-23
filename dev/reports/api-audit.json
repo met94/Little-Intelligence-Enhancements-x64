@@ -1029,7 +1029,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 2862,
+      "line": 2866,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1093,7 +1093,7 @@
     },
     {
       "file": "lua/coplogics/coplogicidle.lua",
-      "line": 1923,
+      "line": 1924,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",

@@ -2294,7 +2294,7 @@ function CopLogicAttack.action_complete_clbk(data, action)
 		local timeout = action:timeout()
 
 		if timeout then
-			data.dodge_timeout_t = TimerManager:game():time() + math.lerp(timeout[1], timeout[2], math.random())
+			data.dodge_timeout_t = TimerManager:game():time() + math.rand(timeout[1], timeout[2])
 		end
 
 		CopLogicAttack._cancel_cover_pathing(data, my_data)
@@ -2487,6 +2487,10 @@ function CopLogicAttack.is_available_for_assignment(data, new_objective)
 	
 	if new_objective and new_objective.is_default then
 		return true
+	end
+
+	if data.is_suppressed then
+		return
 	end
 
 	if data.unit:movement():chk_action_forbidden("walk") then

@@ -1694,6 +1694,7 @@ function CopLogicIdle.damage_clbk(data, damage_info)
 				local settings = attention_info.handler:get_attention(data.SO_access, nil, nil, data.team)
 
 				if settings then
+					data.t = t
 					enemy_data = CopLogicBase.identify_attention_obj_instant(data, enemy_key)
 					enemy_data.dmg_t = t
 					enemy_data.alert_t = t

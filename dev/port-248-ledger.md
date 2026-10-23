@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T19:12:42.032Z
+Generated: 2026-10-23T19:36:10.881Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -537,7 +537,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CopLogicIdle.damage_clbk` | 61 | 69 | 69 |  |
+| [ ] | **PORT** | `CopLogicIdle.damage_clbk` | 62 | 69 | 69 |  |
 | [ ] | audit | `CopLogicIdle._check_needs_reload` | 57 | 0 | 0 |  |
 | [ ] | audit | `CopLogicIdle._check_should_relocate` | 63 | 0 | 0 |  |
 | [ ] | audit | `CopLogicIdle._chk_focus_on_undetected_criminal` | 91 | 0 | 0 |  |
@@ -587,7 +587,7 @@ No function definitions (hook/overlay file).
 |---:|---|---|---:|---:|---:|---|
 | [ ] | **PORT** | `CopLogicAttack._upd_aim` | 560 | 195 | 192 |  |
 | [ ] | **PORT** | `CopLogicAttack.action_complete_clbk` | 101 | 47 | 47 |  |
-| [ ] | **PORT** | `CopLogicAttack.is_available_for_assignment` | 51 | 43 | 43 |  |
+| [ ] | **PORT** | `CopLogicAttack.is_available_for_assignment` | 55 | 43 | 43 |  |
 | [ ] | audit | `CopLogicAttack._check_needs_reload` | 48 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._chk_enrage` | 97 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._chk_request_action_walk_to_cover_offset_pos` | 70 | 0 | 0 |  |

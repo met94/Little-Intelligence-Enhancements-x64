@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-23T19:12:42.034Z",
+  "generated": "2026-10-23T19:36:10.884Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -5318,7 +5318,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1725
+          "startLine": 1726
         },
         {
           "name": "CopLogicIdle._chk_focus_on_undetected_criminal",
@@ -5363,7 +5363,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1789
+          "startLine": 1790
         },
         {
           "name": "CopLogicIdle._chk_reaction_to_attention_object",
@@ -5393,7 +5393,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1815
+          "startLine": 1816
         },
         {
           "name": "CopLogicIdle._chk_start_action_move_out_of_the_way",
@@ -5408,7 +5408,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2056
+          "startLine": 2057
         },
         {
           "name": "CopLogicIdle._get_all_paths",
@@ -5453,7 +5453,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2027
+          "startLine": 2028
         },
         {
           "name": "CopLogicIdle._on_player_slow_pos_rsrv_upd",
@@ -5588,7 +5588,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1905
+          "startLine": 1906
         },
         {
           "name": "CopLogicIdle.clbk_action_timeout",
@@ -5608,7 +5608,7 @@
         {
           "name": "CopLogicIdle.damage_clbk",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 61,
+          "modLines": 62,
           "oldLines": 69,
           "newLines": 69,
           "modParams": "data, damage_info",
@@ -5678,7 +5678,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1954
+          "startLine": 1955
         },
         {
           "name": "CopLogicIdle.on_new_objective",
@@ -5896,7 +5896,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2546
+          "startLine": 2550
         },
         {
           "name": "CopLogicAttack._check_needs_reload",
@@ -5926,7 +5926,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2525
+          "startLine": 2529
         },
         {
           "name": "CopLogicAttack._chk_enrage",
@@ -5956,7 +5956,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2928
+          "startLine": 2932
         },
         {
           "name": "CopLogicAttack._chk_request_action_turn_to_enemy",
@@ -6136,7 +6136,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2575
+          "startLine": 2579
         },
         {
           "name": "CopLogicAttack._find_retreat_position",
@@ -6316,7 +6316,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2550
+          "startLine": 2554
         },
         {
           "name": "CopLogicAttack._update_cover",
@@ -6331,7 +6331,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2665
+          "startLine": 2669
         },
         {
           "name": "CopLogicAttack._verify_cover",
@@ -6441,7 +6441,7 @@
         {
           "name": "CopLogicAttack.is_available_for_assignment",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 51,
+          "modLines": 55,
           "oldLines": 43,
           "newLines": 43,
           "modParams": "data, new_objective",
