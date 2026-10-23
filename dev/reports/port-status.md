@@ -64,6 +64,9 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 - `lua_cover` default is off; Nav-B runs only when `lua_cover >= 2`.
 - LIES's `covers` facing convention is preserved (points at the wall); engine covers point away.
 - `NavFixes` is redundant when LIES is installed; do not run both.
+  LIES now carries the NavFixes nav-link/obstacle guards, but NavFixes still
+  overwrites `find_segment_doors` / `_sort_nav_segs_after_pos` with incompatible
+  signatures. Compatibility matrix: `dev/reports/compatibility.md`.
 - Temporary `[LIES-TRACE]` logs removed.
 
 ## Gates / harness
