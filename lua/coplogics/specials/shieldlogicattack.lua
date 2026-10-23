@@ -527,17 +527,14 @@ function ShieldLogicAttack.queued_update(data)
 
 					if reservation then
 						to_pos = reservation.position
+						data.brain:set_pos_rsrv("path", reservation)
 					else
-						reservation = {
+						data.brain:add_pos_rsrv("path", {
 							radius = 70,
-							position = mvector3.copy(to_pos),
-							filter = data.pos_rsrv_id
-						}
-
-						managers.navigation:add_pos_reservation(reservation)
+							position = mvector3.copy(to_pos)
+						})
 					end
 
-					data.brain:set_pos_rsrv("path", reservation)
 					data.brain:search_for_path(my_data.optimal_path_search_id, to_pos)
 				end
 			end

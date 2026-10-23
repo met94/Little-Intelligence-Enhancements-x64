@@ -45,8 +45,10 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 - `CopLogicAttack.is_available_for_assignment`: restored the 248.2 `data.is_suppressed` gate ahead of walk-forbidden/path-fail; LIES 3 s lockout and sabotage gate kept.
 - `CopLogicIdle.damage_clbk`: `data.t = t` before `identify_attention_obj_instant`.
 - `TaserLogicAttack._chk_play_charge_weapon_sound`: restored the 300-unit vertical guard; LIES distance-scaled cooldown and 3000 range kept.
+- `ShieldLogicAttack.queued_update`: adopted 248.2's reservation split (`set_pos_rsrv` success / `add_pos_rsrv` fallback), kept LIES 70 radius and movement gates. Needs shield smoke.
+- `CarryData._chk_register_steal_SO`: adopted 248.2's guard order + `_add_body_activation_clbk()`, kept LIES `sabotage`/`sabo_voiceline`; fixed the nil drop-point fall-through so no broken drop objective is registered. Needs bag smoke.
 - Keep LIES body (no edit): `CopLogicBase._upd_attention_obj_detection`, `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update`, `CopLogicIdle.damage_clbk`.
-- Merge pending (needs smoke test): `ShieldLogicAttack.queued_update`, `CarryData._chk_register_steal_SO`.
+- Merge pending: none from the current decisions doc.
 
 ## Open — group AI / data / periphery
 

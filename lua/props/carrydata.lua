@@ -1,24 +1,15 @@
 function CarryData:_chk_register_steal_SO()
-	if not self._link_body then
+	if not Network:is_server() or not self._link_body or not self._AI_carry then
 		return
 	end
 
-	if not self._has_body_activation_clbk then
-		local clbk = callback(self, self, "clbk_body_active_state")
-		self._has_body_activation_clbk = {
-			[self._link_body:key()] = clbk
-		}
+	self:_add_body_activation_clbk()
 
-		self._unit:add_body_activation_callback(clbk)
-		self._link_body:set_activate_tag(Idstring("bag_moving"))
-		self._link_body:set_deactivate_tag(Idstring("bag_still"))
-	end
-
-	if not Network:is_server() or self._steal_SO_data or self._linked_to or self._zipline_unit or self._link_body:active() or not managers.navigation:is_data_ready() then
+	if self._steal_SO_data or self._linked_to or self._zipline_unit then
 		return
 	end
 
-	if not self._AI_carry then
+	if self._link_body:active() or not managers.navigation:is_data_ready() then
 		return
 	end
 
@@ -40,10 +31,12 @@ function CarryData:_chk_register_steal_SO()
 		drop_pos = mvector3.copy(drop_point.pos)
 		drop_nav_seg = drop_point.nav_seg
 		drop_area = drop_point.area
-	elseif not self._register_steal_SO_clbk_id then
-		self._register_steal_SO_clbk_id = "carrydata_registerSO" .. tostring(self._unit:key())
+	else
+		if not self._register_steal_SO_clbk_id then
+			self._register_steal_SO_clbk_id = "carrydata_registerSO" .. tostring(self._unit:key())
 
-		managers.enemy:add_delayed_clbk(self._register_steal_SO_clbk_id, callback(self, self, "clbk_register_steal_SO"), TimerManager:game():time() + 10)
+			managers.enemy:add_delayed_clbk(self._register_steal_SO_clbk_id, callback(self, self, "clbk_register_steal_SO"), TimerManager:game():time() + 10)
+		end
 
 		return
 	end

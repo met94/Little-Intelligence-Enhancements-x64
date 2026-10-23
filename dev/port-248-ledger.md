@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T19:36:10.881Z
+Generated: 2026-10-23T19:52:53.918Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -166,7 +166,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CarryData._chk_register_steal_SO` | 128 | 126 | 118 |  |
+| [ ] | **PORT** | `CarryData._chk_register_steal_SO` | 121 | 126 | 118 |  |
 
 ## lua/props/drill.lua
 
@@ -670,7 +670,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `ShieldLogicAttack.queued_update` | 117 | 130 | 129 |  |
+| [ ] | **PORT** | `ShieldLogicAttack.queued_update` | 114 | 130 | 129 |  |
 | [ ] | audit | `ShieldLogicAttack._pathing_complete_clbk` | 21 | 0 | 0 |  |
 | [ ] | audit | `ShieldLogicAttack.chk_should_turn` | 3 | 0 | 0 |  |
 | [ ] | keep | `ShieldLogicAttack._chk_request_action_walk_to_optimal_pos` | 25 | 24 | 24 |  |

@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-23T19:36:10.884Z",
+  "generated": "2026-10-23T19:52:53.921Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -1397,7 +1397,7 @@
         {
           "name": "CarryData._chk_register_steal_SO",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 128,
+          "modLines": 121,
           "oldLines": 126,
           "newLines": 118,
           "modParams": "",
@@ -6850,7 +6850,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 579
+          "startLine": 576
         },
         {
           "name": "ShieldLogicAttack._pathing_complete_clbk",
@@ -6895,7 +6895,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 551
+          "startLine": 548
         },
         {
           "name": "ShieldLogicAttack.chk_should_turn",
@@ -6945,7 +6945,7 @@
         {
           "name": "ShieldLogicAttack.queued_update",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 117,
+          "modLines": 114,
           "oldLines": 130,
           "newLines": 129,
           "modParams": "data",

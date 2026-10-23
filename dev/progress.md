@@ -43,6 +43,7 @@ Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions
 - Offline safe pass: restored `_LIES_navlink_elements` (elementspecialobjective writer), logged nonexistent nav segments, ported `set_nav_segment_state` string keys and `add_obstacle` 248.2 guards/listener, added `MENU_OPTIONS.md`, added freevars gate (68 files, 0 findings), API errors 0. Build `2f54644`.
 - Next test when available: level-change/abort check (load heist, `lua_cover 2`, `gen run`, quit to menu, load another heist, `!lies nav`/`!lies cover`), then a specials/hostage/bot smoke.
 - Static merges applied: `CopLogicAttack.action_complete_clbk` (`math.rand`), `CopLogicAttack.is_available_for_assignment` (suppression gate), `CopLogicIdle.damage_clbk` (`data.t = t`), `TaserLogicAttack._chk_play_charge_weapon_sound` (vertical guard). These need a suppression/taser smoke.
+- Shield/Carry merges applied: `ShieldLogicAttack.queued_update` reservation split (70 radius kept) and `CarryData._chk_register_steal_SO` 248.2 guard/helper merge plus nil drop-point fall-through fix. Need shield/bag smoke.
 
 
 ## Rulings
