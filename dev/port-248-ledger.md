@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T15:56:28.728Z
+Generated: 2026-10-23T16:09:56.552Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -114,12 +114,12 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | **PORT** | `NavigationManager._sort_nav_segs_after_pos` | 93 | 89 | 47 |  |
 | [ ] | **PORT** | `NavigationManager.add_obstacle` | 43 | 20 | 25 |  |
 | [ ] | **PORT** | `NavigationManager.find_segment_doors` | 70 | 18 | 17 |  |
-| [ ] | **PORT** | `NavigationManager.register_cover_units` | 202 | 80 | 75 |  |
+| [ ] | **PORT** | `NavigationManager.register_cover_units` | 211 | 80 | 75 |  |
 | [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 90 | 36 | 38 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager.update:lies_cover` | 10 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `convert_bastards` | 7 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._add_LIES_cached_path` | 7 | 0 | 0 |  |
-| [ ] | audit | `NavigationManager._change_funcs` | 19 | 0 | 0 |  |
+| [ ] | audit | `NavigationManager._change_funcs` | 21 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._check_LIES_invalidated_navlink_cached_paths` | 25 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._do_nav_fixes` | 21 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._draw_coarse_graph_areas` | 24 | 0 | 0 |  |

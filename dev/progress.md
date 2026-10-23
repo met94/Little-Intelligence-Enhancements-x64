@@ -12,7 +12,15 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Task 6: test harness — complete. Lua parser test: `tools\luajit\luajit.exe dev/test-harness/test/test_commands.lua` pass. Commands: nav, cover, assault, setting, dump, help.
 - Task 7: generate ledger + reports + gates — complete. `dev/tools/gates.ps1` passes: 35 Node tests, Lua parser test, 71/71 runtime Lua files compile, ledger and API audit regenerate. API audit gates on a 50-error baseline; increases fail the gate.
 - Task 8: build + baseline instructions — complete. `dev/build.ps1` produces `dist/LIES` (71 Lua files, dev excluded); marker is written before copy so failed builds remain cleanable. `dev/BASELINE.md` has the 2-minute run.
-- Task 9: reviewer pass + baseline log — reviewer FIX-REQUIRED, fixes applied. Baseline log still needed from user.
+- Task 9: reviewer pass + baseline log — reviewer FIX-REQUIRED, fixes applied. Baseline log captured: native crash at load-in.
+
+## P1 bootstrap
+
+- Baseline: native crash while loading `Jewelry Store`. Log ends at `Map has 58 cover points, setting generation limit to 640 cover points.` No Lua traceback. This line is LIES `register_cover_units`; the next code is the v5 room/cover generation loop. Evidence: `dev/reports/baseline-crash.md`.
+- Patch: disabled the v5 generation block (`if false and Network:is_server()`), added lost-tracker/nil-segment/tracker-leak guards, made `_covers` registration unconditional in the no-cover-data branch, and disabled the custom LUA cover swap for the bootstrap.
+- Reviewer verdict: PASS for the bootstrap goal. Remaining nit: 91 lines of dead v5 generation retained for Nav-B reference.
+- Static gates: 49 API errors (down 1), 154 review, 68/68 hooks, 44/44 methods, 71/71 Lua compile.
+
 
 ## Rulings
 

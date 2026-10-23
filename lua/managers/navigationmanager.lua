@@ -390,7 +390,6 @@ function NavigationManager:register_cover_units()
 		self._vis_check_slotmask = managers.slot:get_mask("AI_visibility") + managers.slot:get_mask("enemy_shield_check")
 	end
 
-	local rooms = self._rooms
 	local covers = {}
 	local cover_data = managers.worlddefinition:get_cover_data()
 	local v3_dis_sq = mvec3_dis_sq
@@ -399,33 +398,44 @@ function NavigationManager:register_cover_units()
 		local function _register_cover(pos, fwd)
 			local nav_tracker = self._quad_field:create_nav_tracker(pos, true)
 
-			if not nav_tracker:lost() then
-				local room_nav_seg = self._nav_segments[nav_tracker:nav_segment()]
-				local navseg_tracker = self._quad_field:create_nav_tracker(room_nav_seg.pos, true)
-				local field_pos = nav_tracker:field_position()
-				local cover = {
-					nav_tracker:field_position(),
-					fwd,
-					nav_tracker
-				}
-				
-				local valid_fwd = self:generate_cover_fwd(nav_tracker)
-				
-				if not valid_fwd or not self:check_cover_close_to_wall(field_pos) then
-					return
-				end
-
-				local location_script_data = self._quad_field:get_script_data(navseg_tracker, true)
-
-				if not location_script_data.covers then
-					location_script_data.covers = {}
-				end
-
-				t_ins(location_script_data.covers, cover)
-				t_ins(covers, cover)
-				
-				self:destroy_nav_tracker(navseg_tracker)
+			if nav_tracker:lost() then
+				self:destroy_nav_tracker(nav_tracker)
+				return
 			end
+
+			local room_nav_seg = self._nav_segments[nav_tracker:nav_segment()]
+
+			if not room_nav_seg or not room_nav_seg.pos then
+				self:destroy_nav_tracker(nav_tracker)
+				return
+			end
+
+			local navseg_tracker = self._quad_field:create_nav_tracker(room_nav_seg.pos, true)
+			local field_pos = nav_tracker:field_position()
+			local cover = {
+				nav_tracker:field_position(),
+				fwd,
+				nav_tracker
+			}
+			
+			local valid_fwd = self:generate_cover_fwd(nav_tracker)
+			
+			if not valid_fwd or not self:check_cover_close_to_wall(field_pos) then
+				self:destroy_nav_tracker(nav_tracker)
+				self:destroy_nav_tracker(navseg_tracker)
+				return
+			end
+
+			local location_script_data = self._quad_field:get_script_data(navseg_tracker, true)
+
+			if not location_script_data.covers then
+				location_script_data.covers = {}
+			end
+
+			t_ins(location_script_data.covers, cover)
+			t_ins(covers, cover)
+			
+			self:destroy_nav_tracker(navseg_tracker)
 		end
 
 		local tmp_rot = Rotation(0, 0, 0)
@@ -459,10 +469,7 @@ function NavigationManager:register_cover_units()
 				true
 			}
 
-			if self._debug then
-				t_ins(covers, cover)
-			end
-
+			t_ins(covers, cover)
 			local location_script_data = self._quad_field:get_script_data(nav_tracker)
 
 			if not location_script_data.covers then
@@ -474,7 +481,9 @@ function NavigationManager:register_cover_units()
 		end
 	end
 	
-	if Network:is_server() then
+	-- 248.2 nav v6: runtime cover generation used the removed _rooms/_room_doors
+	-- model. Disabled for the bootstrap build; Nav-B rebuilds it from nav segments.
+	if false and Network:is_server() then
 		local max_cover_points = #covers <= 0 and 5000 or math.round(16 * table.size(self._nav_segments))
 
 		max_cover_points = math_clamp(max_cover_points, 1, 5000)
@@ -1129,8 +1138,10 @@ function NavigationManager:_change_funcs()
 		self.find_cover_in_cone_from_threat_pos_1 = NavigationManager.find_cover_in_cone_from_threat_pos_1
 		self.find_cover_from_threat = NavigationManager.find_cover_from_threat
 		self.find_cover_in_nav_seg_3 = NavigationManager.find_cover_in_nav_seg_3
-	elseif LIES.settings.lua_cover > 1 then
-		log("LIES: Cover through LUA enabled. Mode: " .. tostring(LIES.settings.lua_cover - 1))
+	elseif LIES.settings.lua_cover > 1 and false then
+		-- Nav-B: custom Lua cover search is v5-only until reimplemented against
+		-- the v6 engine. Keep the setting saved, but do not swap the functions.
+		log("LIES: Cover through LUA requested, but disabled in the 248.2 bootstrap.")
 		self._funcs_replaced = true
 		self.find_cover_in_cone_from_threat_pos_1 = self.find_cover_in_cone_from_threat_pos_1_LUA
 		self.find_cover_from_threat = self.find_cover_from_threat_LUA

@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-23T15:56:28.730Z",
+  "generated": "2026-10-23T16:09:56.554Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -730,7 +730,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 912
+          "startLine": 921
         },
         {
           "name": "Hooks.PostHook:NavigationManager.update:lies_cover",
@@ -745,7 +745,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 635
+          "startLine": 644
         },
         {
           "name": "NavigationManager._add_LIES_cached_path",
@@ -760,12 +760,12 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 646
+          "startLine": 655
         },
         {
           "name": "NavigationManager._change_funcs",
           "category": "MOD_ONLY",
-          "modLines": 19,
+          "modLines": 21,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "",
@@ -775,7 +775,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1125
+          "startLine": 1134
         },
         {
           "name": "NavigationManager._check_LIES_invalidated_navlink_cached_paths",
@@ -790,7 +790,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 674
+          "startLine": 683
         },
         {
           "name": "NavigationManager._do_nav_fixes",
@@ -805,7 +805,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 613
+          "startLine": 622
         },
         {
           "name": "NavigationManager._draw_coarse_graph_areas",
@@ -820,7 +820,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1050
+          "startLine": 1059
         },
         {
           "name": "NavigationManager._draw_covers",
@@ -850,7 +850,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1097
+          "startLine": 1106
         },
         {
           "name": "NavigationManager._draw_rooms_LIES",
@@ -865,7 +865,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1075
+          "startLine": 1084
         },
         {
           "name": "NavigationManager._execute_coarce_search",
@@ -880,7 +880,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1691
+          "startLine": 1702
         },
         {
           "name": "NavigationManager._LIES_register_cover",
@@ -895,7 +895,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1145
+          "startLine": 1156
         },
         {
           "name": "NavigationManager._sort_nav_segs_after_pos",
@@ -910,7 +910,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1802
+          "startLine": 1813
         },
         {
           "name": "NavigationManager._strip_nav_field_for_gameplay",
@@ -925,7 +925,7 @@
           "isHook": false,
           "form": "colon",
           "note": "function exists in 246.1 but not in 248.2; drop or re-home",
-          "startLine": 1657
+          "startLine": 1668
         },
         {
           "name": "NavigationManager._update_LIES_cached_paths",
@@ -940,7 +940,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 654
+          "startLine": 663
         },
         {
           "name": "NavigationManager.add_obstacle",
@@ -955,7 +955,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 868
+          "startLine": 877
         },
         {
           "name": "NavigationManager.check_cover_close_to_wall",
@@ -970,7 +970,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1542
+          "startLine": 1553
         },
         {
           "name": "NavigationManager.clamp_position_to_field",
@@ -985,7 +985,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1466
+          "startLine": 1477
         },
         {
           "name": "NavigationManager.draw_coarse_path",
@@ -1015,7 +1015,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 808
+          "startLine": 817
         },
         {
           "name": "NavigationManager.find_cover_from_threat_LUA",
@@ -1030,7 +1030,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1264
+          "startLine": 1275
         },
         {
           "name": "NavigationManager.find_cover_in_cone_from_threat_pos_1_LUA",
@@ -1045,7 +1045,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1169
+          "startLine": 1180
         },
         {
           "name": "NavigationManager.find_cover_in_nav_seg_3_LUA",
@@ -1060,7 +1060,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1361
+          "startLine": 1372
         },
         {
           "name": "NavigationManager.find_segment_doors",
@@ -1105,7 +1105,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1896
+          "startLine": 1907
         },
         {
           "name": "NavigationManager.generate_cover_fwd",
@@ -1135,7 +1135,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 587
+          "startLine": 596
         },
         {
           "name": "NavigationManager.pad_out_position",
@@ -1150,12 +1150,12 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1480
+          "startLine": 1491
         },
         {
           "name": "NavigationManager.register_cover_units",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 202,
+          "modLines": 211,
           "oldLines": 80,
           "newLines": 75,
           "modParams": "",
@@ -1180,7 +1180,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 722
+          "startLine": 731
         },
         {
           "name": "NavigationManager.send_nav_field_to_engine",
@@ -1195,7 +1195,7 @@
           "isHook": false,
           "form": "colon",
           "note": "function exists in 246.1 but not in 248.2; drop or re-home",
-          "startLine": 1579
+          "startLine": 1590
         },
         {
           "name": "NavigationManager.set_nav_segment_state",
@@ -1210,7 +1210,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 959
+          "startLine": 968
         }
       ],
       "errors": [],
