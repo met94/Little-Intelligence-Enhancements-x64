@@ -127,9 +127,22 @@ function TH.cover_probe()
 	local pos = player:position()
 	local forward = player:rotation():y()
 	local threat = pos + forward * 2000
-	local ok, cover = pcall(function()
-		return nav:find_cover_near_pos_1(pos, threat, 2000, 0, true)
-	end)
+	local mode = tonumber(LIES and LIES.settings and LIES.settings.lua_cover) or 1
+	local tracker = player:movement():nav_tracker()
+	local player_seg = tracker and tracker:nav_segment()
+	local ok, cover
+
+	if mode > 1 and player_seg then
+		say('cover probe: custom LUA search mode=' .. tostring(mode) .. ' seg=' .. tostring(player_seg))
+		ok, cover = pcall(function()
+			return nav:find_cover_in_nav_seg_3(player_seg, 2000, pos, threat)
+		end)
+	else
+		say('cover probe: engine search mode=' .. tostring(mode))
+		ok, cover = pcall(function()
+			return nav:find_cover_near_pos_1(pos, threat, 2000, 0, true)
+		end)
+	end
 
 	if not ok then
 		say('cover probe: search failed: ' .. tostring(cover))
@@ -162,6 +175,11 @@ function TH.set_setting(key, value)
 	end
 
 	LIES.settings[key] = parsed
+
+	if key == 'lua_cover' and managers.navigation and managers.navigation._change_funcs then
+		managers.navigation:_change_funcs()
+	end
+
 	say(string.format('setting %s=%s', tostring(key), tostring(parsed)))
 end
 

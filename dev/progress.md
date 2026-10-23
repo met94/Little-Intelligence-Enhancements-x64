@@ -28,6 +28,8 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Fix: removed LIES's EnemyManager overrides entirely; vanilla 248.2 timer-based disposal/task queue handles it. API audit errors drop 46 -> 21.
 - Smoke 4 result: no load crash; alarm raised; after 60 s `groups=1 spawning=1 cops=1`, then native crash as SWAT should arrive. Crash stack: `_set_assault_objective_to_group()` at `groupaistatebesiege.lua:2880` -> `_assign_enemy_groups_to_assault()` -> vanilla `_upd_assault_task`.
 - Fix: ported the smoke/flash grenade door handling to v6 vectors (no `_room_doors`, handle `door.x` vs nav links) and added a v6 `NavigationManager:get_nav_segments_in_direction` helper (direct neighbours by dot product). Nil-guarded segment-area lookups in the two blockade loops. API audit errors 21 -> 20.
+- Smoke 5 (build `db45f63`): success. `!lies alarm`, waited 60 s, then shot a guard. State: `assault_active=true`, `groups=3->4`, `spawning=0`, `cops=12->11`, scheduler timestamp. SWAT arrived; guard death did not crash; `%LOCALAPPDATA%\PAYDAY 2\crash.txt` timestamp unchanged. Basic loud flow works.
+- Next: opt-in Nav-A test. Re-enable the custom LUA cover search branch (`lua_cover >= 2`) over vanilla `_covers`; leave default off. Harness `!lies setting lua_cover 2` calls `_change_funcs`, and `!lies cover` exercises the custom search.
 
 
 ## Rulings

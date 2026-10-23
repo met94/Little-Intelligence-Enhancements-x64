@@ -1171,10 +1171,10 @@ function NavigationManager:_change_funcs()
 		self.find_cover_in_cone_from_threat_pos_1 = NavigationManager.find_cover_in_cone_from_threat_pos_1
 		self.find_cover_from_threat = NavigationManager.find_cover_from_threat
 		self.find_cover_in_nav_seg_3 = NavigationManager.find_cover_in_nav_seg_3
-	elseif LIES.settings.lua_cover > 1 and false then
-		-- Nav-B: custom Lua cover search is v5-only until reimplemented against
-		-- the v6 engine. Keep the setting saved, but do not swap the functions.
-		log("LIES: Cover through LUA requested, but disabled in the 248.2 bootstrap.")
+	elseif LIES.settings.lua_cover > 1 then
+		-- Nav-A: custom Lua cover search over the v6-registered _covers.
+		-- Cover *generation* is still Nav-B; search-only works on vanilla covers.
+		log("LIES: Cover through LUA enabled. Mode: " .. tostring(LIES.settings.lua_cover - 1))
 		self._funcs_replaced = true
 		self.find_cover_in_cone_from_threat_pos_1 = self.find_cover_in_cone_from_threat_pos_1_LUA
 		self.find_cover_from_threat = self.find_cover_from_threat_LUA
