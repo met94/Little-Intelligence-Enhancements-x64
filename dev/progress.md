@@ -2,6 +2,8 @@
 
 Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 
+Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions.md` (keep/merge per function), `dev/reports/port-drop-log.md` (dropped/removed functions and why), `dev/reports/nav-b-feasibility.md` (Nav-B design).
+
 ## P0
 
 - Task 1: import + worktree + plan — complete.
