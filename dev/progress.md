@@ -9,7 +9,7 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Task 3: fn-workbench — complete. Tests: `node --test dev/tools/test/fn-workbench.test.mjs` 4/4. Sample dossier: `dev/reports/dossiers/coplogicattack.is_available_for_assignment.md`.
 - Task 4: api-audit — complete. Tests: `node --test dev/tools/test/api-audit.test.mjs` 5/5. Report: `dev/reports/api-audit.md` (68/68 hooks ok, 51 errors, 156 review). Cross-file nav findings: `groupaistatebesiege` uses removed `get_nav_segments_in_direction` (3x) and `_room_doors` (2x); `coplogictravel` uses `_room_doors` (1x).
 - Task 5: log-scan — complete. Tests: `node --test dev/tools/test/log-scan.test.mjs` 6/6. Sample report: `dev/reports/log-scan-sample.md`. Exact `Setting up mod 'LIES'` match excludes the Joker Tweaks standalone.
-- Task 6: test harness — todo.
+- Task 6: test harness — complete. Lua parser test: `tools\luajit\luajit.exe dev/test-harness/test/test_commands.lua` pass. Commands: nav, cover, assault, setting, dump, help.
 - Task 7: generate ledger + reports + gates — todo.
 - Task 8: build + baseline instructions — todo.
 - Task 9: reviewer pass + baseline log — todo.

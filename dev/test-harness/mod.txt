@@ -1,0 +1,14 @@
+{
+	"name": "LIES Test Harness",
+	"description": "Dev-only chat commands for the LIES 248.2 port. Not shipped.",
+	"author": "workspace",
+	"version": "0.1",
+	"blt_version": 2,
+	"priority": 999,
+	"hooks": [
+		{
+			"hook_id": "lib/managers/chatmanager",
+			"script_path": "lua/chatmanager.lua"
+		}
+	]
+}
