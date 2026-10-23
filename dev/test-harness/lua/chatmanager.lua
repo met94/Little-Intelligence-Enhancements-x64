@@ -170,13 +170,13 @@ function TH.gen_covers(args)
 	local ncands = tonumber(args[3])
 
 	if mode == 'probe' then
-		nsegs = math.clamp(nsegs or 1, 1, 8)
-		ncands = math.clamp(ncands or 8, 1, 32)
+		nsegs = math.floor(math.clamp(nsegs or 1, 1, 4))
+		ncands = math.floor(math.clamp(ncands or 8, 1, 16))
 	elseif mode == 'run' then
 		if nsegs then
-			nsegs = math.clamp(nsegs, 1, 256)
+			nsegs = math.floor(math.clamp(nsegs, 1, 256))
 		end
-		ncands = math.clamp(ncands or 8, 1, 32)
+		ncands = math.floor(math.clamp(ncands or 8, 1, 32))
 	else
 		say('gen: usage !lies gen probe|run [nsegs] [ncands]')
 		return

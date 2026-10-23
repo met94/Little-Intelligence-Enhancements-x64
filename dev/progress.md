@@ -36,6 +36,8 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Cleanup: removed temporary `[LIES-TRACE]` logs; removed 7 dead v5 functions (`find_segment_doors_with_nav_links`, `_draw_rooms_LIES`, `_draw_doors_LIES`, `_LIES_register_cover`, `send_nav_field_to_engine`, `_strip_nav_field_for_gameplay`, `CopLogicTravel.find_door_pos_nearest_to_next_nav_seg`). Tuned generation slices to 4 segments / 32 candidates / 0.1 s. API audit errors 20 -> 0.
 - Ported `GroupAIStateBesiege.force_end_assault_phase` to the 248.2 timestamp poke (no delayed-clbk reschedule).
 - Dossiers generated for the remaining core-AI/special/carry port functions; status/backlog in `dev/reports/port-status.md`.
+- P0 nav fixes: `set_nav_segment_state` now stringifies ids (`tostring(id)`) for `_nav_segments`/`_quad_field`; `add_obstacle` adopts the 248.2 nil guard + destroy listener and keeps LIES cache invalidation.
+- Nav-B review fixes: persistent per-segment generated-cover counter, abort on `_clear`/`_unregister_cover_units`, bounded/pcall pending-clbk cleanup, pcall schedule, removed unused `math_clamp`/`_LIES_navlink_elements`/dead comments, probe clamp 4 segments/16 candidates.
 
 
 ## Rulings

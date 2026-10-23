@@ -21,7 +21,6 @@ local mvec3_length = mvector3.length
 local math_lerp = math.lerp
 local math_abs = math.abs
 local math_max = math.max
-local math_clamp = math.clamp
 local math_ceil = math.ceil
 local math_floor = math.floor
 local temp_vec1 = Vector3()
@@ -31,7 +30,6 @@ local temp_vec4 = Vector3()
 local math_up = math.UP
 local t_ins = table.insert
 NavigationManager.has_registered_cover_units_for_LIES = nil
-NavigationManager._LIES_navlink_elements = {}
 
 function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)
 	local all_nav_segs = self._nav_segments
@@ -191,12 +189,6 @@ function NavigationManager:generate_cover_fwd(tracker, door_list)
 				best_door_dis = dis
 				best_door_has_ray = ray
 			end
-		end
-		
-		-- Nav-B: doorless segments (e.g. closet-like pockets) still need a
-		-- meaningful sweep; fall back to the segment centre.
-		if #doors == 0 then
-			best_door_pos = all_nav_segs[m_seg_id].pos
 		end
 		
 		mvec3_dir(new_fwd, field_pos, best_door_pos)
@@ -475,8 +467,15 @@ function NavigationManager:register_cover_units()
 	end
 	
 	self:_change_funcs()
-	self:_schedule_LIES_cover_generation()
-	
+
+	local ok, err = pcall(function()
+		self:_schedule_LIES_cover_generation()
+	end)
+
+	if not ok then
+		log("LIES: cover generation schedule failed: " .. tostring(err))
+	end
+
 	managers.enemy:add_delayed_clbk("NavigationManager._do_nav_fixes", callback(self, self, "_do_nav_fixes"), TimerManager:game():time() + 2)
 end
 
@@ -559,6 +558,8 @@ local function _lies_cover_grid_add(grid, pos, dis)
 end
 
 function NavigationManager:_LIES_cover_gen_state_new(dry_run, nsegs, ncands)
+	self._LIES_cover_gen_by_seg = self._LIES_cover_gen_by_seg or {}
+
 	if not self._LIES_cover_gen_key_type_checked then
 		self._LIES_cover_gen_key_type_checked = true
 		local first_key = next(self._nav_segments)
@@ -616,6 +617,12 @@ function NavigationManager:_LIES_cover_gen_state_new(dry_run, nsegs, ncands)
 		script_covers_max = 0,
 		limit_reached = nil
 	}
+	
+	-- Seed the per-segment counters from earlier passes on this nav field.
+	for i = 1, #queue do
+		local seg_id = queue[i]
+		state.seg_inserted[seg_id] = self._LIES_cover_gen_by_seg[seg_id] or 0
+	end
 	
 	-- Seed the dedupe grid with the covers Path A already registered so a
 	-- generated cover never lands on top of a vanilla one.
@@ -922,6 +929,7 @@ function NavigationManager:_LIES_cover_gen_process_segment(state, seg_id)
 		if self:_LIES_cover_gen_try_candidate(state, seg_id, candidates[i], location_script_data, doors) then
 			seg_cover_count = seg_cover_count + 1
 			state.seg_inserted[seg_id] = seg_cover_count
+			self._LIES_cover_gen_by_seg[seg_id] = seg_cover_count
 		end
 	end
 end
@@ -1027,6 +1035,25 @@ function NavigationManager:_LIES_cover_gen_step(token)
 	managers.enemy:add_delayed_clbk(LIES_COVER_GEN_CLBK_ID, callback(self, self, "_LIES_cover_gen_step", token), TimerManager:game():time() + LIES_COVER_GEN_SLICE_DELAY)
 end
 
+function NavigationManager:_LIES_cover_gen_remove_pending()
+	if not (managers.enemy and managers.enemy.is_clbk_registered and managers.enemy.remove_delayed_clbk) then
+		return
+	end
+
+	pcall(function()
+		if managers.enemy:is_clbk_registered(LIES_COVER_GEN_CLBK_ID) then
+			managers.enemy:remove_delayed_clbk(LIES_COVER_GEN_CLBK_ID)
+		end
+	end)
+end
+
+function NavigationManager:_LIES_cover_gen_abort()
+	self._LIES_cover_gen_token = (self._LIES_cover_gen_token or 0) + 1
+	self._LIES_cover_gen_state = nil
+	self._LIES_cover_gen_by_seg = {}
+	self:_LIES_cover_gen_remove_pending()
+end
+
 function NavigationManager:_LIES_cover_gen_start(dry_run, nsegs, ncands)
 	if not self:is_data_ready() then
 		return
@@ -1034,15 +1061,8 @@ function NavigationManager:_LIES_cover_gen_start(dry_run, nsegs, ncands)
 	
 	self._LIES_cover_gen_token = (self._LIES_cover_gen_token or 0) + 1
 	self._LIES_cover_gen_state = nil
-	
-	-- A pending slice from an older pass would only abort on its token; drop it
-	-- so it cannot occupy a frame.
-	if managers.enemy and managers.enemy.is_clbk_registered then
-		while managers.enemy:is_clbk_registered(LIES_COVER_GEN_CLBK_ID) do
-			managers.enemy:remove_delayed_clbk(LIES_COVER_GEN_CLBK_ID)
-		end
-	end
-	
+	self:_LIES_cover_gen_remove_pending()
+
 	local state = self:_LIES_cover_gen_state_new(dry_run, nsegs, ncands)
 	
 	self._LIES_cover_gen_state = state
@@ -1119,11 +1139,17 @@ Hooks:PostHook(NavigationManager, "update", "lies_cover", function(self, t, dt)
 	self:_update_LIES_cached_paths(t)
 
 	--self:_draw_covers()
-	--self:_draw_rooms_LIES()
-	--self:_draw_doors_LIES()
 	--self:_draw_anim_nav_links()
 	--self:_draw_coarse_graph()
 	--self:_draw_coarse_graph_areas()
+end)
+
+Hooks:PostHook(NavigationManager, "_unregister_cover_units", "LIES_nav_gen_abort_unregister", function(self)
+	self:_LIES_cover_gen_abort()
+end)
+
+Hooks:PostHook(NavigationManager, "_clear", "LIES_nav_gen_abort_clear", function(self)
+	self:_LIES_cover_gen_abort()
 end)
 
 function NavigationManager:_add_LIES_cached_path(cached_path_data)
@@ -1360,6 +1386,20 @@ function NavigationManager:add_obstacle(obstacle_unit, obstacle_obj_name)
 	end
 
 	local obstacle_obj = obstacle_unit:get_object(obstacle_obj_name)
+
+	if not obstacle_obj then
+		Application:error("[NavigationManager:add_obstacle] There was no obj to reference in this unit!", obstacle_unit, obstacle_obj_name)
+
+		return
+	end
+
+	local scriptdata_ext = obstacle_unit:unit_data()
+
+	if scriptdata_ext and scriptdata_ext.add_destroy_listener then
+		scriptdata_ext:add_destroy_listener(NavigationManager._OBSTACLE_DESTROY_KEY, callback(self, self, "_clbk_obstacle_unit_destroyed", obstacle_obj_name))
+	else
+		Application:error("[NavigationManager:add_obstacle] No unit_data extension to listen for destruction!", obstacle_unit)
+	end
 	
 	if self._cached_paths and #self._cached_paths > 0 then
 		for i = 1, #self._cached_paths do
@@ -1440,8 +1480,10 @@ local ai_groups_so_accesses = {
 }
 
 function NavigationManager:set_nav_segment_state(id, state, filter_group)
-	if not self._nav_segments[id] then
-		debug_pause("[NavigationManager:set_nav_segment_state] inexistent nav_segment", id)
+	local unique_id = tostring(id)
+
+	if not self._nav_segments[unique_id] then
+		debug_pause("[NavigationManager:set_nav_segment_state] nonexistent nav_segment", unique_id)
 
 		return
 	end
@@ -1449,11 +1491,11 @@ function NavigationManager:set_nav_segment_state(id, state, filter_group)
 	if state == "forbid_custom" then
 		local access_filter = self:convert_SO_AI_group_to_access(filter_group)
 
-		self._quad_field:set_nav_segment_blocked_filter(id, access_filter)
+		self._quad_field:set_nav_segment_blocked_filter(unique_id, access_filter)
 
-		self._nav_segments[id].blocked_group = filter_group
+		self._nav_segments[unique_id].blocked_group = filter_group
 		
-		if self._nav_segments[id].blocked_group and self._cached_paths and #self._cached_paths > 0 then
+		if self._nav_segments[unique_id].blocked_group and self._cached_paths and #self._cached_paths > 0 then
 			local so_ai_group = convert_bastards(filter_group)
 			local bad_accesses = ai_groups_so_accesses[so_ai_group]
 			
@@ -1470,7 +1512,7 @@ function NavigationManager:set_nav_segment_state(id, state, filter_group)
 							if check_navpoint.x then
 								local check_seg = self:get_nav_seg_from_pos(check_navpoint, true)
 								
-								if check_seg == id then
+								if check_seg == unique_id then
 									cached_path_data.invalidated = true
 									--log("path invalidated")
 									
@@ -1486,22 +1528,22 @@ function NavigationManager:set_nav_segment_state(id, state, filter_group)
 		return
 	end
 
-	self._quad_field:set_nav_segment_blocked_filter(id, 0)
+	self._quad_field:set_nav_segment_blocked_filter(unique_id, 0)
 
-	self._nav_segments[id].blocked_group = nil
+	self._nav_segments[unique_id].blocked_group = nil
 	local wanted_state = state == "allow_access" and true or false
-	local cur_state = self._quad_field:is_nav_segment_enabled(id)
+	local cur_state = self._quad_field:is_nav_segment_enabled(unique_id)
 	local seg_disabled_state = nil
 
 	if not wanted_state then
 		seg_disabled_state = true
 	end
 
-	self._nav_segments[id].disabled = seg_disabled_state
+	self._nav_segments[unique_id].disabled = seg_disabled_state
 
 	if wanted_state ~= cur_state then
-		self._quad_field:set_nav_segment_enabled(id, wanted_state)
-		managers.groupai:state():on_nav_segment_state_change(id, wanted_state)
+		self._quad_field:set_nav_segment_enabled(unique_id, wanted_state)
+		managers.groupai:state():on_nav_segment_state_change(unique_id, wanted_state)
 	end
 	
 	if seg_disabled_state and self._cached_paths and #self._cached_paths > 0 then
@@ -1517,7 +1559,7 @@ function NavigationManager:set_nav_segment_state(id, state, filter_group)
 					if check_navpoint.x then
 						local check_seg = self:get_nav_seg_from_pos(check_navpoint, true)
 						
-						if check_seg == id then
+						if check_seg == unique_id then
 							cached_path_data.invalidated = true
 							--log("path invalidated")
 							
