@@ -69,7 +69,15 @@ function TH.nav_stats()
 					elseif type(door) == 'table' and door.x then
 						stats.vector_doors = stats.vector_doors + 1
 					elseif type(door) == 'userdata' then
-						stats.nav_links = stats.nav_links + 1
+						local ok, x = pcall(function()
+							return door.x
+						end)
+
+						if ok and x then
+							stats.vector_doors = stats.vector_doors + 1
+						else
+							stats.nav_links = stats.nav_links + 1
+						end
 					end
 				end
 			end
@@ -169,6 +177,58 @@ function TH.force_assault()
 	say('assault: set_assault_mode(true)')
 end
 
+function TH.force_alarm()
+	local state = managers and managers.groupai and managers.groupai:state()
+
+	if not state then
+		say('alarm: group AI state unavailable')
+		return
+	end
+
+	if state.on_police_called then
+		state:on_police_called('civ_alarm')
+	end
+
+	if state.on_police_weapons_hot then
+		state:on_police_weapons_hot('civ_alarm')
+	end
+
+	if state.set_assault_mode then
+		state:set_assault_mode(true)
+	end
+
+	say('alarm: on_police_called + on_police_weapons_hot + set_assault_mode')
+end
+
+function TH.dump_state()
+	local state = managers and managers.groupai and managers.groupai:state()
+
+	if not state then
+		say('state: group AI state unavailable')
+		return
+	end
+
+	local groups = state._groups or {}
+	local spawning = state._spawning_groups or {}
+	local cops = managers.enemy and managers.enemy:all_enemies() or {}
+	local assault = state._task_data and state._task_data.assault or {}
+
+	say(string.format(
+		'state=%s is_server=%s police_called=%s weapons_hot=%s assault_mode=%s assault_active=%s queued=%s(%s) groups=%d spawning=%d cops=%d',
+		tostring(state),
+		tostring(state._is_server),
+		tostring(state.is_police_called and state:is_police_called()),
+		tostring(state._enemy_weapons_hot),
+		tostring(state._assault_mode),
+		tostring(assault.active),
+		tostring(state._police_upd_task_queued),
+		type(state._police_upd_task_queued),
+		table.size(groups),
+		table.size(spawning),
+		table.size(cops)
+	))
+end
+
 function TH.dump()
 	if not LIES or not LIES.settings then
 		say('dump: LIES settings unavailable')
@@ -191,7 +251,7 @@ function TH.dump()
 end
 
 function TH.help()
-	say('commands: nav | cover | assault | setting <key> <value> | dump | help')
+	say('commands: nav | cover | alarm | assault | state | setting <key> <value> | dump | help')
 end
 
 function TH.execute_string(message)
@@ -213,8 +273,12 @@ function TH.execute(command)
 		TH.dump_nav()
 	elseif name == 'cover' then
 		TH.cover_probe()
+	elseif name == 'alarm' then
+		TH.force_alarm()
 	elseif name == 'assault' then
 		TH.force_assault()
+	elseif name == 'state' then
+		TH.dump_state()
 	elseif name == 'setting' then
 		TH.set_setting(args[1], args[2])
 	elseif name == 'dump' then

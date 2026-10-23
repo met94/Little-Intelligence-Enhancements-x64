@@ -20,6 +20,9 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Patch: disabled the v5 generation block (`if false and Network:is_server()`), added lost-tracker/nil-segment/tracker-leak guards, made `_covers` registration unconditional in the no-cover-data branch, and disabled the custom LUA cover swap for the bootstrap.
 - Reviewer verdict: PASS for the bootstrap goal. Remaining nit: 91 lines of dead v5 generation retained for Nav-B reference.
 - Static gates: 49 API errors (down 1), 154 review, 68/68 hooks, 44/44 methods, 71/71 Lua compile.
+- Smoke 2 (build `0e4709c`): no crash. Loaded `Jewelry Store`; harness reports `nav segments=40 missing_neighbours=0 doors(vector=0 numeric=0 links=555) covers=58 bad_covers=0`; cover probe found cover. `!lies assault` set assault mode, but no units spawned. Likely alarm not actually triggered; `set_assault_mode` alone is not a spawn trigger.
+- Ported `GroupAIStateBesiege:_queue_police_upd_task` to the 248.2 timestamp scheduler and removed the reschedule call from `_upd_police_activity`. This is the known 247 police-activity breakage. Harness gained `!lies alarm` and `!lies state`.
+- Smoke 3: use `!lies alarm`, then `!lies state` before/after 45 s. `state` reports server, police-called, weapons-hot, assault mode/task, scheduler value/type, groups, spawning, cops.
 
 
 ## Rulings

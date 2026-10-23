@@ -548,8 +548,6 @@ function GroupAIStateBesiege:_unregister_escort(key)
 end
 
 function GroupAIStateBesiege:_upd_police_activity()
-	self._police_upd_task_queued = false
-
 	if self._police_activity_blocked then
 		return
 	end
@@ -596,8 +594,6 @@ function GroupAIStateBesiege:_upd_police_activity()
 		
 		self._last_upd_t = self._t
 	end
-
-	self:_queue_police_upd_task()
 end
 
 function GroupAIStateBesiege:_update_criminal_reveal()
@@ -1127,21 +1123,21 @@ function GroupAIStateBesiege:start_extend_assault()
 end
 
 function GroupAIStateBesiege:_queue_police_upd_task()
-	--log("a")
-	if not self._police_upd_task_queued then
-		self._police_upd_task_queued = true
-		
-		if Network:is_server() then --essentially, if theres less players, more important enemies are allowed instead of just 3
-			if not Global.game_settings.single_player then
-				local new_value = 12 / table.size(self:all_player_criminals()) 
-
-				self._nr_important_cops = new_value
-			end
+	if self._police_upd_task_queued then
+		if self._t < self._police_upd_task_queued then
+			return
 		end
-		
-		--moving this to a delayed callback makes sure it not take up space in the enemy manager tasks
-		managers.enemy:add_delayed_clbk("GroupAIStateBesiege._upd_police_activity", callback(self, self, "_upd_police_activity"), self._t + 1)
+
+		self:_upd_police_activity()
 	end
+
+	if Network:is_server() and not Global.game_settings.single_player then
+		self._nr_important_cops = 12 / table.size(self:all_player_criminals())
+	end
+
+	local next_upd_t = next(self._spawning_groups) and GroupAIStateBesiege._POLICE_ACTIVITY_DELAY_FAST or GroupAIStateBesiege._POLICE_ACTIVITY_DELAY
+
+	self._police_upd_task_queued = self._t + next_upd_t
 end
 
 function GroupAIStateBesiege:force_end_assault_phase(force_regroup)

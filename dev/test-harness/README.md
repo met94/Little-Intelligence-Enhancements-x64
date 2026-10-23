@@ -17,7 +17,9 @@ Type in chat:
 |---|---|
 | `!lies nav` | Log nav segment count, missing neighbours, door types, cover count. |
 | `!lies cover` | Validate `_covers` and run `find_cover_near_pos_1` from the player. |
-| `!lies assault` | `set_assault_mode(true)` to force a loud test. |
+| `!lies alarm` | Force `on_police_called` + `on_police_weapons_hot` + `set_assault_mode(true)`. |
+| `!lies assault` | `set_assault_mode(true)` only; weaker than `alarm`. |
+| `!lies state` | Dump group AI state: server, police called, weapons hot, assault, scheduler, groups, spawning, cops. |
 | `!lies setting <key> <value>` | Change a LIES setting at runtime. |
 | `!lies dump` | Log LIES settings, cached-nav size, cover count. |
 | `!lies help` | List commands. |
@@ -29,8 +31,8 @@ All output is prefixed `[LIES-TEST]` so `dev/tools/log-scan.mjs` can extract it.
 1. Load `Jewelry Store` Normal.
 2. `!lies nav` → expect `segments>0`, `missing_neighbours=0`, door vectors, `covers>0`.
 3. `!lies cover` → expect either a cover or a clean “no cover found”, never a Lua error.
-4. Shoot once to trigger the alarm; `!lies assault`.
-5. Wait ~45 seconds; watch cop pathing and cover use.
+4. Shoot once to trigger the alarm; `!lies alarm`, then `!lies state`.
+5. Wait ~45 seconds; `!lies state` again. Watch cop pathing and cover use.
 6. Quit; send the latest `mods\logs\*.txt`.
 
 ## Static test

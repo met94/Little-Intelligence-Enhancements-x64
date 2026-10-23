@@ -1291,15 +1291,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 551,
-      "symbol": "_police_upd_task_queued",
-      "severity": "review",
-      "reason": "Boolean -> timestamp in 247",
-      "text": "self._police_upd_task_queued = false"
-    },
-    {
-      "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 662,
+      "line": 658,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1307,7 +1299,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 960,
+      "line": 956,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1315,23 +1307,31 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1131,
+      "line": 1126,
       "symbol": "_police_upd_task_queued",
       "severity": "review",
       "reason": "Boolean -> timestamp in 247",
-      "text": "if not self._police_upd_task_queued then"
+      "text": "if self._police_upd_task_queued then"
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1132,
+      "line": 1127,
       "symbol": "_police_upd_task_queued",
       "severity": "review",
       "reason": "Boolean -> timestamp in 247",
-      "text": "self._police_upd_task_queued = true"
+      "text": "if self._t < self._police_upd_task_queued then"
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1334,
+      "line": 1140,
+      "symbol": "_police_upd_task_queued",
+      "severity": "review",
+      "reason": "Boolean -> timestamp in 247",
+      "text": "self._police_upd_task_queued = self._t + next_upd_t"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 1330,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1339,7 +1339,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1369,
+      "line": 1365,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1347,7 +1347,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2378,
+      "line": 2374,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1355,7 +1355,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2422,
+      "line": 2418,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1363,7 +1363,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2476,
+      "line": 2472,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1371,7 +1371,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2532,
+      "line": 2528,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1379,7 +1379,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2595,
+      "line": 2591,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1387,7 +1387,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2926,
+      "line": 2922,
       "symbol": "get_nav_segments_in_direction",
       "severity": "error",
       "reason": "Removed; use _quad_field/nav_segment_neighbours",
@@ -1395,7 +1395,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3004,
+      "line": 3000,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1403,7 +1403,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3088,
+      "line": 3084,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1411,7 +1411,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3121,
+      "line": 3117,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1419,7 +1419,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3240,
+      "line": 3236,
       "symbol": "get_nav_segments_in_direction",
       "severity": "error",
       "reason": "Removed; use _quad_field/nav_segment_neighbours",
@@ -1427,11 +1427,19 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3318,
+      "line": 3314,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
       "text": "local path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3408,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
@@ -1439,15 +1447,15 @@
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
-      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
+      "text": "coarse_path = managers.navigation:search_coarse(search_params)"
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3416,
+      "line": 3433,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
-      "text": "coarse_path = managers.navigation:search_coarse(search_params)"
+      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
@@ -1455,19 +1463,11 @@
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
-      "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
-    },
-    {
-      "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3441,
-      "symbol": "search_coarse",
-      "severity": "review",
-      "reason": "Start/end validation added at 247",
       "text": "coarse_path = managers.navigation:search_coarse(search_params)"
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3810,
+      "line": 3806,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1475,7 +1475,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3833,
+      "line": 3829,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1483,7 +1483,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3995,
+      "line": 3991,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1491,7 +1491,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4105,
+      "line": 4101,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1499,7 +1499,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4107,
+      "line": 4103,
       "symbol": "get_nav_segments_in_direction",
       "severity": "error",
       "reason": "Removed; use _quad_field/nav_segment_neighbours",
@@ -1507,7 +1507,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4149,
+      "line": 4145,
       "symbol": "_room_doors",
       "severity": "error",
       "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
@@ -1515,7 +1515,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4266,
+      "line": 4262,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1523,7 +1523,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4268,
+      "line": 4264,
       "symbol": "get_nav_segments_in_direction",
       "severity": "error",
       "reason": "Removed; use _quad_field/nav_segment_neighbours",
@@ -1531,7 +1531,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4310,
+      "line": 4306,
       "symbol": "_room_doors",
       "severity": "error",
       "reason": "Removed in nav v6; doors are position vectors in segment.neighbours",
@@ -1539,7 +1539,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4503,
+      "line": 4499,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1547,7 +1547,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4531,
+      "line": 4527,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1555,7 +1555,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4594,
+      "line": 4590,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",

@@ -132,12 +132,12 @@ Target: `e3a8b616`
 ## Errors
 
 - `lua/coplogics/coplogictravel.lua:2002` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `local all_doors = managers.navigation._room_doors`
-- `lua/groupaistate/groupaistatebesiege.lua:2926` `get_nav_segments_in_direction` — Removed; use _quad_field/nav_segment_neighbours. `local navsegs = managers.navigation:get_nav_segments_in_direction(other_group.objective.area.pos_nav_seg, fwd_vec)`
-- `lua/groupaistate/groupaistatebesiege.lua:3240` `get_nav_segments_in_direction` — Removed; use _quad_field/nav_segment_neighbours. `local navsegs = managers.navigation:get_nav_segments_in_direction(other_group.objective.area.pos_nav_seg, fwd_vec)`
-- `lua/groupaistate/groupaistatebesiege.lua:4107` `get_nav_segments_in_direction` — Removed; use _quad_field/nav_segment_neighbours. `local get_dir_navsegs_f = nav_manager.get_nav_segments_in_direction`
-- `lua/groupaistate/groupaistatebesiege.lua:4149` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `test_pos = managers.navigation._room_doors[door_id].center`
-- `lua/groupaistate/groupaistatebesiege.lua:4268` `get_nav_segments_in_direction` — Removed; use _quad_field/nav_segment_neighbours. `local get_dir_navsegs_f = nav_manager.get_nav_segments_in_direction`
-- `lua/groupaistate/groupaistatebesiege.lua:4310` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `test_pos = managers.navigation._room_doors[door_id].center`
+- `lua/groupaistate/groupaistatebesiege.lua:2922` `get_nav_segments_in_direction` — Removed; use _quad_field/nav_segment_neighbours. `local navsegs = managers.navigation:get_nav_segments_in_direction(other_group.objective.area.pos_nav_seg, fwd_vec)`
+- `lua/groupaistate/groupaistatebesiege.lua:3236` `get_nav_segments_in_direction` — Removed; use _quad_field/nav_segment_neighbours. `local navsegs = managers.navigation:get_nav_segments_in_direction(other_group.objective.area.pos_nav_seg, fwd_vec)`
+- `lua/groupaistate/groupaistatebesiege.lua:4103` `get_nav_segments_in_direction` — Removed; use _quad_field/nav_segment_neighbours. `local get_dir_navsegs_f = nav_manager.get_nav_segments_in_direction`
+- `lua/groupaistate/groupaistatebesiege.lua:4145` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `test_pos = managers.navigation._room_doors[door_id].center`
+- `lua/groupaistate/groupaistatebesiege.lua:4264` `get_nav_segments_in_direction` — Removed; use _quad_field/nav_segment_neighbours. `local get_dir_navsegs_f = nav_manager.get_nav_segments_in_direction`
+- `lua/groupaistate/groupaistatebesiege.lua:4306` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `test_pos = managers.navigation._room_doors[door_id].center`
 - `lua/managers/enemymanager.lua:18` `_corpse_disposal_id` — Timer-based disposal in 248.2. `local corpse_disposal_id = self._corpse_disposal_id`
 - `lua/managers/enemymanager.lua:21` `_corpse_disposal_id` — Timer-based disposal in 248.2. `self._corpse_disposal_id = nil`
 - `lua/managers/enemymanager.lua:32` `_corpse_disposal_id` — Timer-based disposal in 248.2. `local corpse_disposal_id = self._corpse_disposal_id`
@@ -239,34 +239,34 @@ Target: `e3a8b616`
 - `lua/coplogics/specials/taserlogicattack.lua:127` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.update_task_key, TaserLogicAttack.queued_update, data, data.t + delay, data.important)`
 - `lua/groupaistate/groupaistatebase.lua:86` `_quad_field` — New engine surface; verify method/arg shapes. `local quadfield = managers.navigation._quad_field`
 - `lua/groupaistate/groupaistatebesiege.lua:169` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `obj_pos = managers.navigation._nav_segments[objective.nav_seg].pos`
-- `lua/groupaistate/groupaistatebesiege.lua:551` `_police_upd_task_queued` — Boolean -> timestamp in 247. `self._police_upd_task_queued = false`
-- `lua/groupaistate/groupaistatebesiege.lua:662` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local nav_segments = managers.navigation._nav_segments`
-- `lua/groupaistate/groupaistatebesiege.lua:960` `search_coarse` — Start/end validation added at 247. `local path = managers.navigation:search_coarse(params)`
-- `lua/groupaistate/groupaistatebesiege.lua:1131` `_police_upd_task_queued` — Boolean -> timestamp in 247. `if not self._police_upd_task_queued then`
-- `lua/groupaistate/groupaistatebesiege.lua:1132` `_police_upd_task_queued` — Boolean -> timestamp in 247. `self._police_upd_task_queued = true`
-- `lua/groupaistate/groupaistatebesiege.lua:1334` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:1369` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:2378` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:2422` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:2476` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:2532` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:2595` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3004` `search_coarse` — Start/end validation added at 247. `local path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3088` `search_coarse` — Start/end validation added at 247. `push_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3121` `search_coarse` — Start/end validation added at 247. `push_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3318` `search_coarse` — Start/end validation added at 247. `local path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3412` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3416` `search_coarse` — Start/end validation added at 247. `coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3437` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3441` `search_coarse` — Start/end validation added at 247. `coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3810` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3833` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:3995` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:4105` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = nav_manager._nav_segments`
-- `lua/groupaistate/groupaistatebesiege.lua:4266` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = nav_manager._nav_segments`
-- `lua/groupaistate/groupaistatebesiege.lua:4503` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:4531` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/groupaistate/groupaistatebesiege.lua:4594` `search_coarse` — Start/end validation added at 247. `local path = managers.navigation:search_coarse(coarse_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:658` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local nav_segments = managers.navigation._nav_segments`
+- `lua/groupaistate/groupaistatebesiege.lua:956` `search_coarse` — Start/end validation added at 247. `local path = managers.navigation:search_coarse(params)`
+- `lua/groupaistate/groupaistatebesiege.lua:1126` `_police_upd_task_queued` — Boolean -> timestamp in 247. `if self._police_upd_task_queued then`
+- `lua/groupaistate/groupaistatebesiege.lua:1127` `_police_upd_task_queued` — Boolean -> timestamp in 247. `if self._t < self._police_upd_task_queued then`
+- `lua/groupaistate/groupaistatebesiege.lua:1140` `_police_upd_task_queued` — Boolean -> timestamp in 247. `self._police_upd_task_queued = self._t + next_upd_t`
+- `lua/groupaistate/groupaistatebesiege.lua:1330` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:1365` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:2374` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:2418` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:2472` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:2528` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:2591` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3000` `search_coarse` — Start/end validation added at 247. `local path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3084` `search_coarse` — Start/end validation added at 247. `push_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3117` `search_coarse` — Start/end validation added at 247. `push_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3314` `search_coarse` — Start/end validation added at 247. `local path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3408` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3412` `search_coarse` — Start/end validation added at 247. `coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3433` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3437` `search_coarse` — Start/end validation added at 247. `coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3806` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3829` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:3991` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:4101` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = nav_manager._nav_segments`
+- `lua/groupaistate/groupaistatebesiege.lua:4262` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = nav_manager._nav_segments`
+- `lua/groupaistate/groupaistatebesiege.lua:4499` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:4527` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/groupaistate/groupaistatebesiege.lua:4590` `search_coarse` — Start/end validation added at 247. `local path = managers.navigation:search_coarse(coarse_params)`
 - `lua/managers/mapelements/elementspecialobjective.lua:373` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
 - `lua/managers/navigationmanager.lua:43` `find_segment_doors` — Returns position vectors, not door tables. `function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)`
 - `lua/managers/navigationmanager.lua:45` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = self._nav_segments`

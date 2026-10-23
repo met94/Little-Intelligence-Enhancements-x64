@@ -32,6 +32,11 @@ assert(cmd.args[1] == 'lua_cover' and cmd.args[2] == '2', 'setting args wrong')
 cmd = parse('!lies spawn taser')
 assert(cmd and cmd.command == 'spawn' and cmd.args[1] == 'taser', 'spawn command not parsed')
 
+assert(type(LIES_TestHarness.force_alarm) == 'function', 'force_alarm missing')
+assert(type(LIES_TestHarness.dump_state) == 'function', 'dump_state missing')
+assert(parse('!lies alarm').command == 'alarm', 'alarm command not parsed')
+assert(parse('!lies state').command == 'state', 'state command not parsed')
+
 cmd = parse('!lies')
 assert(cmd and cmd.command == 'help', 'bare !lies should map to help')
 
