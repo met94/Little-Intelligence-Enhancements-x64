@@ -84,10 +84,11 @@ function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_
 						local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true)
 
 						if nl_tracker:nav_segment() == from_seg_id then
-							table.insert(found_doors, {
-								center = nl_element:value("position"),
-								end_pos = nl_element:nav_link_end_pos()
-							})
+							-- Default callers (vanilla 248.2 included) expect raw
+							-- positions; the {center, end_pos} table is only for
+							-- center_only callers. Use the far end like the old
+							-- table branch did for _upd_aim door watching.
+							table.insert(found_doors, nl_element:nav_link_end_pos())
 						end
 
 						self:destroy_nav_tracker(nl_tracker)

@@ -1126,7 +1126,14 @@ function CopLogicAttack._upd_aim(data, my_data)
 								for i = 1, #doors do
 									local door = doors[i]
 									
-									if door.end_pos then
+									if door.x then
+										local test_pos = door:with_z(door.z + 140)
+										if not raycast_f(data.unit, "ray", head_pos, test_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report") then
+											expected_pos = test_pos
+											
+											break
+										end
+									elseif door.end_pos then
 										local test_pos = door.end_pos:with_z(door.end_pos.z + 140)
 										if not raycast_f(data.unit, "ray", head_pos, test_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report") then
 											expected_pos = test_pos
