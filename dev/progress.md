@@ -6,7 +6,7 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 
 - Task 1: import + worktree + plan — complete.
 - Task 2: fn-ledger — complete. Tests: `node --test dev/tools/test/fn-ledger.test.mjs` 15/15. Output: `dev/port-248-ledger.md`, `dev/reports/port-248-ledger.json`. Counts: 509 top-level functions, 34 PORT, 183 audit, 287 keep, 2 delete, 1 local-helper keep, 2 drop/rewrite.
-- Task 3: fn-workbench — todo.
+- Task 3: fn-workbench — complete. Tests: `node --test dev/tools/test/fn-workbench.test.mjs` 4/4. Sample dossier: `dev/reports/dossiers/coplogicattack.is_available_for_assignment.md`.
 - Task 4: api-audit — todo.
 - Task 5: log-scan — todo.
 - Task 6: test harness — todo.
