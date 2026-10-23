@@ -2924,8 +2924,8 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 							if navsegs then
 								for nav_seg_id, _ in pairs(navsegs) do
 									local seg_area = self:get_area_from_nav_seg_id(nav_seg_id)
-									
-									if not occupied_areas[seg_area.id] and v3_dis_sq(seg_area.pos, other_group.objective.target_area.pos) <= 16000000 then
+
+									if seg_area and not occupied_areas[seg_area.id] and v3_dis_sq(seg_area.pos, other_group.objective.target_area.pos) <= 16000000 then
 										if not current_assault_target_area or v3_dis_sq(current_assault_target_area.pos, seg_area.pos) <= 16000000 then
 											blockade_help_areas[seg_area.id] = seg_area
 										end
@@ -3238,8 +3238,8 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 							if navsegs then
 								for nav_seg_id, _ in pairs(navsegs) do
 									local seg_area = self:get_area_from_nav_seg_id(nav_seg_id)
-									
-									if not occupied_areas[seg_area.id] and v3_dis_sq(seg_area.pos, other_group.objective.target_area.pos) <= 16000000 then
+
+									if seg_area and not occupied_areas[seg_area.id] and v3_dis_sq(seg_area.pos, other_group.objective.target_area.pos) <= 16000000 then
 										if not current_assault_target_area or v3_dis_sq(current_assault_target_area.pos, seg_area.pos) <= 16000000 then
 											blockade_help_areas[seg_area.id] = seg_area
 										end
@@ -4140,13 +4140,16 @@ function GroupAIStateBesiege:_chk_group_use_smoke_grenade(group, task_data, deto
 
 							for _, door_id in ipairs(door_list) do
 								local test_pos
-								
+
 								if type(door_id) == "number" then
-									test_pos = managers.navigation._room_doors[door_id].center
+									test_pos = nil
+								elseif door_id.x then
+									test_pos = door_id
 								else
 									test_pos = door_id:script_data().element:nav_link_end_pos()
 								end
-								
+
+								if test_pos then
 								local dis = mvec3_dis(u_data.m_pos, test_pos)
 								
 								if not best_dis or dis < best_dis then
@@ -4190,6 +4193,7 @@ function GroupAIStateBesiege:_chk_group_use_smoke_grenade(group, task_data, deto
 					end
 				end
 			end
+		end
 		else
 			for u_key, u_data in pairs(group.units) do
 				if u_data.tactics_map and u_data.tactics_map.smoke_grenade and objective and objective.grp_objective == group.objective then
@@ -4301,13 +4305,16 @@ function GroupAIStateBesiege:_chk_group_use_flash_grenade(group, task_data, deto
 
 							for _, door_id in ipairs(door_list) do
 								local test_pos, good_pos
-								
+
 								if type(door_id) == "number" then
-									test_pos = managers.navigation._room_doors[door_id].center
+									test_pos = nil
+								elseif door_id.x then
+									test_pos = door_id
 								else
 									test_pos = door_id:script_data().element:nav_link_end_pos()
 								end
-								
+
+								if test_pos then
 								local dis = mvec3_dis(u_data.m_pos, test_pos)
 								
 								if not best_dis or dis < best_dis then
@@ -4337,6 +4344,7 @@ function GroupAIStateBesiege:_chk_group_use_flash_grenade(group, task_data, deto
 					end
 				end
 			end
+		end
 		else
 			for u_key, u_data in pairs(group.units) do
 				if u_data.tactics_map and u_data.tactics_map.flash_grenade and objective and objective.grp_objective == group.objective then

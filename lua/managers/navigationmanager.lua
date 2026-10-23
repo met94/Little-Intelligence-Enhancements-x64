@@ -109,6 +109,31 @@ function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_
 	return found_doors
 end
 
+function NavigationManager:get_nav_segments_in_direction(from_seg_id, dir)
+	local result = {}
+	local from_seg = self._nav_segments[from_seg_id]
+
+	if not from_seg or not dir then
+		return result
+	end
+
+	local to_neighbour = Vector3()
+
+	for neighbour_id in pairs(from_seg.neighbours or {}) do
+		local neighbour = self._nav_segments[neighbour_id]
+
+		if neighbour and neighbour.pos then
+			mvec3_dir(to_neighbour, from_seg.pos, neighbour.pos)
+
+			if mvector3.dot(to_neighbour, dir) >= 0 then
+				result[neighbour_id] = true
+			end
+		end
+	end
+
+	return result
+end
+
 function NavigationManager:find_segment_doors_with_nav_links(from_seg_id, approve_clbk, get_center)
 	local all_doors = self._room_doors
 	local all_nav_segs = self._nav_segments

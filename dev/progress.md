@@ -26,6 +26,8 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Smoke 3 result: no load crash. State before alarm: `is_server=true police_called=nil weapons_hot=nil assault_mode=false queued=10.0(number) groups=3 spawning=0 cops=5`. After alarm: `police_called=true weapons_hot=true assault_mode=true queued=18.0(number) groups=3 spawning=0 cops=5`. No SWAT yet. Crash occurred ~20 s later while shooting a guard.
 - Crash root cause from `%LOCALAPPDATA%\PAYDAY 2\crash.txt`: `enemymanager.lua:760: attempt to compare number with nil`, stack `chk_queue_disposal() @mods/LIES/lua/managers/enemymanager.lua:42` -> `add_delayed_clbk(..., t)` with nil `t`. LIES's v246 disposal overrides are incompatible with 248.2 timers.
 - Fix: removed LIES's EnemyManager overrides entirely; vanilla 248.2 timer-based disposal/task queue handles it. API audit errors drop 46 -> 21.
+- Smoke 4 result: no load crash; alarm raised; after 60 s `groups=1 spawning=1 cops=1`, then native crash as SWAT should arrive. Crash stack: `_set_assault_objective_to_group()` at `groupaistatebesiege.lua:2880` -> `_assign_enemy_groups_to_assault()` -> vanilla `_upd_assault_task`.
+- Fix: ported the smoke/flash grenade door handling to v6 vectors (no `_room_doors`, handle `door.x` vs nav links) and added a v6 `NavigationManager:get_nav_segments_in_direction` helper (direct neighbours by dot product). Nil-guarded segment-area lookups in the two blockade loops. API audit errors 21 -> 20.
 
 
 ## Rulings

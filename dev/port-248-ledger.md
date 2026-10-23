@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T16:27:46.257Z
+Generated: 2026-10-23T16:41:15.521Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -14,7 +14,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 39 |
 | MOD_ONLY | 184 |
-| VANISHED_IN_NEW | 2 |
+| VANISHED_IN_NEW | 3 |
 | SAME_AS_OLD_VANILLA | 2 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
 | LIES_EDIT_CLEAN | 287 |
@@ -128,6 +128,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `NavigationManager.pad_out_position` | 61 | 0 | 0 |  |
 | [ ] | audit | `trace` | 6 | 0 | 0 |  |
 | [ ] | drop/rewrite | `NavigationManager._strip_nav_field_for_gameplay` | 33 | 38 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
+| [ ] | drop/rewrite | `NavigationManager.get_nav_segments_in_direction` | 24 | 55 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
 | [ ] | drop/rewrite | `NavigationManager.send_nav_field_to_engine` | 77 | 73 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
 | [ ] | keep | `NavigationManager.draw_path` | 59 | 36 | 36 |  |
 | [ ] | keep | `NavigationManager.search_pos_to_pos` | 86 | 7 | 7 |  |
@@ -274,8 +275,8 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `GroupAIStateBesiege._chk_group_use_flash_grenade` | 141 | 45 | 45 |  |
-| [ ] | **PORT** | `GroupAIStateBesiege._chk_group_use_smoke_grenade` | 175 | 47 | 47 |  |
+| [ ] | **PORT** | `GroupAIStateBesiege._chk_group_use_flash_grenade` | 145 | 45 | 45 |  |
+| [ ] | **PORT** | `GroupAIStateBesiege._chk_group_use_smoke_grenade` | 179 | 47 | 47 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._queue_police_upd_task` | 17 | 7 | 13 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 48 | 28 | 22 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 16 | 18 | 20 |  |
