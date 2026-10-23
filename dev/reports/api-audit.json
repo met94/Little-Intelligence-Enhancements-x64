@@ -410,6 +410,404 @@
       "reason": ""
     }
   ],
+  "hookMethodChecks": [
+    {
+      "kind": "PostHook",
+      "className": "CopBrain",
+      "method": "_reset_logic_data",
+      "id": "lies_reset_logic_data",
+      "file": "lua/copextensions/copbrain.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CopBrain",
+      "method": "set_spawn_entry",
+      "id": "lies_accessentry",
+      "file": "lua/copextensions/copbrain.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CopBrain",
+      "method": "convert_to_criminal",
+      "id": "lies_convert_to_criminal",
+      "file": "lua/copextensions/copbrain.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CopBrain",
+      "method": "clbk_death",
+      "id": "lies_remove_sabo_outline",
+      "file": "lua/copextensions/copbrain.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CopBrain",
+      "method": "set_group",
+      "id": "lies_reset_weapons",
+      "file": "lua/copextensions/copbrain.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CopBrain",
+      "method": "on_reload",
+      "id": "lies_on_reload",
+      "file": "lua/copextensions/copbrain.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CopBrain",
+      "method": "clbk_death",
+      "id": "lies_clbk_death",
+      "file": "lua/copextensions/copbrain.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CopBrain",
+      "method": "_add_pathing_result",
+      "id": "lies_pathing",
+      "file": "lua/copextensions/copbrain.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CopMovement",
+      "method": "_upd_actions",
+      "id": "lies_actions",
+      "file": "lua/copextensions/copmovement.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CopSound",
+      "method": "init",
+      "id": "lies_init",
+      "file": "lua/copextensions/copsound.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "TankCopDamage",
+      "method": "seq_clbk_vizor_shatter",
+      "id": "lies_tankvisorbroken",
+      "file": "lua/copextensions/tankcopdamage.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "SentryGunBase",
+      "method": "activate_as_module",
+      "id": "lies_fix_turret_fuck",
+      "file": "lua/equipment/sentry_gun/sentrygunbase.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PreHook",
+      "className": "GroupAIManager",
+      "method": "set_state",
+      "id": "lies_groupsetup",
+      "file": "lua/groupaistate/groupaimanager.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBase",
+      "method": "_clbk_switch_enemies_to_not_cool",
+      "id": "lies_switch_tweaks_for_guards",
+      "file": "lua/groupaistate/groupaistatebase.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBase",
+      "method": "register_rescueable_hostage",
+      "id": "lies_hrt_reg",
+      "file": "lua/groupaistate/groupaistatebase.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBase",
+      "method": "unregister_rescueable_hostage",
+      "id": "lies_hrt_unreg",
+      "file": "lua/groupaistate/groupaistatebase.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBase",
+      "method": "on_enemy_unregistered",
+      "id": "lies_unregister_boss",
+      "file": "lua/groupaistate/groupaistatebase.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBase",
+      "method": "_remove_group_member",
+      "id": "lies_frienddead",
+      "file": "lua/groupaistate/groupaistatebase.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBesiege",
+      "method": "init",
+      "id": "lies_spawngroups",
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBesiege",
+      "method": "_check_spawn_timed_groups",
+      "id": "lieshhtacs_checkspawnedgroups",
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBesiege",
+      "method": "_perform_group_spawning",
+      "id": "lies_upd_group_early",
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBesiege",
+      "method": "on_criminal_nav_seg_change",
+      "id": "lies_check_relocation_for_friendlies",
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "ok": true,
+      "inherited": true
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBesiege",
+      "method": "_upd_groups",
+      "id": "lies_group_dialogue",
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAIStateBesiege",
+      "method": "_upd_assault_task",
+      "id": "lies_retire",
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "WorldDefinition",
+      "method": "assign_unit_data",
+      "id": "lies_fix_dumb_map_stuff",
+      "file": "lua/managers/core/coreworlddefinition.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "ElementDifficulty",
+      "method": "init",
+      "id": "lies_alter_diff_values",
+      "file": "lua/managers/mapelements/elementdifficulty.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "ElementSpawnCivilian",
+      "method": "_finalize_values",
+      "id": "lies_finalize_values",
+      "file": "lua/managers/mapelements/elementspawncivilian.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "ElementSpawnCivilianGroup",
+      "method": "_finalize_values",
+      "id": "lies_finalize_values",
+      "file": "lua/managers/mapelements/elementspawnciviliangroup.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "ElementSpawnEnemyDummy",
+      "method": "_finalize_values",
+      "id": "lies_hhtacs_elementcheck",
+      "file": "lua/managers/mapelements/elementspawnenemydummy.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "ElementSpawnEnemyGroup",
+      "method": "_finalize_values",
+      "id": "lies_finalize_values",
+      "file": "lua/managers/mapelements/elementspawnenemygroup.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "ElementSpecialObjective",
+      "method": "_finalize_values",
+      "id": "lies_send_navlink_element",
+      "file": "lua/managers/mapelements/elementspecialobjective.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "MissionScriptElement",
+      "method": "on_executed",
+      "id": "lies_nav_and_modify",
+      "file": "lua/managers/mapelements/missionscriptelement.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "NavigationManager",
+      "method": "update",
+      "id": "lies_cover",
+      "file": "lua/managers/navigationmanager.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "PlayerDriving",
+      "method": "update",
+      "id": "lies_fix_vehicle",
+      "file": "lua/player/states/playerdriving.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "PlayerFatal",
+      "method": "enter",
+      "id": "lies_fix_revive",
+      "file": "lua/player/states/playerfatal.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "Drill",
+      "method": "on_sabotage_SO_completed",
+      "id": "lies_drilljammedvoiceline",
+      "file": "lua/props/drill.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "Drill",
+      "method": "clbk_sabotage_SO_verification",
+      "id": "lies_tacs_drill",
+      "file": "lua/props/drill.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "Drill",
+      "method": "_unregister_sabotage_SO",
+      "id": "lies_unregisterdrill",
+      "file": "lua/props/drill.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "TeamAIBrain",
+      "method": "on_cool_state_changed",
+      "id": "lies_swap",
+      "file": "lua/teamaiextensions/teamaibrain.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "AttentionTweakData",
+      "method": "init",
+      "id": "lies_fix_badaimobjs",
+      "file": "lua/tweak_data/attentiontweakdata.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "CharacterTweakData",
+      "method": "init",
+      "id": "lies_fix_nosup",
+      "file": "lua/tweak_data/charactertweakdata.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "GroupAITweakData",
+      "method": "_init_chatter_data",
+      "id": "lies_chatter",
+      "file": "lua/tweak_data/groupaitweakdata.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "LevelsTweakData",
+      "method": "init",
+      "id": "lies_fixed_ai_obj",
+      "file": "lua/tweak_data/levelstweakdata.lua",
+      "ok": true,
+      "inherited": false
+    },
+    {
+      "kind": "PostHook",
+      "className": "MenuNodeGui",
+      "method": "_setup_item_rows",
+      "id": "LIES_update",
+      "file": "menunodegui.lua",
+      "ok": true,
+      "inherited": true
+    }
+  ],
   "findings": [
     {
       "file": "lua/civlogics/civilianlogicescort.lua",
@@ -1293,14 +1691,6 @@
     },
     {
       "file": "lua/managers/enemymanager.lua",
-      "line": 171,
-      "symbol": "_upd_shield_disposal_fast",
-      "severity": "error",
-      "reason": "Removed in 247",
-      "text": "self:add_delayed_clbk(shield_disposal_id, callback(self, self, \"_upd_shield_disposal_fast\"), t)"
-    },
-    {
-      "file": "lua/managers/enemymanager.lua",
       "line": 175,
       "symbol": "_fast_shield_disposal",
       "severity": "error",
@@ -1885,27 +2275,11 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1615,
-      "symbol": "send_nav_field_to_engine",
-      "severity": "review",
-      "reason": "Renamed _send_nav_field_to_engine(load_data); v5 data format",
-      "text": "Application:error(\"[NavigationManager:send_nav_field_to_engine] Navgraph needs to be rebuilt!\")"
-    },
-    {
-      "file": "lua/managers/navigationmanager.lua",
       "line": 1634,
       "symbol": "_geog_segments",
       "severity": "error",
       "reason": "Removed in nav v6",
       "text": "for sector_id, sector in pairs(self._geog_segments) do"
-    },
-    {
-      "file": "lua/managers/navigationmanager.lua",
-      "line": 1644,
-      "symbol": "send_nav_field_to_engine",
-      "severity": "review",
-      "reason": "Renamed _send_nav_field_to_engine(load_data); v5 data format",
-      "text": "Application:error(\"[NavigationManager:send_nav_field_to_engine] Navgraph needs to be rebuilt!\")"
     },
     {
       "file": "lua/managers/navigationmanager.lua",

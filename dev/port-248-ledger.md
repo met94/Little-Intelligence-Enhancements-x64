@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T15:37:36.221Z
+Generated: 2026-10-23T15:56:28.728Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -12,6 +12,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | category | count |
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 34 |
+| MOD_ONLY_HOOK | 39 |
 | MOD_ONLY | 183 |
 | VANISHED_IN_NEW | 2 |
 | SAME_AS_OLD_VANILLA | 2 |
@@ -38,12 +39,15 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 
 ## menunodegui.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:MenuNodeGui._setup_item_rows:LIES_update` | 13 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/tweak_data/attentiontweakdata.lua
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:AttentionTweakData.init:lies_fix_badaimobjs` | 87 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `AttentionTweakData.setup_hhtacs` | 117 | 0 | 0 |  |
 
 ## lua/tweak_data/weapontweakdata.lua
@@ -56,6 +60,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:CharacterTweakData.init:lies_fix_nosup` | 26 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `CharacterTweakData._setup_extra_chatter_tweak` | 72 | 0 | 0 |  |
 | [ ] | audit | `CharacterTweakData.fix_escort` | 11 | 0 | 0 |  |
 | [ ] | audit | `CharacterTweakData.setup_hhtacs` | 340 | 0 | 0 |  |
@@ -65,12 +70,14 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:LevelsTweakData.init:lies_fixed_ai_obj` | 4 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `LevelsTweakData.setup_hhtacs` | 3 | 0 | 0 |  |
 
 ## lua/tweak_data/groupaitweakdata.lua
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAITweakData._init_chatter_data:lies_chatter` | 367 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAITweakData._LIES_setup` | 4303 | 0 | 0 |  |
 | [ ] | audit | `GroupAITweakData._setup_hhtacs_bo_compatibility` | 41 | 0 | 0 |  |
 | [ ] | audit | `GroupAITweakData._setup_hhtacs_cartel_compatibility` | 310 | 0 | 0 |  |
@@ -109,6 +116,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `NavigationManager.find_segment_doors` | 70 | 18 | 17 |  |
 | [ ] | **PORT** | `NavigationManager.register_cover_units` | 202 | 80 | 75 |  |
 | [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 90 | 36 | 38 |  |
+| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager.update:lies_cover` | 10 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `convert_bastards` | 7 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._add_LIES_cached_path` | 7 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._change_funcs` | 19 | 0 | 0 |  |
@@ -163,15 +171,22 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:Drill._unregister_sabotage_SO:lies_unregisterdrill` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:Drill.clbk_sabotage_SO_verification:lies_tacs_drill` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:Drill.on_sabotage_SO_completed:lies_drilljammedvoiceline` | 9 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | keep | `Drill._register_sabotage_SO` | 71 | 82 | 82 |  |
 
 ## lua/groupaistate/groupaimanager.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PreHook:GroupAIManager.set_state:lies_groupsetup` | 7 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/managers/mapelements/missionscriptelement.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:MissionScriptElement.on_executed:lies_nav_and_modify` | 36 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/managers/mapelements/elementenemyprefered.lua
 
@@ -183,6 +198,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:ElementSpawnEnemyDummy._finalize_values:lies_hhtacs_elementcheck` | 48 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `ElementSpawnEnemyDummy.check_overwrite_spawn_value` | 21 | 0 | 0 |  |
 | [ ] | audit | `ElementSpawnEnemyDummy.value` | 19 | 0 | 0 |  |
 
@@ -190,26 +206,33 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:ElementSpawnCivilian._finalize_values:lies_finalize_values` | 11 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | keep | `ElementSpawnCivilian.produce` | 46 | 47 | 47 |  |
 
 ## lua/managers/mapelements/elementspawnciviliangroup.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:ElementSpawnCivilianGroup._finalize_values:lies_finalize_values` | 11 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/managers/mapelements/elementdifficulty.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:ElementDifficulty.init:lies_alter_diff_values` | 24 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/managers/mapelements/elementspawnenemygroup.lua
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:ElementSpawnEnemyGroup._finalize_values:lies_finalize_values` | 51 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | keep | `ElementSpawnEnemyGroup.on_executed` | 43 | 35 | 35 |  |
 
 ## lua/managers/mapelements/elementspecialobjective.lua
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:ElementSpecialObjective._finalize_values:lies_send_navlink_element` | 85 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | keep | `ElementSpecialObjective.clbk_verify_administration` | 65 | 20 | 20 |  |
 | [ ] | keep | `ElementSpecialObjective.nav_link_delay` | 9 | 3 | 3 |  |
 
@@ -229,6 +252,11 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBase._clbk_switch_enemies_to_not_cool:lies_switch_tweaks_for_guards` | 11 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBase._remove_group_member:lies_frienddead` | 23 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBase.on_enemy_unregistered:lies_unregister_boss` | 9 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBase.register_rescueable_hostage:lies_hrt_reg` | 9 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBase.unregister_rescueable_hostage:lies_hrt_unreg` | 5 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAIStateBase._add_drama_hhtacs` | 3 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBase._calculate_difficulty_ratio_hhtacs` | 17 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBase._get_balancing_multiplier_hhtacs` | 22 | 0 | 0 |  |
@@ -262,6 +290,8 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `GroupAIStateBesiege._queue_police_upd_task` | 17 | 7 | 13 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 52 | 28 | 22 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 16 | 18 | 20 |  |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire` | 101 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 90 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_assault` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 50 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon_sweep` | 37 | 0 | 0 |  |
@@ -336,7 +366,9 @@ No function definitions (hook/overlay file).
 
 ## lua/copextensions/tankcopdamage.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:TankCopDamage.seq_clbk_vizor_shatter:lies_tankvisorbroken` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/copextensions/copbase.lua
 
@@ -351,12 +383,21 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:CopMovement._upd_actions:lies_actions` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `CopMovement.force_upd_z_ray` | 7 | 0 | 0 |  |
 
 ## lua/copextensions/copbrain.lua
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:CopBrain._add_pathing_result:lies_pathing` | 46 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:CopBrain._reset_logic_data:lies_reset_logic_data` | 25 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:CopBrain.clbk_death:lies_clbk_death` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:CopBrain.clbk_death:lies_remove_sabo_outline` | 6 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:CopBrain.convert_to_criminal:lies_convert_to_criminal` | 26 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:CopBrain.on_reload:lies_on_reload` | 48 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:CopBrain.set_group:lies_reset_weapons` | 115 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:CopBrain.set_spawn_entry:lies_accessentry` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `CopBrain._do_hhtacs_damage_modifiers` | 152 | 0 | 0 |  |
 | [ ] | audit | `CopBrain._on_player_slow_pos_rsrv_upd` | 9 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.check_upd_aim` | 39 | 0 | 0 |  |
@@ -389,6 +430,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:CopSound.init:lies_init` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `CopSound._play_fixed` | 17 | 0 | 0 |  |
 | [ ] | audit | `CopSound._play_vc_framework_voice` | 15 | 0 | 0 |  |
 | [ ] | audit | `CopSound.say_fix` | 168 | 0 | 0 |  |
@@ -702,7 +744,9 @@ No function definitions (hook/overlay file).
 
 ## lua/teamaiextensions/teamaibrain.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:TeamAIBrain.on_cool_state_changed:lies_swap` | 5 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/teamaiextensions/teamaiinventory.lua
 
@@ -771,7 +815,9 @@ No function definitions (hook/overlay file).
 
 ## lua/player/states/playerdriving.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:PlayerDriving.update:lies_fix_vehicle` | 13 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/civlogics/civilianlogicflee.lua
 
@@ -851,9 +897,25 @@ No function definitions (hook/overlay file).
 
 ## lua/equipment/sentry_gun/sentrygunbase.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:SentryGunBase.activate_as_module:lies_fix_turret_fuck` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/managers/core/coreworlddefinition.lua
 
-No function definitions (hook/overlay file).
+| done | status | function | mod L | old L | new L | note |
+|---:|---|---|---:|---:|---:|---|
+| [ ] | audit (hook) | `Hooks.PostHook:WorldDefinition.assign_unit_data:lies_fix_dumb_map_stuff` | 37 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+
+## lua/copextensions/copinventory.lua
+
+**UNHOOKED FILE** — not referenced by mod.txt; it never loads.
+
+## lua/managers/mapelements/elementnavobstacle.lua
+
+**UNHOOKED FILE** — not referenced by mod.txt; it never loads.
+
+## lua/player/states/playerfatal.lua
+
+**UNHOOKED FILE** — not referenced by mod.txt; it never loads.
 

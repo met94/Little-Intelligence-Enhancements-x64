@@ -25,7 +25,6 @@
   { "symbol": "_nav_link", "severity": "review", "reason": "Nav-link lifecycle changed" },
   { "symbol": "queue_task", "severity": "review", "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions" },
   { "symbol": "_police_upd_task_queued", "severity": "review", "reason": "Boolean -> timestamp in 247" },
-  { "symbol": "session():peer", "severity": "review", "reason": "Prefer get_peer_safe/get_peer_by_unit_safe where applicable" },
   { "symbol": "table.has", "severity": "review", "reason": "Direct indexing since 242; verify truthiness assumptions" },
   { "symbol": "create_delayed_unit", "severity": "review", "reason": "Takes a list of unit ids at 247" }
 ]

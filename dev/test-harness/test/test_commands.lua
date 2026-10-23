@@ -38,4 +38,9 @@ assert(cmd and cmd.command == 'help', 'bare !lies should map to help')
 assert(parse('hello') == nil, 'non-command should return nil')
 assert(parse('!other nav') == nil, 'other prefix should return nil')
 
+LIES = {}
+log = function() end
+local ok, err = pcall(LIES_TestHarness.dump)
+assert(ok, 'dump with nil settings should not error: ' .. tostring(err))
+
 print('ok: LIES test-harness parser')

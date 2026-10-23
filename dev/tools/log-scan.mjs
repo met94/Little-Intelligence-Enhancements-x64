@@ -24,9 +24,11 @@ export function scanLog(text, { file = '', hookFiles = [] } = {}) {
 
   const setup = [];
   const harness = [];
+  const harnessErrors = [];
   const fatal = [];
   const luaErrors = [];
   const liesErrors = [];
+  let setupSeen = false;
 
   const hasLiesFrame = (startIndex) => {
     const stop = Math.min(lines.length, startIndex + 8);
@@ -42,13 +44,17 @@ export function scanLog(text, { file = '', hookFiles = [] } = {}) {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (/Setting up mod 'LIES'(?![A-Za-z0-9_])/.test(line)) setup.push({ line: i + 1, text: line.trim() });
+    if (/Setting up mod 'LIES'\s*$/.test(line)) {
+      setup.push({ line: i + 1, text: line.trim() });
+      setupSeen = true;
+    }
     if (/\[LIES-TEST\]/.test(line)) harness.push({ line: i + 1, text: line.trim() });
+    if (/\[LIES-TEST\]\s*ERROR/.test(line)) harnessErrors.push({ line: i + 1, text: line.trim() });
     if (FATAL_RE.test(line)) fatal.push({ line: i + 1, text: line.trim() });
     if (LUA_ERROR_RE.test(line)) {
       const entry = { line: i + 1, text: line.trim() };
       luaErrors.push(entry);
-      if (ERROR_MARKER_RE.test(line) && hasLiesFrame(i)) {
+      if (setupSeen && ERROR_MARKER_RE.test(line) && hasLiesFrame(i)) {
         liesErrors.push(entry);
       }
     }
@@ -58,10 +64,11 @@ export function scanLog(text, { file = '', hookFiles = [] } = {}) {
     file,
     setup,
     harness,
+    harnessErrors,
     fatal,
     luaErrors,
     liesErrors,
-    ok: fatal.length === 0 && liesErrors.length === 0
+    ok: setup.length > 0 && fatal.length === 0 && liesErrors.length === 0 && harnessErrors.length === 0
   };
 }
 
@@ -82,6 +89,7 @@ export function renderReport(result) {
   lines.push(`- Lua errors: ${result.luaErrors.length}`);
   lines.push(`- LIES errors: ${result.liesErrors.length}`);
   lines.push(`- harness: ${result.harness.length}`);
+  lines.push(`- harness errors: ${result.harnessErrors.length}`);
   lines.push(`- result: ${result.ok ? 'OK' : 'FAIL'}`);
   lines.push('');
 
@@ -117,6 +125,12 @@ export function renderReport(result) {
   lines.push('');
   if (!result.harness.length) lines.push('None.');
   else for (const entry of result.harness) lines.push(`- ${entry.line}: \`${entry.text}\``);
+  lines.push('');
+
+  lines.push('## Harness errors');
+  lines.push('');
+  if (!result.harnessErrors.length) lines.push('None.');
+  else for (const entry of result.harnessErrors) lines.push(`- ${entry.line}: \`${entry.text}\``);
   lines.push('');
 
   return lines.join('\n') + '\n';

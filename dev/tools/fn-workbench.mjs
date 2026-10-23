@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { parseSource, collectFunctions, classifySources } from './fn-ledger.mjs';
+import { defaultClone } from './workspace.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -160,7 +161,7 @@ function parseArgs(argv) {
     hook: '',
     name: '',
     mod: process.cwd(),
-    clone: path.resolve(HERE, '../../../../game-data/Payday-2-LuaJIT-Complete'),
+    clone: defaultClone(HERE),
     old: 'a3180fc',
     new: 'e3a8b616',
     out: '',

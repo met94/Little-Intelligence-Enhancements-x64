@@ -37,7 +37,7 @@ test('clean log is ok even with unrelated update noise', () => {
 });
 
 test('strict mode fails on non-LIES Lua errors', () => {
-  const result = scanLog("Lua: Error: attempt to call a nil value\n", { file: 'test.log' });
+  const result = scanLog("Lua: [INFO] [BLT] Setting up mod 'LIES'\nLua: Error: attempt to call a nil value\n", { file: 'test.log' });
   assert.equal(result.ok, true);
   assert.equal(isOk(result, { strict: true }), false);
 });
@@ -45,6 +45,32 @@ test('strict mode fails on non-LIES Lua errors', () => {
 test('setup match does not count LIES-derived standalone mods', () => {
   const result = scanLog("Lua: [INFO] [BLT] Setting up mod 'LIES's Joker Tweaks Standalone'\n", { file: 'test.log' });
   assert.equal(result.setup.length, 0);
+});
+
+test('scanLog fails when LIES never loaded', () => {
+  const result = scanLog("Lua: [INFO] [BLT] Setting up mod 'Other'\n", { file: 'test.log' });
+  assert.equal(result.setup.length, 0);
+  assert.equal(result.ok, false);
+});
+
+test('scanLog fails on harness ERROR lines', () => {
+  const result = scanLog("Lua: [INFO] [BLT] Setting up mod 'LIES'\nLua: [INFO] [LIES-TEST] ERROR attempt to call a nil value\n", { file: 'test.log' });
+  assert.equal(result.setup.length, 1);
+  assert.equal(result.harnessErrors.length, 1);
+  assert.equal(result.ok, false);
+});
+
+test('setup match does not count the test harness', () => {
+  const result = scanLog("Lua: [INFO] [BLT] Setting up mod 'LIES Test Harness'\nLua: [INFO] [BLT] Setting up mod 'LIES'\n", { file: 'test.log' });
+  assert.equal(result.setup.length, 1);
+  assert.equal(result.ok, true);
+});
+
+test('scanLog does not mark errors before LIES setup as LIES errors', () => {
+  const log = "Lua: Error: lib/managers/navigationmanager.lua:1: attempt to index a nil value\nLua: [INFO] [BLT] Setting up mod 'LIES'\n";
+  const result = scanLog(log, { file: 'test.log', hookFiles: ['lib/managers/navigationmanager.lua'] });
+  assert.equal(result.liesErrors.length, 0);
+  assert.equal(result.ok, true);
 });
 
 test('renderReport contains counts and line references', () => {

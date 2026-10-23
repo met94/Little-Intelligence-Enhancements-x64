@@ -12,15 +12,13 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
+import { luaparseCandidates, defaultClone } from './workspace.mjs';
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
 function loadLuaparse() {
-  const candidates = [
-    path.resolve(HERE, '../../../../tools/lua/node_modules/luaparse'),
-    'luaparse'
-  ];
-  for (const candidate of candidates) {
+  for (const candidate of luaparseCandidates(HERE)) {
     try { return require(candidate); } catch { /* next */ }
   }
   throw new Error('luaparse not found; install with: npm install --prefix tools/lua luaparse');
@@ -141,7 +139,15 @@ function paramNames(parameters) {
   });
 }
 
-function functionRecord(name, node, source, form, isLocal = false) {
+function stringLiteralValue(node) {
+  if (!node) return null;
+  if (node.type !== 'StringLiteral') return null;
+  if (node.value !== null && node.value !== undefined) return node.value;
+  if (typeof node.raw === 'string' && node.raw.length >= 2) return node.raw.slice(1, -1);
+  return null;
+}
+
+function functionRecord(name, node, source, form, isLocal = false, isHook = false) {
   if (!name) return null;
   const params = paramNames(node.parameters);
   const isMethod = form === 'colon' || name.includes('.');
@@ -159,6 +165,7 @@ function functionRecord(name, node, source, form, isLocal = false) {
     endLine: node.loc ? node.loc.end.line : 0,
     form,
     isLocal,
+    isHook,
     bodyText
   };
 }
@@ -192,6 +199,23 @@ export function collectFunctions(source, ast) {
       // Anonymous function expressions are recorded by their assignment/local
       // statement; never descend into a function body.
       return;
+    }
+
+    if (node.type === 'CallStatement' && node.expression && node.expression.type === 'CallExpression') {
+      const call = node.expression;
+      const baseName = memberName(call.base);
+      if (baseName === 'Hooks.PostHook' || baseName === 'Hooks.PreHook') {
+        const args = call.arguments || [];
+        const className = memberName(args[0]);
+        const method = stringLiteralValue(args[1]);
+        const id = stringLiteralValue(args[2]);
+        const callback = args[3];
+        if (className && method && id && callback && callback.type === 'FunctionDeclaration') {
+          const kind = baseName === 'Hooks.PostHook' ? 'PostHook' : 'PreHook';
+          add(functionRecord(`Hooks.${kind}:${className}.${method}:${id}`, callback, source, 'hook', false, true));
+        }
+        return;
+      }
     }
 
     if (node.type === 'AssignmentStatement' && node.variables && node.init) {
@@ -291,7 +315,10 @@ export function classifySources(modSource, oldSource, newSource) {
     let category;
     let note = '';
 
-    if (!parsed.old.ok || !parsed.new.ok) {
+    if (modFn.isHook) {
+      category = 'MOD_ONLY_HOOK';
+      note = 'Hooks:PostHook/PreHook callback; audit and port with the hooked method';
+    } else if (!parsed.old.ok || !parsed.new.ok) {
       category = 'UNCLASSIFIED_PARSE_ERROR';
       note = 'old and/or new game file did not parse';
     } else if (!oldFn && !newFn) {
@@ -329,6 +356,7 @@ export function classifySources(modSource, oldSource, newSource) {
       oldParams: oldFn ? oldFn.params.join(', ') : '',
       newParams: newFn ? newFn.params.join(', ') : '',
       isLocal: Boolean(modFn.isLocal),
+      isHook: Boolean(modFn.isHook),
       form: modFn.form,
       note,
       startLine: modFn.startLine
@@ -351,6 +379,7 @@ const STATUS = {
   LIES_EDIT_VANILLA_CHANGED: '**PORT**',
   MOD_ONLY: 'audit',
   MOD_ONLY_NEWALSO: 'audit',
+  MOD_ONLY_HOOK: 'audit (hook)',
   VANISHED_IN_NEW: 'drop/rewrite',
   LIES_EDIT_CLEAN: 'keep',
   SAME_AS_NEW_VANILLA: 'keep (new)',
@@ -362,6 +391,7 @@ const STATUS = {
 const ORDER = [
   'LIES_EDIT_VANILLA_CHANGED',
   'MOD_ONLY_NEWALSO',
+  'MOD_ONLY_HOOK',
   'MOD_ONLY',
   'VANISHED_IN_NEW',
   'SAME_AS_OLD_VANILLA',
@@ -406,6 +436,11 @@ export function renderMarkdown({ oldRev, newRev, generated, files }) {
   for (const file of files) {
     lines.push(`## ${file.file}`);
     lines.push('');
+    if (file.unhooked) {
+      lines.push('**UNHOOKED FILE** — not referenced by mod.txt; it never loads.');
+      lines.push('');
+      continue;
+    }
     if (!file.rows.length) {
       lines.push(file.errors && file.errors.length
         ? `BLOCKED: ${file.errors.map(e => e.message).join('; ')}`
@@ -440,7 +475,7 @@ export function renderMarkdown({ oldRev, newRev, generated, files }) {
 function parseArgs(argv) {
   const args = {
     mod: process.cwd(),
-    clone: path.resolve(HERE, '../../../../game-data/Payday-2-LuaJIT-Complete'),
+    clone: defaultClone(HERE),
     old: 'a3180fc',
     new: 'e3a8b616',
     out: '',
@@ -490,6 +525,16 @@ function gitShow(clone, rev, file) {
   }
 }
 
+function walkLuaFiles(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === '.git' || entry.name === 'dev' || entry.name === 'dist') continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walkLuaFiles(full, out);
+    else if (entry.isFile() && entry.name.endsWith('.lua')) out.push(full);
+  }
+  return out;
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const modDir = path.resolve(args.mod);
@@ -531,13 +576,21 @@ function main() {
     }
   }
 
+  // Flag Lua files that are not referenced by mod.txt: they never load.
+  const hookedScripts = new Set(hooks.map(hook => String(hook.script_path || '')));
+  const knownFiles = new Set(files.map(file => file.file));
+  for (const absolute of walkLuaFiles(modDir)) {
+    const rel = path.relative(modDir, absolute).replace(/\\/g, '/');
+    if (hookedScripts.has(rel) || knownFiles.has(rel)) continue;
+    files.push({ file: rel, hook: '', rows: [], errors: [], totals: {}, unhooked: true });
+  }
+
   const markdown = renderMarkdown({
     oldRev: args.old,
     newRev: args.new,
     generated: new Date().toISOString(),
     files
   });
-
   const out = args.out ? path.resolve(args.out) : '';
   const jsonOut = args.json ? path.resolve(args.json) : '';
   if (out) {
@@ -551,11 +604,12 @@ function main() {
 
   const totalRows = files.reduce((sum, file) => sum + file.rows.length, 0);
   const totalErrors = files.reduce((sum, file) => sum + file.errors.length, 0);
+  const unhooked = files.filter(file => file.unhooked).length;
   const totals = {};
   for (const file of files) {
     for (const [key, value] of Object.entries(file.totals || {})) totals[key] = (totals[key] || 0) + value;
   }
-  console.log(`files=${files.length} functions=${totalRows} errors=${totalErrors}`);
+  console.log(`files=${files.length} functions=${totalRows} errors=${totalErrors} unhooked=${unhooked}`);
   console.log(Object.entries(totals).map(([k, v]) => `${k}=${v}`).join(' '));
   if (out) console.log(`wrote ${out}`);
   if (jsonOut) console.log(`wrote ${jsonOut}`);

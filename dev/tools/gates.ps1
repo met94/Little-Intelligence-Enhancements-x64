@@ -25,6 +25,13 @@ function Add-Section([string]$Title, [string]$Body, [bool]$Ok) {
     if (-not $Ok) { $script:failed = $true }
 }
 
+if (-not (Test-Path -LiteralPath $Luajit)) {
+    Add-Section 'LuaJIT toolchain' ("Missing: " + $Luajit) $false
+    $lines | Set-Content -LiteralPath $Report -Encoding utf8
+    Write-Host ("wrote " + $Report)
+    exit 1
+}
+
 # Node tests
 $testFiles = @(Get-ChildItem (Join-Path $RepoRoot 'dev\tools\test') -Filter '*.test.mjs' | Select-Object -ExpandProperty FullName)
 $nodeOut = & node --test $testFiles 2>&1 | Out-String
@@ -55,8 +62,18 @@ $ledgerOk = $LASTEXITCODE -eq 0
 Add-Section 'Function ledger' $ledgerOut.Trim() $ledgerOk
 
 $auditOut = & node (Join-Path $RepoRoot 'dev\tools\api-audit.mjs') --mod $RepoRoot --out (Join-Path $ReportDir 'api-audit.md') --json (Join-Path $ReportDir 'api-audit.json') 2>&1 | Out-String
-$auditOk = $LASTEXITCODE -eq 0
-Add-Section 'API audit' $auditOut.Trim() $auditOk
+$baselineFile = Join-Path $ReportDir 'api-audit-baseline.txt'
+$auditErrors = if ($auditOut -match 'errors=(\d+)') { [int]$matches[1] } else { 999999 }
+$hooksOk = if ($auditOut -match 'hooks=(\d+)/(\d+)') { [int]$matches[1] } else { 0 }
+$hooksTotal = if ($auditOut -match 'hooks=(\d+)/(\d+)') { [int]$matches[2] } else { 0 }
+$baseline = if (Test-Path -LiteralPath $baselineFile) { [int](Get-Content -LiteralPath $baselineFile -Raw) } else { $null }
+if ($null -eq $baseline) {
+    Set-Content -LiteralPath $baselineFile -Value $auditErrors -Encoding utf8
+    $baseline = $auditErrors
+}
+$auditOk = ($hooksOk -eq $hooksTotal) -and ($auditErrors -le $baseline)
+$auditBody = $auditOut.Trim() + "`nBaseline errors: $baseline (current: $auditErrors)"
+Add-Section 'API audit' $auditBody $auditOk
 
 $lines | Set-Content -LiteralPath $Report -Encoding utf8
 Write-Host ("wrote " + $Report)

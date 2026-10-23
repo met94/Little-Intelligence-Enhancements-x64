@@ -1,17 +1,17 @@
 ﻿# LIES 248.2 static gates
 
-Generated: 2026-10-23 16:37:31Z
+Generated: 2026-10-23 16:56:23Z
 
 ## Node tool tests
 
 Result: PASS
 
-Γä╣ pass 30
+Γä╣ pass 42
 Γä╣ fail 0
 Γä╣ cancelled 0
 Γä╣ skipped 0
 Γä╣ todo 0
-Γä╣ duration_ms 120.2366
+Γä╣ duration_ms 123.9071
 
 ## Test-harness parser
 
@@ -30,8 +30,8 @@ Failures: 0
 
 Result: PASS
 
-files=68 functions=509 errors=0
-MOD_ONLY=183 LIES_EDIT_CLEAN=287 LIES_EDIT_VANILLA_CHANGED=34 VANISHED_IN_NEW=2 SAME_AS_OLD_VANILLA_LOCAL=1 SAME_AS_OLD_VANILLA=2
+files=71 functions=548 errors=0 unhooked=3
+MOD_ONLY=183 MOD_ONLY_HOOK=39 LIES_EDIT_CLEAN=287 LIES_EDIT_VANILLA_CHANGED=34 VANISHED_IN_NEW=2 SAME_AS_OLD_VANILLA_LOCAL=1 SAME_AS_OLD_VANILLA=2
 wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-port-248\dev\port-248-ledger.md
 wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-port-248\dev\reports\port-248-ledger.json
 
@@ -39,5 +39,6 @@ wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-port-248\dev\reports\port-248
 
 Result: PASS
 
-hooks=68/68 errors=51 review=156
+hooks=68/68 methods=44/44 errors=50 review=154
+Baseline errors: 50 (current: 50)
 

@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { defaultClone } from './workspace.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_SYMBOLS_PATH = path.join(HERE, 'removed-symbols.json');
@@ -19,20 +20,82 @@ export function loadSymbols(file = DEFAULT_SYMBOLS_PATH) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-// Return the part of a line before a Lua line comment, ignoring -- inside strings.
-function codePart(line) {
-  let quote = null;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (quote) {
-      if (ch === '\\') { i++; continue; }
-      if (ch === quote) quote = null;
+export function extractHookDeclarations(source) {
+  const declarations = [];
+  const pattern = /Hooks\s*:\s*(PostHook|PreHook)\s*\(\s*([A-Za-z_][\w.]*)\s*,\s*(['"])([^'"]+)\3\s*,\s*(['"])([^'"]+)\5/g;
+  let match;
+  while ((match = pattern.exec(source)) !== null) {
+    declarations.push({
+      kind: match[1],
+      className: match[2],
+      method: match[4],
+      id: match[6],
+      line: source.slice(0, match.index).split('\n').length
+    });
+  }
+  return declarations;
+}
+
+// Replace comments and string contents with spaces while preserving newlines.
+// Keeps line numbers stable and prevents symbols inside comments/strings from
+// producing false positives.
+function maskLua(source) {
+  let out = '';
+  let i = 0;
+  const n = source.length;
+  const blank = text => text.replace(/[^\n]/g, ' ');
+
+  while (i < n) {
+    const c = source[i];
+    const c2 = source[i + 1];
+
+    if (c === '-' && c2 === '-') {
+      const long = /^--(\[(=*)\[)/.exec(source.slice(i));
+      if (long) {
+        const close = ']' + long[2] + ']';
+        const end = source.indexOf(close, i + long[0].length);
+        const stop = end === -1 ? n : end + close.length;
+        out += blank(source.slice(i, stop));
+        i = stop;
+      } else {
+        const end = source.indexOf('\n', i + 2);
+        const stop = end === -1 ? n : end;
+        out += blank(source.slice(i, stop));
+        i = stop;
+      }
       continue;
     }
-    if (ch === '"' || ch === "'") { quote = ch; continue; }
-    if (ch === '-' && line[i + 1] === '-') return line.slice(0, i);
+
+    if (c === '"' || c === "'") {
+      const quote = c;
+      const start = i;
+      i++;
+      while (i < n) {
+        if (source[i] === '\\') { i += 2; continue; }
+        if (source[i] === quote) { i++; break; }
+        i++;
+      }
+      out += blank(source.slice(start, i));
+      continue;
+    }
+
+    if (c === '[') {
+      const long = /^\[(=*)\[/.exec(source.slice(i));
+      if (long) {
+        const close = ']' + long[1] + ']';
+        const end = source.indexOf(close, i + long[0].length);
+        const stop = end === -1 ? n : end + close.length;
+        out += blank(source.slice(i, stop));
+        i = stop;
+        continue;
+      }
+    }
+
+    out += c;
+    i++;
   }
-  return line;
+
+  return out;
 }
 
 // True when symbol occurs as a whole identifier/expression, not inside a longer name.
@@ -51,13 +114,14 @@ function containsSymbol(code, symbol) {
 
 export function auditText(source, { file, symbols }) {
   const findings = [];
-  const lines = source.split(/\r?\n/);
+  const maskedLines = maskLua(source).split(/\r?\n/);
+  const originalLines = source.split(/\r?\n/);
   // Longest first so _room_doors suppresses the _rooms substring on the same line.
   const ordered = [...symbols].sort((a, b) => b.symbol.length - a.symbol.length);
 
-  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-    const line = lines[lineIndex];
-    const code = codePart(line);
+  for (let lineIndex = 0; lineIndex < maskedLines.length; lineIndex++) {
+    const line = maskedLines[lineIndex];
+    const code = line;
     if (!code.trim()) continue;
     const matched = [];
     for (const entry of ordered) {
@@ -70,7 +134,7 @@ export function auditText(source, { file, symbols }) {
         symbol: entry.symbol,
         severity: entry.severity,
         reason: entry.reason,
-        text: line.trim().slice(0, 200)
+        text: (originalLines[lineIndex] || line).trim().slice(0, 200)
       });
     }
   }
@@ -78,10 +142,12 @@ export function auditText(source, { file, symbols }) {
   return findings;
 }
 
-export function renderReport({ targetRev, hookChecks, findings }) {
+export function renderReport({ targetRev, hookChecks, hookMethodChecks, findings }) {
   const errors = findings.filter(item => item.severity === 'error');
   const reviews = findings.filter(item => item.severity === 'review');
   const badHooks = hookChecks.filter(item => !item.ok);
+  const methodChecks = hookMethodChecks || [];
+  const badMethods = methodChecks.filter(item => !item.ok);
 
   const lines = [];
   lines.push('# LIES 248.2 API audit');
@@ -89,6 +155,7 @@ export function renderReport({ targetRev, hookChecks, findings }) {
   lines.push(`Target: \`${targetRev}\``);
   lines.push('');
   lines.push(`- hooks: ${hookChecks.length - badHooks.length}/${hookChecks.length} ok`);
+  lines.push(`- method checks: ${methodChecks.length - badMethods.length}/${methodChecks.length} ok`);
   lines.push(`- errors: ${errors.length}`);
   lines.push(`- review: ${reviews.length}`);
   lines.push('');
@@ -101,6 +168,21 @@ export function renderReport({ targetRev, hookChecks, findings }) {
     lines.push(`| ${check.ok ? 'ok' : 'FAIL'} | \`${check.hook}\` | \`${check.file}\` | ${check.reason || ''} |`);
   }
   lines.push('');
+
+  lines.push('## Hook method checks');
+  lines.push('');
+  if (!methodChecks.length) {
+    lines.push('None.');
+    lines.push('');
+  } else {
+    lines.push('| status | hook | class.method | id |');
+    lines.push('|---|---|---|---|');
+    for (const check of methodChecks) {
+      const status = !check.ok ? 'FAIL' : (check.inherited ? 'ok (base)' : 'ok');
+      lines.push(`| ${status} | ${check.kind || ''} | \`${check.className}.${check.method}\` | \`${check.id}\` |`);
+    }
+    lines.push('');
+  }
 
   for (const [title, items] of [['Errors', errors], ['Review', reviews]]) {
     lines.push(`## ${title}`);
@@ -152,6 +234,7 @@ export function auditMod({ modDir, cloneDir, targetRev, symbols }) {
   const hooks = Array.isArray(modTxt.hooks) ? modTxt.hooks : [];
   const hookChecks = [];
   const findings = [];
+  const luaFiles = walkLua(modDir);
 
   for (const hook of hooks) {
     const hookId = String(hook.hook_id || '');
@@ -171,20 +254,75 @@ export function auditMod({ modDir, cloneDir, targetRev, symbols }) {
 
   // Also scan Lua files that are not hooked directly (helpers, menu files).
   const hooked = new Set(hooks.map(hook => String(hook.script_path || '')));
-  for (const file of walkLua(modDir)) {
+  for (const file of luaFiles) {
     const rel = path.relative(modDir, file).replace(/\\/g, '/');
     if (hooked.has(rel)) continue;
     findings.push(...auditText(fs.readFileSync(file, 'utf8'), { file: rel, symbols }));
   }
 
+  // Verify every Hooks:PostHook/PreHook method exists at the target revision.
+  const methodCache = new Map();
+  const methodExists = (className, method) => {
+    const key = `${className}.${method}`;
+    if (methodCache.has(key)) return methodCache.get(key);
+    const exactPatterns = [
+      `function ${className}:${method}`,
+      `function ${className}.${method}`,
+      `${className}.${method} = function`
+    ];
+    let result = { ok: false, inherited: false };
+    for (const pattern of exactPatterns) {
+      const hit = spawnSync('git', ['-C', cloneDir, 'grep', '-n', '--fixed-strings', pattern, targetRev, '--', '*.lua'], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore']
+      });
+      if (hit.status === 0) { result = { ok: true, inherited: false }; break; }
+    }
+    if (!result.ok) {
+      const escaped = method.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const inheritedPattern = `function [A-Za-z0-9_.]+[:.]${escaped}\\s*\\(`;
+      const hit = spawnSync('git', ['-C', cloneDir, 'grep', '-n', '-E', inheritedPattern, targetRev, '--', '*.lua'], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore']
+      });
+      if (hit.status === 0) result = { ok: true, inherited: true };
+    }
+    methodCache.set(key, result);
+    return result;
+  };
+
+  const declarations = new Map();
+  for (const file of luaFiles) {
+    const rel = path.relative(modDir, file).replace(/\\/g, '/');
+    const source = fs.readFileSync(file, 'utf8');
+    for (const declaration of extractHookDeclarations(source)) {
+      const key = `${declaration.className}.${declaration.method}:${declaration.id}`;
+      if (!declarations.has(key)) declarations.set(key, { ...declaration, file: rel });
+    }
+  }
+
+  const hookMethodChecks = [];
+  for (const declaration of declarations.values()) {
+    const check = methodExists(declaration.className, declaration.method);
+    hookMethodChecks.push({
+      kind: declaration.kind,
+      className: declaration.className,
+      method: declaration.method,
+      id: declaration.id,
+      file: declaration.file,
+      ok: check.ok,
+      inherited: check.inherited
+    });
+  }
+
   findings.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.symbol.localeCompare(b.symbol));
-  return { targetRev, hookChecks, findings };
+  return { targetRev, hookChecks, hookMethodChecks, findings };
 }
 
 function parseArgs(argv) {
   const args = {
     mod: process.cwd(),
-    clone: path.resolve(HERE, '../../../../game-data/Payday-2-LuaJIT-Complete'),
+    clone: defaultClone(HERE),
     new: 'e3a8b616',
     out: '',
     json: '',
@@ -236,8 +374,9 @@ function main() {
   const errors = report.findings.filter(item => item.severity === 'error').length;
   const reviews = report.findings.filter(item => item.severity === 'review').length;
   const badHooks = report.hookChecks.filter(item => !item.ok).length;
-  console.log(`hooks=${report.hookChecks.length - badHooks}/${report.hookChecks.length} errors=${errors} review=${reviews}`);
-  if (args.strict && (errors || badHooks)) process.exitCode = 1;
+  const badMethods = report.hookMethodChecks.filter(item => !item.ok).length;
+  console.log(`hooks=${report.hookChecks.length - badHooks}/${report.hookChecks.length} methods=${report.hookMethodChecks.length - badMethods}/${report.hookMethodChecks.length} errors=${errors} review=${reviews}`);
+  if (args.strict && (errors || badHooks || badMethods)) process.exitCode = 1;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

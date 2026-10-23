@@ -17,15 +17,6 @@ if (Test-Path $Dest) {
 
 New-Item -ItemType Directory -Force $Dest | Out-Null
 
-$items = @('mod.txt', 'menumanager.lua', 'menunodegui.lua', 'logo.png', 'LICENSE', 'loc', 'lua', 'menu')
-foreach ($item in $items) {
-    $source = Join-Path $RepoRoot $item
-    if (-not (Test-Path -LiteralPath $source)) {
-        throw "Missing runtime item: $item"
-    }
-    Copy-Item -LiteralPath $source -Destination $Dest -Recurse -Force
-}
-
 $commit = (& git -C $RepoRoot rev-parse --short HEAD 2>$null)
 if (-not $commit) { $commit = 'unknown' }
 $markerText = @(
@@ -34,6 +25,15 @@ $markerText = @(
     ('built: ' + (Get-Date).ToString('u'))
 ) -join "`n"
 Set-Content -LiteralPath $Marker -Value $markerText -Encoding utf8
+
+$items = @('mod.txt', 'menumanager.lua', 'menunodegui.lua', 'logo.png', 'LICENSE', 'loc', 'lua', 'menu')
+foreach ($item in $items) {
+    $source = Join-Path $RepoRoot $item
+    if (-not (Test-Path -LiteralPath $source)) {
+        throw "Missing runtime item: $item"
+    }
+    Copy-Item -LiteralPath $source -Destination $Dest -Recurse -Force
+}
 
 Write-Host "built $Dest"
 Write-Host "commit: $commit"

@@ -97,6 +97,13 @@ test('local helper identical to old vanilla is kept, not deleted', () => {
   assert.equal(helper.category, 'SAME_AS_OLD_VANILLA_LOCAL');
 });
 
+test('Hooks:PostHook callbacks are ledger rows', () => {
+  const source = 'Hooks:PostHook(CopBrain, "post_init", "lies_post_init", function(self) return 1 end)';
+  const { rows } = classifySources(source, '', '');
+  assert.equal(rows[0].name, 'Hooks.PostHook:CopBrain.post_init:lies_post_init');
+  assert.equal(rows[0].category, 'MOD_ONLY_HOOK');
+});
+
 test('mod-only function is MOD_ONLY', () => {
   const old = 'function A:foo() return 1 end';
   const mod = 'function A:foo() return 1 end\nfunction A:extra() return 2 end';
@@ -140,6 +147,14 @@ test('parse failure is reported, not thrown', () => {
   assert.equal(rows.length, 0);
   assert.equal(errors.length, 1);
   assert.match(errors[0].message, /mod/i);
+});
+
+test('markdown flags unhooked files', () => {
+  const md = renderMarkdown({
+    oldRev: 'old', newRev: 'new', generated: 'now',
+    files: [{ file: 'lua/dead.lua', rows: [], totals: {}, unhooked: true }]
+  });
+  assert.match(md, /UNHOOKED FILE/);
 });
 
 test('markdown contains totals and one row per function', () => {

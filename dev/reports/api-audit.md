@@ -3,8 +3,9 @@
 Target: `e3a8b616`
 
 - hooks: 68/68 ok
-- errors: 51
-- review: 156
+- method checks: 44/44 ok
+- errors: 50
+- review: 154
 
 ## Hook checks
 
@@ -79,6 +80,55 @@ Target: `e3a8b616`
 | ok | `lib/units/equipment/sentry_gun/sentrygunbase` | `lua/equipment/sentry_gun/sentrygunbase.lua` |  |
 | ok | `core/lib/utils/dev/editor/coreworlddefinition` | `lua/managers/core/coreworlddefinition.lua` |  |
 
+## Hook method checks
+
+| status | hook | class.method | id |
+|---|---|---|---|
+| ok | PostHook | `CopBrain._reset_logic_data` | `lies_reset_logic_data` |
+| ok | PostHook | `CopBrain.set_spawn_entry` | `lies_accessentry` |
+| ok | PostHook | `CopBrain.convert_to_criminal` | `lies_convert_to_criminal` |
+| ok | PostHook | `CopBrain.clbk_death` | `lies_remove_sabo_outline` |
+| ok | PostHook | `CopBrain.set_group` | `lies_reset_weapons` |
+| ok | PostHook | `CopBrain.on_reload` | `lies_on_reload` |
+| ok | PostHook | `CopBrain.clbk_death` | `lies_clbk_death` |
+| ok | PostHook | `CopBrain._add_pathing_result` | `lies_pathing` |
+| ok | PostHook | `CopMovement._upd_actions` | `lies_actions` |
+| ok | PostHook | `CopSound.init` | `lies_init` |
+| ok | PostHook | `TankCopDamage.seq_clbk_vizor_shatter` | `lies_tankvisorbroken` |
+| ok | PostHook | `SentryGunBase.activate_as_module` | `lies_fix_turret_fuck` |
+| ok | PreHook | `GroupAIManager.set_state` | `lies_groupsetup` |
+| ok | PostHook | `GroupAIStateBase._clbk_switch_enemies_to_not_cool` | `lies_switch_tweaks_for_guards` |
+| ok | PostHook | `GroupAIStateBase.register_rescueable_hostage` | `lies_hrt_reg` |
+| ok | PostHook | `GroupAIStateBase.unregister_rescueable_hostage` | `lies_hrt_unreg` |
+| ok | PostHook | `GroupAIStateBase.on_enemy_unregistered` | `lies_unregister_boss` |
+| ok | PostHook | `GroupAIStateBase._remove_group_member` | `lies_frienddead` |
+| ok | PostHook | `GroupAIStateBesiege.init` | `lies_spawngroups` |
+| ok | PostHook | `GroupAIStateBesiege._check_spawn_timed_groups` | `lieshhtacs_checkspawnedgroups` |
+| ok | PostHook | `GroupAIStateBesiege._perform_group_spawning` | `lies_upd_group_early` |
+| ok (base) | PostHook | `GroupAIStateBesiege.on_criminal_nav_seg_change` | `lies_check_relocation_for_friendlies` |
+| ok | PostHook | `GroupAIStateBesiege._upd_groups` | `lies_group_dialogue` |
+| ok | PostHook | `GroupAIStateBesiege._upd_assault_task` | `lies_retire` |
+| ok | PostHook | `WorldDefinition.assign_unit_data` | `lies_fix_dumb_map_stuff` |
+| ok | PostHook | `ElementDifficulty.init` | `lies_alter_diff_values` |
+| ok | PostHook | `ElementSpawnCivilian._finalize_values` | `lies_finalize_values` |
+| ok | PostHook | `ElementSpawnCivilianGroup._finalize_values` | `lies_finalize_values` |
+| ok | PostHook | `ElementSpawnEnemyDummy._finalize_values` | `lies_hhtacs_elementcheck` |
+| ok | PostHook | `ElementSpawnEnemyGroup._finalize_values` | `lies_finalize_values` |
+| ok | PostHook | `ElementSpecialObjective._finalize_values` | `lies_send_navlink_element` |
+| ok | PostHook | `MissionScriptElement.on_executed` | `lies_nav_and_modify` |
+| ok | PostHook | `NavigationManager.update` | `lies_cover` |
+| ok | PostHook | `PlayerDriving.update` | `lies_fix_vehicle` |
+| ok | PostHook | `PlayerFatal.enter` | `lies_fix_revive` |
+| ok | PostHook | `Drill.on_sabotage_SO_completed` | `lies_drilljammedvoiceline` |
+| ok | PostHook | `Drill.clbk_sabotage_SO_verification` | `lies_tacs_drill` |
+| ok | PostHook | `Drill._unregister_sabotage_SO` | `lies_unregisterdrill` |
+| ok | PostHook | `TeamAIBrain.on_cool_state_changed` | `lies_swap` |
+| ok | PostHook | `AttentionTweakData.init` | `lies_fix_badaimobjs` |
+| ok | PostHook | `CharacterTweakData.init` | `lies_fix_nosup` |
+| ok | PostHook | `GroupAITweakData._init_chatter_data` | `lies_chatter` |
+| ok | PostHook | `LevelsTweakData.init` | `lies_fixed_ai_obj` |
+| ok (base) | PostHook | `MenuNodeGui._setup_item_rows` | `LIES_update` |
+
 ## Errors
 
 - `lua/coplogics/coplogictravel.lua:2002` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `local all_doors = managers.navigation._room_doors`
@@ -104,7 +154,6 @@ Target: `e3a8b616`
 - `lua/managers/enemymanager.lua:162` `_shield_disposal_id` — Timer-based disposal in 248.2. `local shield_disposal_id = self._shield_disposal_id`
 - `lua/managers/enemymanager.lua:166` `_shield_disposal_id` — Timer-based disposal in 248.2. `self._shield_disposal_id = shield_disposal_id`
 - `lua/managers/enemymanager.lua:169` `_fast_shield_disposal` — Removed in 247. `self._fast_shield_disposal = true`
-- `lua/managers/enemymanager.lua:171` `_upd_shield_disposal_fast` — Removed in 247. `self:add_delayed_clbk(shield_disposal_id, callback(self, self, "_upd_shield_disposal_fast"), t)`
 - `lua/managers/enemymanager.lua:175` `_fast_shield_disposal` — Removed in 247. `elseif not self._fast_shield_disposal and self:shield_limit() < nr_shields then`
 - `lua/managers/enemymanager.lua:176` `_fast_shield_disposal` — Removed in 247. `self._fast_shield_disposal = false`
 - `lua/managers/enemymanager.lua:194` `_shield_disposal_id` — Timer-based disposal in 248.2. `local shield_disposal_id = self._shield_disposal_id`
@@ -277,8 +326,6 @@ Target: `e3a8b616`
 - `lua/managers/navigationmanager.lua:1604` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `if not self._nav_segments[vis_group.seg].rooms then`
 - `lua/managers/navigationmanager.lua:1605` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `self._nav_segments[vis_group.seg].rooms = {}`
 - `lua/managers/navigationmanager.lua:1608` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `self._nav_segments[vis_group.seg].rooms[i_room] = self._rooms[i_room]`
-- `lua/managers/navigationmanager.lua:1615` `send_nav_field_to_engine` — Renamed _send_nav_field_to_engine(load_data); v5 data format. `Application:error("[NavigationManager:send_nav_field_to_engine] Navgraph needs to be rebuilt!")`
-- `lua/managers/navigationmanager.lua:1644` `send_nav_field_to_engine` — Renamed _send_nav_field_to_engine(load_data); v5 data format. `Application:error("[NavigationManager:send_nav_field_to_engine] Navgraph needs to be rebuilt!")`
 - `lua/managers/navigationmanager.lua:1709` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segments = self._nav_segments`
 - `lua/managers/navigationmanager.lua:1772` `_quad_field` — New engine surface; verify method/arg shapes. `if self._quad_field:is_nav_segment_blocked(i_seg, search_data.access_pos) then`
 - `lua/managers/navigationmanager.lua:1803` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_segs = self._nav_segments`

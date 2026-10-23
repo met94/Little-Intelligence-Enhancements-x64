@@ -170,8 +170,8 @@ function TH.force_assault()
 end
 
 function TH.dump()
-	if not LIES then
-		say('dump: LIES not loaded')
+	if not LIES or not LIES.settings then
+		say('dump: LIES settings unavailable')
 		return
 	end
 
