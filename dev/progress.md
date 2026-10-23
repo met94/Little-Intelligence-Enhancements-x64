@@ -30,6 +30,7 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Fix: ported the smoke/flash grenade door handling to v6 vectors (no `_room_doors`, handle `door.x` vs nav links) and added a v6 `NavigationManager:get_nav_segments_in_direction` helper (direct neighbours by dot product). Nil-guarded segment-area lookups in the two blockade loops. API audit errors 21 -> 20.
 - Smoke 5 (build `db45f63`): success. `!lies alarm`, waited 60 s, then shot a guard. State: `assault_active=true`, `groups=3->4`, `spawning=0`, `cops=12->11`, scheduler timestamp. SWAT arrived; guard death did not crash; `%LOCALAPPDATA%\PAYDAY 2\crash.txt` timestamp unchanged. Basic loud flow works.
 - Next: opt-in Nav-A test. Re-enable the custom LUA cover search branch (`lua_cover >= 2`) over vanilla `_covers`; leave default off. Harness `!lies setting lua_cover 2` calls `_change_funcs`, and `!lies cover` exercises the custom search.
+- Smoke 6 (build `1cd6baa`): success. `lua_cover=2`, custom LUA search ran (`mode=2`, seg 15/20), found cover, SWAT reached 16 cops / 7 groups / assault active, no crash; `crash.txt` unchanged. Nav-A custom search over vanilla v6 covers works.
 
 
 ## Rulings
