@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T18:39:40.111Z
+Generated: 2026-10-23T18:40:36.514Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -286,7 +286,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `GroupAIStateBesiege._chk_group_use_smoke_grenade` | 179 | 47 | 47 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._queue_police_upd_task` | 17 | 7 | 13 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 48 | 28 | 22 |  |
-| [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 16 | 18 | 20 |  |
+| [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 18 | 18 | 20 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire` | 101 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 90 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_assault` | 44 | 0 | 0 |  |

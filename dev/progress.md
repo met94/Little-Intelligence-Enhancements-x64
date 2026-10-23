@@ -34,6 +34,8 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Nav-B implemented behind `lua_cover >= 2`: delayed/sliced generation from nav segments, doorway seeds + engine sampler + wall fan, 90-unit spatial-hash dedupe, per-segment 16 / total 2048 caps, tracker ownership via `insert_cover`. Harness `!lies gen probe|run`. Spec: `dev/reports/nav-b-feasibility.md`. Gates pass; reviewer findings fixed (Path A door cache, per-segment cap, candidate budget, jitter, sample-fail counting, probe clamp).
 - Nav-B smoke: automatic pass on Jewelry Store inserted 95 covers (58 -> 272) across 33 segments in 1221 ms; `sample_fail=0`, `seg_mismatch=70`, `wall_fail=41`, `fwd_fail=32`; no crash; custom LUA search found a cover. Harness `gen` clamp used `math_clamp` (nil) — fixed to `math.clamp`.
 - Cleanup: removed temporary `[LIES-TRACE]` logs; removed 7 dead v5 functions (`find_segment_doors_with_nav_links`, `_draw_rooms_LIES`, `_draw_doors_LIES`, `_LIES_register_cover`, `send_nav_field_to_engine`, `_strip_nav_field_for_gameplay`, `CopLogicTravel.find_door_pos_nearest_to_next_nav_seg`). Tuned generation slices to 4 segments / 32 candidates / 0.1 s. API audit errors 20 -> 0.
+- Ported `GroupAIStateBesiege.force_end_assault_phase` to the 248.2 timestamp poke (no delayed-clbk reschedule).
+- Dossiers generated for the remaining core-AI/special/carry port functions; status/backlog in `dev/reports/port-status.md`.
 
 
 ## Rulings

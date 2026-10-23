@@ -1150,7 +1150,9 @@ function GroupAIStateBesiege:force_end_assault_phase(force_regroup)
 		if force_regroup then
 			task_data.force_regroup = true
 
-			managers.enemy:reschedule_delayed_clbk(GroupAIStateBesiege._upd_police_activity, self._t)
+			if self._police_upd_task_queued then
+				self._police_upd_task_queued = self._t + 0.1
+			end
 		end
 	end
 
