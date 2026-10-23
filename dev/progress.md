@@ -23,6 +23,9 @@ Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 - Smoke 2 (build `0e4709c`): no crash. Loaded `Jewelry Store`; harness reports `nav segments=40 missing_neighbours=0 doors(vector=0 numeric=0 links=555) covers=58 bad_covers=0`; cover probe found cover. `!lies assault` set assault mode, but no units spawned. Likely alarm not actually triggered; `set_assault_mode` alone is not a spawn trigger.
 - Ported `GroupAIStateBesiege:_queue_police_upd_task` to the 248.2 timestamp scheduler and removed the reschedule call from `_upd_police_activity`. This is the known 247 police-activity breakage. Harness gained `!lies alarm` and `!lies state`.
 - Smoke 3: use `!lies alarm`, then `!lies state` before/after 45 s. `state` reports server, police-called, weapons-hot, assault mode/task, scheduler value/type, groups, spawning, cops.
+- Smoke 3 result: no load crash. State before alarm: `is_server=true police_called=nil weapons_hot=nil assault_mode=false queued=10.0(number) groups=3 spawning=0 cops=5`. After alarm: `police_called=true weapons_hot=true assault_mode=true queued=18.0(number) groups=3 spawning=0 cops=5`. No SWAT yet. Crash occurred ~20 s later while shooting a guard.
+- Crash root cause from `%LOCALAPPDATA%\PAYDAY 2\crash.txt`: `enemymanager.lua:760: attempt to compare number with nil`, stack `chk_queue_disposal() @mods/LIES/lua/managers/enemymanager.lua:42` -> `add_delayed_clbk(..., t)` with nil `t`. LIES's v246 disposal overrides are incompatible with 248.2 timers.
+- Fix: removed LIES's EnemyManager overrides entirely; vanilla 248.2 timer-based disposal/task queue handles it. API audit errors drop 46 -> 21.
 
 
 ## Rulings

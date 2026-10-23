@@ -4,7 +4,7 @@ Target: `e3a8b616`
 
 - hooks: 68/68 ok
 - method checks: 44/44 ok
-- errors: 46
+- errors: 21
 - review: 154
 
 ## Hook checks
@@ -138,31 +138,6 @@ Target: `e3a8b616`
 - `lua/groupaistate/groupaistatebesiege.lua:4145` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `test_pos = managers.navigation._room_doors[door_id].center`
 - `lua/groupaistate/groupaistatebesiege.lua:4264` `get_nav_segments_in_direction` — Removed; use _quad_field/nav_segment_neighbours. `local get_dir_navsegs_f = nav_manager.get_nav_segments_in_direction`
 - `lua/groupaistate/groupaistatebesiege.lua:4306` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `test_pos = managers.navigation._room_doors[door_id].center`
-- `lua/managers/enemymanager.lua:18` `_corpse_disposal_id` — Timer-based disposal in 248.2. `local corpse_disposal_id = self._corpse_disposal_id`
-- `lua/managers/enemymanager.lua:21` `_corpse_disposal_id` — Timer-based disposal in 248.2. `self._corpse_disposal_id = nil`
-- `lua/managers/enemymanager.lua:32` `_corpse_disposal_id` — Timer-based disposal in 248.2. `local corpse_disposal_id = self._corpse_disposal_id`
-- `lua/managers/enemymanager.lua:40` `_corpse_disposal_id` — Timer-based disposal in 248.2. `self._corpse_disposal_id = corpse_disposal_id`
-- `lua/managers/enemymanager.lua:53` `_corpse_disposal_id` — Timer-based disposal in 248.2. `local corpse_disposal_id = self._corpse_disposal_id`
-- `lua/managers/enemymanager.lua:57` `_corpse_disposal_id` — Timer-based disposal in 248.2. `self._corpse_disposal_id = nil`
-- `lua/managers/enemymanager.lua:63` `_corpse_disposal_id` — Timer-based disposal in 248.2. `self._corpse_disposal_id = corpse_disposal_id`
-- `lua/managers/enemymanager.lua:92` `no_dispose` — Renamed to no_disposal. `if not corpse_data.no_dispose then`
-- `lua/managers/enemymanager.lua:95` `_corpse_disposal_id` — Timer-based disposal in 248.2. `local corpse_disposal_id = self._corpse_disposal_id`
-- `lua/managers/enemymanager.lua:98` `_corpse_disposal_id` — Timer-based disposal in 248.2. `self._corpse_disposal_id = nil`
-- `lua/managers/enemymanager.lua:130` `no_dispose` — Renamed to no_disposal. `if not corpse_data.no_dispose then`
-- `lua/managers/enemymanager.lua:133` `_corpse_disposal_id` — Timer-based disposal in 248.2. `local corpse_disposal_id = self._corpse_disposal_id`
-- `lua/managers/enemymanager.lua:136` `_corpse_disposal_id` — Timer-based disposal in 248.2. `self._corpse_disposal_id = nil`
-- `lua/managers/enemymanager.lua:162` `_shield_disposal_id` — Timer-based disposal in 248.2. `local shield_disposal_id = self._shield_disposal_id`
-- `lua/managers/enemymanager.lua:166` `_shield_disposal_id` — Timer-based disposal in 248.2. `self._shield_disposal_id = shield_disposal_id`
-- `lua/managers/enemymanager.lua:169` `_fast_shield_disposal` — Removed in 247. `self._fast_shield_disposal = true`
-- `lua/managers/enemymanager.lua:175` `_fast_shield_disposal` — Removed in 247. `elseif not self._fast_shield_disposal and self:shield_limit() < nr_shields then`
-- `lua/managers/enemymanager.lua:176` `_fast_shield_disposal` — Removed in 247. `self._fast_shield_disposal = false`
-- `lua/managers/enemymanager.lua:194` `_shield_disposal_id` — Timer-based disposal in 248.2. `local shield_disposal_id = self._shield_disposal_id`
-- `lua/managers/enemymanager.lua:201` `_shield_disposal_id` — Timer-based disposal in 248.2. `self._shield_disposal_id = nil`
-- `lua/managers/enemymanager.lua:202` `_fast_shield_disposal` — Removed in 247. `self._fast_shield_disposal = false`
-- `lua/managers/enemymanager.lua:205` `_fast_shield_disposal` — Removed in 247. `elseif self._fast_shield_disposal and nr_shields <= self:shield_limit() then`
-- `lua/managers/enemymanager.lua:206` `_fast_shield_disposal` — Removed in 247. `self._fast_shield_disposal = false`
-- `lua/managers/enemymanager.lua:341` `_shield_disposal_id` — Timer-based disposal in 248.2. `self:add_delayed_clbk(self._shield_disposal_id, callback(self, self, "_upd_shield_disposal"), delay)`
-- `lua/managers/enemymanager.lua:343` `_shield_disposal_id` — Timer-based disposal in 248.2. `self._shield_disposal_id = nil`
 - `lua/managers/navigationmanager.lua:113` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `local all_doors = self._room_doors`
 - `lua/managers/navigationmanager.lua:1601` `_rooms` — Removed at runtime in nav v6. `rooms = self._rooms`
 - `lua/managers/navigationmanager.lua:1605` `_room_doors` — Removed in nav v6; doors are position vectors in segment.neighbours. `send_data.doors = self._room_doors`

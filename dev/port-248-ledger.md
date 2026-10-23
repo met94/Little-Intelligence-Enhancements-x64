@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-23T16:23:41.968Z
+Generated: 2026-10-23T16:27:46.257Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -11,7 +11,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 
 | category | count |
 |---|---:|
-| LIES_EDIT_VANILLA_CHANGED | 34 |
+| LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 39 |
 | MOD_ONLY | 184 |
 | VANISHED_IN_NEW | 2 |
@@ -91,19 +91,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 
 ## lua/managers/enemymanager.lua
 
-| done | status | function | mod L | old L | new L | note |
-|---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `EnemyManager._execute_queued_task` | 26 | 11 | 11 | signature changed: (i) -> (i_task) |
-| [ ] | **PORT** | `EnemyManager._upd_shield_disposal` | 123 | 128 | 127 | signature changed: () -> (t) |
-| [ ] | **PORT** | `EnemyManager._update_queued_tasks` | 80 | 42 | 52 |  |
-| [ ] | **PORT** | `EnemyManager.chk_queue_disposal` | 14 | 14 | 16 |  |
-| [ ] | **PORT** | `EnemyManager.corpse_limit_changed_clbk` | 22 | 22 | 5 |  |
-| [ ] | **PORT** | `EnemyManager.on_civilian_destroyed` | 37 | 40 | 32 |  |
-| [ ] | **PORT** | `EnemyManager.on_enemy_destroyed` | 37 | 40 | 32 |  |
-| [ ] | **PORT** | `EnemyManager.register_shield` | 36 | 40 | 28 |  |
-| [ ] | **PORT** | `EnemyManager.set_corpse_disposal_enabled` | 19 | 21 | 16 |  |
-| [ ] | **PORT** | `EnemyManager.unqueue_task` | 19 | 16 | 14 |  |
-| [ ] | **PORT** | `EnemyManager.unregister_shield` | 40 | 44 | 16 |  |
+No function definitions (hook/overlay file).
 
 ## lua/managers/navigationmanager.lua
 
