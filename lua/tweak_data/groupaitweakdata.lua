@@ -4278,13 +4278,19 @@ function GroupAITweakData:_LIES_setup()
 		end
 	end
 
+	local skirmish_assault_groups
+
+	if managers.groupai and managers.groupai:state() and managers.skirmish and self.skirmish and self.skirmish.assault then
+		skirmish_assault_groups = self.skirmish.assault.groups
+	end
+
 	for group_id, group_info in pairs(self.enemy_spawn_groups) do
 		if not self.besiege.assault.groups[group_id] then
 			self.besiege.assault.groups[group_id] = {0, 0, 0}
 		end
 		
-		if not self.skirmish.assault.groups[group_id] then
-			self.besiege.assault.groups[group_id] = {0, 0, 0}
+		if skirmish_assault_groups and not skirmish_assault_groups[group_id] then
+			skirmish_assault_groups[group_id] = {0, 0, 0}
 		end
 		
 		if not self.besiege.recon.groups[group_id] then

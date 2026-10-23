@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-23T20:24:52.212Z",
+  "generated": "2026-10-23T20:34:44.011Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -434,7 +434,7 @@
         {
           "name": "GroupAITweakData._LIES_setup",
           "category": "MOD_ONLY",
-          "modLines": 4303,
+          "modLines": 4309,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "",
@@ -459,7 +459,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4843
+          "startLine": 4849
         },
         {
           "name": "GroupAITweakData._setup_hhtacs_cartel_compatibility",
@@ -474,7 +474,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4885
+          "startLine": 4891
         },
         {
           "name": "GroupAITweakData._setup_hhtacs_task_data",
@@ -489,7 +489,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4305
+          "startLine": 4311
         },
         {
           "name": "Hooks.PostHook:GroupAITweakData._init_chatter_data:lies_chatter",
@@ -504,7 +504,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 4475
+          "startLine": 4481
         }
       ],
       "errors": [],

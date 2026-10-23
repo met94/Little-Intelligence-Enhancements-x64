@@ -1480,7 +1480,7 @@ function GroupAIStateBesiege:on_objective_complete(unit, objective)
 			local u_data = self._police[u_key]
 
 			if u_data and u_data.assigned_area then
-				self:set_enemy_assigned(self._area_data[new_objective.nav_seg], u_key)
+				self:set_enemy_assigned(self:get_area_from_nav_seg_id(new_objective.nav_seg), u_key)
 			end
 		end
 	else
