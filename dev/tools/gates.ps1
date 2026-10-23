@@ -56,6 +56,26 @@ $compileBody = "Files: $($luaFiles.Count)`nFailures: $($compileFailures.Count)"
 if ($compileFailures.Count) { $compileBody += "`n" + ($compileFailures -join "`n") }
 Add-Section 'LuaJIT syntax (runtime files)' $compileBody ($compileFailures.Count -eq 0)
 
+# Free identifiers: every hook file against its game source.
+$freevarsTool = Join-Path $Workspace 'tools\lua-freevars.mjs'
+$cloneDir = Join-Path $Workspace 'game-data\Payday-2-LuaJIT-Complete'
+$modTxt = Get-Content (Join-Path $RepoRoot 'mod.txt') -Raw | ConvertFrom-Json
+$freevarFailures = @()
+$freevarChecked = 0
+foreach ($hook in $modTxt.hooks) {
+    $modFile = Join-Path $RepoRoot ($hook.script_path -replace '/', '\')
+    $gameFile = Join-Path $cloneDir ($hook.hook_id + '.lua')
+    if (-not (Test-Path -LiteralPath $modFile) -or -not (Test-Path -LiteralPath $gameFile)) { continue }
+    $freevarChecked++
+    $out = & node $freevarsTool $modFile --game $gameFile 2>&1 | Out-String
+    if ($out -notmatch 'no game-file locals missing') {
+        $freevarFailures += ($hook.script_path + ' :: ' + (($out.Trim() -split "`n" | Select-Object -Last 2) -join ' | '))
+    }
+}
+$freevarBody = "Files: $freevarChecked`nFindings: $($freevarFailures.Count)"
+if ($freevarFailures.Count) { $freevarBody += "`n" + ($freevarFailures -join "`n") }
+Add-Section 'Free identifiers (game-file locals)' $freevarBody ($freevarFailures.Count -eq 0)
+
 # Regenerate ledger + audit
 $ledgerOut = & node (Join-Path $RepoRoot 'dev\tools\fn-ledger.mjs') --mod $RepoRoot --out (Join-Path $ReportDir '..\port-248-ledger.md') --json (Join-Path $ReportDir 'port-248-ledger.json') 2>&1 | Out-String
 $ledgerOk = $LASTEXITCODE -eq 0

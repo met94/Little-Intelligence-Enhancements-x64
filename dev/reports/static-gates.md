@@ -1,6 +1,6 @@
 ﻿# LIES 248.2 static gates
 
-Generated: 2026-10-23 20:03:20Z
+Generated: 2026-10-23 20:04:06Z
 
 ## Node tool tests
 
@@ -11,7 +11,7 @@ Result: PASS
 Γä╣ cancelled 0
 Γä╣ skipped 0
 Γä╣ todo 0
-Γä╣ duration_ms 115.1656
+Γä╣ duration_ms 112.127
 
 ## Test-harness parser
 
@@ -25,6 +25,13 @@ Result: PASS
 
 Files: 71
 Failures: 0
+
+## Free identifiers (game-file locals)
+
+Result: PASS
+
+Files: 68
+Findings: 0
 
 ## Function ledger
 

@@ -34,6 +34,14 @@ Dossiers in `dev/reports/dossiers/`:
 
 Policy: port one function at a time; preserve LIES intent; use the dossier's `246.1 -> LIES` and `246.1 -> 248.2` diffs; run gates + `cavecrew-reviewer`; test in game before shipping default-on.
 
+## Decisions applied (static, no game test)
+
+- `set_nav_segment_state`: stringified `tostring(id)` keys; LIES cache invalidation kept.
+- `add_obstacle`: 248.2 nil guard + destroy listener; LIES cache invalidation kept.
+- `force_end_assault_phase`: 248.2 timestamp poke.
+- Keep LIES body (no edit): `CopLogicBase._upd_attention_obj_detection`, `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update`, `CopLogicIdle.damage_clbk` (optional `data.t = t`).
+- Merge pending (needs smoke test): `CopLogicAttack.is_available_for_assignment`, `CopLogicAttack.action_complete_clbk` (`math.rand` only), `ShieldLogicAttack.queued_update`, `CarryData._chk_register_steal_SO`, `TaserLogicAttack._chk_play_charge_weapon_sound`.
+
 ## Open — group AI / data / periphery
 
 - `GroupAIStateBase` and `GroupAIStateBesiege` remaining `LIES_EDIT_CLEAN` / `MOD_ONLY` functions: behavior audit, not API crashes.
