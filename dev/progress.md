@@ -45,6 +45,7 @@ Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions
 - Static merges applied: `CopLogicAttack.action_complete_clbk` (`math.rand`), `CopLogicAttack.is_available_for_assignment` (suppression gate), `CopLogicIdle.damage_clbk` (`data.t = t`), `TaserLogicAttack._chk_play_charge_weapon_sound` (vertical guard). These need a suppression/taser smoke.
 - Shield/Carry merges applied: `ShieldLogicAttack.queued_update` reservation split (70 radius kept) and `CarryData._chk_register_steal_SO` 248.2 guard/helper merge plus nil drop-point fall-through fix. Need shield/bag smoke.
 - Compatibility audit: NavFixes hard-conflicts (signature overwrite); LIES absorbed its two remaining nav guards but NavFixes must still be disabled. Keepers owns two idle functions; Useful Bots owns bot AI; pin Monkeepers to 99. Report: `dev/reports/compatibility.md`.
+- Core AI gap audit: AI-01 `_upd_aim` raw v6 doors fixed; AI-02 `find_segment_doors` raw nav-link positions fixed (vanilla phalanx crash route removed); AI-03 phalanx aliases deferred; AI-04 marshal downgrade documented; AI-05 no change; AI-06 latent. Report: `dev/reports/core-ai-gap-audit.md`.
 
 
 ## Rulings
