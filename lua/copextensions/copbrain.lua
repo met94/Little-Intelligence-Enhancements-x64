@@ -1,9 +1,5 @@
 CopBrain._logic_variants.marshal_marksman.attack = CopLogicAttack
 
-if LIES and LIES.LogCheck then
-	LIES:LogCheck("marshal marksman attack=CopLogicAttack")
-end
-
 CopBrain._logic_variants.triad_boss.attack = LIESBossLogicAttack
 CopBrain._logic_variants.deep_boss.attack = LIESDeepBossLogicAttack
 
@@ -19,6 +15,11 @@ CopBrain._logic_variants.mobster_boss = CopBrain._logic_variants.triad_boss
 CopBrain._logic_variants.snowman_boss = CopBrain._logic_variants.triad_boss
 
 function CopBrain:post_init()
+	if LIES and LIES.LogCheck and not LIES._check_marshal_logged then
+		LIES._check_marshal_logged = true
+		LIES:LogCheck("marshal marksman attack=CopLogicAttack")
+	end
+
 	self._logics = CopBrain._logic_variants[self._unit:base()._tweak_table]
 
 	self:_reset_logic_data()

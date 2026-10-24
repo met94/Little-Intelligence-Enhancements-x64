@@ -150,11 +150,11 @@ None.
 - `lua/civlogics/civilianlogicidle.lua:218` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, CivilianLogicIdle._upd_detection, data, data.t + delay)`
 - `lua/civlogics/civilianlogicsurrender.lua:67` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.outline_detection_task_key, CivilianLogicIdle._upd_outline_detection, data, data.t + 2)`
 - `lua/civlogics/civilianlogictravel.lua:24` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `return CopLogicTravel._get_pos_on_wall(managers.navigation._nav_segments[objective.nav_seg].pos, 700, nil, nil, nil, data.pos_rsrv_id)`
-- `lua/copextensions/copbrain.lua:876` `search_coarse` — Start/end validation added at 247. `return managers.navigation:search_coarse(params)`
-- `lua/copextensions/copbrain.lua:898` `search_pos_to_pos` — Delegates to _quad_field:detailed_search(params). `managers.navigation:search_pos_to_pos(params)`
-- `lua/copextensions/copbrain.lua:921` `search_pos_to_pos` — Delegates to _quad_field:detailed_search(params). `managers.navigation:search_pos_to_pos(params)`
-- `lua/copextensions/copbrain.lua:949` `search_pos_to_pos` — Delegates to _quad_field:detailed_search(params). `managers.navigation:search_pos_to_pos(params)`
-- `lua/copextensions/copbrain.lua:1372` `search_coarse` — Start/end validation added at 247. `managers.navigation:search_coarse(params)`
+- `lua/copextensions/copbrain.lua:877` `search_coarse` — Start/end validation added at 247. `return managers.navigation:search_coarse(params)`
+- `lua/copextensions/copbrain.lua:899` `search_pos_to_pos` — Delegates to _quad_field:detailed_search(params). `managers.navigation:search_pos_to_pos(params)`
+- `lua/copextensions/copbrain.lua:922` `search_pos_to_pos` — Delegates to _quad_field:detailed_search(params). `managers.navigation:search_pos_to_pos(params)`
+- `lua/copextensions/copbrain.lua:950` `search_pos_to_pos` — Delegates to _quad_field:detailed_search(params). `managers.navigation:search_pos_to_pos(params)`
+- `lua/copextensions/copbrain.lua:1373` `search_coarse` — Start/end validation added at 247. `managers.navigation:search_coarse(params)`
 - `lua/coplogics/boss/bosslogicattack.lua:163` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.update_queue_id, LIESBossLogicAttack.queued_update, data, data.t + delay, true)`
 - `lua/coplogics/boss/bosslogicattack.lua:938` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, LIESBossLogicAttack._upd_enemy_detection, data, data.t + delay, true)`
 - `lua/coplogics/coplogicarrest.lua:245` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.update_task_key, CopLogicArrest.queued_update, data, data.t + delay, data.important)`

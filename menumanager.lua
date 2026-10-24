@@ -212,10 +212,14 @@ if RequiredScript == "lib/managers/menumanager" then
 			return
 		end
 		
-		local received_data = json.decode(json_data)
+		local ok, received_data = pcall(json.decode, json_data)
+
+		if not ok or type(received_data) ~= "table" then
+			return
+		end
 		
 		for _, data in pairs(received_data) do
-			if data.version then
+			if data.ident == "LIES-AI-MOD" and data.version then
 				LIES.received_version = data.version
 				log("LIES: Received update data.")
 				break

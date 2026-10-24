@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T08:39:54.007Z
+Generated: 2026-10-24T08:46:35.252Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -34,7 +34,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.Load` | 11 | 0 | 0 |  |
 | [ ] | audit | `LIES.LogCheck` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.Save` | 8 | 0 | 0 |  |
-| [ ] | audit | `LIES.set_update_data` | 15 | 0 | 0 |  |
+| [ ] | audit | `LIES.set_update_data` | 19 | 0 | 0 |  |
 | [ ] | audit | `LIES.tprint` | 38 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 
@@ -418,7 +418,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopBrain.clbk_pathing_results` | 54 | 41 | 41 |  |
 | [ ] | keep | `CopBrain.on_suppressed` | 11 | 13 | 13 |  |
 | [ ] | keep | `CopBrain.on_team_set` | 10 | 5 | 5 |  |
-| [ ] | keep | `CopBrain.post_init` | 53 | 46 | 46 |  |
+| [ ] | keep | `CopBrain.post_init` | 58 | 46 | 46 |  |
 | [ ] | keep | `CopBrain.search_for_path` | 23 | 18 | 18 |  |
 | [ ] | keep | `CopBrain.search_for_path_from_pos` | 22 | 18 | 18 |  |
 | [ ] | keep | `CopBrain.search_for_path_to_cover` | 27 | 16 | 16 |  |
