@@ -85,10 +85,10 @@ Current evidence: 55 Node tests, 68/68 hooks, 50/50 hook methods, 0 API errors,
 - Version: `V8.57_x64`
 - Build: `dist\LIES` at `331406f`
 - Package: `dist\LIES-V8.57_x64.zip`
-- SHA-256: `F497CA2E06EA792FB3B06B0A7DCBDA76CACF61736A671DDAD9309B37179D592C`
+- SHA-256: `CB1195BBC2A276FCDFE32951E12F6236EF33BB7EC7053CCED062575A91E291AF`
 - Release page: `https://github.com/met94/Little-Intelligence-Enhancements-x64/releases/tag/V8.57_x64`
 - Auto-update feed: `https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json` (200; advertises `V8.57_x64`)
-- Published asset: `LIES-V8.57_x64.zip`, 308,204 bytes, matching SHA-256
+- Published asset: `LIES-V8.57_x64.zip`, 310,739 bytes, matching SHA-256; includes `README.md`
 - Final review: release diff reviewed; 3 release risks (missing remote, 404 feed decode, load-time diagnostic) fixed; static gates 55/55.
 
 ## Merge / workspace
