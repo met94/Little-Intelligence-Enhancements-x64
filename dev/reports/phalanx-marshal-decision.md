@@ -85,15 +85,39 @@ Read-only research. No runtime code changed for this document.
 - B. Re-alias after LIES load: apply LIES aim/damage/idle behaviour to
   VIP/minions. Needs a phalanx smoke and file-order audit.
 
-## Recommendation
+## Decisions taken
 
-- Keep solo phalanx for hhtacs, but document it.
-- Fix the respawn key to `spawn_chance.respawn_delay = 1200` only if 20-minute
-  respawn is intended; otherwise delete the line.
-- Try the marshal hybrid (`MarshalLogicAttack`) in a marshal heist; it is the
-  only option that keeps both LIES and marshal-specific logic.
-- Leave phalanx aliases vanilla for now; revisit only if phalanx aim/damage
-  feels wrong.
+- Solo phalanx: **keep LIES behaviour** (hhtacs parity). No code change.
+- Phalanx respawn: **move to `spawn_chance.respawn_delay`**. Applied:
+  `self.phalanx.spawn_chance.respawn_delay = 1200` on difficulty > 6.
+- Marshal: **keep LIES downgrade for now** (recommended; see intent below).
+  Revisit only if marshal marksmen visibly get stuck in non-walkable areas.
+- Phalanx aliases: **leave vanilla** (parity with the mod's base).
+
+## Marshal intent — not a bug
+
+Timeline:
+
+- LIES 6.23 replaced the whole `marshal_marksman` variant with `swat`
+  (`CopBrain._logic_variants.marshal_marksman = ...swat`).
+- LIES 7.39 changed that to explicitly set
+  `CopBrain._logic_variants.marshal_marksman.attack = CopLogicAttack`.
+- The mapping persists through V8.57.
+
+That is a deliberate, repeated design choice: LIES wants marshal marksmen to
+run its rewritten attack logic, not the vanilla `MarshalLogicAttack` subclass.
+It is not a typo.
+
+Why it is risky to simply restore the subclass: `MarshalLogicAttack.update`
+is a separate update loop with its own `_chk_exit_non_walkable_area` and
+queueing. Restoring it regains marshal-specific exit behavior but may bypass
+parts of LIES's attack update semantics. Conversely, keeping the downgrade
+gives marksmen full LIES attack behavior but loses the marshal-specific
+non-walkable-area exit, which can leave them stuck on weird geometry.
+
+Recommended path: keep the downgrade; if a marshal heist shows marksmen stuck
+in non-walkable areas, port only `_chk_exit_non_walkable_area` into LIES's
+attack update rather than swapping the whole subclass. That preserves both.
 
 ## Validation
 

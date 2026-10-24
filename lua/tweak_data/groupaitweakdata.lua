@@ -4467,7 +4467,7 @@ function GroupAITweakData:_setup_hhtacs_task_data(difficulty_index)
 		self.phalanx.max_soldier_groups = 6
 		self.phalanx.move_interval = 15
 		self.phalanx.check_spawn_intervall = 120
-		self.phalanx.respawn_delay = 1200
+		self.phalanx.spawn_chance.respawn_delay = 1200
 	end
 	
 	self.phalanx.vip.damage_reduction = {
