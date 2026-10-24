@@ -531,7 +531,7 @@ function ShieldLogicAttack.queued_update(data)
 
 						if not my_data._LIES_check_shield_set then
 							my_data._LIES_check_shield_set = true
-							log("[LIES-CHECK] shield reservation set unit=" .. tostring(unit:key()))
+							LIES:LogCheck("shield reservation set unit=" .. tostring(unit:key()))
 						end
 					else
 						data.brain:add_pos_rsrv("path", {
@@ -541,7 +541,7 @@ function ShieldLogicAttack.queued_update(data)
 
 						if not my_data._LIES_check_shield_fallback then
 							my_data._LIES_check_shield_fallback = true
-							log("[LIES-CHECK] shield reservation fallback unit=" .. tostring(unit:key()))
+							LIES:LogCheck("shield reservation fallback unit=" .. tostring(unit:key()))
 						end
 					end
 

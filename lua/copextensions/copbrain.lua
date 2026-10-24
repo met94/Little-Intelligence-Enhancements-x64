@@ -1,6 +1,8 @@
 CopBrain._logic_variants.marshal_marksman.attack = CopLogicAttack
 
-log("[LIES-CHECK] marshal marksman attack=CopLogicAttack")
+if LIES and LIES.LogCheck then
+	LIES:LogCheck("marshal marksman attack=CopLogicAttack")
+end
 
 CopBrain._logic_variants.triad_boss.attack = LIESBossLogicAttack
 CopBrain._logic_variants.deep_boss.attack = LIESDeepBossLogicAttack

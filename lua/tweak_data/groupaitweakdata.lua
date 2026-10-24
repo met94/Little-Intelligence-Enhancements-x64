@@ -16,7 +16,7 @@ function GroupAITweakData:_LIES_setup()
 		
 		self._LIES_fix = true
 
-		log(string.format("[LIES-CHECK] tweak setup branch=other-mod-owns-spawn-groups hhtacs=%s", tostring(LIES.settings.hhtacs)))
+		LIES:LogCheck(string.format("tweak setup branch=other-mod-owns-spawn-groups hhtacs=%s", tostring(LIES.settings.hhtacs)))
 
 		if LIES.settings.hhtacs then
 			local difficulty = Global.game_settings and Global.game_settings.difficulty or "normal"
@@ -4307,7 +4307,7 @@ function GroupAITweakData:_LIES_setup()
 	self.street = deep_clone(self.besiege)
 	self.safehouse = deep_clone(self.besiege)
 
-	log(string.format("[LIES-CHECK] tweak setup complete hhtacs=%s server=%s skirmish_groups=%s phalanx_respawn=%s", tostring(LIES.settings.hhtacs), tostring(Network and Network:is_server()), tostring(skirmish_assault_groups ~= nil), tostring(self.phalanx.spawn_chance and self.phalanx.spawn_chance.respawn_delay)))
+	LIES:LogCheck(string.format("tweak setup complete hhtacs=%s server=%s skirmish_groups=%s phalanx_respawn=%s", tostring(LIES.settings.hhtacs), tostring(Network and Network:is_server()), tostring(skirmish_assault_groups ~= nil), tostring(self.phalanx.spawn_chance and self.phalanx.spawn_chance.respawn_delay)))
 
 	self._LIES_fix = true
 end

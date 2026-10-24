@@ -1,7 +1,8 @@
 # LIES 248.2 — release readiness checklist
 
-Status: not ready to publish. Port is playable on the tested paths; release
-metadata and final regression are still open.
+Status: release candidate prepared for `V8.57_x64`. Port is playable on the
+tested paths; final branch review, push, and GitHub release are the remaining
+steps. Diagnostic logging is gated behind the Debug Logging option (default OFF).
 
 ## Metadata
 
@@ -9,38 +10,31 @@ metadata and final regression are still open.
 |---|---|---|
 | `mod.txt` name | `LIES` | Keep unchanged (dependency key). |
 | `mod.txt` hooks | 68, all targets exist at 248.2 | Verified by API audit. |
-| Version | `menumanager.lua` says `V8.57` | Bump at release; no version field in `mod.txt`. |
-| `changelog.txt` | **missing** | Create before publishing; newest first, `Revision N:` matching the version, end with `Player notes:`. |
-| `MENU_OPTIONS.md` | present | Update if option behaviour changes. |
+| Version | `V8.57_x64` in `menumanager.lua` and `mod.txt` | Set for release. |
+| `changelog.txt` | present, `Revision V8.57_x64` | Ships in the package. |
+| `MENU_OPTIONS.md` | present, Debug Logging documented | Ships in the package. |
 | License | `LICENSE` = AGPL-3.0 | Keep; publish modified source if distributing. |
-| Upstream remote | `origin` = original LIES repo | Keep for rebases; do not push without intent. |
+| Remotes | `origin` = upstream; `x64` = `met94/Little-Intelligence-Enhancements-x64` | Push release branch to `x64/main`. |
 
 ## Auto-updater
 
-`menumanager.lua` contains:
+`menumanager.lua` points at the fork:
 
 ```lua
-LIES.update_url = "https://raw.githubusercontent.com/fuglore/Little-Intelligence-Enhancements/auto-updates/autoupdate.json"
+LIES.update_url = "https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json"
 ```
 
-The upstream JSON currently advertises `V8.57`. A ported build with a higher
-version will not be overwritten by the prompt, but the updater still points at
-the original project.
-
-Before publishing:
-
-- repoint it to the fork's own `autoupdate.json`, or
-- disable the update check in the release build.
-
-Do not leave it pointing at upstream while shipping a modified build.
+The fork's `autoupdate.json` advertises `V8.57_x64`. The update prompt links to
+the GitHub releases page. Verify the raw URL returns the JSON after pushing
+`main`.
 
 ## Build contents
 
 `dev/build.ps1` packages:
 
 - `mod.txt`, `menumanager.lua`, `menunodegui.lua`, `logo.png`, `LICENSE`
-- `loc/`, `lua/`, `menu/`
-- excludes `dev/`, `dist/`, `.git/`
+- `loc/`, `lua/`, `menu/`, `changelog.txt`, `MENU_OPTIONS.md`
+- excludes `dev/`, `dist/`, `.git/`, `autoupdate.json` (served separately)
 
 `dist/LIES` is generated; never edit it by hand. The build marker
 `.lies-build` is written before copying so failed builds remain cleanable.
@@ -56,8 +50,8 @@ Do not leave it pointing at upstream while shipping a modified build.
 - function ledger regeneration
 - API audit (currently 0 errors)
 
-Current evidence: 68/68 hooks, 46/46 hook methods, 0 API errors, 68 freevar
-files / 0 findings.
+Current evidence: 55 Node tests, 68/68 hooks, 50/50 hook methods, 0 API errors,
+68 freevar files / 0 findings, 71/71 LuaJIT compile.
 
 ## Gameplay regression still required
 

@@ -1,0 +1,27 @@
+LIES — changelog
+
+Revision V8.57_x64 — 2026-10-24
+Port of LIES V8.57 to PAYDAY 2 248.2 (x64).
+
+- Updated the full LIES surface for game 248.2: 68 hooks, 71 runtime Lua files,
+  API errors 0, freevars clean.
+- Rebuilt navigation for v6: custom cover search, Nav-B cover generation,
+  v6 doors/coarse search, NavFixes guards absorbed.
+- Dropped the incompatible EnemyManager v246 disposal/task overrides; vanilla
+  248.2 timers are used.
+- Ported the 248.2 police scheduler, grenade-door handling, and
+  force-end-assault timestamp path.
+- Kept LIES detection/aim/taser/tank/idle bodies; merged suppression, dodge,
+  taser vertical, shield reservation, and CarryData guards.
+- HHTACS: phalanx solo behavior kept; respawn key fixed; spawn-search cleaned;
+  dead recon sweep removed; HRT/sabotage/recon/hostage group logic repaired.
+- Periphery fixes: camera line-of-sight, team-AI hold/revive guard, civilian
+  follow guard, drill tracker guard, mission obstacle init, difficulty lookup.
+- Diagnostics: `[LIES-CHECK]` events are available behind the new Debug
+  Logging option; default OFF.
+- Known deviations: Nav-B covers are visible only to LIES's Lua search;
+  NavFixes must not run with LIES; EnemyManager tuning is vanilla 248.2.
+
+Player notes: LIES now runs on the current 64-bit PAYDAY 2 update. Enemy AI,
+custom cover, HHTACS tactics, and phalanx should behave like the mod's intended
+design; normal play is quiet unless Debug Logging is enabled.

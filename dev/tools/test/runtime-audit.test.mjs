@@ -22,6 +22,18 @@ function luaFiles(dir) {
   });
 }
 
+test('LIES-CHECK diagnostics are gated by debug_log', () => {
+  const manager = fs.readFileSync(path.join(root, 'menumanager.lua'), 'utf8');
+  assert.match(manager, /debug_log = false/);
+  assert.match(manager, /function LIES:LogCheck/);
+
+  for (const file of luaFiles(path.join(root, 'lua'))) {
+    const source = fs.readFileSync(file, 'utf8');
+    assert.equal(source.includes('log("[LIES-CHECK]'), false, `${path.relative(root, file)} has a raw phalanx log`);
+    assert.equal(source.includes('log(string.format("[LIES-CHECK]'), false, `${path.relative(root, file)} has a raw formatted log`);
+  }
+});
+
 test('spawn search caps linear path distance with the linear max_dis', () => {
   const active = stripCommentedLines(besiege);
   assert.match(active, /\n\s*if not max_dis or my_dis < max_dis then\r?\n/);

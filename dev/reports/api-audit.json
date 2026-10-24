@@ -937,7 +937,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 874,
+      "line": 876,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -945,7 +945,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 896,
+      "line": 898,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -953,7 +953,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 919,
+      "line": 921,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -961,7 +961,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 947,
+      "line": 949,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -969,7 +969,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 1370,
+      "line": 1372,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",

@@ -456,12 +456,12 @@ function SecurityCamera:_detect_criminals_loud(t, criminals)
 
 							if not self._LIES_check_camera_reveal then
 								self._LIES_check_camera_reveal = true
-								log("[LIES-CHECK] camera LOS reveal camera=" .. tostring(self._unit:key()))
+								LIES:LogCheck("camera LOS reveal camera=" .. tostring(self._unit:key()))
 							end
 						end
 					elseif not self._LIES_check_camera_blocked then
 						self._LIES_check_camera_blocked = true
-						log("[LIES-CHECK] camera LOS blocked camera=" .. tostring(self._unit:key()))
+						LIES:LogCheck("camera LOS blocked camera=" .. tostring(self._unit:key()))
 					end
 				end
 			end

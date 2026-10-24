@@ -420,7 +420,7 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 		self._check_spawn_phalanx = self._check_spawn_phalanx_LIES
 		self._spawn_phalanx = self._spawn_phalanx_LIES
 
-		log("[LIES-CHECK] phalanx binding init hhtacs=true")
+		LIES:LogCheck("phalanx binding init hhtacs=true")
 
 		--checks for groups that have previously spawned to allow for certain scripted events to be overwritten based on it
 		Hooks:PostHook(GroupAIStateBesiege, "_check_spawn_timed_groups", "lieshhtacs_checkspawnedgroups", function(self, target_area, task_data)
@@ -467,18 +467,18 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 			if group.has_spawned then
 				if not self._LIES_check_phalanx_spawned then
 					self._LIES_check_phalanx_spawned = true
-					log(string.format("[LIES-CHECK] phalanx spawned units=%d", table.size(group.units)))
+					LIES:LogCheck(string.format("phalanx spawned units=%d", table.size(group.units)))
 				end
 			elseif self._LIES_check_phalanx_spawn_t and self._t - self._LIES_check_phalanx_spawn_t > 15 and not self._LIES_check_phalanx_pending then
 				self._LIES_check_phalanx_pending = true
-				log(string.format("[LIES-CHECK] phalanx pending after 15s units=%d", table.size(group.units)))
+				LIES:LogCheck(string.format("phalanx pending after 15s units=%d", table.size(group.units)))
 			end
 		end)
 
 		Hooks:PostHook(GroupAIStateBesiege, "phalanx_damage_reduction_enable", "lies_check_phalanx_buff_enable", function(self)
 			if LIES.settings.hhtacs then
 				local team = self:_get_law1_team()
-				log("[LIES-CHECK] phalanx buff enabled value=" .. tostring(team and team.damage_reduction))
+				LIES:LogCheck("phalanx buff enabled value=" .. tostring(team and team.damage_reduction))
 			end
 		end)
 		
@@ -511,7 +511,7 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 					if voiced or self._t >= deadline then
 						if not voiced and not group._LIES_check_retreat_expired then
 							group._LIES_check_retreat_expired = true
-							log("[LIES-CHECK] retreat announcement expired group=" .. tostring(group.id))
+							LIES:LogCheck("retreat announcement expired group=" .. tostring(group.id))
 						end
 
 						group.needs_announce_retreat = false
@@ -815,7 +815,7 @@ function GroupAIStateBesiege:_check_spawn_phalanx_LIES()
 
 	if self._LIES_check_phalanx_state ~= check_state then
 		self._LIES_check_phalanx_state = check_state
-		log("[LIES-CHECK] phalanx check " .. check_state)
+		LIES:LogCheck("phalanx check " .. check_state)
 	end
 
 	if self._phalanx_center_pos and self._task_data and self._task_data.assault.active and not self._phalanx_spawn_group and (self._task_data.assault.phase == "build" or self._task_data.assault.phase == "sustain") then
@@ -874,7 +874,7 @@ function GroupAIStateBesiege:_check_phalanx_damage_reduction_increase_LIES()
 
 				self:set_phalanx_damage_reduction_buff(dmg_reduct)
 
-				log(string.format("[LIES-CHECK] phalanx buff increased value=%.3f", dmg_reduct))
+				LIES:LogCheck(string.format("phalanx buff increased value=%.3f", dmg_reduct))
 
 				self._phalanx_damage_reduction_last_increase = last_increase
 			end
@@ -986,7 +986,7 @@ end
 function GroupAIStateBesiege:phalanx_damage_reduction_disable_LIES()
 	self:set_phalanx_damage_reduction_buff(-1)
 
-	log("[LIES-CHECK] phalanx buff disabled")
+	LIES:LogCheck("phalanx buff disabled")
 
 	self._phalanx_damage_reduction_last_increase = nil
 	self._phalanx_center_pos = self._phalanx_center_pos_old and mvector3.copy(self._phalanx_center_pos_old) or self._phalanx_center_pos
@@ -1248,7 +1248,7 @@ function GroupAIStateBesiege:_upd_hostage_task()
 		managers.enemy:add_delayed_clbk(self._hostage_upd_key, callback(self, self, "_upd_hostage_task"), self._t + 0.2)
 	elseif not self._LIES_check_hostage_drained then
 		self._LIES_check_hostage_drained = true
-		log("[LIES-CHECK] hostage task drained")
+		LIES:LogCheck("hostage task drained")
 	end
 end
 
@@ -2341,7 +2341,7 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 			elseif current_objective.tactic == "hrt" then
 				if not group._LIES_check_hrt_tactic then
 					group._LIES_check_hrt_tactic = true
-					log("[LIES-CHECK] hrt tactic active group=" .. tostring(group.id))
+					LIES:LogCheck("hrt tactic active group=" .. tostring(group.id))
 				end
 
 				if current_objective.going_for_hostages and self._rescueable_hostages then
@@ -2362,7 +2362,7 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 			elseif current_objective.tactic == "sabotage" then
 				if not group._LIES_check_sabotage_tactic then
 					group._LIES_check_sabotage_tactic = true
-					log("[LIES-CHECK] sabotage tactic active group=" .. tostring(group.id))
+					LIES:LogCheck("sabotage tactic active group=" .. tostring(group.id))
 				end
 
 				if current_objective.going_for_drill and self._jammable_drills then
@@ -3757,7 +3757,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 					if not self:is_nav_seg_safe(nav_point[1]) then
 						if not self._LIES_check_recon_truncated then
 							self._LIES_check_recon_truncated = true
-							log("[LIES-CHECK] recon path truncated before unsafe seg=" .. tostring(nav_point[1]))
+							LIES:LogCheck("recon path truncated before unsafe seg=" .. tostring(nav_point[1]))
 						end
 
 						for i = 0, #current_objective.coarse_path - forwardmost_i_nav_point do
@@ -4529,7 +4529,7 @@ function GroupAIStateBesiege:_choose_best_group(best_groups, total_weight)
 end
 
 function GroupAIStateBesiege:_spawn_phalanx_LIES()
-	log("[LIES-CHECK] phalanx spawn enter center=" .. tostring(self._phalanx_center_pos ~= nil))
+	LIES:LogCheck("phalanx spawn enter center=" .. tostring(self._phalanx_center_pos ~= nil))
 
 	if not self._phalanx_center_pos then
 		Application:error("self._phalanx_center_pos NOT SET!!!")
@@ -4562,7 +4562,7 @@ function GroupAIStateBesiege:_spawn_phalanx_LIES()
 		return
 	end
 
-	log(string.format("[LIES-CHECK] phalanx spawn group type=%s pts=%d area=%s", tostring(spawn_group_type), #spawn_group.spawn_pts, tostring(phalanx_area.id)))
+	LIES:LogCheck(string.format("phalanx spawn group type=%s pts=%d area=%s", tostring(spawn_group_type), #spawn_group.spawn_pts, tostring(phalanx_area.id)))
 
 	if spawn_group.spawn_pts[1] and spawn_group.spawn_pts[1].pos then
 		local spawn_pos = spawn_group.spawn_pts[1].pos
@@ -4585,13 +4585,13 @@ function GroupAIStateBesiege:_spawn_phalanx_LIES()
 				self._LIES_check_phalanx_spawned = nil
 				self._LIES_check_phalanx_pending = nil
 
-				log(string.format("[LIES-CHECK] phalanx group created units=%d", table.size(self._phalanx_spawn_group.units)))
+				LIES:LogCheck(string.format("phalanx group created units=%d", table.size(self._phalanx_spawn_group.units)))
 
 				self:set_assault_endless(true)
 				managers.game_play_central:announcer_say("cpa_a02_01")
 				managers.network:session():send_to_peers_synched("group_ai_event", self:get_sync_event_id("phalanx_spawned"), 0)
 			else
-				log("[LIES-CHECK] phalanx spawn failed: no group")
+				LIES:LogCheck("phalanx spawn failed: no group")
 			end
 		end
 	end
@@ -4776,13 +4776,13 @@ Hooks:PostHook(GroupAIStateBesiege, "update", "lies_check_phalanx_binding", func
 
 		if not self._LIES_check_phalanx_binding_repaired then
 			self._LIES_check_phalanx_binding_repaired = true
-			log("[LIES-CHECK] phalanx binding repaired on update")
+			LIES:LogCheck("phalanx binding repaired on update")
 		end
 	end
 end)
 
 Hooks:PostHook(GroupAIStateBase, "sync_event", "lies_check_phalanx_sync", function(self, event_id, blame_id)
 	if self.EVENT_SYNC and self.EVENT_SYNC[event_id] == "phalanx_spawned" then
-		log("[LIES-CHECK] phalanx sync event received server=" .. tostring(self._is_server))
+		LIES:LogCheck("phalanx sync event received server=" .. tostring(self._is_server))
 	end
 end)

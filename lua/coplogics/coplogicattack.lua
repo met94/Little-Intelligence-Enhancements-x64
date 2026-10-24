@@ -1133,7 +1133,7 @@ function CopLogicAttack._upd_aim(data, my_data)
 
 											if not LIES._check_door_watch_logged then
 												LIES._check_door_watch_logged = true
-												log("[LIES-CHECK] door watch raw position used")
+												LIES:LogCheck("door watch raw position used")
 											end
 											
 											break
@@ -2504,7 +2504,7 @@ function CopLogicAttack.is_available_for_assignment(data, new_objective)
 	if data.is_suppressed then
 		if not my_data._LIES_check_suppression_deny then
 			my_data._LIES_check_suppression_deny = true
-			log("[LIES-CHECK] suppression deny unit=" .. tostring(data.unit:base()._tweak_table))
+			LIES:LogCheck("suppression deny unit=" .. tostring(data.unit:base()._tweak_table))
 		end
 
 		return

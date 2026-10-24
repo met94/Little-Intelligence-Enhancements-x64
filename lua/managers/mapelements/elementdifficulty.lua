@@ -153,7 +153,7 @@ Hooks:PostHook(ElementDifficulty, "init", "lies_alter_diff_values", function(sel
 		if to_adjust[self._id] then --empty out the on executed table
 			self._values.on_executed = {}
 
-			log("[LIES-CHECK] difficulty on_executed cleared element=" .. tostring(self._id) .. " level=" .. tostring(Global.level_data and Global.level_data.level_id))
+			LIES:LogCheck("difficulty on_executed cleared element=" .. tostring(self._id) .. " level=" .. tostring(Global.level_data and Global.level_data.level_id))
 		end
 	end
 end)

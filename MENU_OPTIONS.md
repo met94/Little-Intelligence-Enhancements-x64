@@ -98,6 +98,12 @@ distance engagement starts. Not vanilla-accurate.
 Sacrifices some LIES-specific AI work for steadier frame times. Turn on if the
 mod causes stutter; OFF gives more responsive AI.
 
+## Debug Logging (`debug_log`)
+
+Writes `[LIES-CHECK]` diagnostic events to the PAYDAY 2 log. Default is OFF.
+Turn it on only while collecting a test log; normal play stays quiet. The
+option affects diagnostics, not AI behaviour.
+
 ## Legacy localization keys
 
 `loc/en.txt` also contains strings for `fixed_specialspawncaps`, `coplimit`

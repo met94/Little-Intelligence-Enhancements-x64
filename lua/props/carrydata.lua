@@ -23,7 +23,7 @@ function CarryData:_chk_register_steal_SO()
 	if pickup_area.enemy_loot_drop_points then
 		if not self._LIES_check_steal_skip_logged then
 			self._LIES_check_steal_skip_logged = true
-			log("[LIES-CHECK] bag steal SO skipped: enemy loot drop area unit=" .. tostring(self._unit:key()))
+			LIES:LogCheck("bag steal SO skipped: enemy loot drop area unit=" .. tostring(self._unit:key()))
 		end
 
 		return
@@ -45,7 +45,7 @@ function CarryData:_chk_register_steal_SO()
 
 		if not self._LIES_check_steal_retry_logged then
 			self._LIES_check_steal_retry_logged = true
-			log("[LIES-CHECK] bag steal SO deferred: no drop point unit=" .. tostring(self._unit:key()))
+			LIES:LogCheck("bag steal SO deferred: no drop point unit=" .. tostring(self._unit:key()))
 		end
 
 		return
@@ -131,6 +131,6 @@ function CarryData:_chk_register_steal_SO()
 
 	if not self._LIES_check_steal_registered_logged then
 		self._LIES_check_steal_registered_logged = true
-		log(string.format("[LIES-CHECK] bag steal SO registered unit=%s pickup_seg=%s drop_seg=%s group=%s", tostring(self._unit:key()), tostring(pickup_nav_seg), tostring(drop_nav_seg), tostring(self._AI_carry.SO_category)))
+		LIES:LogCheck(string.format("bag steal SO registered unit=%s pickup_seg=%s drop_seg=%s group=%s", tostring(self._unit:key()), tostring(pickup_nav_seg), tostring(drop_nav_seg), tostring(self._AI_carry.SO_category)))
 	end
 end

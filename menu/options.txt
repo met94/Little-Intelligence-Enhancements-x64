@@ -139,5 +139,13 @@
 			"callback" : "callback_lies_highperformance",
 			"value" : "highperformance"
 		},
+		{
+			"type" : "toggle",
+			"id" : "lies_debug_log",
+			"title" : "menu_lies_debug_log_title",
+			"description" : "menu_lies_debug_log_desc",
+			"callback" : "callback_lies_debug_log",
+			"value" : "debug_log"
+		},
 	]
 }

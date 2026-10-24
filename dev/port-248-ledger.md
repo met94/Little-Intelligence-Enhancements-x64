@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T08:17:59.472Z
+Generated: 2026-10-24T08:39:54.007Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,7 +13,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 24 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 189 |
+| MOD_ONLY | 190 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 2 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -32,6 +32,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.find_cover_in_nav_seg_3` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_near_pos_1` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.Load` | 11 | 0 | 0 |  |
+| [ ] | audit | `LIES.LogCheck` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.Save` | 8 | 0 | 0 |  |
 | [ ] | audit | `LIES.set_update_data` | 15 | 0 | 0 |  |
 | [ ] | audit | `LIES.tprint` | 38 | 0 | 0 |  |

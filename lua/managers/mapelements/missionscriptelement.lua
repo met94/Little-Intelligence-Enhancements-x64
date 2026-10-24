@@ -65,7 +65,7 @@ local nav_fixes_on_executed = {
 
 			if not disable_obstacles._obstacle_units or #disable_obstacles._obstacle_units == 0 then
 				disable_obstacles._obstacle_units = {}
-				log("[LIES-CHECK] mission obstacle list initialized element=" .. tostring(self._id))
+				LIES:LogCheck("mission obstacle list initialized element=" .. tostring(self._id))
 			end
 			
 			for i = 1, #nav_obstacle_info do

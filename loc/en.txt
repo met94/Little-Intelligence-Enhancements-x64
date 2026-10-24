@@ -72,4 +72,7 @@
 	
 	"menu_lies_highperformance_title" : "High Performance Mode",
 	"menu_lies_highperformance_desc" : "If your frames are dropping a lot, or you're getting stutters, try turning this on, it'll sacrifice some AI functionality unique to LIES in exchange for more consistent framerates. OFF has more responsive/fluid AI.",
+
+	"menu_lies_debug_log_title" : "Debug Logging",
+	"menu_lies_debug_log_desc" : "Writes [LIES-CHECK] diagnostic events to the PAYDAY 2 log. Leave OFF for normal play; turn ON only when collecting a test log.",
 }
