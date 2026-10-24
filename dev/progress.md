@@ -2,7 +2,7 @@
 
 Baseline: 246.1 (`a3180fc`). Target: 248.2 (`e3a8b616`). Mod: V8.57 (`4215a39`).
 
-Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions.md` (keep/merge per function), `dev/reports/port-drop-log.md` (dropped/removed functions and why), `dev/reports/nav-b-feasibility.md` (Nav-B design), `dev/reports/future-updates.md` (next game update).
+Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions.md` (keep/merge per function), `dev/reports/port-drop-log.md` (dropped/removed functions and why), `dev/reports/nav-b-feasibility.md` (Nav-B design), `dev/reports/future-updates.md` (next game update), `dev/reports/handoff-2026-10-24.md` (next-session handoff), `dev/reports/phalanx-marshal-decision.md` (open decisions).
 
 ## P0
 
