@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-24T05:12:05.277Z",
+  "generated": "2026-10-24T05:15:38.426Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -2634,7 +2634,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 4939
+          "startLine": 4947
         },
         {
           "name": "GroupAIStateBesiege._draw_enemy_activity",
@@ -2739,7 +2739,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4785
+          "startLine": 4793
         },
         {
           "name": "GroupAIStateBesiege._queue_police_upd_task",
@@ -2849,7 +2849,7 @@
         {
           "name": "GroupAIStateBesiege._spawn_phalanx_LIES",
           "category": "MOD_ONLY",
-          "modLines": 54,
+          "modLines": 62,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "",

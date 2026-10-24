@@ -4759,6 +4759,8 @@ function GroupAIStateBesiege:_spawn_phalanx_LIES()
 		return
 	end
 
+	log(string.format("[LIES] phalanx spawn: type=%s pts=%d area=%s", tostring(spawn_group_type), #spawn_group.spawn_pts, tostring(phalanx_area.id)))
+
 	if spawn_group.spawn_pts[1] and spawn_group.spawn_pts[1].pos then
 		local spawn_pos = spawn_group.spawn_pts[1].pos
 		local spawn_nav_seg = managers.navigation:get_nav_seg_from_pos(spawn_pos)
@@ -4775,9 +4777,15 @@ function GroupAIStateBesiege:_spawn_phalanx_LIES()
 
 			self._phalanx_spawn_group = self:_spawn_in_group(spawn_group, spawn_group_type, grp_objective, nil)
 
-			self:set_assault_endless(true)
-			managers.game_play_central:announcer_say("cpa_a02_01")
-			managers.network:session():send_to_peers_synched("group_ai_event", self:get_sync_event_id("phalanx_spawned"), 0)
+			log(string.format("[LIES] phalanx group=%s units=%d", tostring(self._phalanx_spawn_group ~= nil), self._phalanx_spawn_group and #self._phalanx_spawn_group.units or 0))
+
+			if self._phalanx_spawn_group then
+				self:set_assault_endless(true)
+				managers.game_play_central:announcer_say("cpa_a02_01")
+				managers.network:session():send_to_peers_synched("group_ai_event", self:get_sync_event_id("phalanx_spawned"), 0)
+			else
+				log("[LIES] phalanx spawn failed: _spawn_in_group returned nil")
+			end
 		end
 	end
 end
