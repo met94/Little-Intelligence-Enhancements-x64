@@ -108,7 +108,24 @@ Review trigger:
 | `lua/managers/mapelements/elementnavobstacle.lua` | 0 bytes, not hooked | Delete or implement when nav obstacles are revisited. |
 | `lua/player/states/playerfatal.lua` | 113 bytes, not hooked; contains a `PlayerFatal.enter` PostHook | Currently never loads. Decide whether to hook it or remove it. |
 
-## 6. Do not drop without review (kept LIES bodies)
+## 6. Dead recon-sweep subsystem — dropped (commit `9dec81a`)
+
+| Function | Why dropped | Replacement / impact |
+|---|---|---|
+| `GroupAIStateBesiege:_begin_recon_sweep_task` | No callers; `sweep_task` was never created. | Vanilla `_upd_recon_tasks` remains the only recon driver. No player impact. |
+| `GroupAIStateBesiege:_upd_recon_sweep_task` | Only caller of the sweep assignment helpers; never called itself. | Deleted with the sweep path. |
+| `GroupAIStateBesiege:_assign_enemy_group_to_recon_sweep` | Only reachable from `_upd_recon_sweep_task`. | Deleted; normal `_assign_enemy_group_to_recon` branch remains. |
+| `GroupAIStateBesiege:_assign_enemy_groups_to_recon_sweep` | Only called by `_upd_recon_sweep_task`. | Deleted. |
+| `GroupAIStateBesiege:_set_recon_sweep_objective_to_group` | Only called by the sweep helpers. | Deleted; vanilla recon objective flow remains. |
+
+Also removed the permanent `if self._task_data.recon.sweep_task then ...`
+fork in `_assign_enemy_group_to_recon`. Audit: `dev/reports/hhtacs-audit.md`
+H-05. Regression test: `dev/tools/test/runtime-audit.test.mjs`.
+
+Review trigger: only if recon sweep is deliberately reimplemented against the
+248.2 recon driver; do not restore the old dead copy without a caller.
+
+## 7. Do not drop without review (kept LIES bodies)
 
 These remain LIES implementations and are **not** drops:
 

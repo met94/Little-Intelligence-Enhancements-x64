@@ -47,6 +47,7 @@ Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions
 - Compatibility audit: NavFixes hard-conflicts (signature overwrite); LIES absorbed its two remaining nav guards but NavFixes must still be disabled. Keepers owns two idle functions; Useful Bots owns bot AI; pin Monkeepers to 99. Report: `dev/reports/compatibility.md`.
 - Core AI gap audit: AI-01 `_upd_aim` raw v6 doors fixed; AI-02 `find_segment_doors` raw nav-link positions fixed (vanilla phalanx crash route removed); AI-03 phalanx aliases deferred; AI-04 marshal downgrade documented; AI-05 no change; AI-06 latent. Report: `dev/reports/core-ai-gap-audit.md`.
 - HHTACS H-01/H-09 fixed. Phalanx decisions: keep solo behavior; move respawn key to `spawn_chance.respawn_delay`; leave phalanx aliases vanilla. Marshal mapping kept (intentional LIES behavior); revisit only if stuck.
+- HHTACS H-02/H-03/H-04/H-05 closed (`9dec81a`): hhtacs-only respawn key; phalanx spawn call dropped the unsupported 6th arg; `_find_spawn_group_near_area` enforces linear `max_dis` while keeping it as the weight scale; deleted the five-function dead recon-sweep subsystem and its fork. Regression tests: `dev/tools/test/runtime-audit.test.mjs`. Gates: 45 Node tests, 71/71 Lua compile, freevars 0, API errors 0.
 
 
 ## Rulings
@@ -58,6 +59,7 @@ Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions
 - Task 4: Hook-method checks fall back to any class defining the method; two inherited methods (`GroupAIStateBesiege.on_criminal_nav_seg_change`, `MenuNodeGui._setup_item_rows`) pass as `ok (base)`. Cost if wrong: a method removed from the concrete class but present on an unrelated class could pass; the report shows `ok (base)` for review.
 - Task 5: LIES-context errors are any Lua error in a LIES-hooked file after the LIES setup line. This is intentionally conservative; cost if wrong: an unrelated vanilla error in a hooked file can fail the smoke gate.
 - Task 7: API audit gate uses a recorded 50-error baseline; increases fail. Cost if wrong: a new error that replaces an old error without changing the count passes; the report still lists it for review.
+- H-04: `_find_spawn_group_near_area` compares the linear cached path distance to the linear `max_dis`, not vanilla's `max_dis * max_dis`. Vanilla's squared comparison is inert because the cached distance is linear; no current caller passes `max_dis`. Cost if wrong: a future caller gets a true cap rather than vanilla's effectively-unbounded one.
 
 ## Review fixes (P0)
 

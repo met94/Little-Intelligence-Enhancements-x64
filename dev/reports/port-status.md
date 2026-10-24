@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-10-23 (after Nav-B smoke + static cleanup).
+Last updated: 2026-10-24 (after HHTACS H-02/H-03/H-04/H-05 cleanup).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -13,8 +13,13 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
 - Nav-B: runtime cover generation on nav segments — verified; Jewelry Store 95 generated covers (58 -> 272), no crash.
 - EnemyManager v246 disposal overrides removed; vanilla timer disposal/task queue used.
 - Besiege police scheduler ported to 248.2 timestamps; smoke/flash grenade door handling ported; `force_end_assault_phase` timestamp poke ported.
-- Dead v5 nav functions removed. API audit: **0 errors**, 147 review.
-- Static gates: Node tests, LuaJIT syntax, ledger, API audit pass. `lua-freevars` clean on nav/besiege/travel.
+- Dead v5 nav functions removed. API audit: **0 errors**, 152 review.
+- HHTACS leftovers H-02/H-03/H-04/H-05 closed in `9dec81a`: hhtacs-only
+  `spawn_chance.respawn_delay`; five-argument phalanx spawn search; linear
+  `max_dis` cap; dead recon-sweep subsystem deleted. Regression tests:
+  `dev/tools/test/runtime-audit.test.mjs`.
+- Static gates: 45 Node tests, 71/71 LuaJIT syntax, 68/68 freevars, ledger,
+  API audit pass.
 
 ## Open — core AI (needs in-game testing)
 

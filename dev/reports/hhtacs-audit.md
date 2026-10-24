@@ -33,10 +33,10 @@ phalanx keys, dead recon-sweep subsystem, one skirmish metatable hazard).
 | ID | Severity | Symbol / location | 248.2 status | Impact | Action | Gate |
 |---|---|---|---|---|---|---|
 | H-01 | High (verify) | `GroupAITweakData:_LIES_setup` skirmish block, `groupaitweakdata.lua:1327`, `:4286-4287` | `tweak_data.group_ai.skirmish.assault` is metatable-backed (232.4 and 248.2 alike); `groups` calls `managers.skirmish:current_wave_number()` -> `GroupAIManager:state()` | First `set_state("empty")` (inside `GroupAIManager:init`) runs the PreHook with `state() == nil`; `math.clamp(nil, ...)` throws from `_LIES_setup`. If SuperBLT does not swallow it, the whole switch is aborted and no hhtacs runs. Second bug: line 4287 writes the **skirmish** slot into `besiege`. | Hoist `local skirmish = tweak_data.group_ai.skirmish`, guard `managers.skirmish` / `state()`, write `skirmish.assault.groups[...]`. | static + log |
-| H-02 | Medium | `_check_spawn_phalanx_LIES` (`besiege:763`), `_setup_hhtacs_task_data` `phalanx.respawn_delay` (`groupaitweakdata:4464`) | 248.2 `_check_spawn_phalanx` has `not Global.game_settings.single_player`; respawn delay lives in `phalanx.spawn_chance.respawn_delay` (300000 on DW+) | LIES re-enables phalanx in solo; the 1200 s `respawn_delay` LIES writes is never read, so the intended respawn cap is a no-op. | Keep/remove SP guard deliberately; move the value to `spawn_chance.respawn_delay` or delete. | smoke (phalanx) |
-| H-03 | Medium | `besiege:4754` `_spawn_phalanx_LIES` -> `_find_spawn_group_near_area(..., "phalanx")` | LIES helper takes 5 params; 248.2 takes 5 | 6th argument silently discarded. Any intended phalanx-specific spawn-point filter never applied. | Implement the filter or drop the argument. | static |
-| H-04 | Medium (latent) | `_find_spawn_group_near_area` (`besiege:4570`) | 248.2 squares/filters by `max_dis`; LIES ignores the parameter | Today all four call sites pass `nil`, so no visible change; any future caller silently loses distance capping. | Restore the `max_dis` filter. | static |
-| H-05 | Low | Recon sweep: `_begin_recon_sweep_task`, `_upd_recon_sweep_task`, `_assign_enemy_group_to_recon_sweep`, `_set_recon_sweep_objective_to_group`, `_assign_enemy_groups_to_recon_sweep` (`besiege:3612-3830`) | No caller anywhere in the tree; `_task_data.recon.sweep_task` is never created | Whole subsystem is dead; `_assign_enemy_group_to_recon` branch is permanently false. No player effect. | Delete, or wire a real trigger if sweep was wanted. | static |
+| H-02 | Medium | `_check_spawn_phalanx_LIES` (`besiege:763`), `_setup_hhtacs_task_data` `phalanx.respawn_delay` (`groupaitweakdata:4464`) | 248.2 `_check_spawn_phalanx` has `not Global.game_settings.single_player`; respawn delay lives in `phalanx.spawn_chance.respawn_delay` (300000 on DW+) | LIES re-enables phalanx in solo; the 1200 s `respawn_delay` LIES writes is never read, so the intended respawn cap is a no-op. | Resolved `9dec81a`: moved to `spawn_chance.respawn_delay` (hhtacs-only); solo guard kept intentionally. | smoke (phalanx) |
+| H-03 | Medium | `besiege:4754` `_spawn_phalanx_LIES` -> `_find_spawn_group_near_area(..., "phalanx")` | LIES helper takes 5 params; 248.2 takes 5 | 6th argument silently discarded. Any intended phalanx-specific spawn-point filter never applied. | Resolved `9dec81a`: argument dropped; helper remains 5-arg. | static |
+| H-04 | Medium (latent) | `_find_spawn_group_near_area` (`besiege:4570`) | 248.2 squares/filters by `max_dis`; LIES ignores the parameter | Today all call sites pass `nil`, so no visible change; any future caller silently loses distance capping. | Resolved `9dec81a`: linear `max_dis` cap restored; weighting keeps the unscaled value. | static |
+| H-05 | Low | Recon sweep: `_begin_recon_sweep_task`, `_upd_recon_sweep_task`, `_assign_enemy_group_to_recon_sweep`, `_set_recon_sweep_objective_to_group`, `_assign_enemy_groups_to_recon_sweep` (`besiege:3612-3830`) | No caller anywhere in the tree; `_task_data.recon.sweep_task` is never created | Whole subsystem is dead; `_assign_enemy_group_to_recon` branch is permanently false. No player effect. | Resolved `9dec81a`: deleted five functions and the sweep fork. | static |
 | H-06 | Low | `_setup_hhtacs_task_data` LIES-only keys (`groupaitweakdata:4389-4464`) | `max_smoke_grenades`, `phalanx.max_soldier_groups`, `phalanx.move_interval` do not exist in any game file (246/248) | Consumed only by LIES code; consistent. Not a break, but do not expect the game to honour them. | Document as LIES-private. | static |
 | H-07 | Low | `_LIES_setup:14` `enemy_spawn_groups["tac_swat_shotgun_rush"]` detection | Vanilla 246.1 and 248.2 expose only 13 spawn groups; `tac_swat_shotgun_rush` exists only in `besiege.assault.groups` weight tables | "Another mod already fixed spawn groups" detection now relies solely on `medic_M4`; the first half is always false. | Leave (works) or retarget to a group vanilla actually defines. | static |
 | H-08 | Low | `_check_spawn_timed_groups` hhtacs PostHook (`besiege:423-445`) | `_timed_groups[*].has_spawned` is a LIES-private field | Written, never read anywhere. Dead bookkeeping. | Delete or use. | static |
@@ -46,6 +46,24 @@ phalanx keys, dead recon-sweep subsystem, one skirmish metatable hazard).
 | H-12 | Info | `phalanx.vip.damage_reduction` override (`groupaitweakdata:4467`) | Vanilla 248.2: `{max .5, start .1, increase .05, interval 5}`; LIES: `{max .2, start .025, increase .025, interval 15}` | Intentional hhtacs tuning; every key is read by `_check_phalanx_damage_reduction_increase_LIES` / `phalanx_damage_reduction_enable`. | Keep. | smoke |
 
 Everything else in scope checked clean; see "Verified clean".
+
+## Resolution (2026-10-24, `9dec81a`)
+
+- **H-02:** respawn key now `phalanx.spawn_chance.respawn_delay = 1200`, only
+  when `LIES.settings.hhtacs` is on. Solo phalanx remains enabled deliberately.
+  Player: with hhtacs, a phalanx can return after roughly 20 minutes; with
+  hhtacs off, vanilla 248.2 pacing is unchanged.
+- **H-03/H-04:** the phalanx spawn call is five-argument; the helper enforces
+  `max_dis` as a **linear** cap and keeps the unscaled value as the weighting
+  scale. No current caller passes `max_dis`, so live behavior is unchanged.
+  Vanilla's squared comparison is latent-inert because the cached path distance
+  is linear; this port uses the intended cap instead.
+- **H-05:** deleted the five uncalled recon-sweep functions and the permanent
+  `sweep_task` fork. Vanilla `_upd_recon_tasks` remains the only recon driver.
+  Player: no change.
+- **Evidence:** `tools\gates.ps1` PASS (45 Node tests, 71/71 Lua compile,
+  freevars 0, API errors 0); source regression tests in
+  `dev/tools/test/runtime-audit.test.mjs`.
 
 ---
 
