@@ -89,7 +89,9 @@ Read-only research. No runtime code changed for this document.
 
 - Solo phalanx: **keep LIES behaviour** (hhtacs parity). No code change.
 - Phalanx respawn: **move to `spawn_chance.respawn_delay`**. Applied:
-  `self.phalanx.spawn_chance.respawn_delay = 1200` on difficulty > 6.
+  `self.phalanx.spawn_chance.respawn_delay = 1200` on difficulty > 6, **only when
+  hhtacs is enabled** (LIES's phalanx spawn functions are hhtacs-only). With
+  hhtacs off, vanilla 248.2 phalanx pacing is unchanged.
 - Marshal: **keep LIES downgrade** (decided). Fallback: if marksmen visibly
   get stuck in non-walkable areas, port only `_chk_exit_non_walkable_area` into
   LIES's attack update rather than swapping the whole subclass.

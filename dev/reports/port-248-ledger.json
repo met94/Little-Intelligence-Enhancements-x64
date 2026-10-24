@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-24T04:44:33.481Z",
+  "generated": "2026-10-24T05:12:05.277Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -459,7 +459,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4849
+          "startLine": 4852
         },
         {
           "name": "GroupAITweakData._setup_hhtacs_cartel_compatibility",
@@ -474,12 +474,12 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4891
+          "startLine": 4894
         },
         {
           "name": "GroupAITweakData._setup_hhtacs_task_data",
           "category": "MOD_ONLY",
-          "modLines": 169,
+          "modLines": 172,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "difficulty_index",
@@ -504,7 +504,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 4481
+          "startLine": 4484
         }
       ],
       "errors": [],

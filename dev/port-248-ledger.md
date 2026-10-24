@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T04:44:33.479Z
+Generated: 2026-10-24T05:12:05.274Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -81,7 +81,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `GroupAITweakData._LIES_setup` | 4309 | 0 | 0 |  |
 | [ ] | audit | `GroupAITweakData._setup_hhtacs_bo_compatibility` | 41 | 0 | 0 |  |
 | [ ] | audit | `GroupAITweakData._setup_hhtacs_cartel_compatibility` | 310 | 0 | 0 |  |
-| [ ] | audit | `GroupAITweakData._setup_hhtacs_task_data` | 169 | 0 | 0 |  |
+| [ ] | audit | `GroupAITweakData._setup_hhtacs_task_data` | 172 | 0 | 0 |  |
 
 ## lua/tweak_data/skirmishtweakdata.lua
 
