@@ -33,7 +33,7 @@ the GitHub releases page. Verify the raw URL returns the JSON after pushing
 `dev/build.ps1` packages:
 
 - `mod.txt`, `menumanager.lua`, `menunodegui.lua`, `logo.png`, `LICENSE`
-- `loc/`, `lua/`, `menu/`, `changelog.txt`, `MENU_OPTIONS.md`
+- `loc/`, `lua/`, `menu/`, `changelog.txt`, `MENU_OPTIONS.md`, `README.md`
 - excludes `dev/`, `dist/`, `.git/`, `autoupdate.json` (served separately)
 
 `dist/LIES` is generated; never edit it by hand. The build marker

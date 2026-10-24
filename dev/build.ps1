@@ -26,7 +26,7 @@ $markerText = @(
 ) -join "`n"
 Set-Content -LiteralPath $Marker -Value $markerText -Encoding utf8
 
-$items = @('mod.txt', 'menumanager.lua', 'menunodegui.lua', 'logo.png', 'LICENSE', 'loc', 'lua', 'menu', 'changelog.txt', 'MENU_OPTIONS.md')
+$items = @('mod.txt', 'menumanager.lua', 'menunodegui.lua', 'logo.png', 'LICENSE', 'loc', 'lua', 'menu', 'changelog.txt', 'MENU_OPTIONS.md', 'README.md')
 foreach ($item in $items) {
     $source = Join-Path $RepoRoot $item
     if (-not (Test-Path -LiteralPath $source)) {
