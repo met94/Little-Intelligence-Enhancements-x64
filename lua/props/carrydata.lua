@@ -1,24 +1,15 @@
 function CarryData:_chk_register_steal_SO()
-	if not self._link_body then
+	if not Network:is_server() or not self._link_body or not self._AI_carry then
 		return
 	end
 
-	if not self._has_body_activation_clbk then
-		local clbk = callback(self, self, "clbk_body_active_state")
-		self._has_body_activation_clbk = {
-			[self._link_body:key()] = clbk
-		}
+	self:_add_body_activation_clbk()
 
-		self._unit:add_body_activation_callback(clbk)
-		self._link_body:set_activate_tag(Idstring("bag_moving"))
-		self._link_body:set_deactivate_tag(Idstring("bag_still"))
-	end
-
-	if not Network:is_server() or self._steal_SO_data or self._linked_to or self._zipline_unit or self._link_body:active() or not managers.navigation:is_data_ready() then
+	if self._steal_SO_data or self._linked_to or self._zipline_unit then
 		return
 	end
 
-	if not self._AI_carry then
+	if self._link_body:active() or not managers.navigation:is_data_ready() then
 		return
 	end
 
@@ -30,6 +21,11 @@ function CarryData:_chk_register_steal_SO()
 	managers.navigation:destroy_nav_tracker(tracker_pickup)
 
 	if pickup_area.enemy_loot_drop_points then
+		if not self._LIES_check_steal_skip_logged then
+			self._LIES_check_steal_skip_logged = true
+			LIES:LogCheck("bag steal SO skipped: enemy loot drop area unit=" .. tostring(self._unit:key()))
+		end
+
 		return
 	end
 
@@ -40,10 +36,17 @@ function CarryData:_chk_register_steal_SO()
 		drop_pos = mvector3.copy(drop_point.pos)
 		drop_nav_seg = drop_point.nav_seg
 		drop_area = drop_point.area
-	elseif not self._register_steal_SO_clbk_id then
-		self._register_steal_SO_clbk_id = "carrydata_registerSO" .. tostring(self._unit:key())
+	else
+		if not self._register_steal_SO_clbk_id then
+			self._register_steal_SO_clbk_id = "carrydata_registerSO" .. tostring(self._unit:key())
 
-		managers.enemy:add_delayed_clbk(self._register_steal_SO_clbk_id, callback(self, self, "clbk_register_steal_SO"), TimerManager:game():time() + 10)
+			managers.enemy:add_delayed_clbk(self._register_steal_SO_clbk_id, callback(self, self, "clbk_register_steal_SO"), TimerManager:game():time() + 10)
+		end
+
+		if not self._LIES_check_steal_retry_logged then
+			self._LIES_check_steal_retry_logged = true
+			LIES:LogCheck("bag steal SO deferred: no drop point unit=" .. tostring(self._unit:key()))
+		end
 
 		return
 	end
@@ -125,4 +128,9 @@ function CarryData:_chk_register_steal_SO()
 
 	managers.groupai:state():add_special_objective(so_id, so_descriptor)
 	managers.groupai:state():register_loot(self._unit, pickup_area)
+
+	if not self._LIES_check_steal_registered_logged then
+		self._LIES_check_steal_registered_logged = true
+		LIES:LogCheck(string.format("bag steal SO registered unit=%s pickup_seg=%s drop_seg=%s group=%s", tostring(self._unit:key()), tostring(pickup_nav_seg), tostring(drop_nav_seg), tostring(self._AI_carry.SO_category)))
+	end
 end

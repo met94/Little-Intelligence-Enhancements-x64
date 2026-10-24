@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.57",
+		version = "V8.57_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -21,10 +21,11 @@ if RequiredScript == "lib/managers/menumanager" then
 			teamaihelpers = true,
 			spawngroupdelays = 1,
 			hhtacs = false,
-			highperformance = false
+			highperformance = false,
+			debug_log = false
 		}
 	}
-	LIES.update_url = "https://raw.githubusercontent.com/fuglore/Little-Intelligence-Enhancements/auto-updates/autoupdate.json"
+	LIES.update_url = "https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json"
 
 	TheFixesPreventer = TheFixesPreventer or {}
 	TheFixesPreventer.fix_hostages_not_moving = true
@@ -95,6 +96,12 @@ if RequiredScript == "lib/managers/menumanager" then
 		if file then
 			file:write(json.encode(LIES.settings))
 			file:close()
+		end
+	end
+
+	function LIES:LogCheck(message)
+		if self.settings and self.settings.debug_log then
+			log("[LIES-CHECK] " .. tostring(message))
 		end
 	end
 	
@@ -205,10 +212,14 @@ if RequiredScript == "lib/managers/menumanager" then
 			return
 		end
 		
-		local received_data = json.decode(json_data)
+		local ok, received_data = pcall(json.decode, json_data)
+
+		if not ok or type(received_data) ~= "table" then
+			return
+		end
 		
 		for _, data in pairs(received_data) do
-			if data.version then
+			if data.ident == "LIES-AI-MOD" and data.version then
 				LIES.received_version = data.version
 				log("LIES: Received update data.")
 				break
@@ -330,6 +341,13 @@ if RequiredScript == "lib/managers/menumanager" then
 			local on = item:value() == "on"
 			LIES.settings.highperformance = on
 			log("high performance mode: "..tostring(LIES.settings.highperformance))
+
+			LIES:Save()
+		end
+
+		MenuCallbackHandler.callback_lies_debug_log = function(self, item)
+			local on = item:value() == "on"
+			LIES.settings.debug_log = on
 
 			LIES:Save()
 		end

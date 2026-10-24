@@ -527,17 +527,24 @@ function ShieldLogicAttack.queued_update(data)
 
 					if reservation then
 						to_pos = reservation.position
-					else
-						reservation = {
-							radius = 70,
-							position = mvector3.copy(to_pos),
-							filter = data.pos_rsrv_id
-						}
+						data.brain:set_pos_rsrv("path", reservation)
 
-						managers.navigation:add_pos_reservation(reservation)
+						if not my_data._LIES_check_shield_set then
+							my_data._LIES_check_shield_set = true
+							LIES:LogCheck("shield reservation set unit=" .. tostring(unit:key()))
+						end
+					else
+						data.brain:add_pos_rsrv("path", {
+							radius = 70,
+							position = mvector3.copy(to_pos)
+						})
+
+						if not my_data._LIES_check_shield_fallback then
+							my_data._LIES_check_shield_fallback = true
+							LIES:LogCheck("shield reservation fallback unit=" .. tostring(unit:key()))
+						end
 					end
 
-					data.brain:set_pos_rsrv("path", reservation)
 					data.brain:search_for_path(my_data.optimal_path_search_id, to_pos)
 				end
 			end

@@ -1,0 +1,57 @@
+{
+  "file": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\PAYDAY 2\\mods\\logs\\2026_10_23_log.txt",
+  "setup": [
+    {
+      "line": 55,
+      "text": "05:17:21 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 127,
+      "text": "05:17:21 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 211,
+      "text": "05:17:21 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 358,
+      "text": "05:17:37 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 430,
+      "text": "05:17:37 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 502,
+      "text": "05:17:37 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    }
+  ],
+  "harness": [
+    {
+      "line": 614,
+      "text": "05:17:53 PM Lua: [LIES-TEST] nav segments=40 missing_neighbours=0 doors(vector=0 numeric=0 links=555) covers=58 bad_covers=0"
+    },
+    {
+      "line": 615,
+      "text": "05:17:57 PM Lua: [LIES-TEST] cover probe: found cover at 1075 2650 25"
+    },
+    {
+      "line": 617,
+      "text": "05:18:33 PM Lua: [LIES-TEST] assault: set_assault_mode(true)"
+    },
+    {
+      "line": 622,
+      "text": "05:19:17 PM Lua: [LIES-TEST] assault: set_assault_mode(true)"
+    }
+  ],
+  "harnessErrors": [],
+  "fatal": [],
+  "luaErrors": [
+    {
+      "line": 318,
+      "text": "05:17:27 PM Log:  (D:\\a\\PAYDAY2-SuperBLT\\PAYDAY2-SuperBLT\\src\\InitiateState.cpp:98) mods/BeardLib/Modules/Utils/ModAssetsModule.lua:156: attempt to compare number with nil"
+    }
+  ],
+  "liesErrors": [],
+  "ok": true
+}

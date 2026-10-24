@@ -16,6 +16,8 @@ function GroupAITweakData:_LIES_setup()
 		
 		self._LIES_fix = true
 
+		LIES:LogCheck(string.format("tweak setup branch=other-mod-owns-spawn-groups hhtacs=%s", tostring(LIES.settings.hhtacs)))
+
 		if LIES.settings.hhtacs then
 			local difficulty = Global.game_settings and Global.game_settings.difficulty or "normal"
 			local difficulty_index = tweak_data:difficulty_to_index(difficulty)
@@ -4278,13 +4280,19 @@ function GroupAITweakData:_LIES_setup()
 		end
 	end
 
+	local skirmish_assault_groups
+
+	if managers.groupai and managers.groupai:state() and managers.skirmish and self.skirmish and self.skirmish.assault then
+		skirmish_assault_groups = self.skirmish.assault.groups
+	end
+
 	for group_id, group_info in pairs(self.enemy_spawn_groups) do
 		if not self.besiege.assault.groups[group_id] then
 			self.besiege.assault.groups[group_id] = {0, 0, 0}
 		end
 		
-		if not self.skirmish.assault.groups[group_id] then
-			self.besiege.assault.groups[group_id] = {0, 0, 0}
+		if skirmish_assault_groups and not skirmish_assault_groups[group_id] then
+			skirmish_assault_groups[group_id] = {0, 0, 0}
 		end
 		
 		if not self.besiege.recon.groups[group_id] then
@@ -4298,7 +4306,9 @@ function GroupAITweakData:_LIES_setup()
 
 	self.street = deep_clone(self.besiege)
 	self.safehouse = deep_clone(self.besiege)
-	
+
+	LIES:LogCheck(string.format("tweak setup complete hhtacs=%s server=%s skirmish_groups=%s phalanx_respawn=%s", tostring(LIES.settings.hhtacs), tostring(Network and Network:is_server()), tostring(skirmish_assault_groups ~= nil), tostring(self.phalanx.spawn_chance and self.phalanx.spawn_chance.respawn_delay)))
+
 	self._LIES_fix = true
 end
 
@@ -4461,7 +4471,10 @@ function GroupAITweakData:_setup_hhtacs_task_data(difficulty_index)
 		self.phalanx.max_soldier_groups = 6
 		self.phalanx.move_interval = 15
 		self.phalanx.check_spawn_intervall = 120
-		self.phalanx.respawn_delay = 1200
+
+		if LIES.settings.hhtacs then
+			self.phalanx.spawn_chance.respawn_delay = 1200
+		end
 	end
 	
 	self.phalanx.vip.damage_reduction = {

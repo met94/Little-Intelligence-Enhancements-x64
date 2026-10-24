@@ -2,6 +2,7 @@
 	"name" : "LIES",
 	"description" : "Big fixes to enemy AI in small number.",
 	"author" : "fugsystem",
+	"version" : "V8.57_x64",
 	"blt_version" : 2,
 	"priority" : 100,
 	"image" : "logo.png",

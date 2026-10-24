@@ -1,7 +1,7 @@
 function CivilianLogicTravel._determine_exact_destination(data, objective)
 	if objective.pos then
 		return objective.pos
-	elseif objective.type == "follow" then
+	elseif objective.type == "follow" and alive(objective.follow_unit) then
 		local to_pos
 		
 		if not data.tied then
@@ -16,6 +16,11 @@ function CivilianLogicTravel._determine_exact_destination(data, objective)
 			
 		return to_pos
 	else
+		if objective.type == "follow" and not data._LIES_check_civ_dead_follow then
+			data._LIES_check_civ_dead_follow = true
+			LIES:LogCheck("civilian follow target unavailable, fallback nav_seg=" .. tostring(objective.nav_seg))
+		end
+
 		return CopLogicTravel._get_pos_on_wall(managers.navigation._nav_segments[objective.nav_seg].pos, 700, nil, nil, nil, data.pos_rsrv_id)
 	end
 end

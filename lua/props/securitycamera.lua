@@ -404,6 +404,7 @@ function SecurityCamera:_detect_criminals_loud(t, criminals)
 		
 		self._cone_angle = settings.fov
 		self._suspicion_range = settings.suspicion_range
+		self._visibility_slotmask = self._visibility_slotmask or managers.slot:get_mask("AI_visibility")
 		
 		self._set_settings = true
 	end
@@ -437,12 +438,12 @@ function SecurityCamera:_detect_criminals_loud(t, criminals)
 				mvector3.direction(self._tmp_vec1, my_pos, detection_pos)
 				local angle = mvector3.angle(my_fwd, self._tmp_vec1)
 				local angle_max = my_cone * 0.5
-				angle_multiplier = angle / angle_max
+				local angle_multiplier = angle / angle_max
 
 				if angle_multiplier < 1 then
 					local vis_ray = self._unit:raycast("ray", my_pos, detection_pos, "slot_mask", self._visibility_slotmask, "ray_type", "ai_vision")
 
-					if not vis_ray or vis_ray.unit:key() == u_key then
+					if not vis_ray or vis_ray.unit and vis_ray.unit:key() == c_key then
 						local in_cone = true
 
 						if self._cone_angle ~= nil then
@@ -452,7 +453,15 @@ function SecurityCamera:_detect_criminals_loud(t, criminals)
 						
 						if in_cone then
 							managers.groupai:state():criminal_spotted(c_unit, true)
+
+							if not self._LIES_check_camera_reveal then
+								self._LIES_check_camera_reveal = true
+								LIES:LogCheck("camera LOS reveal camera=" .. tostring(self._unit:key()))
+							end
 						end
+					elseif not self._LIES_check_camera_blocked then
+						self._LIES_check_camera_blocked = true
+						LIES:LogCheck("camera LOS blocked camera=" .. tostring(self._unit:key()))
 					end
 				end
 			end

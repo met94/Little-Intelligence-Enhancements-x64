@@ -1126,7 +1126,19 @@ function CopLogicAttack._upd_aim(data, my_data)
 								for i = 1, #doors do
 									local door = doors[i]
 									
-									if door.end_pos then
+									if door.x then
+										local test_pos = door:with_z(door.z + 140)
+										if not raycast_f(data.unit, "ray", head_pos, test_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report") then
+											expected_pos = test_pos
+
+											if not LIES._check_door_watch_logged then
+												LIES._check_door_watch_logged = true
+												LIES:LogCheck("door watch raw position used")
+											end
+											
+											break
+										end
+									elseif door.end_pos then
 										local test_pos = door.end_pos:with_z(door.end_pos.z + 140)
 										if not raycast_f(data.unit, "ray", head_pos, test_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report") then
 											expected_pos = test_pos
@@ -2294,7 +2306,7 @@ function CopLogicAttack.action_complete_clbk(data, action)
 		local timeout = action:timeout()
 
 		if timeout then
-			data.dodge_timeout_t = TimerManager:game():time() + math.lerp(timeout[1], timeout[2], math.random())
+			data.dodge_timeout_t = TimerManager:game():time() + math.rand(timeout[1], timeout[2])
 		end
 
 		CopLogicAttack._cancel_cover_pathing(data, my_data)
@@ -2487,6 +2499,15 @@ function CopLogicAttack.is_available_for_assignment(data, new_objective)
 	
 	if new_objective and new_objective.is_default then
 		return true
+	end
+
+	if data.is_suppressed then
+		if not my_data._LIES_check_suppression_deny then
+			my_data._LIES_check_suppression_deny = true
+			LIES:LogCheck("suppression deny unit=" .. tostring(data.unit:base()._tweak_table))
+		end
+
+		return
 	end
 
 	if data.unit:movement():chk_action_forbidden("walk") then

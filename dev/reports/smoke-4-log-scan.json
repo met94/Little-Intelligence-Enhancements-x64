@@ -1,0 +1,53 @@
+{
+  "file": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\PAYDAY 2\\mods\\logs\\2026_10_23_log.txt",
+  "setup": [
+    {
+      "line": 55,
+      "text": "05:24:59 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 127,
+      "text": "05:24:59 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 211,
+      "text": "05:25:00 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 358,
+      "text": "05:25:19 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 430,
+      "text": "05:25:19 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    },
+    {
+      "line": 502,
+      "text": "05:25:19 PM Lua: [INFO] [BLT] Setting up mod 'LIES'"
+    }
+  ],
+  "harness": [
+    {
+      "line": 614,
+      "text": "05:25:32 PM Lua: [LIES-TEST] state=table: 0x533f05c0 is_server=true police_called=nil weapons_hot=nil assault_mode=false assault_active=nil queued=10.015857696533(number) groups=3 spawning=0 cops=5"
+    },
+    {
+      "line": 615,
+      "text": "05:25:35 PM Lua: [LIES-TEST] alarm: on_police_called + on_police_weapons_hot + set_assault_mode"
+    },
+    {
+      "line": 616,
+      "text": "05:25:40 PM Lua: [LIES-TEST] state=table: 0x533f05c0 is_server=true police_called=true weapons_hot=true assault_mode=true assault_active=nil queued=18.034885406494(number) groups=3 spawning=0 cops=5"
+    }
+  ],
+  "harnessErrors": [],
+  "fatal": [],
+  "luaErrors": [
+    {
+      "line": 321,
+      "text": "05:25:08 PM Log:  (D:\\a\\PAYDAY2-SuperBLT\\PAYDAY2-SuperBLT\\src\\InitiateState.cpp:98) mods/BeardLib/Modules/Utils/ModAssetsModule.lua:156: attempt to compare number with nil"
+    }
+  ],
+  "liesErrors": [],
+  "ok": true
+}

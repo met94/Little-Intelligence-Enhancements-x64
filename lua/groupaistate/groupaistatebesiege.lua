@@ -397,6 +397,7 @@ local blockade_start_maps = {
 }
 
 Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
+	LIES._check_door_watch_logged = nil
 	self._escorts = {}
 	self._MAX_SIMULTANEOUS_SPAWNS = 2
 	
@@ -418,7 +419,9 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 		self.phalanx_damage_reduction_disable = self.phalanx_damage_reduction_disable_LIES
 		self._check_spawn_phalanx = self._check_spawn_phalanx_LIES
 		self._spawn_phalanx = self._spawn_phalanx_LIES
-		
+
+		LIES:LogCheck("phalanx binding init hhtacs=true")
+
 		--checks for groups that have previously spawned to allow for certain scripted events to be overwritten based on it
 		Hooks:PostHook(GroupAIStateBesiege, "_check_spawn_timed_groups", "lieshhtacs_checkspawnedgroups", function(self, target_area, task_data)
 			if not self._timed_groups then
@@ -453,6 +456,31 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 				self:_upd_group(self._groups[spawn_task.group.id])
 			end
 		end)
+
+		Hooks:PostHook(GroupAIStateBesiege, "_check_phalanx_group_has_spawned", "lies_check_phalanx_spawn_log", function(self)
+			local group = self._phalanx_spawn_group
+
+			if not group then
+				return
+			end
+
+			if group.has_spawned then
+				if not self._LIES_check_phalanx_spawned then
+					self._LIES_check_phalanx_spawned = true
+					LIES:LogCheck(string.format("phalanx spawned units=%d", table.size(group.units)))
+				end
+			elseif self._LIES_check_phalanx_spawn_t and self._t - self._LIES_check_phalanx_spawn_t > 15 and not self._LIES_check_phalanx_pending then
+				self._LIES_check_phalanx_pending = true
+				LIES:LogCheck(string.format("phalanx pending after 15s units=%d", table.size(group.units)))
+			end
+		end)
+
+		Hooks:PostHook(GroupAIStateBesiege, "phalanx_damage_reduction_enable", "lies_check_phalanx_buff_enable", function(self)
+			if LIES.settings.hhtacs then
+				local team = self:_get_law1_team()
+				LIES:LogCheck("phalanx buff enabled value=" .. tostring(team and team.damage_reduction))
+			end
+		end)
 		
 		Hooks:PostHook(GroupAIStateBesiege, "on_criminal_nav_seg_change", "lies_check_relocation_for_friendlies", function(self, unit, nav_seg_id)
 			if unit and self._player_criminals[unit:key()] then
@@ -474,7 +502,21 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 			for group_id, group in pairs(self._groups) do
 				if group.needs_announce_retreat then
 					group.dialogue_data = nil
-					group.needs_announce_retreat = not self:_voice_retreat(group)
+
+					local deadline = group._LIES_retreat_announce_deadline or self._t + 3
+					group._LIES_retreat_announce_deadline = deadline
+
+					local voiced = self:_voice_retreat(group)
+
+					if voiced or self._t >= deadline then
+						if not voiced and not group._LIES_check_retreat_expired then
+							group._LIES_check_retreat_expired = true
+							LIES:LogCheck("retreat announcement expired group=" .. tostring(group.id))
+						end
+
+						group.needs_announce_retreat = false
+						group._LIES_retreat_announce_deadline = nil
+					end
 				elseif group.dialogue_data and dialogue_data_funcs[group.dialogue_data] then
 					local func = dialogue_data_funcs[group.dialogue_data]
 					
@@ -548,8 +590,6 @@ function GroupAIStateBesiege:_unregister_escort(key)
 end
 
 function GroupAIStateBesiege:_upd_police_activity()
-	self._police_upd_task_queued = false
-
 	if self._police_activity_blocked then
 		return
 	end
@@ -596,8 +636,6 @@ function GroupAIStateBesiege:_upd_police_activity()
 		
 		self._last_upd_t = self._t
 	end
-
-	self:_queue_police_upd_task()
 end
 
 function GroupAIStateBesiege:_update_criminal_reveal()
@@ -765,6 +803,21 @@ function GroupAIStateBesiege:assign_enemy_to_group_ai(unit, team_id)
 end
 
 function GroupAIStateBesiege:_check_spawn_phalanx_LIES()
+	local assault = self._task_data and self._task_data.assault
+	local check_state = string.format(
+		"center=%s active=%s phase=%s group=%s chance=%s",
+		tostring(self._phalanx_center_pos ~= nil),
+		tostring(assault and assault.active),
+		tostring(assault and assault.phase),
+		tostring(self._phalanx_spawn_group ~= nil),
+		tostring(self._phalanx_current_spawn_chance)
+	)
+
+	if self._LIES_check_phalanx_state ~= check_state then
+		self._LIES_check_phalanx_state = check_state
+		LIES:LogCheck("phalanx check " .. check_state)
+	end
+
 	if self._phalanx_center_pos and self._task_data and self._task_data.assault.active and not self._phalanx_spawn_group and (self._task_data.assault.phase == "build" or self._task_data.assault.phase == "sustain") then
 		local now = TimerManager:game():time()
 		local respawn_delay = tweak_data.group_ai.phalanx.spawn_chance.respawn_delay
@@ -793,7 +846,9 @@ function GroupAIStateBesiege:_check_spawn_phalanx_LIES()
 					self._phalanx_last_spawn_check = now
 
 					if math.random() <= self._phalanx_current_spawn_chance then
-						self:_spawn_phalanx()
+						-- Call the LIES body directly so a missed init/post-hook swap
+						-- cannot fall back to vanilla phalanx handling.
+						self:_spawn_phalanx_LIES()
 					end
 				end
 			end
@@ -818,6 +873,8 @@ function GroupAIStateBesiege:_check_phalanx_damage_reduction_increase_LIES()
 				local dmg_reduct = math.min(damage_reduction_max, damage_reduction + tweak_data.group_ai.phalanx.vip.damage_reduction.increase)
 
 				self:set_phalanx_damage_reduction_buff(dmg_reduct)
+
+				LIES:LogCheck(string.format("phalanx buff increased value=%.3f", dmg_reduct))
 
 				self._phalanx_damage_reduction_last_increase = last_increase
 			end
@@ -928,6 +985,8 @@ end
 
 function GroupAIStateBesiege:phalanx_damage_reduction_disable_LIES()
 	self:set_phalanx_damage_reduction_buff(-1)
+
+	LIES:LogCheck("phalanx buff disabled")
 
 	self._phalanx_damage_reduction_last_increase = nil
 	self._phalanx_center_pos = self._phalanx_center_pos_old and mvector3.copy(self._phalanx_center_pos_old) or self._phalanx_center_pos
@@ -1127,21 +1186,21 @@ function GroupAIStateBesiege:start_extend_assault()
 end
 
 function GroupAIStateBesiege:_queue_police_upd_task()
-	--log("a")
-	if not self._police_upd_task_queued then
-		self._police_upd_task_queued = true
-		
-		if Network:is_server() then --essentially, if theres less players, more important enemies are allowed instead of just 3
-			if not Global.game_settings.single_player then
-				local new_value = 12 / table.size(self:all_player_criminals()) 
-
-				self._nr_important_cops = new_value
-			end
+	if self._police_upd_task_queued then
+		if self._t < self._police_upd_task_queued then
+			return
 		end
-		
-		--moving this to a delayed callback makes sure it not take up space in the enemy manager tasks
-		managers.enemy:add_delayed_clbk("GroupAIStateBesiege._upd_police_activity", callback(self, self, "_upd_police_activity"), self._t + 1)
+
+		self:_upd_police_activity()
 	end
+
+	if Network:is_server() and not Global.game_settings.single_player then
+		self._nr_important_cops = 12 / table.size(self:all_player_criminals())
+	end
+
+	local next_upd_t = next(self._spawning_groups) and GroupAIStateBesiege._POLICE_ACTIVITY_DELAY_FAST or GroupAIStateBesiege._POLICE_ACTIVITY_DELAY
+
+	self._police_upd_task_queued = self._t + next_upd_t
 end
 
 function GroupAIStateBesiege:force_end_assault_phase(force_regroup)
@@ -1154,7 +1213,9 @@ function GroupAIStateBesiege:force_end_assault_phase(force_regroup)
 		if force_regroup then
 			task_data.force_regroup = true
 
-			managers.enemy:reschedule_delayed_clbk(GroupAIStateBesiege._upd_police_activity, self._t)
+			if self._police_upd_task_queued then
+				self._police_upd_task_queued = self._t + 0.1
+			end
 		end
 	end
 
@@ -1162,6 +1223,8 @@ function GroupAIStateBesiege:force_end_assault_phase(force_regroup)
 end
 
 function GroupAIStateBesiege:_upd_hostage_task()
+	self._hostage_upd_key = nil
+
 	local hos_data = self._hostage_data
 	local best_hostage_task, best_hostage_task_t, best_hostage_task_i
 	
@@ -1176,11 +1239,17 @@ function GroupAIStateBesiege:_upd_hostage_task()
 	end
 	
 	if best_hostage_task then
-		best_hostage_task.clbk()
 		table.remove(self._hostage_data, best_hostage_task_i)
+		best_hostage_task.clbk()
 	end
-	
-	managers.enemy:add_delayed_clbk(self._hostage_upd_key, callback(self, self, "_upd_hostage_task"), self._t + 0.2)
+
+	if not self._hostage_upd_key and next(self._hostage_data) then
+		self._hostage_upd_key = "GroupAIStateBesiege:_upd_hostage_task"
+		managers.enemy:add_delayed_clbk(self._hostage_upd_key, callback(self, self, "_upd_hostage_task"), self._t + 0.2)
+	elseif not self._LIES_check_hostage_drained then
+		self._LIES_check_hostage_drained = true
+		LIES:LogCheck("hostage task drained")
+	end
 end
 
 function GroupAIStateBesiege:add_to_surrendered(unit, update)
@@ -1412,6 +1481,7 @@ function GroupAIStateBesiege:_assign_assault_groups_to_retire()
 				group.dialogue_data = nil
 				
 				group.needs_announce_retreat = true
+				group._LIES_retreat_announce_deadline = nil
 			end
 		end
 		
@@ -1444,6 +1514,7 @@ function GroupAIStateBesiege:_assign_assault_groups_to_retire()
 				group.dialogue_data = nil
 				
 				group.needs_announce_retreat = true
+				group._LIES_retreat_announce_deadline = nil
 			end
 		end
 
@@ -1482,7 +1553,7 @@ function GroupAIStateBesiege:on_objective_complete(unit, objective)
 			local u_data = self._police[u_key]
 
 			if u_data and u_data.assigned_area then
-				self:set_enemy_assigned(self._area_data[new_objective.nav_seg], u_key)
+				self:set_enemy_assigned(self:get_area_from_nav_seg_id(new_objective.nav_seg), u_key)
 			end
 		end
 	else
@@ -1741,51 +1812,7 @@ function GroupAIStateBesiege:_assign_enemy_group_to_assault(group)
 	end
 end
 
-function GroupAIStateBesiege:_assign_enemy_group_to_recon_sweep(group)
-	local task_data = self._task_data.recon.sweep_task
-
-	if group.has_spawned and group.objective.type == "recon_area" then
-		if group.objective.moving_out then
-			local done_moving = nil
-
-			for u_key, u_data in pairs(group.units) do
-				local objective = u_data.unit:brain():objective()
-
-				if objective then
-					if objective.grp_objective ~= group.objective then
-						-- Nothing
-					elseif not objective.in_place then
-						done_moving = false
-					elseif done_moving == nil then
-						done_moving = true
-					end
-				end
-			end
-
-			if done_moving == true then
-				task_data.visited_areas[group.objective.area.id] = true
-
-				group.objective.moving_out = nil
-				group.in_place_t = self._t
-				group.objective.moving_in = nil
-				
-				group.dialogue_data = nil
-			end
-		end
-
-		if not group.objective.moving_out then
-			self:_set_recon_sweep_objective_to_group(group)
-		end
-	end
-end
-
 function GroupAIStateBesiege:_assign_enemy_group_to_recon(group)
-	if self._task_data.recon.sweep_task then
-		self:_assign_enemy_group_to_recon_sweep(group)
-		
-		return
-	end
-
 	if group.has_spawned and group.objective.type == "recon_area" then
 		if group.objective.moving_out then
 			local done_moving = nil
@@ -2308,39 +2335,53 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 							end
 						end
 					end
-				elseif current_objective.tactic == "hrt" then
-					if current_objective.going_for_hostages and self._rescueable_hostages then
-						if not next(current_objective.area.criminal.units) then
-							for u_key, u_table in pairs(self._rescueable_hostages) do
-								if current_objective.area.id == u_table.area.id then
-									return
-								end
+				else
+					current_objective.tactic = nil
+				end
+			elseif current_objective.tactic == "hrt" then
+				if not group._LIES_check_hrt_tactic then
+					group._LIES_check_hrt_tactic = true
+					LIES:LogCheck("hrt tactic active group=" .. tostring(group.id))
+				end
+
+				if current_objective.going_for_hostages and self._rescueable_hostages then
+					if not next(current_objective.area.criminal.units) then
+						for u_key, u_table in pairs(self._rescueable_hostages) do
+							if current_objective.area.id == u_table.area.id then
+								return
 							end
-							
-							current_objective.tactic = nil
-						else
-							current_objective.tactic = nil
 						end
-					end
-				elseif current_objective.tactic == "sabotage" then
-					if current_objective.going_for_drill and self._jammable_drills then
-						if not next(current_objective.area.criminal.units) then
-							for u_key, area in pairs(self._jammable_drills) do
-								if current_objective.area.id == area.id then
-									return
-								end
-							end
-							
-							current_objective.tactic = nil
-						else
-							current_objective.tactic = nil
-						end
+						
+						current_objective.tactic = nil
 					else
 						current_objective.tactic = nil
 					end
 				else
 					current_objective.tactic = nil
 				end
+			elseif current_objective.tactic == "sabotage" then
+				if not group._LIES_check_sabotage_tactic then
+					group._LIES_check_sabotage_tactic = true
+					LIES:LogCheck("sabotage tactic active group=" .. tostring(group.id))
+				end
+
+				if current_objective.going_for_drill and self._jammable_drills then
+					if not next(current_objective.area.criminal.units) then
+						for u_key, area in pairs(self._jammable_drills) do
+							if current_objective.area.id == area.id then
+								return
+							end
+						end
+						
+						current_objective.tactic = nil
+					else
+						current_objective.tactic = nil
+					end
+				else
+					current_objective.tactic = nil
+				end
+			else
+				current_objective.tactic = nil
 			end
 			
 			current_objective.interrupt_on_contact = nil
@@ -2928,8 +2969,8 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 							if navsegs then
 								for nav_seg_id, _ in pairs(navsegs) do
 									local seg_area = self:get_area_from_nav_seg_id(nav_seg_id)
-									
-									if not occupied_areas[seg_area.id] and v3_dis_sq(seg_area.pos, other_group.objective.target_area.pos) <= 16000000 then
+
+									if seg_area and not occupied_areas[seg_area.id] and v3_dis_sq(seg_area.pos, other_group.objective.target_area.pos) <= 16000000 then
 										if not current_assault_target_area or v3_dis_sq(current_assault_target_area.pos, seg_area.pos) <= 16000000 then
 											blockade_help_areas[seg_area.id] = seg_area
 										end
@@ -3242,8 +3283,8 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 							if navsegs then
 								for nav_seg_id, _ in pairs(navsegs) do
 									local seg_area = self:get_area_from_nav_seg_id(nav_seg_id)
-									
-									if not occupied_areas[seg_area.id] and v3_dis_sq(seg_area.pos, other_group.objective.target_area.pos) <= 16000000 then
+
+									if seg_area and not occupied_areas[seg_area.id] and v3_dis_sq(seg_area.pos, other_group.objective.target_area.pos) <= 16000000 then
 										if not current_assault_target_area or v3_dis_sq(current_assault_target_area.pos, seg_area.pos) <= 16000000 then
 											blockade_help_areas[seg_area.id] = seg_area
 										end
@@ -3611,254 +3652,6 @@ function GroupAIStateBesiege:_assign_enemy_groups_to_recon()
 	end
 end
 
-function GroupAIStateBesiege:_begin_recon_sweep_task(recon_areas, target_positions)
-	self._task_data.recon.sweep_task = {
-		use_smoke = true,
-		use_spawn_event = true,
-		visited_areas = {},
-		target_positions = target_positions,
-		target_areas = recon_areas,
-		start_t = self._t,
-		sweep = true
-	}
-
-	self._task_data.recon.next_dispatch_t = nil
-end
-
-function GroupAIStateBesiege:_upd_recon_sweep_task()
-	local task_data = self._task_data.recon.sweep_task
-	
-	if not task_data then
-		return
-	end
-	
-	local t = self._t
-	
-	for u_key, u_data in pairs(self._char_criminals) do
-		if (not u_data.status or u_data.status == "electrified") and alive(u_data.unit) then
-			if not u_data.undetected and t - u_data.det_t < 9 then
-				self._task_data.recon.sweep_task = nil
-				
-				return
-			end
-		end
-	end
-	
-	local visited_areas = task_data.visited_areas
-	
-	local search_complete = true
-	
-	for area_id, area in pairs(task_data.target_areas) do
-		if not visited_areas[area_id] then
-			search_complete = nil
-		end
-	end
-	
-	if search_complete then
-		if t - task_data.start_t > 180 then
-			self._task_data.recon.sweep_task = nil
-		
-			for u_key, u_data in pairs(self._char_criminals) do
-				self:criminal_spotted(u_data.unit, true)
-			end
-			
-			return
-		else
-			local all_areas = self._area_data
-			local valid_criminal_pos = {}
-			
-			for u_key, u_data in pairs(self._char_criminals) do
-				if alive(u_data.unit) then
-					valid_criminal_pos[u_key] = mvector3.copy(u_data.pos)
-				end
-			end
-
-			local mvec3_dis = mvec3_dis_sq
-			local candidate_areas = {}
-			
-			for key, pos in pairs(valid_criminal_pos) do
-				for area_id, area in pairs(all_areas) do
-					if not next(area.police.units) then
-						if mvec3_dis(pos, area.pos) < 1440000 and self:chk_area_leads_to_enemy(area.pos_nav_seg, area.pos_nav_seg, true) then
-							candidate_areas[area_id] = area
-						end
-					end
-				end
-			end
-			
-			task_data.target_areas = candidate_areas
-			task_data.target_positions = valid_criminal_pos
-		end
-	end
-
-	self:_assign_enemy_groups_to_recon_sweep(task_data)
-	self:_assign_assault_groups_to_retire()
-
-	local nr_wanted = 24 - self:_count_police_force("recon")
-
-	if nr_wanted <= 0 then
-		return
-	end
-	
-	local target_area
-	
-	for area_id, area in pairs(task_data.target_areas) do
-		if table.size(area.neighbours) < 2 and not visited_areas[area_id] and not next(area.police.units) then
-			target_area = area
-			
-			break
-		end
-	end
-	
-	if not target_area then
-		for area_id, area in pairs(task_data.target_areas) do
-			if not visited_areas[area_id] and not next(area.police.units) then
-				target_area = area
-				
-				break
-			end
-		end
-	end
-	
-	if target_area then
-		local spawn_group, spawn_group_type
-				
-		spawn_group, spawn_group_type = self:_find_spawn_group_near_area(target_area, self._tweak_data.recon.groups, nil, nil, nil)
-
-		if spawn_group then			
-			local grp_objective = {
-				attitude = "avoid",
-				stance = "hos",
-				type = "recon_area",
-				area = spawn_group.area,
-				coarse_path = {
-					{
-						spawn_group.area.pos_nav_seg,
-						spawn_group.area.pos
-					}
-				}
-			}
-			
-			visited_areas[spawn_group.area.id] = true
-			self:_spawn_in_group(spawn_group, spawn_group_type, grp_objective)
-
-			used_group = true
-		else
-			visited_areas[target_area.id] = true
-		end
-	end
-end
-
-function GroupAIStateBesiege:_assign_enemy_groups_to_recon_sweep(task_data)
-	for group_id, group in pairs(self._groups) do
-		if group.has_spawned and group.objective.type == "recon_area" then
-			if group.objective.moving_out then
-				local done_moving = nil
-
-				for u_key, u_data in pairs(group.units) do
-					local objective = u_data.unit:brain():objective()
-
-					if objective then
-						if objective.grp_objective ~= group.objective then
-							-- Nothing
-						elseif not objective.in_place then
-							done_moving = false
-						elseif done_moving == nil then
-							done_moving = true
-						end
-					end
-				end
-
-				if done_moving == true then
-					task_data.visited_areas[group.objective.area.id] = true
-
-					group.objective.moving_out = nil
-					group.in_place_t = self._t
-					group.objective.moving_in = nil
-					group.dialogue_data = nil
-				end
-			end
-
-			if not group.objective.moving_out then
-				self:_set_recon_sweep_objective_to_group(group)
-			end
-		end
-	end
-end
-
-function GroupAIStateBesiege:_set_recon_sweep_objective_to_group(group)
-	if not group.has_spawned then
-		return
-	end
-	
-	local current_objective = group.objective
-	local task_data = self._task_data.recon.sweep_task
-	local visited_areas = task_data.visited_areas
-	
-	if visited_areas[current_objective.area.id] then
-		local sweep_path, target_area
-		
-		for area_id, area in pairs(task_data.target_areas) do
-			if table.size(area.neighbours) < 2 and not visited_areas[area_id] and not next(area.police.units) then
-				local search_params = {
-					id = "GroupAI_reconsweep",
-					from_seg = current_objective.area.pos_nav_seg,
-					to_seg = area.pos_nav_seg,
-					access_pos = self._get_group_acces_mask(group)
-				}
-				
-				local coarse_path = managers.navigation:search_coarse(search_params)
-
-				if coarse_path then
-					target_area = area
-					sweep_path = coarse_path
-				
-					break
-				else
-					visited_areas[area_id] = true
-				end
-			end
-		end
-		
-		if not target_area then
-			for area_id, area in pairs(task_data.target_areas) do
-				if not visited_areas[area_id] and not next(area.police.units) then
-					local search_params = {
-						id = "GroupAI_reconsweep",
-						from_seg = current_objective.area.pos_nav_seg,
-						to_seg = area.pos_nav_seg,
-						access_pos = self._get_group_acces_mask(group)
-					}
-				
-					local coarse_path = managers.navigation:search_coarse(search_params)
-
-					if coarse_path then
-						target_area = area
-						sweep_path = coarse_path
-					
-						break
-					else
-						visited_areas[area_id] = true
-					end
-				end
-			end
-		end
-		
-		if target_area and sweep_path then
-			local grp_objective = {
-				pose = "stand",
-				type = "recon_area",
-				stance = "hos",
-				attitude = "avoid",
-				area = target_area,
-				coarse_path = sweep_path
-			}
-
-			self:_set_objective_to_enemy_group(group, grp_objective)
-		end
-	end
-end
-
 function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 	if not group.has_spawned then
 		return
@@ -3962,7 +3755,12 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 					local nav_point = current_objective.coarse_path[i]
 
 					if not self:is_nav_seg_safe(nav_point[1]) then
-						for i = 0, #current_objective.coarse_path - i do
+						if not self._LIES_check_recon_truncated then
+							self._LIES_check_recon_truncated = true
+							LIES:LogCheck("recon path truncated before unsafe seg=" .. tostring(nav_point[1]))
+						end
+
+						for i = 0, #current_objective.coarse_path - forwardmost_i_nav_point do
 							table.remove(current_objective.coarse_path)
 						end
 
@@ -4026,6 +3824,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			self:_set_objective_to_enemy_group(group, grp_objective)
 
 			group.objective.moving_in = true
+			group.objective.moved_in = true
 
 			if next(current_objective.target_area.criminal.units) then
 				self:_chk_group_use_smoke_grenade(group, {
@@ -4144,13 +3943,16 @@ function GroupAIStateBesiege:_chk_group_use_smoke_grenade(group, task_data, deto
 
 							for _, door_id in ipairs(door_list) do
 								local test_pos
-								
+
 								if type(door_id) == "number" then
-									test_pos = managers.navigation._room_doors[door_id].center
+									test_pos = nil
+								elseif door_id.x then
+									test_pos = door_id
 								else
 									test_pos = door_id:script_data().element:nav_link_end_pos()
 								end
-								
+
+								if test_pos then
 								local dis = mvec3_dis(u_data.m_pos, test_pos)
 								
 								if not best_dis or dis < best_dis then
@@ -4194,6 +3996,7 @@ function GroupAIStateBesiege:_chk_group_use_smoke_grenade(group, task_data, deto
 					end
 				end
 			end
+		end
 		else
 			for u_key, u_data in pairs(group.units) do
 				if u_data.tactics_map and u_data.tactics_map.smoke_grenade and objective and objective.grp_objective == group.objective then
@@ -4305,13 +4108,16 @@ function GroupAIStateBesiege:_chk_group_use_flash_grenade(group, task_data, deto
 
 							for _, door_id in ipairs(door_list) do
 								local test_pos, good_pos
-								
+
 								if type(door_id) == "number" then
-									test_pos = managers.navigation._room_doors[door_id].center
+									test_pos = nil
+								elseif door_id.x then
+									test_pos = door_id
 								else
 									test_pos = door_id:script_data().element:nav_link_end_pos()
 								end
-								
+
+								if test_pos then
 								local dis = mvec3_dis(u_data.m_pos, test_pos)
 								
 								if not best_dis or dis < best_dis then
@@ -4341,6 +4147,7 @@ function GroupAIStateBesiege:_chk_group_use_flash_grenade(group, task_data, deto
 					end
 				end
 			end
+		end
 		else
 			for u_key, u_data in pairs(group.units) do
 				if u_data.tactics_map and u_data.tactics_map.flash_grenade and objective and objective.grp_objective == group.objective then
@@ -4722,6 +4529,8 @@ function GroupAIStateBesiege:_choose_best_group(best_groups, total_weight)
 end
 
 function GroupAIStateBesiege:_spawn_phalanx_LIES()
+	LIES:LogCheck("phalanx spawn enter center=" .. tostring(self._phalanx_center_pos ~= nil))
+
 	if not self._phalanx_center_pos then
 		Application:error("self._phalanx_center_pos NOT SET!!!")
 
@@ -4745,13 +4554,15 @@ function GroupAIStateBesiege:_spawn_phalanx_LIES()
 		return
 	end
 
-	local spawn_group, spawn_group_type = self:_find_spawn_group_near_area(phalanx_area, phalanx_group, nil, nil, nil, "phalanx")
+	local spawn_group, spawn_group_type = self:_find_spawn_group_near_area(phalanx_area, phalanx_group, nil, nil, nil)
 
 	if not spawn_group then
 		Application:error("Could not get spawn_group from phalanx_area!")
 
 		return
 	end
+
+	LIES:LogCheck(string.format("phalanx spawn group type=%s pts=%d area=%s", tostring(spawn_group_type), #spawn_group.spawn_pts, tostring(phalanx_area.id)))
 
 	if spawn_group.spawn_pts[1] and spawn_group.spawn_pts[1].pos then
 		local spawn_pos = spawn_group.spawn_pts[1].pos
@@ -4769,9 +4580,19 @@ function GroupAIStateBesiege:_spawn_phalanx_LIES()
 
 			self._phalanx_spawn_group = self:_spawn_in_group(spawn_group, spawn_group_type, grp_objective, nil)
 
-			self:set_assault_endless(true)
-			managers.game_play_central:announcer_say("cpa_a02_01")
-			managers.network:session():send_to_peers_synched("group_ai_event", self:get_sync_event_id("phalanx_spawned"), 0)
+			if self._phalanx_spawn_group then
+				self._LIES_check_phalanx_spawn_t = self._t
+				self._LIES_check_phalanx_spawned = nil
+				self._LIES_check_phalanx_pending = nil
+
+				LIES:LogCheck(string.format("phalanx group created units=%d", table.size(self._phalanx_spawn_group.units)))
+
+				self:set_assault_endless(true)
+				managers.game_play_central:announcer_say("cpa_a02_01")
+				managers.network:session():send_to_peers_synched("group_ai_event", self:get_sync_event_id("phalanx_spawned"), 0)
+			else
+				LIES:LogCheck("phalanx spawn failed: no group")
+			end
 		end
 	end
 end
@@ -4945,3 +4766,23 @@ function GroupAIStateBesiege._determine_group_leader(units)
 
 	return highest_ranking_u_key, highest_ranking_u_data
 end
+
+Hooks:PostHook(GroupAIStateBesiege, "update", "lies_check_phalanx_binding", function(self)
+	if LIES.settings.hhtacs and self._check_spawn_phalanx ~= self._check_spawn_phalanx_LIES then
+		self._check_spawn_phalanx = self._check_spawn_phalanx_LIES
+		self._spawn_phalanx = self._spawn_phalanx_LIES
+		self._check_phalanx_damage_reduction_increase = self._check_phalanx_damage_reduction_increase_LIES
+		self.phalanx_damage_reduction_disable = self.phalanx_damage_reduction_disable_LIES
+
+		if not self._LIES_check_phalanx_binding_repaired then
+			self._LIES_check_phalanx_binding_repaired = true
+			LIES:LogCheck("phalanx binding repaired on update")
+		end
+	end
+end)
+
+Hooks:PostHook(GroupAIStateBase, "sync_event", "lies_check_phalanx_sync", function(self, event_id, blame_id)
+	if self.EVENT_SYNC and self.EVENT_SYNC[event_id] == "phalanx_spawned" then
+		LIES:LogCheck("phalanx sync event received server=" .. tostring(self._is_server))
+	end
+end)
