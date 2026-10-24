@@ -1,8 +1,8 @@
 # LIES 248.2 — release readiness checklist
 
-Status: `V8.57_x64` release candidate reviewed and packaged. Push to
-`x64/main` and publish the GitHub release next. Diagnostic logging is gated
-behind the Debug Logging option (default OFF).
+Status: `V8.57_x64` published. GitHub release and fork updater feed are live;
+merge to the workspace remains pending explicit approval. Diagnostic logging is
+gated behind the Debug Logging option (default OFF).
 
 ## Metadata
 
@@ -87,7 +87,8 @@ Current evidence: 55 Node tests, 68/68 hooks, 50/50 hook methods, 0 API errors,
 - Package: `dist\LIES-V8.57_x64.zip`
 - SHA-256: `F497CA2E06EA792FB3B06B0A7DCBDA76CACF61736A671DDAD9309B37179D592C`
 - Release page: `https://github.com/met94/Little-Intelligence-Enhancements-x64/releases/tag/V8.57_x64`
-- Auto-update feed: `https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json`
+- Auto-update feed: `https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json` (200; advertises `V8.57_x64`)
+- Published asset: `LIES-V8.57_x64.zip`, 308,204 bytes, matching SHA-256
 - Final review: release diff reviewed; 3 release risks (missing remote, 404 feed decode, load-time diagnostic) fixed; static gates 55/55.
 
 ## Merge / workspace
