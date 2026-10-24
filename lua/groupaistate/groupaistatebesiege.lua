@@ -500,7 +500,14 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 			for group_id, group in pairs(self._groups) do
 				if group.needs_announce_retreat then
 					group.dialogue_data = nil
-					group.needs_announce_retreat = not self:_voice_retreat(group)
+
+					local deadline = group._LIES_retreat_announce_deadline or self._t + 3
+					group._LIES_retreat_announce_deadline = deadline
+
+					if self:_voice_retreat(group) or self._t >= deadline then
+						group.needs_announce_retreat = false
+						group._LIES_retreat_announce_deadline = nil
+					end
 				elseif group.dialogue_data and dialogue_data_funcs[group.dialogue_data] then
 					local func = dialogue_data_funcs[group.dialogue_data]
 					
@@ -1190,6 +1197,8 @@ function GroupAIStateBesiege:force_end_assault_phase(force_regroup)
 end
 
 function GroupAIStateBesiege:_upd_hostage_task()
+	self._hostage_upd_key = nil
+
 	local hos_data = self._hostage_data
 	local best_hostage_task, best_hostage_task_t, best_hostage_task_i
 	
@@ -1204,11 +1213,14 @@ function GroupAIStateBesiege:_upd_hostage_task()
 	end
 	
 	if best_hostage_task then
-		best_hostage_task.clbk()
 		table.remove(self._hostage_data, best_hostage_task_i)
+		best_hostage_task.clbk()
 	end
-	
-	managers.enemy:add_delayed_clbk(self._hostage_upd_key, callback(self, self, "_upd_hostage_task"), self._t + 0.2)
+
+	if not self._hostage_upd_key and next(self._hostage_data) then
+		self._hostage_upd_key = "GroupAIStateBesiege:_upd_hostage_task"
+		managers.enemy:add_delayed_clbk(self._hostage_upd_key, callback(self, self, "_upd_hostage_task"), self._t + 0.2)
+	end
 end
 
 function GroupAIStateBesiege:add_to_surrendered(unit, update)
@@ -1440,6 +1452,7 @@ function GroupAIStateBesiege:_assign_assault_groups_to_retire()
 				group.dialogue_data = nil
 				
 				group.needs_announce_retreat = true
+				group._LIES_retreat_announce_deadline = nil
 			end
 		end
 		
@@ -1472,6 +1485,7 @@ function GroupAIStateBesiege:_assign_assault_groups_to_retire()
 				group.dialogue_data = nil
 				
 				group.needs_announce_retreat = true
+				group._LIES_retreat_announce_deadline = nil
 			end
 		end
 
@@ -2292,39 +2306,43 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 							end
 						end
 					end
-				elseif current_objective.tactic == "hrt" then
-					if current_objective.going_for_hostages and self._rescueable_hostages then
-						if not next(current_objective.area.criminal.units) then
-							for u_key, u_table in pairs(self._rescueable_hostages) do
-								if current_objective.area.id == u_table.area.id then
-									return
-								end
+				else
+					current_objective.tactic = nil
+				end
+			elseif current_objective.tactic == "hrt" then
+				if current_objective.going_for_hostages and self._rescueable_hostages then
+					if not next(current_objective.area.criminal.units) then
+						for u_key, u_table in pairs(self._rescueable_hostages) do
+							if current_objective.area.id == u_table.area.id then
+								return
 							end
-							
-							current_objective.tactic = nil
-						else
-							current_objective.tactic = nil
 						end
-					end
-				elseif current_objective.tactic == "sabotage" then
-					if current_objective.going_for_drill and self._jammable_drills then
-						if not next(current_objective.area.criminal.units) then
-							for u_key, area in pairs(self._jammable_drills) do
-								if current_objective.area.id == area.id then
-									return
-								end
-							end
-							
-							current_objective.tactic = nil
-						else
-							current_objective.tactic = nil
-						end
+						
+						current_objective.tactic = nil
 					else
 						current_objective.tactic = nil
 					end
 				else
 					current_objective.tactic = nil
 				end
+			elseif current_objective.tactic == "sabotage" then
+				if current_objective.going_for_drill and self._jammable_drills then
+					if not next(current_objective.area.criminal.units) then
+						for u_key, area in pairs(self._jammable_drills) do
+							if current_objective.area.id == area.id then
+								return
+							end
+						end
+						
+						current_objective.tactic = nil
+					else
+						current_objective.tactic = nil
+					end
+				else
+					current_objective.tactic = nil
+				end
+			else
+				current_objective.tactic = nil
 			end
 			
 			current_objective.interrupt_on_contact = nil
@@ -3698,7 +3716,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 					local nav_point = current_objective.coarse_path[i]
 
 					if not self:is_nav_seg_safe(nav_point[1]) then
-						for i = 0, #current_objective.coarse_path - i do
+						for i = 0, #current_objective.coarse_path - forwardmost_i_nav_point do
 							table.remove(current_objective.coarse_path)
 						end
 
@@ -3762,6 +3780,7 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 			self:_set_objective_to_enemy_group(group, grp_objective)
 
 			group.objective.moving_in = true
+			group.objective.moved_in = true
 
 			if next(current_objective.target_area.criminal.units) then
 				self:_chk_group_use_smoke_grenade(group, {

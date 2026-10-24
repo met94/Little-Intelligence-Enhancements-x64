@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T06:23:37.909Z
+Generated: 2026-10-24T06:36:35.078Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -294,7 +294,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 48 | 28 | 22 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 18 | 18 | 20 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire` | 101 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 116 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 123 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_assault` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_reenforce` | 46 | 0 | 0 |  |
@@ -327,7 +327,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `GroupAIStateBesiege.request_group_upd` | 12 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege.start_extend_assault` | 33 | 0 | 0 |  |
 | [ ] | keep (local helper) | `spawn_group_id` | 3 | 3 | 3 | local helper; keep even if identical to vanilla |
-| [ ] | keep | `GroupAIStateBesiege._assign_assault_groups_to_retire` | 47 | 31 | 31 |  |
+| [ ] | keep | `GroupAIStateBesiege._assign_assault_groups_to_retire` | 49 | 31 | 31 |  |
 | [ ] | keep | `GroupAIStateBesiege._assign_enemy_groups_to_assault` | 40 | 33 | 33 |  |
 | [ ] | keep | `GroupAIStateBesiege._assign_enemy_groups_to_recon` | 45 | 38 | 38 |  |
 | [ ] | keep | `GroupAIStateBesiege._assign_group_to_retire` | 100 | 51 | 51 |  |
@@ -337,10 +337,10 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `GroupAIStateBesiege._draw_enemy_activity` | 341 | 287 | 287 |  |
 | [ ] | keep | `GroupAIStateBesiege._find_spawn_group_near_area` | 130 | 123 | 123 |  |
 | [ ] | keep | `GroupAIStateBesiege._perform_group_spawning` | 153 | 145 | 145 |  |
-| [ ] | keep | `GroupAIStateBesiege._set_assault_objective_to_group` | 1410 | 351 | 351 |  |
-| [ ] | keep | `GroupAIStateBesiege._set_recon_objective_to_group` | 185 | 176 | 176 |  |
+| [ ] | keep | `GroupAIStateBesiege._set_assault_objective_to_group` | 1414 | 351 | 351 |  |
+| [ ] | keep | `GroupAIStateBesiege._set_recon_objective_to_group` | 186 | 176 | 176 |  |
 | [ ] | keep | `GroupAIStateBesiege._set_reenforce_objective_to_group` | 93 | 83 | 83 |  |
-| [ ] | keep | `GroupAIStateBesiege._upd_hostage_task` | 21 | 15 | 15 |  |
+| [ ] | keep | `GroupAIStateBesiege._upd_hostage_task` | 26 | 15 | 15 |  |
 | [ ] | keep | `GroupAIStateBesiege._upd_regroup_task` | 11 | 11 | 11 |  |
 | [ ] | keep | `GroupAIStateBesiege._verify_group_objective` | 70 | 67 | 67 |  |
 | [ ] | keep | `GroupAIStateBesiege._voice_deathguard_start` | 12 | 9 | 9 |  |
