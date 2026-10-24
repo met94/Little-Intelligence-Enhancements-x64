@@ -846,7 +846,9 @@ function GroupAIStateBesiege:_check_spawn_phalanx_LIES()
 					self._phalanx_last_spawn_check = now
 
 					if math.random() <= self._phalanx_current_spawn_chance then
-						self:_spawn_phalanx()
+						-- Call the LIES body directly so a missed init/post-hook swap
+						-- cannot fall back to vanilla phalanx handling.
+						self:_spawn_phalanx_LIES()
 					end
 				end
 			end

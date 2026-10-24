@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T08:16:57.757Z
+Generated: 2026-10-24T08:17:59.472Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -301,7 +301,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_reenforce` | 46 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._check_phalanx_damage_reduction_increase_LIES` | 126 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._check_spawn_phalanx_LIES` | 51 | 0 | 0 |  |
+| [ ] | audit | `GroupAIStateBesiege._check_spawn_phalanx_LIES` | 53 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._chk_crimin_proximity_to_unit` | 22 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._chk_group_area_presence` | 22 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._chk_group_engaging_area` | 44 | 0 | 0 |  |
