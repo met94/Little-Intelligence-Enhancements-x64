@@ -1,8 +1,8 @@
 # LIES 248.2 — release readiness checklist
 
-Status: release candidate prepared for `V8.57_x64`. Port is playable on the
-tested paths; final branch review, push, and GitHub release are the remaining
-steps. Diagnostic logging is gated behind the Debug Logging option (default OFF).
+Status: `V8.57_x64` release candidate reviewed and packaged. Push to
+`x64/main` and publish the GitHub release next. Diagnostic logging is gated
+behind the Debug Logging option (default OFF).
 
 ## Metadata
 
@@ -79,6 +79,16 @@ Current evidence: 55 Node tests, 68/68 hooks, 50/50 hook methods, 0 API errors,
 - `lua_cover` defaults to OFF; generation is opt-in and host-only.
 - `NavFixes` is redundant when LIES is installed; do not run both.
 - LIES's cover facing convention is preserved (points at the wall).
+
+## Release candidate
+
+- Version: `V8.57_x64`
+- Build: `dist\LIES` at `331406f`
+- Package: `dist\LIES-V8.57_x64.zip`
+- SHA-256: `F497CA2E06EA792FB3B06B0A7DCBDA76CACF61736A671DDAD9309B37179D592C`
+- Release page: `https://github.com/met94/Little-Intelligence-Enhancements-x64/releases/tag/V8.57_x64`
+- Auto-update feed: `https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json`
+- Final review: release diff reviewed; 3 release risks (missing remote, 404 feed decode, load-time diagnostic) fixed; static gates 55/55.
 
 ## Merge / workspace
 
