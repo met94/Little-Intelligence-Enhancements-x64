@@ -39,7 +39,7 @@ phalanx keys, dead recon-sweep subsystem, one skirmish metatable hazard).
 | H-05 | Low | Recon sweep: `_begin_recon_sweep_task`, `_upd_recon_sweep_task`, `_assign_enemy_group_to_recon_sweep`, `_set_recon_sweep_objective_to_group`, `_assign_enemy_groups_to_recon_sweep` (`besiege:3612-3830`) | No caller anywhere in the tree; `_task_data.recon.sweep_task` is never created | Whole subsystem is dead; `_assign_enemy_group_to_recon` branch is permanently false. No player effect. | Resolved `9dec81a`: deleted five functions and the sweep fork. | static |
 | H-06 | Low | `_setup_hhtacs_task_data` LIES-only keys (`groupaitweakdata:4389-4464`) | `max_smoke_grenades`, `phalanx.max_soldier_groups`, `phalanx.move_interval` do not exist in any game file (246/248) | Consumed only by LIES code; consistent. Not a break, but do not expect the game to honour them. | Document as LIES-private. | static |
 | H-07 | Low | `_LIES_setup:14` `enemy_spawn_groups["tac_swat_shotgun_rush"]` detection | Vanilla 246.1 and 248.2 expose only 13 spawn groups; `tac_swat_shotgun_rush` exists only in `besiege.assault.groups` weight tables | "Another mod already fixed spawn groups" detection now relies solely on `medic_M4`; the first half is always false. | Leave (works) or retarget to a group vanilla actually defines. | static |
-| H-08 | Low | `_check_spawn_timed_groups` hhtacs PostHook (`besiege:423-445`) | `_timed_groups[*].has_spawned` is a LIES-private field | Written, never read anywhere. Dead bookkeeping. | Delete or use. | static |
+| H-08 | Low | `_check_spawn_timed_groups` hhtacs PostHook (`besiege:423-445`) | `_timed_groups[*].has_spawned` is a LIES-private field | **Read** by `ElementSpawnEnemyDummy.check_overwrite_spawn_value` (`elementspawnenemydummy.lua:81`) to gate the marshal-marksman harasser swap. Not dead. | Keep; do not delete. | static |
 | H-09 | Low (pre-existing) | `besiege:1483` `self._area_data[new_objective.nav_seg]` | `_area_data` is keyed by area id, never by nav-seg id (232.4 identical) | Always nil -> `set_enemy_assigned(nil, u_key)` clears the cop's area assignment instead of setting it. | `self:get_area_from_nav_seg_id(new_objective.nav_seg)`. | static + smoke |
 | H-10 | Info | `_queue_police_upd_task` (`besiege:1125`) vs 248.2 `besiege:78-90` | 247 added `_POLICE_ACTIVITY_DELAY` / `_FAST` and moved rescheduling into `update()` | LIES already matches the 248.2 contract (direct `_upd_police_activity` call, timestamp field, constants). No double-run, no stale `managers.enemy:queue_task`. | No change; close the ledger `PORT` item. | static |
 | H-11 | Info | `managers.network:session():send_to_peers_synched` (`besiege:4241/4387/4458/4780`) | 247 switched group-ai calls to `managers.network:send_to_peers_synched`; `session()` and `GameSession:send_to_peers_synched` still exist and are still used by the game itself | Not a break. Style/consistency only. | Optional cleanup. | static |
@@ -266,13 +266,15 @@ Consequences, none fatal:
 
 ---
 
-## H-08 - `has_spawned` on timed groups is write-only
+## H-08 - `has_spawned` on timed groups gates the marshal harasser swap
 
-The hhtacs PostHook on `_check_spawn_timed_groups` sets
-`cur_group_data.has_spawned = true` for every timed group that has produced a
-unit. 248.2's `create_timed_groups_table` builds `{tweak_data, individual_data}`
-only, and nothing reads `has_spawned` on that table. No effect; either delete
-the hook or use the flag for a real decision.
+Corrected 2026-10-24: this is **not** write-only. The hhtacs PostHook on
+`_check_spawn_timed_groups` sets `cur_group_data.has_spawned = true` for every
+timed group that has produced a unit. `ElementSpawnEnemyDummy.check_overwrite_spawn_value`
+(`lua/managers/mapelements/elementspawnenemydummy.lua:81`) reads
+`groupaistate._timed_groups["marshal_squad"].has_spawned` to decide whether to
+swap in the LIES marshal-marksman harasser. Removing the hook would silently
+kill that substitution on man/rvd1/moon. Keep it.
 
 ---
 
@@ -429,7 +431,7 @@ Checked by name against `e3a8b616`; all present (or LIES-defined by design):
 - **H-05 dead:** recon-sweep subsystem has no caller; leave for a future
   delete-or-wire decision.
 - **H-06/H-07/H-08/H-12:** LIES-private keys, spawn-group detection quirk,
-  write-only `has_spawned`, intentional phalanx tuning. Documented, no code.
+  marshal-gating `has_spawned`, intentional phalanx tuning. Documented, no code.
 - **H-10/H-11:** already correct; ledger can be closed.
 
 ## Test plan (what static analysis cannot settle)

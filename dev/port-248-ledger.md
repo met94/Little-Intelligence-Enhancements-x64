@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T05:44:31.623Z
+Generated: 2026-10-24T06:23:37.909Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -15,9 +15,9 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | MOD_ONLY_HOOK | 41 |
 | MOD_ONLY | 189 |
 | VANISHED_IN_NEW | 1 |
-| SAME_AS_OLD_VANILLA | 2 |
+| SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 288 |
+| LIES_EDIT_CLEAN | 287 |
 
 ## menumanager.lua
 
@@ -158,7 +158,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | audit | `SecurityCamera._detect_criminals_loud` | 80 | 0 | 0 |  |
+| [ ] | audit | `SecurityCamera._detect_criminals_loud` | 81 | 0 | 0 |  |
 | [ ] | keep | `SecurityCamera._detection_angle_and_dis_chk` | 31 | 26 | 26 |  |
 | [ ] | keep | `SecurityCamera._upd_detect_attention_objects` | 160 | 133 | 133 |  |
 | [ ] | keep | `SecurityCamera._upd_suspicion` | 124 | 97 | 97 |  |
@@ -737,7 +737,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | keep | `TeamAIMovement.chk_action_forbidden` | 3 | 11 | 11 |  |
+| [ ] | delete | `TeamAIMovement.chk_action_forbidden` | 11 | 11 | 11 | stale 246.1 copy; delete unless intentionally kept |
 
 ## lua/teamaiextensions/teamaibrain.lua
 

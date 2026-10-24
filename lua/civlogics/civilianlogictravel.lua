@@ -1,7 +1,7 @@
 function CivilianLogicTravel._determine_exact_destination(data, objective)
 	if objective.pos then
 		return objective.pos
-	elseif objective.type == "follow" then
+	elseif objective.type == "follow" and alive(objective.follow_unit) then
 		local to_pos
 		
 		if not data.tied then

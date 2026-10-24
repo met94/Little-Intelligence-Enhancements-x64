@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-24T05:44:31.625Z",
+  "generated": "2026-10-24T06:23:37.911Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -1341,7 +1341,7 @@
         {
           "name": "SecurityCamera._detect_criminals_loud",
           "category": "MOD_ONLY",
-          "modLines": 80,
+          "modLines": 81,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "t, criminals",
@@ -1558,7 +1558,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 212
+          "startLine": 216
         }
       ],
       "errors": [],
@@ -7459,8 +7459,8 @@
       "rows": [
         {
           "name": "TeamAIMovement.chk_action_forbidden",
-          "category": "LIES_EDIT_CLEAN",
-          "modLines": 3,
+          "category": "SAME_AS_OLD_VANILLA",
+          "modLines": 11,
           "oldLines": 11,
           "newLines": 11,
           "modParams": "action_type",
@@ -7469,13 +7469,13 @@
           "isLocal": false,
           "isHook": false,
           "form": "colon",
-          "note": "",
+          "note": "stale 246.1 copy; delete unless intentionally kept",
           "startLine": 1
         }
       ],
       "errors": [],
       "totals": {
-        "LIES_EDIT_CLEAN": 1
+        "SAME_AS_OLD_VANILLA": 1
       }
     },
     {

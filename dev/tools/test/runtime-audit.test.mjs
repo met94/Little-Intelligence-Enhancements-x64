@@ -39,6 +39,40 @@ test('every spawn-search call passes only the supported arguments', () => {
   }
 });
 
+test('security camera loud detection uses the matching criminal key', () => {
+  const source = fs.readFileSync(path.join(root, 'lua', 'props', 'securitycamera.lua'), 'utf8');
+  assert.match(source, /vis_ray\.unit:key\(\) == c_key/);
+  assert.match(source, /local angle_multiplier = angle \/ angle_max/);
+  assert.match(source, /self\._visibility_slotmask = self\._visibility_slotmask or managers\.slot:get_mask\("AI_visibility"\)/);
+});
+
+test('team AI movement restores the should-stay walk guard', () => {
+  const source = fs.readFileSync(path.join(root, 'lua', 'teamaiextensions', 'teamaimovement.lua'), 'utf8');
+  assert.match(source, /if action_type == "walk" and self\._should_stay then/);
+});
+
+test('civilian follow travel guards a dead follow unit', () => {
+  const source = fs.readFileSync(path.join(root, 'lua', 'civlogics', 'civilianlogictravel.lua'), 'utf8');
+  assert.match(source, /objective\.type == "follow" and alive\(objective\.follow_unit\)/);
+});
+
+test('drill sabotage objective guards a missing nav tracker', () => {
+  const source = fs.readFileSync(path.join(root, 'lua', 'props', 'drill.lua'), 'utf8');
+  assert.match(source, /not self\._sabotage_align_obj_name or not self\._nav_tracker then/);
+});
+
+test('both obstacle-placement branches initialise obstacle_units', () => {
+  const source = fs.readFileSync(path.join(root, 'lua', 'managers', 'mapelements', 'missionscriptelement.lua'), 'utf8');
+  const guards = source.match(/if not disable_obstacles\._obstacle_units/g) || [];
+  assert.ok(guards.length >= 2, `obstacle_units guards: ${guards.length}`);
+});
+
+test('difficulty removal checks the level-specific adjustment table', () => {
+  const source = fs.readFileSync(path.join(root, 'lua', 'managers', 'mapelements', 'elementdifficulty.lua'), 'utf8');
+  const checks = source.match(/if to_adjust\[self\._id\] then/g) || [];
+  assert.ok(checks.length >= 2, `to_adjust checks: ${checks.length}`);
+});
+
 test('dead recon-sweep subsystem is removed', () => {
   const names = [
     '_begin_recon_sweep_task',

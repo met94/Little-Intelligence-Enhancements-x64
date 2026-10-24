@@ -62,6 +62,10 @@ local nav_fixes_on_executed = {
 			local rotation = Rotation(0, 0, -0)
 			local disable_obstacles = managers.mission:get_element_by_id(101797)
 			local obstacle_obj_name = Idstring("rp_dev_door_blocker_1x1x3")
+
+			if not disable_obstacles._obstacle_units or #disable_obstacles._obstacle_units == 0 then
+				disable_obstacles._obstacle_units = {}
+			end
 			
 			for i = 1, #nav_obstacle_info do
 				local obstacle_info = nav_obstacle_info[i]
