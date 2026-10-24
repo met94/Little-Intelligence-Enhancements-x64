@@ -49,6 +49,7 @@ Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions
 - HHTACS H-01/H-09 fixed. Phalanx decisions: keep solo behavior; move respawn key to `spawn_chance.respawn_delay`; leave phalanx aliases vanilla. Marshal mapping kept (intentional LIES behavior); revisit only if stuck.
 - HHTACS H-02/H-03/H-04/H-05 closed (`9dec81a`): hhtacs-only respawn key; phalanx spawn call dropped the unsupported 6th arg; `_find_spawn_group_near_area` enforces linear `max_dis` while keeping it as the weight scale; deleted the five-function dead recon-sweep subsystem and its fork. Regression tests: `dev/tools/test/runtime-audit.test.mjs`. Gates: 45 Node tests, 71/71 Lua compile, freevars 0, API errors 0.
 - `[LIES-CHECK]` smoke logging added (`70ec89f`): suppression, shield reservation, bag steal-SO, taser vertical gate, phalanx spawn/buff, HHTACS setup, marshal mapping, raw-door aim. Two-game smoke: no LIES errors or crash; suppression deny x128, shield set x53/fallback x4, bag registered x12/skipped x5, taser allowed x14/blocked x7, phalanx spawned 11 units + buff enabled/disabled, raw-door x2. Partial: marshal movement, holdout, phalanx buff increase. Report: `dev/reports/smoke-check-logging.md`.
+- Parity audit completed: API review 152 hits -> 147 safe, 5 engine/uncertain, 0 drift (`api-audit-triage.md`); Group AI 39 clean bodies identical, fixed recon truncation, HRT/sabotage nesting, moved_in, hostage timer, retreat retry (`8e7ec60`, `groupai-audit.md`); periphery fixed camera LOS, team-AI hold/revive, civilian follow, drill tracker, mission obstacle init, difficulty lookup (`ae89d04`, `periphery-audit.md`). Gates 54 tests, API 0, freevars 0.
 
 
 ## Rulings
@@ -61,6 +62,11 @@ Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions
 - Task 5: LIES-context errors are any Lua error in a LIES-hooked file after the LIES setup line. This is intentionally conservative; cost if wrong: an unrelated vanilla error in a hooked file can fail the smoke gate.
 - Task 7: API audit gate uses a recorded 50-error baseline; increases fail. Cost if wrong: a new error that replaces an old error without changing the count passes; the report still lists it for review.
 - H-04: `_find_spawn_group_near_area` compares the linear cached path distance to the linear `max_dis`, not vanilla's `max_dis * max_dis`. Vanilla's squared comparison is inert because the cached distance is linear; no current caller passes `max_dis`. Cost if wrong: a future caller gets a true cap rather than vanilla's effectively-unbounded one.
+- Group AI recon: keep vanilla 248.2 `#coarse_path - forwardmost_i_nav_point` loop, including the one-extra removal. Cost if wrong: recon path stops one node earlier than ideal.
+- Group AI hunts: close the flank `if alive(follow_unit)` before the `hrt`/`sabotage` branches and add the hrt reassignment `else`. Cost if wrong: one extra tactic reassignment instead of a stale HRT tactic.
+- Retreat voice: bounded 3 s retry, not single-shot and not every tick. Cost if wrong: a retreat line can be lost after 3 s; other group voice cues resume.
+- Periphery camera: leave `_destroyed` unchanged (248.2 writes it); only fix the undefined `u_key`, nil mask, and leaked `angle_multiplier`. Cost if wrong: camera LOS can reveal through walls or skip valid reveals.
+- Periphery: leave PlayerBleedOut's bag-drop distance alone; 670·28 cm looks like intentional "drop only if very far" pacing, not a 248.2 drift. Cost if wrong: AI keeps a bag while walking a long revive distance.
 
 ## Review fixes (P0)
 

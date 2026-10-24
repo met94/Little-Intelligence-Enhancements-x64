@@ -544,3 +544,22 @@ whether cops path in.
   `node dev/tools/api-audit.mjs`, ledger closure, plus
   `node tools/lua-freevars.mjs lua/managers/navigationmanager.lua --game
   <gamefile>` for the nav file.
+
+---
+
+## Group AI audit additions (2026-10-24)
+
+- **rvd1 forced follow-up (`ElementSpecialObjective:choose_followup_SO`):**
+  accept 248.2 `backup_pool` behavior. LIES no longer gets `nil` for an
+  all-zero-weight followup, so its idle fallback is reached less often. Only
+  edge-cases authored with `base_chance = 0`; cosmetic.
+- **Whisper-mode `on_criminal_nav_seg_change`:** no change. 248.2
+  `_on_area_safety_status` returns early in whisper mode; LIES clears
+  `area.is_safe` first, but `is_area_safe()` recomputes from criminals and
+  pathing/spawn checks are unaffected.
+- **`_get_spawn_unit_name` boss gate:** keep LIES behavior (no vanilla
+  `max_nr_simultaneous_boss_types` gate). Intentional LIES special pressure;
+  do not "fix" without a measured spawn issue.
+- **Recon truncation:** keep the 248.2 `#coarse_path - forwardmost_i_nav_point`
+  loop form, including its one-extra removal. Parity-safe; re-target node is
+  the one behind the forwardmost point.

@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-10-24 (after HHTACS H-02/H-03/H-04/H-05 cleanup).
+Last updated: 2026-10-24 (after Group AI and periphery parity audits).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -18,7 +18,16 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   `spawn_chance.respawn_delay`; five-argument phalanx spawn search; linear
   `max_dis` cap; dead recon-sweep subsystem deleted. Regression tests:
   `dev/tools/test/runtime-audit.test.mjs`.
-- Static gates: 45 Node tests, 71/71 LuaJIT syntax, 68/68 freevars, ledger,
+- Group AI audit (`8e7ec60`): all 39 LIES_EDIT_CLEAN bodies token-identical
+  to 248.2; fixed recon path truncation, HRT/sabotage tactic nesting,
+  `moved_in`, hostage-task ordering/timer, and bounded retreat retry.
+- Periphery audit (`ae89d04`): fixed camera loud LOS, team-AI hold/revive
+  guard, civilian follow guard, drill tracker guard, mission obstacle init,
+  difficulty removal lookup; corrected H-08 (`has_spawned` is read by the
+  marshal harasser swap).
+- API review triage: 147 known-safe, 5 engine/uncertain, 0 confirmed drift
+  (`dev/reports/api-audit-triage.md`).
+- Static gates: 54 Node tests, 71/71 LuaJIT syntax, 68/68 freevars, ledger,
   API audit pass.
 
 ## Open — core AI (needs in-game testing)
@@ -55,12 +64,17 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 - Keep LIES body (no edit): `CopLogicBase._upd_attention_obj_detection`, `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update`, `CopLogicIdle.damage_clbk`.
 - Merge pending: none from the current decisions doc.
 
-## Open — group AI / data / periphery
+## Group AI / data / periphery — audited
 
-- `GroupAIStateBase` and `GroupAIStateBesiege` remaining `LIES_EDIT_CLEAN` / `MOD_ONLY` functions: behavior audit, not API crashes.
-- `hhtacs` tactics: verify every referenced spawn group/tactic exists at 248.2.
-- Team AI, civilians, props, mission elements, menu, player states: mostly clean; audit new 248.2 fields.
-- Remaining API review hits (147): `_nav_segments`, `queue_task`, `_quad_field`, `_nav_link`, `search_coarse`, etc. Review list in `dev/reports/api-audit.md`.
+- `GroupAIStateBase` / `GroupAIStateBesiege`: audited; 39 LIES_EDIT_CLEAN
+  bodies are token-identical to 248.2. Report: `dev/reports/groupai-audit.md`.
+- HHTACS tactics/spawn groups/unit categories: audit closed; no missing keys.
+- Team AI, civilians, props, mission elements, menu, player states: audited;
+  no 248.2 contract drift; clear LIES-side guards fixed in `ae89d04`. Report:
+  `dev/reports/periphery-audit.md`.
+- 152 API review hits triaged: 147 known-safe, 5 engine/uncertain, 0 confirmed
+  drift. Report: `dev/reports/api-audit-triage.md`. Watch list: custom
+  `_quad_field:find_cover` cone keys, `is_position_unreserved` descriptor.
 
 ## Known deviations
 
