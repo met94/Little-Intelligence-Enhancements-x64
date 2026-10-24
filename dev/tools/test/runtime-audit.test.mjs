@@ -60,7 +60,8 @@ test('hostage task removes before callback and stops when empty', () => {
 
 test('retreat announcement retries briefly, then clears the retry flag', () => {
   assert.match(besiege, /group\._LIES_retreat_announce_deadline = deadline/);
-  assert.match(besiege, /self:_voice_retreat\(group\) or self\._t >= deadline/);
+  assert.match(besiege, /local voiced = self:_voice_retreat\(group\)/);
+  assert.match(besiege, /if voiced or self\._t >= deadline then/);
   assert.doesNotMatch(besiege, /group\.needs_announce_retreat = not self:_voice_retreat\(group\)/);
 });
 

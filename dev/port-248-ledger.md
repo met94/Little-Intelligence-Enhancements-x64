@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T06:36:35.078Z
+Generated: 2026-10-24T07:42:12.065Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -15,9 +15,9 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | MOD_ONLY_HOOK | 41 |
 | MOD_ONLY | 189 |
 | VANISHED_IN_NEW | 1 |
-| SAME_AS_OLD_VANILLA | 3 |
+| SAME_AS_OLD_VANILLA | 2 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 287 |
+| LIES_EDIT_CLEAN | 288 |
 
 ## menumanager.lua
 
@@ -158,7 +158,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | audit | `SecurityCamera._detect_criminals_loud` | 81 | 0 | 0 |  |
+| [ ] | audit | `SecurityCamera._detect_criminals_loud` | 89 | 0 | 0 |  |
 | [ ] | keep | `SecurityCamera._detection_angle_and_dis_chk` | 31 | 26 | 26 |  |
 | [ ] | keep | `SecurityCamera._upd_detect_attention_objects` | 160 | 133 | 133 |  |
 | [ ] | keep | `SecurityCamera._upd_suspicion` | 124 | 97 | 97 |  |
@@ -177,7 +177,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit (hook) | `Hooks.PostHook:Drill._unregister_sabotage_SO:lies_unregisterdrill` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:Drill.clbk_sabotage_SO_verification:lies_tacs_drill` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:Drill.on_sabotage_SO_completed:lies_drilljammedvoiceline` | 9 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | keep | `Drill._register_sabotage_SO` | 71 | 82 | 82 |  |
+| [ ] | keep | `Drill._register_sabotage_SO` | 76 | 82 | 82 |  |
 
 ## lua/groupaistate/groupaimanager.lua
 
@@ -222,7 +222,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | audit (hook) | `Hooks.PostHook:ElementDifficulty.init:lies_alter_diff_values` | 24 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:ElementDifficulty.init:lies_alter_diff_values` | 26 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/managers/mapelements/elementspawnenemygroup.lua
 
@@ -294,7 +294,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 48 | 28 | 22 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 18 | 18 | 20 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire` | 101 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 123 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 130 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_assault` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_reenforce` | 46 | 0 | 0 |  |
@@ -337,10 +337,10 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `GroupAIStateBesiege._draw_enemy_activity` | 341 | 287 | 287 |  |
 | [ ] | keep | `GroupAIStateBesiege._find_spawn_group_near_area` | 130 | 123 | 123 |  |
 | [ ] | keep | `GroupAIStateBesiege._perform_group_spawning` | 153 | 145 | 145 |  |
-| [ ] | keep | `GroupAIStateBesiege._set_assault_objective_to_group` | 1414 | 351 | 351 |  |
-| [ ] | keep | `GroupAIStateBesiege._set_recon_objective_to_group` | 186 | 176 | 176 |  |
+| [ ] | keep | `GroupAIStateBesiege._set_assault_objective_to_group` | 1424 | 351 | 351 |  |
+| [ ] | keep | `GroupAIStateBesiege._set_recon_objective_to_group` | 191 | 176 | 176 |  |
 | [ ] | keep | `GroupAIStateBesiege._set_reenforce_objective_to_group` | 93 | 83 | 83 |  |
-| [ ] | keep | `GroupAIStateBesiege._upd_hostage_task` | 26 | 15 | 15 |  |
+| [ ] | keep | `GroupAIStateBesiege._upd_hostage_task` | 29 | 15 | 15 |  |
 | [ ] | keep | `GroupAIStateBesiege._upd_regroup_task` | 11 | 11 | 11 |  |
 | [ ] | keep | `GroupAIStateBesiege._verify_group_objective` | 70 | 67 | 67 |  |
 | [ ] | keep | `GroupAIStateBesiege._voice_deathguard_start` | 12 | 9 | 9 |  |
@@ -737,7 +737,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | delete | `TeamAIMovement.chk_action_forbidden` | 11 | 11 | 11 | stale 246.1 copy; delete unless intentionally kept |
+| [ ] | keep | `TeamAIMovement.chk_action_forbidden` | 16 | 11 | 11 |  |
 
 ## lua/teamaiextensions/teamaibrain.lua
 
@@ -864,7 +864,7 @@ No function definitions (hook/overlay file).
 |---:|---|---|---:|---:|---:|---|
 | [ ] | audit | `CivilianLogicTravel._check_should_relocate` | 23 | 0 | 0 |  |
 | [ ] | keep | `CivilianLogicTravel._chk_has_old_action` | 14 | 5 | 5 |  |
-| [ ] | keep | `CivilianLogicTravel._determine_exact_destination` | 21 | 18 | 18 |  |
+| [ ] | keep | `CivilianLogicTravel._determine_exact_destination` | 26 | 18 | 18 |  |
 | [ ] | keep | `CivilianLogicTravel._upd_stop_old_action` | 20 | 9 | 9 |  |
 | [ ] | keep | `CivilianLogicTravel.update` | 113 | 104 | 104 |  |
 

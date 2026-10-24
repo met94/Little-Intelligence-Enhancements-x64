@@ -504,7 +504,14 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 					local deadline = group._LIES_retreat_announce_deadline or self._t + 3
 					group._LIES_retreat_announce_deadline = deadline
 
-					if self:_voice_retreat(group) or self._t >= deadline then
+					local voiced = self:_voice_retreat(group)
+
+					if voiced or self._t >= deadline then
+						if not voiced and not group._LIES_check_retreat_expired then
+							group._LIES_check_retreat_expired = true
+							log("[LIES-CHECK] retreat announcement expired group=" .. tostring(group.id))
+						end
+
 						group.needs_announce_retreat = false
 						group._LIES_retreat_announce_deadline = nil
 					end
@@ -1220,6 +1227,9 @@ function GroupAIStateBesiege:_upd_hostage_task()
 	if not self._hostage_upd_key and next(self._hostage_data) then
 		self._hostage_upd_key = "GroupAIStateBesiege:_upd_hostage_task"
 		managers.enemy:add_delayed_clbk(self._hostage_upd_key, callback(self, self, "_upd_hostage_task"), self._t + 0.2)
+	elseif not self._LIES_check_hostage_drained then
+		self._LIES_check_hostage_drained = true
+		log("[LIES-CHECK] hostage task drained")
 	end
 end
 
@@ -2310,6 +2320,11 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 					current_objective.tactic = nil
 				end
 			elseif current_objective.tactic == "hrt" then
+				if not group._LIES_check_hrt_tactic then
+					group._LIES_check_hrt_tactic = true
+					log("[LIES-CHECK] hrt tactic active group=" .. tostring(group.id))
+				end
+
 				if current_objective.going_for_hostages and self._rescueable_hostages then
 					if not next(current_objective.area.criminal.units) then
 						for u_key, u_table in pairs(self._rescueable_hostages) do
@@ -2326,6 +2341,11 @@ function GroupAIStateBesiege:_set_assault_objective_to_group(group, phase)
 					current_objective.tactic = nil
 				end
 			elseif current_objective.tactic == "sabotage" then
+				if not group._LIES_check_sabotage_tactic then
+					group._LIES_check_sabotage_tactic = true
+					log("[LIES-CHECK] sabotage tactic active group=" .. tostring(group.id))
+				end
+
 				if current_objective.going_for_drill and self._jammable_drills then
 					if not next(current_objective.area.criminal.units) then
 						for u_key, area in pairs(self._jammable_drills) do
@@ -3716,6 +3736,11 @@ function GroupAIStateBesiege:_set_recon_objective_to_group(group)
 					local nav_point = current_objective.coarse_path[i]
 
 					if not self:is_nav_seg_safe(nav_point[1]) then
+						if not self._LIES_check_recon_truncated then
+							self._LIES_check_recon_truncated = true
+							log("[LIES-CHECK] recon path truncated before unsafe seg=" .. tostring(nav_point[1]))
+						end
+
 						for i = 0, #current_objective.coarse_path - forwardmost_i_nav_point do
 							table.remove(current_objective.coarse_path)
 						end

@@ -99,6 +99,28 @@ skirmish (`skirmish_groups=false` in both loads; guard prevented a crash, but
 holdout was not played), and phalanx buff increase (VIP died too quickly).
 These are not regressions from this build.
 
+## New audit-fix events (build after `8e7ec60`)
+
+These prove the Group AI/periphery fixes actually executed:
+
+| Log line | Meaning |
+|---|---|
+| `[LIES-CHECK] hrt tactic active group=...` | HRT branch reached on a hostage heist |
+| `[LIES-CHECK] sabotage tactic active group=...` | Drill-sabotage branch reached |
+| `[LIES-CHECK] recon path truncated before unsafe seg=...` | Recon re-target truncation ran without nil-index |
+| `[LIES-CHECK] hostage task drained` | Hostage timer stopped instead of re-arming forever |
+| `[LIES-CHECK] retreat announcement expired group=...` | Retreat retry hit its 3 s bound |
+| `[LIES-CHECK] camera LOS reveal camera=...` / `camera LOS blocked camera=...` | Camera raycast actually allowed/blocked a reveal |
+| `[LIES-CHECK] team AI hold blocked walk unit=...` | Bot hold-position guard restored |
+| `[LIES-CHECK] civilian follow target unavailable ...` | Civilian follow fallback hit instead of nil-index |
+| `[LIES-CHECK] drill sabotage skipped: no nav tracker ...` | Drill tracker guard hit |
+| `[LIES-CHECK] mission obstacle list initialized element=...` | PAL obstacle init guard ran |
+| `[LIES-CHECK] difficulty on_executed cleared element=...` | Pent 101606 removal path ran |
+
+Missing lines mean the corresponding event did not occur; they are not failures by
+themselves. Send the log after one normal loud run, plus HRT/drill if they occur
+naturally.
+
 ## Log collection
 
 Send the newest `C:\Program Files (x86)\Steam\steamapps\common\PAYDAY 2\mods\logs\*.txt`.

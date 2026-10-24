@@ -4,6 +4,11 @@ function TeamAIMovement:chk_action_forbidden(action_type)
 			return false
 		end
 
+		if not self._LIES_check_hold_blocked then
+			self._LIES_check_hold_blocked = true
+			log("[LIES-CHECK] team AI hold blocked walk unit=" .. tostring(self._unit:key()))
+		end
+
 		return true
 	end
 
