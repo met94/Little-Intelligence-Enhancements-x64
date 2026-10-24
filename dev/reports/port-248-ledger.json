@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-24T05:25:32.863Z",
+  "generated": "2026-10-24T05:44:31.625Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -434,7 +434,7 @@
         {
           "name": "GroupAITweakData._LIES_setup",
           "category": "MOD_ONLY",
-          "modLines": 4309,
+          "modLines": 4313,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "",
@@ -459,7 +459,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4852
+          "startLine": 4856
         },
         {
           "name": "GroupAITweakData._setup_hhtacs_cartel_compatibility",
@@ -474,7 +474,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4894
+          "startLine": 4898
         },
         {
           "name": "GroupAITweakData._setup_hhtacs_task_data",
@@ -489,7 +489,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4311
+          "startLine": 4315
         },
         {
           "name": "Hooks.PostHook:GroupAITweakData._init_chatter_data:lies_chatter",
@@ -504,7 +504,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 4484
+          "startLine": 4488
         }
       ],
       "errors": [],
@@ -1427,7 +1427,7 @@
         {
           "name": "CarryData._chk_register_steal_SO",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 121,
+          "modLines": 136,
           "oldLines": 126,
           "newLines": 118,
           "modParams": "",
@@ -2334,7 +2334,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1404
+          "startLine": 1434
         },
         {
           "name": "GroupAIStateBesiege._assign_enemy_group_to_assault",
@@ -2349,7 +2349,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1697
+          "startLine": 1727
         },
         {
           "name": "GroupAIStateBesiege._assign_enemy_group_to_recon",
@@ -2364,7 +2364,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1742
+          "startLine": 1772
         },
         {
           "name": "GroupAIStateBesiege._assign_enemy_group_to_reenforce",
@@ -2379,7 +2379,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1787
+          "startLine": 1817
         },
         {
           "name": "GroupAIStateBesiege._assign_enemy_groups_to_assault",
@@ -2394,7 +2394,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 2070
+          "startLine": 2100
         },
         {
           "name": "GroupAIStateBesiege._assign_enemy_groups_to_recon",
@@ -2409,7 +2409,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 3522
+          "startLine": 3552
         },
         {
           "name": "GroupAIStateBesiege._assign_group_to_retire",
@@ -2424,12 +2424,12 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1303
+          "startLine": 1333
         },
         {
           "name": "GroupAIStateBesiege._check_phalanx_damage_reduction_increase_LIES",
           "category": "MOD_ONLY",
-          "modLines": 124,
+          "modLines": 126,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "",
@@ -2439,7 +2439,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 800
+          "startLine": 826
         },
         {
           "name": "GroupAIStateBesiege._check_spawn_phalanx_LIES",
@@ -2454,7 +2454,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 763
+          "startLine": 789
         },
         {
           "name": "GroupAIStateBesiege._chk_crimin_proximity_to_unit",
@@ -2469,7 +2469,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1923
+          "startLine": 1953
         },
         {
           "name": "GroupAIStateBesiege._chk_group_area_presence",
@@ -2484,7 +2484,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 3754
+          "startLine": 3784
         },
         {
           "name": "GroupAIStateBesiege._chk_group_engaging_area",
@@ -2499,7 +2499,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1985
+          "startLine": 2015
         },
         {
           "name": "GroupAIStateBesiege._chk_group_use_flash_grenade",
@@ -2514,7 +2514,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 3961
+          "startLine": 3991
         },
         {
           "name": "GroupAIStateBesiege._chk_group_use_gas_grenade",
@@ -2529,7 +2529,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4107
+          "startLine": 4137
         },
         {
           "name": "GroupAIStateBesiege._chk_group_use_smoke_grenade",
@@ -2544,7 +2544,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 3781
+          "startLine": 3811
         },
         {
           "name": "GroupAIStateBesiege._choose_best_group",
@@ -2559,7 +2559,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4409
+          "startLine": 4439
         },
         {
           "name": "GroupAIStateBesiege._create_objective_from_group_objective",
@@ -2574,7 +2574,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1834
+          "startLine": 1864
         },
         {
           "name": "GroupAIStateBesiege._determine_group_leader",
@@ -2589,7 +2589,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 4655
+          "startLine": 4689
         },
         {
           "name": "GroupAIStateBesiege._draw_enemy_activity",
@@ -2619,7 +2619,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4278
+          "startLine": 4308
         },
         {
           "name": "GroupAIStateBesiege._get_group_area",
@@ -2634,7 +2634,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1964
+          "startLine": 1994
         },
         {
           "name": "GroupAIStateBesiege._get_group_forwardmost_coarse_path_index_from_unit",
@@ -2649,7 +2649,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 2030
+          "startLine": 2060
         },
         {
           "name": "GroupAIStateBesiege._get_group_forwardmost_unit",
@@ -2664,7 +2664,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1946
+          "startLine": 1976
         },
         {
           "name": "GroupAIStateBesiege._on_player_slow_pos_rsrv_upd",
@@ -2679,7 +2679,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 490
+          "startLine": 516
         },
         {
           "name": "GroupAIStateBesiege._perform_group_spawning",
@@ -2694,7 +2694,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4501
+          "startLine": 4535
         },
         {
           "name": "GroupAIStateBesiege._queue_police_upd_task",
@@ -2709,7 +2709,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1125
+          "startLine": 1155
         },
         {
           "name": "GroupAIStateBesiege._register_escort",
@@ -2724,7 +2724,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 533
+          "startLine": 559
         },
         {
           "name": "GroupAIStateBesiege._set_assault_objective_to_group",
@@ -2739,7 +2739,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 2111
+          "startLine": 2141
         },
         {
           "name": "GroupAIStateBesiege._set_objective_to_phalanx_group_LIES",
@@ -2754,7 +2754,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 932
+          "startLine": 962
         },
         {
           "name": "GroupAIStateBesiege._set_recon_objective_to_group",
@@ -2769,7 +2769,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 3568
+          "startLine": 3598
         },
         {
           "name": "GroupAIStateBesiege._set_reenforce_objective_to_group",
@@ -2784,12 +2784,12 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4173
+          "startLine": 4203
         },
         {
           "name": "GroupAIStateBesiege._spawn_phalanx_LIES",
           "category": "MOD_ONLY",
-          "modLines": 62,
+          "modLines": 66,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "",
@@ -2799,7 +2799,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 4438
+          "startLine": 4468
         },
         {
           "name": "GroupAIStateBesiege._unregister_escort",
@@ -2814,7 +2814,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 545
+          "startLine": 571
         },
         {
           "name": "GroupAIStateBesiege._upd_group",
@@ -2829,7 +2829,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1656
+          "startLine": 1686
         },
         {
           "name": "GroupAIStateBesiege._upd_hostage_task",
@@ -2844,7 +2844,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1162
+          "startLine": 1192
         },
         {
           "name": "GroupAIStateBesiege._upd_police_activity",
@@ -2859,7 +2859,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 550
+          "startLine": 576
         },
         {
           "name": "GroupAIStateBesiege._upd_regroup_task",
@@ -2874,7 +2874,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1079
+          "startLine": 1109
         },
         {
           "name": "GroupAIStateBesiege._update_criminal_reveal",
@@ -2889,7 +2889,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 599
+          "startLine": 625
         },
         {
           "name": "GroupAIStateBesiege._verify_group_objective",
@@ -2904,7 +2904,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 654
+          "startLine": 680
         },
         {
           "name": "GroupAIStateBesiege._voice_block_escort_start",
@@ -2919,7 +2919,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1259
+          "startLine": 1289
         },
         {
           "name": "GroupAIStateBesiege._voice_charge_start",
@@ -2934,7 +2934,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1237
+          "startLine": 1267
         },
         {
           "name": "GroupAIStateBesiege._voice_deathguard_start",
@@ -2964,7 +2964,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1215
+          "startLine": 1245
         },
         {
           "name": "GroupAIStateBesiege._voice_follow_me",
@@ -2979,7 +2979,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1248
+          "startLine": 1278
         },
         {
           "name": "GroupAIStateBesiege._voice_gatherloot",
@@ -2994,7 +2994,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1281
+          "startLine": 1311
         },
         {
           "name": "GroupAIStateBesiege._voice_getcivs",
@@ -3009,7 +3009,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1270
+          "startLine": 1300
         },
         {
           "name": "GroupAIStateBesiege._voice_move_complete",
@@ -3054,7 +3054,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1292
+          "startLine": 1322
         },
         {
           "name": "GroupAIStateBesiege._voice_open_fire_start",
@@ -3084,7 +3084,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1226
+          "startLine": 1256
         },
         {
           "name": "GroupAIStateBesiege.add_to_surrendered",
@@ -3099,7 +3099,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1184
+          "startLine": 1214
         },
         {
           "name": "GroupAIStateBesiege.assign_enemy_to_group_ai",
@@ -3114,7 +3114,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 725
+          "startLine": 751
         },
         {
           "name": "GroupAIStateBesiege.check_follow_objectives_ready",
@@ -3129,7 +3129,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1627
+          "startLine": 1657
         },
         {
           "name": "GroupAIStateBesiege.force_end_assault_phase",
@@ -3144,7 +3144,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1143
+          "startLine": 1173
         },
         {
           "name": "GroupAIStateBesiege.force_spawn_group",
@@ -3159,7 +3159,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 624
+          "startLine": 650
         },
         {
           "name": "GroupAIStateBesiege.is_detection_persistent",
@@ -3174,7 +3174,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 529
+          "startLine": 555
         },
         {
           "name": "GroupAIStateBesiege.on_defend_travel_end",
@@ -3189,7 +3189,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1596
+          "startLine": 1626
         },
         {
           "name": "GroupAIStateBesiege.on_objective_complete",
@@ -3204,12 +3204,12 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1452
+          "startLine": 1482
         },
         {
           "name": "GroupAIStateBesiege.phalanx_damage_reduction_disable_LIES",
           "category": "MOD_ONLY",
-          "modLines": 6,
+          "modLines": 8,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "",
@@ -3219,7 +3219,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 925
+          "startLine": 953
         },
         {
           "name": "GroupAIStateBesiege.remove_from_surrendered",
@@ -3234,7 +3234,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1201
+          "startLine": 1231
         },
         {
           "name": "GroupAIStateBesiege.request_group_upd",
@@ -3249,7 +3249,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1583
+          "startLine": 1613
         },
         {
           "name": "GroupAIStateBesiege.start_extend_assault",
@@ -3264,7 +3264,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1091
+          "startLine": 1121
         },
         {
           "name": "Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire",
@@ -3279,12 +3279,12 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 977
+          "startLine": 1007
         },
         {
           "name": "Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups",
           "category": "MOD_ONLY_HOOK",
-          "modLines": 90,
+          "modLines": 116,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "",
@@ -3309,7 +3309,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 4267
+          "startLine": 4297
         },
         {
           "name": "spawn_group_id",
@@ -3324,7 +3324,7 @@
           "isHook": false,
           "form": "decl",
           "note": "local helper; keep even if identical to vanilla",
-          "startLine": 4274
+          "startLine": 4304
         }
       ],
       "errors": [],
@@ -3515,7 +3515,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 997
+          "startLine": 999
         },
         {
           "name": "CopBrain._do_hhtacs_damage_modifiers",
@@ -3530,7 +3530,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 309
+          "startLine": 311
         },
         {
           "name": "CopBrain._on_player_slow_pos_rsrv_upd",
@@ -3545,7 +3545,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 679
+          "startLine": 681
         },
         {
           "name": "CopBrain.action_complete_clbk",
@@ -3560,7 +3560,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1032
+          "startLine": 1034
         },
         {
           "name": "CopBrain.add_pos_rsrv",
@@ -3575,7 +3575,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 631
+          "startLine": 633
         },
         {
           "name": "CopBrain.check_upd_aim",
@@ -3590,7 +3590,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 213
+          "startLine": 215
         },
         {
           "name": "CopBrain.clbk_group_member_attention_verified",
@@ -3605,7 +3605,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1308
+          "startLine": 1310
         },
         {
           "name": "CopBrain.clbk_pathing_results",
@@ -3620,7 +3620,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1253
+          "startLine": 1255
         },
         {
           "name": "CopBrain.get_movement_delay",
@@ -3635,7 +3635,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 689
+          "startLine": 691
         },
         {
           "name": "CopBrain.is_criminal",
@@ -3650,7 +3650,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1060
+          "startLine": 1062
         },
         {
           "name": "CopBrain.objective_is_sabotage",
@@ -3665,7 +3665,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1161
+          "startLine": 1163
         },
         {
           "name": "CopBrain.on_suppressed",
@@ -3680,7 +3680,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 705
+          "startLine": 707
         },
         {
           "name": "CopBrain.on_team_set",
@@ -3695,7 +3695,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 194
+          "startLine": 196
         },
         {
           "name": "CopBrain.post_init",
@@ -3710,7 +3710,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 17
+          "startLine": 19
         },
         {
           "name": "CopBrain.request_stillness",
@@ -3725,7 +3725,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1056
+          "startLine": 1058
         },
         {
           "name": "CopBrain.request_switch_to_normal_weapon",
@@ -3740,7 +3740,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1132
+          "startLine": 1134
         },
         {
           "name": "CopBrain.request_switch_to_safe_weapon",
@@ -3755,7 +3755,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1080
+          "startLine": 1082
         },
         {
           "name": "CopBrain.search_for_coarse_immediate",
@@ -3770,7 +3770,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 859
+          "startLine": 861
         },
         {
           "name": "CopBrain.search_for_coarse_path_to_pos",
@@ -3785,7 +3785,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1352
+          "startLine": 1354
         },
         {
           "name": "CopBrain.search_for_path",
@@ -3800,7 +3800,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 875
+          "startLine": 877
         },
         {
           "name": "CopBrain.search_for_path_from_pos",
@@ -3815,7 +3815,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 899
+          "startLine": 901
         },
         {
           "name": "CopBrain.search_for_path_to_cover",
@@ -3830,7 +3830,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 922
+          "startLine": 924
         },
         {
           "name": "CopBrain.set_objective",
@@ -3845,7 +3845,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 717
+          "startLine": 719
         },
         {
           "name": "CopBrain.set_pos_rsrv",
@@ -3860,7 +3860,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 655
+          "startLine": 657
         },
         {
           "name": "CopBrain.set_spawn_ai",
@@ -3875,7 +3875,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 156
+          "startLine": 158
         },
         {
           "name": "CopBrain.upd_falloff_sim",
@@ -3890,7 +3890,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 205
+          "startLine": 207
         },
         {
           "name": "CopBrain.update",
@@ -3905,7 +3905,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1320
+          "startLine": 1322
         },
         {
           "name": "Hooks.PostHook:CopBrain._add_pathing_result:lies_pathing",
@@ -3920,7 +3920,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 950
+          "startLine": 952
         },
         {
           "name": "Hooks.PostHook:CopBrain._reset_logic_data:lies_reset_logic_data",
@@ -3935,7 +3935,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 80
+          "startLine": 82
         },
         {
           "name": "Hooks.PostHook:CopBrain.clbk_death:lies_clbk_death",
@@ -3950,7 +3950,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 627
+          "startLine": 629
         },
         {
           "name": "Hooks.PostHook:CopBrain.clbk_death:lies_remove_sabo_outline",
@@ -3965,7 +3965,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 149
+          "startLine": 151
         },
         {
           "name": "Hooks.PostHook:CopBrain.convert_to_criminal:lies_convert_to_criminal",
@@ -3980,7 +3980,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 122
+          "startLine": 124
         },
         {
           "name": "Hooks.PostHook:CopBrain.on_reload:lies_on_reload",
@@ -3995,7 +3995,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 578
+          "startLine": 580
         },
         {
           "name": "Hooks.PostHook:CopBrain.set_group:lies_reset_weapons",
@@ -4010,7 +4010,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 462
+          "startLine": 464
         },
         {
           "name": "Hooks.PostHook:CopBrain.set_spawn_entry:lies_accessentry",
@@ -4025,7 +4025,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 106
+          "startLine": 108
         }
       ],
       "errors": [],
@@ -5851,7 +5851,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2557
+          "startLine": 2567
         },
         {
           "name": "CopLogicAttack._check_needs_reload",
@@ -5881,7 +5881,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2536
+          "startLine": 2546
         },
         {
           "name": "CopLogicAttack._chk_enrage",
@@ -5896,7 +5896,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1536
+          "startLine": 1541
         },
         {
           "name": "CopLogicAttack._chk_exit_attack_logic",
@@ -5911,7 +5911,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2939
+          "startLine": 2949
         },
         {
           "name": "CopLogicAttack._chk_request_action_turn_to_enemy",
@@ -5926,7 +5926,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1460
+          "startLine": 1465
         },
         {
           "name": "CopLogicAttack._chk_request_action_walk_to_cover",
@@ -5941,7 +5941,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2407
+          "startLine": 2412
         },
         {
           "name": "CopLogicAttack._chk_request_action_walk_to_cover_offset_pos",
@@ -5956,7 +5956,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2336
+          "startLine": 2341
         },
         {
           "name": "CopLogicAttack._chk_request_action_walk_to_cover_shoot_pos",
@@ -5986,7 +5986,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1962
+          "startLine": 1967
         },
         {
           "name": "CopLogicAttack._chk_start_action_move_out_of_the_way",
@@ -6001,7 +6001,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1902
+          "startLine": 1907
         },
         {
           "name": "CopLogicAttack._chk_wants_to_take_cover",
@@ -6031,7 +6031,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2163
+          "startLine": 2168
         },
         {
           "name": "CopLogicAttack._correct_path_start_pos",
@@ -6046,7 +6046,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2319
+          "startLine": 2324
         },
         {
           "name": "CopLogicAttack._find_charge_pos",
@@ -6061,7 +6061,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1824
+          "startLine": 1829
         },
         {
           "name": "CopLogicAttack._find_flank_pos",
@@ -6076,7 +6076,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1863
+          "startLine": 1868
         },
         {
           "name": "CopLogicAttack._find_friend_pos",
@@ -6091,7 +6091,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2586
+          "startLine": 2596
         },
         {
           "name": "CopLogicAttack._find_retreat_position",
@@ -6106,7 +6106,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2040
+          "startLine": 2045
         },
         {
           "name": "CopLogicAttack._get_cover_offset_pos",
@@ -6121,7 +6121,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1700
+          "startLine": 1705
         },
         {
           "name": "CopLogicAttack._get_expected_pos",
@@ -6136,7 +6136,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1321
+          "startLine": 1326
         },
         {
           "name": "CopLogicAttack._move_back_into_field_position",
@@ -6151,7 +6151,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1672
+          "startLine": 1677
         },
         {
           "name": "CopLogicAttack._pathing_complete_clbk",
@@ -6181,7 +6181,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1482
+          "startLine": 1487
         },
         {
           "name": "CopLogicAttack._process_pathing_results",
@@ -6196,12 +6196,12 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1758
+          "startLine": 1763
         },
         {
           "name": "CopLogicAttack._upd_aim",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 567,
+          "modLines": 572,
           "oldLines": 195,
           "newLines": 192,
           "modParams": "data, my_data",
@@ -6256,7 +6256,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2178
+          "startLine": 2183
         },
         {
           "name": "CopLogicAttack._upd_stop_old_action",
@@ -6271,7 +6271,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2561
+          "startLine": 2571
         },
         {
           "name": "CopLogicAttack._update_cover",
@@ -6286,7 +6286,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2676
+          "startLine": 2686
         },
         {
           "name": "CopLogicAttack._verify_cover",
@@ -6301,7 +6301,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1742
+          "startLine": 1747
         },
         {
           "name": "CopLogicAttack.action_complete_clbk",
@@ -6316,7 +6316,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2217
+          "startLine": 2222
         },
         {
           "name": "CopLogicAttack.action_taken",
@@ -6346,7 +6346,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1634
+          "startLine": 1639
         },
         {
           "name": "CopLogicAttack.chk_should_turn",
@@ -6396,7 +6396,7 @@
         {
           "name": "CopLogicAttack.is_available_for_assignment",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 55,
+          "modLines": 60,
           "oldLines": 43,
           "newLines": 43,
           "modParams": "data, new_objective",
@@ -6406,7 +6406,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2480
+          "startLine": 2485
         },
         {
           "name": "CopLogicAttack.queue_update",
@@ -6805,7 +6805,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 576
+          "startLine": 586
         },
         {
           "name": "ShieldLogicAttack._pathing_complete_clbk",
@@ -6850,7 +6850,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 548
+          "startLine": 558
         },
         {
           "name": "ShieldLogicAttack.chk_should_turn",
@@ -6900,7 +6900,7 @@
         {
           "name": "ShieldLogicAttack.queued_update",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 114,
+          "modLines": 124,
           "oldLines": 130,
           "newLines": 129,
           "modParams": "data",
@@ -6937,12 +6937,12 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 473
+          "startLine": 487
         },
         {
           "name": "TaserLogicAttack._chk_play_charge_weapon_sound",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 7,
+          "modLines": 21,
           "oldLines": 7,
           "newLines": 7,
           "modParams": "data, my_data, focus_enemy",
@@ -6967,7 +6967,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 448
+          "startLine": 462
         },
         {
           "name": "TaserLogicAttack._chk_wants_to_take_cover",

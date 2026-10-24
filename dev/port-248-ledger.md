@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T05:25:32.861Z
+Generated: 2026-10-24T05:44:31.623Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -78,7 +78,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAITweakData._init_chatter_data:lies_chatter` | 367 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | audit | `GroupAITweakData._LIES_setup` | 4309 | 0 | 0 |  |
+| [ ] | audit | `GroupAITweakData._LIES_setup` | 4313 | 0 | 0 |  |
 | [ ] | audit | `GroupAITweakData._setup_hhtacs_bo_compatibility` | 41 | 0 | 0 |  |
 | [ ] | audit | `GroupAITweakData._setup_hhtacs_cartel_compatibility` | 310 | 0 | 0 |  |
 | [ ] | audit | `GroupAITweakData._setup_hhtacs_task_data` | 172 | 0 | 0 |  |
@@ -168,7 +168,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CarryData._chk_register_steal_SO` | 121 | 126 | 118 |  |
+| [ ] | **PORT** | `CarryData._chk_register_steal_SO` | 136 | 126 | 118 |  |
 
 ## lua/props/drill.lua
 
@@ -294,11 +294,11 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 48 | 28 | 22 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 18 | 18 | 20 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire` | 101 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 90 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 116 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_assault` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_reenforce` | 46 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._check_phalanx_damage_reduction_increase_LIES` | 124 | 0 | 0 |  |
+| [ ] | audit | `GroupAIStateBesiege._check_phalanx_damage_reduction_increase_LIES` | 126 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._check_spawn_phalanx_LIES` | 36 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._chk_crimin_proximity_to_unit` | 22 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._chk_group_area_presence` | 22 | 0 | 0 |  |
@@ -310,7 +310,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `GroupAIStateBesiege._on_player_slow_pos_rsrv_upd` | 38 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._register_escort` | 11 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._set_objective_to_phalanx_group_LIES` | 44 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._spawn_phalanx_LIES` | 62 | 0 | 0 |  |
+| [ ] | audit | `GroupAIStateBesiege._spawn_phalanx_LIES` | 66 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._unregister_escort` | 4 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._upd_group` | 40 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._update_criminal_reveal` | 24 | 0 | 0 |  |
@@ -323,7 +323,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `GroupAIStateBesiege._voice_movedin_civs` | 10 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._voice_retreat` | 10 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege.check_follow_objectives_ready` | 22 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege.phalanx_damage_reduction_disable_LIES` | 6 | 0 | 0 |  |
+| [ ] | audit | `GroupAIStateBesiege.phalanx_damage_reduction_disable_LIES` | 8 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege.request_group_upd` | 12 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege.start_extend_assault` | 33 | 0 | 0 |  |
 | [ ] | keep (local helper) | `spawn_group_id` | 3 | 3 | 3 | local helper; keep even if identical to vanilla |
@@ -582,9 +582,9 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 567 | 195 | 192 |  |
+| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 572 | 195 | 192 |  |
 | [ ] | **PORT** | `CopLogicAttack.action_complete_clbk` | 101 | 47 | 47 |  |
-| [ ] | **PORT** | `CopLogicAttack.is_available_for_assignment` | 55 | 43 | 43 |  |
+| [ ] | **PORT** | `CopLogicAttack.is_available_for_assignment` | 60 | 43 | 43 |  |
 | [ ] | audit | `CopLogicAttack._check_needs_reload` | 48 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._chk_enrage` | 97 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._chk_request_action_walk_to_cover_offset_pos` | 70 | 0 | 0 |  |
@@ -667,7 +667,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `ShieldLogicAttack.queued_update` | 114 | 130 | 129 |  |
+| [ ] | **PORT** | `ShieldLogicAttack.queued_update` | 124 | 130 | 129 |  |
 | [ ] | audit | `ShieldLogicAttack._pathing_complete_clbk` | 21 | 0 | 0 |  |
 | [ ] | audit | `ShieldLogicAttack.chk_should_turn` | 3 | 0 | 0 |  |
 | [ ] | keep | `ShieldLogicAttack._chk_request_action_walk_to_optimal_pos` | 25 | 24 | 24 |  |
@@ -681,7 +681,7 @@ No function definitions (hook/overlay file).
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
 | [ ] | **PORT** | `TaserLogicAttack._cancel_tase_attempt` | 12 | 10 | 8 |  |
-| [ ] | **PORT** | `TaserLogicAttack._chk_play_charge_weapon_sound` | 7 | 7 | 7 |  |
+| [ ] | **PORT** | `TaserLogicAttack._chk_play_charge_weapon_sound` | 21 | 7 | 7 |  |
 | [ ] | **PORT** | `TaserLogicAttack._upd_enemy_detection` | 75 | 74 | 74 |  |
 | [ ] | audit | `TaserLogicAttack._chk_wants_to_take_cover` | 37 | 0 | 0 |  |
 | [ ] | keep | `TaserLogicAttack._chk_reaction_to_attention_object` | 24 | 21 | 21 |  |

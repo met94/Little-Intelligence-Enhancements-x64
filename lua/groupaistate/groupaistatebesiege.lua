@@ -397,6 +397,7 @@ local blockade_start_maps = {
 }
 
 Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
+	LIES._check_door_watch_logged = nil
 	self._escorts = {}
 	self._MAX_SIMULTANEOUS_SPAWNS = 2
 	
@@ -451,6 +452,31 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 		Hooks:PostHook(GroupAIStateBesiege, "_perform_group_spawning", "lies_upd_group_early", function(self, spawn_task, force, use_last)
 			if spawn_task.group.has_spawned and self._groups[spawn_task.group.id] then
 				self:_upd_group(self._groups[spawn_task.group.id])
+			end
+		end)
+
+		Hooks:PostHook(GroupAIStateBesiege, "_check_phalanx_group_has_spawned", "lies_check_phalanx_spawn_log", function(self)
+			local group = self._phalanx_spawn_group
+
+			if not group then
+				return
+			end
+
+			if group.has_spawned then
+				if not self._LIES_check_phalanx_spawned then
+					self._LIES_check_phalanx_spawned = true
+					log(string.format("[LIES-CHECK] phalanx spawned units=%d", table.size(group.units)))
+				end
+			elseif self._LIES_check_phalanx_spawn_t and self._t - self._LIES_check_phalanx_spawn_t > 15 and not self._LIES_check_phalanx_pending then
+				self._LIES_check_phalanx_pending = true
+				log(string.format("[LIES-CHECK] phalanx pending after 15s units=%d", table.size(group.units)))
+			end
+		end)
+
+		Hooks:PostHook(GroupAIStateBesiege, "phalanx_damage_reduction_enable", "lies_check_phalanx_buff_enable", function(self)
+			if LIES.settings.hhtacs then
+				local team = self:_get_law1_team()
+				log("[LIES-CHECK] phalanx buff enabled value=" .. tostring(team and team.damage_reduction))
 			end
 		end)
 		
@@ -815,6 +841,8 @@ function GroupAIStateBesiege:_check_phalanx_damage_reduction_increase_LIES()
 
 				self:set_phalanx_damage_reduction_buff(dmg_reduct)
 
+				log(string.format("[LIES-CHECK] phalanx buff increased value=%.3f", dmg_reduct))
+
 				self._phalanx_damage_reduction_last_increase = last_increase
 			end
 			
@@ -924,6 +952,8 @@ end
 
 function GroupAIStateBesiege:phalanx_damage_reduction_disable_LIES()
 	self:set_phalanx_damage_reduction_buff(-1)
+
+	log("[LIES-CHECK] phalanx buff disabled")
 
 	self._phalanx_damage_reduction_last_increase = nil
 	self._phalanx_center_pos = self._phalanx_center_pos_old and mvector3.copy(self._phalanx_center_pos_old) or self._phalanx_center_pos
@@ -4467,7 +4497,7 @@ function GroupAIStateBesiege:_spawn_phalanx_LIES()
 		return
 	end
 
-	log(string.format("[LIES] phalanx spawn: type=%s pts=%d area=%s", tostring(spawn_group_type), #spawn_group.spawn_pts, tostring(phalanx_area.id)))
+	log(string.format("[LIES-CHECK] phalanx spawn group type=%s pts=%d area=%s", tostring(spawn_group_type), #spawn_group.spawn_pts, tostring(phalanx_area.id)))
 
 	if spawn_group.spawn_pts[1] and spawn_group.spawn_pts[1].pos then
 		local spawn_pos = spawn_group.spawn_pts[1].pos
@@ -4485,14 +4515,18 @@ function GroupAIStateBesiege:_spawn_phalanx_LIES()
 
 			self._phalanx_spawn_group = self:_spawn_in_group(spawn_group, spawn_group_type, grp_objective, nil)
 
-			log(string.format("[LIES] phalanx group=%s units=%d", tostring(self._phalanx_spawn_group ~= nil), self._phalanx_spawn_group and #self._phalanx_spawn_group.units or 0))
-
 			if self._phalanx_spawn_group then
+				self._LIES_check_phalanx_spawn_t = self._t
+				self._LIES_check_phalanx_spawned = nil
+				self._LIES_check_phalanx_pending = nil
+
+				log(string.format("[LIES-CHECK] phalanx group created units=%d", table.size(self._phalanx_spawn_group.units)))
+
 				self:set_assault_endless(true)
 				managers.game_play_central:announcer_say("cpa_a02_01")
 				managers.network:session():send_to_peers_synched("group_ai_event", self:get_sync_event_id("phalanx_spawned"), 0)
 			else
-				log("[LIES] phalanx spawn failed: _spawn_in_group returned nil")
+				log("[LIES-CHECK] phalanx spawn failed: no group")
 			end
 		end
 	end

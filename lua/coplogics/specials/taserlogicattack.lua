@@ -438,10 +438,24 @@ function TaserLogicAttack.action_complete_clbk(data, action)
 end
 
 function TaserLogicAttack._chk_play_charge_weapon_sound(data, my_data, focus_enemy)
-	if not my_data.tasing_action and (not data.last_charge_snd_play_t or data.t - data.last_charge_snd_play_t > math.lerp(15, 30, focus_enemy.verified_dis / 3000)) and focus_enemy.verified_dis < 3000 and math.abs(data.m_pos.z - focus_enemy.m_pos.z) < 300 then
-		data.last_charge_snd_play_t = data.t
+	local want_charge = not my_data.tasing_action and (not data.last_charge_snd_play_t or data.t - data.last_charge_snd_play_t > math.lerp(15, 30, focus_enemy.verified_dis / 3000)) and focus_enemy.verified_dis < 3000
 
-		data.unit:sound():play("taser_charge", nil, true)
+	if want_charge then
+		local vertical_dis = math.abs(data.m_pos.z - focus_enemy.m_pos.z)
+
+		if vertical_dis < 300 then
+			data.last_charge_snd_play_t = data.t
+
+			data.unit:sound():play("taser_charge", nil, true)
+
+			if not data._LIES_check_taser_charge_allowed then
+				data._LIES_check_taser_charge_allowed = true
+				log(string.format("[LIES-CHECK] taser charge allowed vertical=%.0f", vertical_dis))
+			end
+		elseif not data._LIES_check_taser_charge_blocked then
+			data._LIES_check_taser_charge_blocked = true
+			log(string.format("[LIES-CHECK] taser charge blocked vertical=%.0f", vertical_dis))
+		end
 	end
 end
 

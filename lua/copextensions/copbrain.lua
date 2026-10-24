@@ -1,5 +1,7 @@
 CopBrain._logic_variants.marshal_marksman.attack = CopLogicAttack
 
+log("[LIES-CHECK] marshal marksman attack=CopLogicAttack")
+
 CopBrain._logic_variants.triad_boss.attack = LIESBossLogicAttack
 CopBrain._logic_variants.deep_boss.attack = LIESDeepBossLogicAttack
 
