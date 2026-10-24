@@ -48,6 +48,7 @@ Docs: `dev/reports/port-status.md` (status/backlog), `dev/reports/port-decisions
 - Core AI gap audit: AI-01 `_upd_aim` raw v6 doors fixed; AI-02 `find_segment_doors` raw nav-link positions fixed (vanilla phalanx crash route removed); AI-03 phalanx aliases deferred; AI-04 marshal downgrade documented; AI-05 no change; AI-06 latent. Report: `dev/reports/core-ai-gap-audit.md`.
 - HHTACS H-01/H-09 fixed. Phalanx decisions: keep solo behavior; move respawn key to `spawn_chance.respawn_delay`; leave phalanx aliases vanilla. Marshal mapping kept (intentional LIES behavior); revisit only if stuck.
 - HHTACS H-02/H-03/H-04/H-05 closed (`9dec81a`): hhtacs-only respawn key; phalanx spawn call dropped the unsupported 6th arg; `_find_spawn_group_near_area` enforces linear `max_dis` while keeping it as the weight scale; deleted the five-function dead recon-sweep subsystem and its fork. Regression tests: `dev/tools/test/runtime-audit.test.mjs`. Gates: 45 Node tests, 71/71 Lua compile, freevars 0, API errors 0.
+- `[LIES-CHECK]` smoke logging added (`70ec89f`): suppression, shield reservation, bag steal-SO, taser vertical gate, phalanx spawn/buff, HHTACS setup, marshal mapping, raw-door aim. Two-game smoke: no LIES errors or crash; suppression deny x128, shield set x53/fallback x4, bag registered x12/skipped x5, taser allowed x14/blocked x7, phalanx spawned 11 units + buff enabled/disabled, raw-door x2. Partial: marshal movement, holdout, phalanx buff increase. Report: `dev/reports/smoke-check-logging.md`.
 
 
 ## Rulings

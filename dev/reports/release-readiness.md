@@ -65,10 +65,14 @@ files / 0 findings.
 - Nav-A custom search — passed.
 - Nav-B generation + custom search — passed.
 - Level change / Nav-B abort — passed after latest build.
-- **Pending smoke:** suppression gate, dodge `math.rand`, idle damage `data.t`,
-  taser charge vertical guard.
-- **Pending smoke:** shield reservation split, bag steal-SO guard/helper.
-- **Pending deep:** specials, hostages, team AI, hhtacs, level restart.
+- **Passed 2026-10-24 (`70ec89f`):** suppression gate (128 denials),
+  taser vertical guard (14 allowed / 7 blocked), shield reservation split
+  (53 set / 4 fallback), bag steal-SO guard/helper (12 registered / 5 expected
+  skips), hhtacs phalanx spawn + buff enable/disable, raw-door aim branch.
+- **Still pending:** dodge `math.rand` and idle damage `data.t` (no dedicated
+  log/trigger); phalanx buff increase (VIP died before the 15 s tick).
+- **Pending deep:** specials (partial), hostages, team AI, holdout skirmish,
+  marshal marksman movement, level restart.
 - **Pending compatibility:** clean profile vs `NavFixes`, `Useful Bots`,
   `Keepers`, `Iter Lite`, `The Fixes`.
 

@@ -75,6 +75,30 @@ were rejected; send that log.
   run.
 - **AI-02 nav-link crash:** phalanx Run 2 covers the reachable route.
 
+## Results — 2026-10-24, build `70ec89f`
+
+Two games, one log (`2026_10_24_log.txt`). Counts from `[LIES-CHECK]`:
+
+| Check | Evidence | Result |
+|---|---|---|
+| HHTACS setup | `tweak setup complete` x2; `hhtacs=true`; respawn `1200` / `300000` | Pass (difficulty-dependent key behaved as expected) |
+| Suppression gate | `suppression deny` x128 across normal cops/SWAT/FBI/sniper | Pass; no crash or stuck-assignment symptom reported |
+| Shield reservation | `shield reservation set` x53; `fallback` x4 | Pass; both branches exercised |
+| Bag steal SO | `registered` x12; `deferred` x13; `skipped: enemy loot drop area` x5 | Pass; registration and expected skip paths exercised |
+| Taser vertical gate | `allowed` x14; `blocked` x7 (1000/830/400 units) | Pass; same-floor allowed, cross-floor blocked |
+| Phalanx | `spawn group` x1; `group created` x1; `spawned units=11` x1; `pending` x0; `buff enabled` x1; `buff disabled` x1; `buff increased` x0 | Pass for spawn/buff lifecycle; no increase because the VIP died before the 15 s tick |
+| Raw-door aim | `door watch raw position used` x2 | Pass (branch reached) |
+| Marshal | load-time mapping x2 | Mapping confirmed; marksman behaviour not exercised |
+
+No new `crash.txt` timestamp (still 2026-10-23 17:35). Only BeardLib
+`ModAssetsModule.lua:156 attempt to compare number with nil` appears; no LIES
+error, no `LEAKING POS RESERVATION`, no `FATAL ERROR`.
+
+Partial/unverified: marshal marksman movement (no marshal heist), holdout
+skirmish (`skirmish_groups=false` in both loads; guard prevented a crash, but
+holdout was not played), and phalanx buff increase (VIP died too quickly).
+These are not regressions from this build.
+
 ## Log collection
 
 Send the newest `C:\Program Files (x86)\Steam\steamapps\common\PAYDAY 2\mods\logs\*.txt`.
