@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T05:15:38.424Z
+Generated: 2026-10-24T05:25:32.861Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,7 +13,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 24 |
 | MOD_ONLY_HOOK | 41 |
-| MOD_ONLY | 194 |
+| MOD_ONLY | 189 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 2 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -296,11 +296,8 @@ No function definitions (hook/overlay file).
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire` | 101 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 90 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_assault` | 44 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 50 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon_sweep` | 37 | 0 | 0 |  |
+| [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_reenforce` | 46 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._assign_enemy_groups_to_recon_sweep` | 36 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._begin_recon_sweep_task` | 13 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._check_phalanx_damage_reduction_increase_LIES` | 124 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._check_spawn_phalanx_LIES` | 36 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._chk_crimin_proximity_to_unit` | 22 | 0 | 0 |  |
@@ -313,11 +310,9 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `GroupAIStateBesiege._on_player_slow_pos_rsrv_upd` | 38 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._register_escort` | 11 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._set_objective_to_phalanx_group_LIES` | 44 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._set_recon_sweep_objective_to_group` | 72 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._spawn_phalanx_LIES` | 62 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._unregister_escort` | 4 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._upd_group` | 40 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._upd_recon_sweep_task` | 123 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._update_criminal_reveal` | 24 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._voice_block_escort_start` | 10 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._voice_charge_start` | 10 | 0 | 0 |  |
