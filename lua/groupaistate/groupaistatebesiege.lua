@@ -419,7 +419,9 @@ Hooks:PostHook(GroupAIStateBesiege, "init", "lies_spawngroups", function(self)
 		self.phalanx_damage_reduction_disable = self.phalanx_damage_reduction_disable_LIES
 		self._check_spawn_phalanx = self._check_spawn_phalanx_LIES
 		self._spawn_phalanx = self._spawn_phalanx_LIES
-		
+
+		log("[LIES-CHECK] phalanx binding init hhtacs=true")
+
 		--checks for groups that have previously spawned to allow for certain scripted events to be overwritten based on it
 		Hooks:PostHook(GroupAIStateBesiege, "_check_spawn_timed_groups", "lieshhtacs_checkspawnedgroups", function(self, target_area, task_data)
 			if not self._timed_groups then
@@ -801,6 +803,21 @@ function GroupAIStateBesiege:assign_enemy_to_group_ai(unit, team_id)
 end
 
 function GroupAIStateBesiege:_check_spawn_phalanx_LIES()
+	local assault = self._task_data and self._task_data.assault
+	local check_state = string.format(
+		"center=%s active=%s phase=%s group=%s chance=%s",
+		tostring(self._phalanx_center_pos ~= nil),
+		tostring(assault and assault.active),
+		tostring(assault and assault.phase),
+		tostring(self._phalanx_spawn_group ~= nil),
+		tostring(self._phalanx_current_spawn_chance)
+	)
+
+	if self._LIES_check_phalanx_state ~= check_state then
+		self._LIES_check_phalanx_state = check_state
+		log("[LIES-CHECK] phalanx check " .. check_state)
+	end
+
 	if self._phalanx_center_pos and self._task_data and self._task_data.assault.active and not self._phalanx_spawn_group and (self._task_data.assault.phase == "build" or self._task_data.assault.phase == "sustain") then
 		local now = TimerManager:game():time()
 		local respawn_delay = tweak_data.group_ai.phalanx.spawn_chance.respawn_delay
@@ -4510,6 +4527,8 @@ function GroupAIStateBesiege:_choose_best_group(best_groups, total_weight)
 end
 
 function GroupAIStateBesiege:_spawn_phalanx_LIES()
+	log("[LIES-CHECK] phalanx spawn enter center=" .. tostring(self._phalanx_center_pos ~= nil))
+
 	if not self._phalanx_center_pos then
 		Application:error("self._phalanx_center_pos NOT SET!!!")
 
@@ -4745,3 +4764,23 @@ function GroupAIStateBesiege._determine_group_leader(units)
 
 	return highest_ranking_u_key, highest_ranking_u_data
 end
+
+Hooks:PostHook(GroupAIStateBesiege, "update", "lies_check_phalanx_binding", function(self)
+	if LIES.settings.hhtacs and self._check_spawn_phalanx ~= self._check_spawn_phalanx_LIES then
+		self._check_spawn_phalanx = self._check_spawn_phalanx_LIES
+		self._spawn_phalanx = self._spawn_phalanx_LIES
+		self._check_phalanx_damage_reduction_increase = self._check_phalanx_damage_reduction_increase_LIES
+		self.phalanx_damage_reduction_disable = self.phalanx_damage_reduction_disable_LIES
+
+		if not self._LIES_check_phalanx_binding_repaired then
+			self._LIES_check_phalanx_binding_repaired = true
+			log("[LIES-CHECK] phalanx binding repaired on update")
+		end
+	end
+end)
+
+Hooks:PostHook(GroupAIStateBase, "sync_event", "lies_check_phalanx_sync", function(self, event_id, blame_id)
+	if self.EVENT_SYNC and self.EVENT_SYNC[event_id] == "phalanx_spawned" then
+		log("[LIES-CHECK] phalanx sync event received server=" .. tostring(self._is_server))
+	end
+end)

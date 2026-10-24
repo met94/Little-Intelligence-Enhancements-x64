@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T07:42:12.065Z
+Generated: 2026-10-24T08:16:57.757Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -12,7 +12,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | category | count |
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 24 |
-| MOD_ONLY_HOOK | 41 |
+| MOD_ONLY_HOOK | 43 |
 | MOD_ONLY | 189 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 2 |
@@ -293,13 +293,15 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `GroupAIStateBesiege._queue_police_upd_task` | 17 | 7 | 13 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 48 | 28 | 22 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 18 | 18 | 20 |  |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBase.sync_event:lies_check_phalanx_sync` | 5 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire` | 101 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 130 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 132 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.update:lies_check_phalanx_binding` | 13 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_assault` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 44 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_reenforce` | 46 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._check_phalanx_damage_reduction_increase_LIES` | 126 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._check_spawn_phalanx_LIES` | 36 | 0 | 0 |  |
+| [ ] | audit | `GroupAIStateBesiege._check_spawn_phalanx_LIES` | 51 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._chk_crimin_proximity_to_unit` | 22 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._chk_group_area_presence` | 22 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._chk_group_engaging_area` | 44 | 0 | 0 |  |
@@ -310,7 +312,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `GroupAIStateBesiege._on_player_slow_pos_rsrv_upd` | 38 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._register_escort` | 11 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._set_objective_to_phalanx_group_LIES` | 44 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._spawn_phalanx_LIES` | 66 | 0 | 0 |  |
+| [ ] | audit | `GroupAIStateBesiege._spawn_phalanx_LIES` | 68 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._unregister_escort` | 4 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._upd_group` | 40 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._update_criminal_reveal` | 24 | 0 | 0 |  |
