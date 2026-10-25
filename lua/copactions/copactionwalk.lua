@@ -34,6 +34,7 @@ function CopActionWalk:_init()
 		end
 
 		local nav_path = {}
+		self._nav_path = self._nav_path or {}
 
 		for i, nav_point in ipairs(self._nav_path) do
 			if nav_point.x then

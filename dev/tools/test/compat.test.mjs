@@ -103,6 +103,10 @@ test('ElementSpecialObjective finalization scales the nav-link interval', () => 
   const guard = source.match(/if ([^\n]*?) and interval and interval > 0 [^\n]*then/);
   assert.ok(guard, 'interval scaling guard is missing');
   assert.match(guard[1], /_is_nav_link|is_navigation_link/);
+  // Pin the polarity: `if not self:_is_nav_link() and ...` still contains the
+  // identifier, so the negation must be excluded explicitly.
+  assert.doesNotMatch(guard[1], /\bnot\b[^\n]*_is_nav_link/);
+  assert.doesNotMatch(guard[1], /\bnot\b/);
   assert.ok(
     source.indexOf('if interval > 3 then') < source.indexOf('interval * mult'),
     'the vanilla 3 s cap must be applied before the multiplier',
