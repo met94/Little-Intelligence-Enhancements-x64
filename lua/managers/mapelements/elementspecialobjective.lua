@@ -297,11 +297,14 @@ Hooks:PostHook(ElementSpecialObjective, "_finalize_values", "lies_send_navlink_e
 	end
 	
 	--Navlink Delays setting: normalize the interval before ElementSpecialObjective:init clones _values.
-	--nav_link_delay() reads _values.interval for the engine, and Iter's register_anim_nav_link wrapper
-	--copies it into values.itr_interval for its nav-link queue, so scaling here feeds both.
+	--Only nav-link elements are scaled: on a regular SO, _values.interval becomes so_descriptor.interval
+	--(GroupAIStateBesiege._upd_SO poll cooldown), so scaling it would shorten objective re-polling too.
+	--The vanilla 3 s cap is applied first, then the multiplier. nav_link_delay() reads the result for the
+	--engine, and Iter's register_anim_nav_link copies it into values.itr_interval for its nav-link queue
+	--(Iter then min-caps it per so_action and, with nav_streamline, zeroes the engine value).
 	local interval = self._values.interval
 	
-	if interval and interval > 0 and not self._LIES_nav_interval_scaled then
+	if self:_is_nav_link() and interval and interval > 0 and not self._LIES_nav_interval_scaled then
 		self._LIES_nav_interval_scaled = true
 		
 		if interval > 3 then --same cap as nav_link_delay() below

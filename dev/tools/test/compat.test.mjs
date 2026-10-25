@@ -97,7 +97,17 @@ test('ElementSpecialObjective finalization scales the nav-link interval', () => 
   assert.match(source, /\(\{1, 0\.5, 0\.25, 0\}\)\[setting\]/);
   assert.match(source, /self\._values\.interval = interval \* mult/);
   assert.match(source, /self\._LIES_nav_interval_scaled/);
-  assert.match(source, /if interval and interval > 0 /);
+
+  // Only nav-link elements are scaled: a regular SO's interval feeds so_descriptor
+  // and the GroupAIStateBesiege poll cooldown, so it must stay vanilla.
+  const guard = source.match(/if ([^\n]*?) and interval and interval > 0 [^\n]*then/);
+  assert.ok(guard, 'interval scaling guard is missing');
+  assert.match(guard[1], /_is_nav_link|is_navigation_link/);
+  assert.ok(
+    source.indexOf('if interval > 3 then') < source.indexOf('interval * mult'),
+    'the vanilla 3 s cap must be applied before the multiplier',
+  );
+
   assert.match(source, /if interval > 3 then/);
   // The vanilla cap must survive as a fallback.
   assert.match(source, /function ElementSpecialObjective:nav_link_delay\(\)/);
@@ -147,6 +157,13 @@ test('CopActionWalk:_init guards an empty nav path', () => {
 
   assert.match(body, /self\._nav_path = self\._nav_path or \{\}/);
   assert.match(body, /not action_desc\.interrupted or not self\._nav_path\[1\] or not self\._nav_path\[1\]\.x/);
+
+  // The guard must run before the simplified-path insert loop indexes _nav_path.
+  const guardAt = body.indexOf('self._nav_path = self._nav_path or {}');
+  const loopAt = body.indexOf('t_ins(self._nav_path, nav_point.x');
+  assert.notEqual(guardAt, -1, '_nav_path guard is missing');
+  assert.notEqual(loopAt, -1, 'simplified-path insert loop is missing');
+  assert.ok(guardAt < loopAt, 'the _nav_path guard must run before the insert loop');
 });
 
 test('compat claims cannot be satisfied by Lua comments', () => {

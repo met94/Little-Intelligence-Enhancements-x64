@@ -10,19 +10,29 @@ the Keepers/Monkeepers guards so those mods can drop their own overrides.
   animated nav link. Supported values: 1x, 0.5x, 0.25x, NO CHILL. A
   `_LIES_nav_interval_scaled` flag prevents compounding if finalization runs
   twice; unset/`-1` intervals are left alone.
-- The interval is capped at 3 in the posthook, matching
+- Only nav-link elements are scaled, gated by the element's own `_is_nav_link()`.
+  For a regular special objective `_values.interval` becomes
+  `so_descriptor.interval` and drives `GroupAIStateBesiege._upd_SO`'s poll
+  cooldown, not an animation delay, so it keeps its vanilla value.
+- The interval is capped at 3 first, then multiplied, matching
   `ElementSpecialObjective:nav_link_delay()`; the method's own cap is kept as a
   fallback. Scaling at finalization feeds both consumers: the engine's
   `nav_link_delay()` and Iter's `NavigationManager:register_anim_nav_link`
   wrapper, which copies `values.interval` into `itr_interval` and uses it for
   its nav-link reservation queue.
+- With Iter installed, Iter re-clamps that value: it min-caps `values.interval`
+  per `so_action` (1-2 s for jumps, ladders, climbs and `e_nl_*` links) before
+  storing `itr_interval`, then sets `values.interval = 0` while `nav_streamline`
+  is on (the default). The engine delay is therefore 0 and the queue runs on the
+  capped `itr_interval`, so the 0.5x/0.25x multipliers are partly swallowed by
+  Iter's cap on links whose vanilla interval already exceeds it.
 - NO CHILL writes an interval of `0`. Iter treats a zero interval as
   "reservation not needed", so cops can walk the same link simultaneously —
   that is the advertised effect, and the reason cops may stack.
 - `CopLogicIdle.clbk_action_timeout` now skips `objective_complete_clbk` when
-  the objective carries Keepers' `kpr_done` flag. Keepers sets that flag when
-  its special objective is finalized; its own `clbk_action_timeout` carried the
-  same guard.
+  the objective carries Keepers' `kpr_done` flag. Keepers sets that flag in
+  `Keepers:on_completed_SO` when it completes the objective it administers; its
+  own `clbk_action_timeout` carried the same guard.
 - `TeamAILogicIdle.action_complete_clbk` now fails the old objective only when
   `my_data.action_expired` is unset, matching Monkeepers' guard. Monkeepers'
   `action_complete_clbk` override can then be removed without losing behavior.

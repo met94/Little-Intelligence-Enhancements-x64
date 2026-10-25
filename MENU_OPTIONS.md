@@ -88,14 +88,18 @@ it was a menu entry with no effect.
 | 0.25x (One Third) | Quarter of the vanilla delay (the menu label is historical; the multiplier is 0.25). |
 | NO CHILL | Removes delays; may cause cops to stack up on the same link. |
 
-How it works: the multiplier is applied once, when the map element finalizes
-its values, and the result is capped at the vanilla 3-second ceiling. Because
-the scaled value is stored on the element itself, it feeds both consumers — the
-engine's own `ElementSpecialObjective:nav_link_delay()` and, when
+How it works: only animated nav-link elements are scaled. The vanilla interval
+is capped at 3 seconds first, then multiplied once, when the map element
+finalizes its values. Because the scaled value is stored on the element itself,
+it feeds both consumers — the engine's own
+`ElementSpecialObjective:nav_link_delay()` and, when
 [Iter](https://github.com/met94/payday2-mod-Iter) is installed, Iter's nav-link
-queue (`values.itr_interval`). Elements whose interval is unset or `-1` keep
-the vanilla default, so the setting only touches links that actually have a
-delay.
+queue (`values.itr_interval`). Iter re-clamps the value per `so_action` (1-2
+seconds for jumps, ladders, climbs and `e_nl_*` links) and zeroes the engine
+delay while its `nav_streamline` option is on (the default); with Iter the queue
+therefore runs on the capped value, so the 0.5x/0.25x multipliers are partly
+absorbed. Elements whose interval is unset or `-1` keep the vanilla default, so
+the setting only touches links that actually have a delay.
 
 **NO CHILL** writes an interval of `0`. Iter treats a zero interval as "no
 reservation needed", so with Iter installed multiple cops can walk the same

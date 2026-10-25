@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-25T09:43:24.664Z",
+  "generated": "2026-10-25T09:55:53.448Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -1811,7 +1811,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 342
+          "startLine": 345
         },
         {
           "name": "ElementSpecialObjective.nav_link_delay",
@@ -1826,12 +1826,12 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 332
+          "startLine": 335
         },
         {
           "name": "Hooks.PostHook:ElementSpecialObjective._finalize_values:lies_send_navlink_element",
           "category": "MOD_ONLY_HOOK",
-          "modLines": 107,
+          "modLines": 110,
           "oldLines": 0,
           "newLines": 0,
           "modParams": "",

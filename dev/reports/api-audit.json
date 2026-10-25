@@ -1553,7 +1553,7 @@
     },
     {
       "file": "lua/managers/mapelements/elementspecialobjective.lua",
-      "line": 395,
+      "line": 398,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",

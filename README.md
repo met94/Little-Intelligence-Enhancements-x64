@@ -72,15 +72,17 @@ owner per subsystem. These are the combinations validated in this fork.
   congestion, coarse search, and the animated nav-link queue; LIES keeps its
   own squad push coordination (`CopLogicTravel.chk_group_ready_to_move`), which
   Iter does not replace. LIES' Navlink Delays setting feeds Iter's queue: the
-  scaled interval is written at element finalization and Iter copies it into
-  `values.itr_interval`.
+  scaled interval is written at element finalization, then Iter min-caps it per
+  `so_action` (1-2 s) into `values.itr_interval` and zeroes the engine delay
+  while `nav_streamline` is on (the default), so the lower multipliers are
+  partly absorbed by Iter's cap.
 - **Keepers — compatible, target `priority: 10`.** Keepers should load after
   LIES so its wrappers compose on top. Phase 3 removes its `CopLogicIdle`
   overrides (`queued_update`, `clbk_action_timeout`); LIES now carries Keepers'
   `kpr_done` guard in `clbk_action_timeout`, so the behavior survives the
   removal.
 - **Monkeepers — compatible, set `priority: 99`.** 99 loads after LIES (100)
-  and before Keepers (0), so Monkeepers' `is_obstructed` and `CarryData`
+  and before Keepers (10), so Monkeepers' `is_obstructed` and `CarryData`
   wrappers survive. Phase 4 removes its `TeamAILogicIdle.action_complete_clbk`
   override; LIES now carries the `my_data.action_expired` guard it relied on.
 - **Useful Bots — compatible, untouched.** Useful Bots owns bot-side

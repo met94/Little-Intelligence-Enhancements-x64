@@ -28,8 +28,8 @@ dead `Navlink Delays` setting.
 
 | Change | Where | Why |
 | --- | --- | --- |
-| Navlink Delays multiplier + 3 s cap applied at element finalization | `lua/managers/mapelements/elementspecialobjective.lua` (`lies_send_navlink_element` post-hook) | Dead code before: the menu wrote `LIES.settings.nav_link_interval` and nothing read it. Finalization runs before `init` clones `_values` and before `on_executed` → `register_anim_nav_link`, so the scaled value reaches both `nav_link_delay()` and Iter's `itr_interval` |
-| `kpr_done` guard in `clbk_action_timeout` | `lua/coplogics/coplogicidle.lua` | Keepers' own `clbk_action_timeout` skipped `objective_complete_clbk` for objectives it had already finalized; LIES must keep that once Phase 3 deletes Keepers' copy |
+| Navlink Delays multiplier + 3 s cap applied at element finalization, nav-links only | `lua/managers/mapelements/elementspecialobjective.lua` (`lies_send_navlink_element` post-hook) | Dead code before: the menu wrote `LIES.settings.nav_link_interval` and nothing read it. The block is gated on `self:_is_nav_link()` so regular SOs keep their `so_descriptor.interval` polling cooldown. Finalization runs before `init` clones `_values` and before `on_executed` → `register_anim_nav_link`, so the capped-then-scaled value reaches both `nav_link_delay()` and Iter's `itr_interval` (Iter re-clamps per `so_action` and zeroes the engine value under `nav_streamline`) |
+| `kpr_done` guard in `clbk_action_timeout` | `lua/coplogics/coplogicidle.lua` | Keepers' own `clbk_action_timeout` skipped `objective_complete_clbk` for objectives it had already completed via `Keepers:on_completed_SO`; LIES must keep that once Phase 3 deletes Keepers' copy |
 | `action_expired` guard in `action_complete_clbk` | `lua/teamailogics/teamailogicidle.lua` | Exact guard from Monkeepers' override (`elseif not my_data.action_expired`); Phase 4 deletes Monkeepers' copy |
 | `self._nav_path` / `self._nav_path[1]` nil guards | `lua/copactions/copactionwalk.lua` (`_init`) | Vanilla had `not self._nav_path`; standalone LIES would index an empty path. The Fixes still owns `_init` in the full profile |
 
@@ -147,7 +147,8 @@ so the resulting order is not knowable from the files. Three functions actually 
 - `TeamAILogicIdle.action_complete_clbk` — Monkeepers **full replace** (48 lines, no orig)
   vs LIES 61 lines (near-vanilla 58). Whoever loads second wins outright.
 
-Recommendation: pin Monkeepers to **99** (loads after LIES, still before Keepers at 0).
+Recommendation: pin Monkeepers to **99** (loads after LIES, still before Keepers at its
+current default 0 and its Phase 3 target of 10).
 Result: LIES → Monkeepers → Keepers, both wrappers live, and only LIES' near-vanilla
 `action_complete_clbk` is dropped instead of Monkeepers' bag/objective logic.
 The reverse pin (101) would be worse: Monkeepers' `is_obstructed`/`carrydata` wrappers
@@ -218,10 +219,16 @@ functions Iter does not define — notably `CopLogicTravel.chk_group_ready_to_mo
 LIES-only, which is why LIES squad push coordination still works with Iter full nav.
 
 **Phase 2 (V8.58_x64):** the Navlink Delays multiplier is applied at
-`ElementSpecialObjective:_finalize_values`, i.e. before `register_anim_nav_link` runs, so
-Iter's wrapper copies the scaled value into `values.itr_interval` and uses it for its
-queue (`navigationmanager.lua:238,811,876,965`). A `0` interval makes Iter's
-`CopActionWalk:itr_reserve_navlink` return immediately (`copactionwalk.lua:187-190`).
+`ElementSpecialObjective:_finalize_values` to nav-link elements only (gated on
+`_is_nav_link()`; a regular SO keeps its vanilla polling interval), i.e. before
+`register_anim_nav_link` runs. Iter's wrapper then re-clamps the value: it
+min-caps `values.interval` per `so_action` (1-2 s, `navigationmanager.lua:216-236`),
+stores that as `values.itr_interval` (`:238`) and, with `nav_streamline`
+(default on), sets `values.interval = 0` (`:240-242`). The queue therefore runs
+on the capped `itr_interval` (`navigationmanager.lua:238,811,876,965`) while the
+engine delay is 0; the 0.5x/0.25x multipliers are partly swallowed by Iter's
+cap. A `0` interval makes Iter's `CopActionWalk:itr_reserve_navlink` return
+immediately (`copactionwalk.lua:187-190`).
 
 ### 2.7 Additive/safe set
 

@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-25T09:43:24.659Z
+Generated: 2026-10-25T09:55:53.447Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -236,7 +236,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | audit (hook) | `Hooks.PostHook:ElementSpecialObjective._finalize_values:lies_send_navlink_element` | 107 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:ElementSpecialObjective._finalize_values:lies_send_navlink_element` | 110 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | keep | `ElementSpecialObjective.clbk_verify_administration` | 65 | 20 | 20 |  |
 | [ ] | keep | `ElementSpecialObjective.nav_link_delay` | 9 | 3 | 3 |  |
 
