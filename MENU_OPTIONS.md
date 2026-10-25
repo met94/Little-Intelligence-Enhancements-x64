@@ -77,12 +77,32 @@ experimental option until the full hhtacs audit is complete.
 
 ## Navlink Delays (`nav_link_interval`)
 
+Scales the pause a cop spends playing an animated nav-link action (vaulting a
+window, climbing a fence). **This option works as of V8.58_x64** — before that
+it was a menu entry with no effect.
+
 | Value | Effect |
 |---|---|
 | 1x (Vanilla) | No change to nav-link animation delays. |
 | 0.5x (Half) | Half delays. |
-| 0.25x (One Third) | Quarter delays. |
-| NO CHILL | Removes delays; may cause cops to stack up. |
+| 0.25x (One Third) | Quarter of the vanilla delay (the menu label is historical; the multiplier is 0.25). |
+| NO CHILL | Removes delays; may cause cops to stack up on the same link. |
+
+How it works: the multiplier is applied once, when the map element finalizes
+its values, and the result is capped at the vanilla 3-second ceiling. Because
+the scaled value is stored on the element itself, it feeds both consumers — the
+engine's own `ElementSpecialObjective:nav_link_delay()` and, when
+[Iter](https://github.com/met94/payday2-mod-Iter) is installed, Iter's nav-link
+queue (`values.itr_interval`). Elements whose interval is unset or `-1` keep
+the vanilla default, so the setting only touches links that actually have a
+delay.
+
+**NO CHILL** writes an interval of `0`. Iter treats a zero interval as "no
+reservation needed", so with Iter installed multiple cops can walk the same
+link at once — this is the intended effect, but it is also why cops can bunch
+up in a doorway or on a ladder.
+
+**Heist restart** recommended: elements are finalized when a heist loads.
 
 ## Team AI Shouters (`teamaihelpers`)
 

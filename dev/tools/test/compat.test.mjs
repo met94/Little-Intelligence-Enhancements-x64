@@ -1,0 +1,159 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = fileURLToPath(new URL('../../../', import.meta.url));
+const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8');
+
+// Strip Lua comments so a claim cannot be satisfied by dead text. Handles
+// whole-line `--[[ ... ]]` blocks, inline `--[[ ... ]]`, and `--` to EOL.
+function stripLuaComments(source) {
+  let out = '';
+  let i = 0;
+  while (i < source.length) {
+    if (source.startsWith('--[[', i)) {
+      const end = source.indexOf(']]', i + 4);
+      if (end === -1) break;
+      i = end + 2;
+      continue;
+    }
+    if (source.startsWith('--', i)) {
+      const eol = source.indexOf('\n', i);
+      if (eol === -1) break;
+      i = eol;
+      continue;
+    }
+    const ch = source[i];
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      out += ch;
+      i++;
+      while (i < source.length) {
+        out += source[i];
+        if (source[i] === '\\') {
+          out += source[i + 1] ?? '';
+          i += 2;
+          continue;
+        }
+        if (source[i] === quote) {
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+    out += ch;
+    i++;
+  }
+  return out;
+}
+
+const stripped = (file) => stripLuaComments(read(file));
+
+function functionBody(source, signature) {
+  const start = source.indexOf(signature);
+  assert.notEqual(start, -1, `${signature} is missing`);
+  const next = source.indexOf('\nfunction ', start + signature.length);
+  return source.slice(start, next === -1 ? source.length : next);
+}
+
+test('version metadata agrees on V8.58_x64', () => {
+  const modTxt = JSON.parse(read('mod.txt').replace(/^\uFEFF/, ''));
+  assert.equal(modTxt.version, 'V8.58_x64');
+
+  const feed = JSON.parse(read('autoupdate.json').replace(/^\uFEFF/, ''));
+  assert.equal(feed[0].version, 'V8.58_x64');
+
+  const readme = read('README.md');
+  assert.match(readme, /\*\*Current release:\*\* `V8\.58_x64`/);
+  assert.doesNotMatch(readme, /V8\.57_x64/);
+
+  const changelog = read('changelog.txt');
+  const revisions = [...changelog.matchAll(/^Revision (V[\d.]+_x64) \u2014 (\d{4}-\d{2}-\d{2})\r?$/gm)];
+  assert.ok(revisions.length > 0, 'changelog has no revision headers');
+  assert.equal(revisions[0][1], 'V8.58_x64');
+  assert.equal(revisions[0][2], '2026-10-25');
+  assert.equal(revisions.at(-1)[1], 'V8.57_x64', 'older revision header was lost');
+});
+
+test('LIES still advertises the Navlink Delays menu entry it now implements', () => {
+  const options = read('menu', 'options.txt');
+  const entry = options.match(/"type" : "multiple_choice"[\s\S]{0,800}?"value" : "nav_link_interval"/);
+  assert.ok(entry, 'nav_link_interval multiple-choice entry is missing');
+  assert.match(entry[0], /"id" : "lies_nav_link_interval"/);
+  assert.equal((entry[0].match(/menu_lies_nav_link_interval_(vanilla|half|athird|nochill)/g) || []).length, 4);
+
+  const manager = read('menumanager.lua');
+  assert.match(manager, /LIES\.settings\.nav_link_interval = value/);
+});
+
+test('ElementSpecialObjective finalization scales the nav-link interval', () => {
+  const source = stripped(path.join('lua', 'managers', 'mapelements', 'elementspecialobjective.lua'));
+
+  assert.match(source, /LIES\.settings\.nav_link_interval/);
+  assert.match(source, /\(\{1, 0\.5, 0\.25, 0\}\)\[setting\]/);
+  assert.match(source, /self\._values\.interval = interval \* mult/);
+  assert.match(source, /self\._LIES_nav_interval_scaled/);
+  assert.match(source, /if interval and interval > 0 /);
+  assert.match(source, /if interval > 3 then/);
+  // The vanilla cap must survive as a fallback.
+  assert.match(source, /function ElementSpecialObjective:nav_link_delay\(\)/);
+});
+
+test('scaling happens inside the _finalize_values post-hook, before nav-link registration', () => {
+  const source = stripped(path.join('lua', 'managers', 'mapelements', 'elementspecialobjective.lua'));
+  const hookStart = source.indexOf('"lies_send_navlink_element"');
+  assert.notEqual(hookStart, -1, 'finalize post-hook registration is missing');
+
+  const scaleAt = source.indexOf('_LIES_nav_interval_scaled', hookStart);
+  const registerAt = source.indexOf('managers.navigation._LIES_navlink_elements[self._id] = self', hookStart);
+  assert.notEqual(scaleAt, -1, 'interval scaling is not inside the post-hook');
+  assert.notEqual(registerAt, -1, 'nav-link registration is missing');
+  assert.ok(scaleAt < registerAt, 'interval scaling must run before nav-link registration');
+
+  // Finalization runs before init clones _values; keep the scaling in the hook
+  // body so both the engine and Iter's register_anim_nav_link see it.
+  const hookEnd = source.indexOf('\nfunction ElementSpecialObjective:', hookStart);
+  assert.notEqual(hookEnd, -1, 'post-hook end could not be located');
+  assert.ok(scaleAt < hookEnd, 'interval scaling escaped the post-hook');
+});
+
+test('CopLogicIdle keeps the Keepers kpr_done guard', () => {
+  const source = stripped(path.join('lua', 'coplogics', 'coplogicidle.lua'));
+  const body = functionBody(source, 'function CopLogicIdle.clbk_action_timeout');
+
+  assert.match(
+    body,
+    /if \(not data\.cool or not my_data\.detected_criminal\) and not data\.objective\.kpr_done then\s*\n\s*data\.objective_complete_clbk\(data\.unit, data\.objective\)/,
+  );
+});
+
+test('TeamAILogicIdle keeps the Monkeepers action_expired guard', () => {
+  const source = stripped(path.join('lua', 'teamailogics', 'teamailogicidle.lua'));
+  const body = functionBody(source, 'function TeamAILogicIdle.action_complete_clbk');
+
+  assert.match(
+    body,
+    /elseif not my_data\.action_expired then\s*\n\s*data\.objective_failed_clbk\(data\.unit, old_objective\)/,
+  );
+});
+
+test('CopActionWalk:_init guards an empty nav path', () => {
+  const source = stripped(path.join('lua', 'copactions', 'copactionwalk.lua'));
+  const body = functionBody(source, 'function CopActionWalk:_init');
+
+  assert.match(body, /self\._nav_path = self\._nav_path or \{\}/);
+  assert.match(body, /not action_desc\.interrupted or not self\._nav_path\[1\] or not self\._nav_path\[1\]\.x/);
+});
+
+test('compat claims cannot be satisfied by Lua comments', () => {
+  // Guard the stripper itself: a purely commented pattern must not match.
+  const fake = stripLuaComments('-- if not data.objective.kpr_done then\n--[[ self._nav_path = self._nav_path or {} ]]\n');
+  assert.doesNotMatch(fake, /kpr_done/);
+  assert.doesNotMatch(fake, /_nav_path or \{\}/);
+  // ...and real code after a comment still survives.
+  assert.match(stripLuaComments('-- note\nlocal x = 1 -- tail\n'), /local x = 1/);
+});

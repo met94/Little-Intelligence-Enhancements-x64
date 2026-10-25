@@ -1129,7 +1129,7 @@
     },
     {
       "file": "lua/coplogics/coplogicidle.lua",
-      "line": 1924,
+      "line": 1925,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1553,7 +1553,7 @@
     },
     {
       "file": "lua/managers/mapelements/elementspecialobjective.lua",
-      "line": 373,
+      "line": 395,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",

@@ -431,7 +431,7 @@ function TeamAILogicIdle.action_complete_clbk(data, action)
 				if not my_data.action_timeout_clbk_id then
 					data.objective_complete_clbk(data.unit, old_objective)
 				end
-			else
+			elseif not my_data.action_expired then --Monkeepers guard: that mod cleared the objective before failing it here; Phase 4 removes its override
 				data.objective_failed_clbk(data.unit, old_objective)
 			end
 		end

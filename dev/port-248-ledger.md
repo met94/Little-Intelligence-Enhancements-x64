@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T08:46:35.252Z
+Generated: 2026-10-25T09:43:24.659Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -236,7 +236,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | audit (hook) | `Hooks.PostHook:ElementSpecialObjective._finalize_values:lies_send_navlink_element` | 85 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:ElementSpecialObjective._finalize_values:lies_send_navlink_element` | 107 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | keep | `ElementSpecialObjective.clbk_verify_administration` | 65 | 20 | 20 |  |
 | [ ] | keep | `ElementSpecialObjective.nav_link_delay` | 9 | 3 | 3 |  |
 
@@ -452,7 +452,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopActionWalk.enforce_gravity_on_simple_path` | 28 | 0 | 0 |  |
 | [ ] | keep | `CopActionWalk._apply_padding_to_simplified_path` | 52 | 50 | 50 |  |
 | [ ] | keep | `CopActionWalk._calculate_simplified_path` | 53 | 33 | 33 |  |
-| [ ] | keep | `CopActionWalk._init` | 168 | 160 | 160 |  |
+| [ ] | keep | `CopActionWalk._init` | 170 | 160 | 160 |  |
 | [ ] | keep | `CopActionWalk.on_attention` | 27 | 21 | 21 |  |
 
 ## lua/coplogics/coplogicintimidated.lua
@@ -559,7 +559,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopLogicIdle._upd_stance_and_pose` | 58 | 61 | 61 |  |
 | [ ] | keep | `CopLogicIdle._upd_stop_old_action` | 35 | 35 | 35 |  |
 | [ ] | keep | `CopLogicIdle.action_complete_clbk` | 48 | 33 | 33 |  |
-| [ ] | keep | `CopLogicIdle.clbk_action_timeout` | 23 | 21 | 21 |  |
+| [ ] | keep | `CopLogicIdle.clbk_action_timeout` | 24 | 21 | 21 |  |
 | [ ] | keep | `CopLogicIdle.enter` | 114 | 107 | 107 |  |
 | [ ] | keep | `CopLogicIdle.is_available_for_assignment` | 35 | 27 | 27 |  |
 | [ ] | keep | `CopLogicIdle.on_alert` | 72 | 56 | 56 |  |

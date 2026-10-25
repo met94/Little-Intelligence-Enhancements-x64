@@ -380,7 +380,8 @@ function CopLogicIdle.clbk_action_timeout(ignore_this, data)
 
 	my_data.action_expired = true
 	
-	if not data.cool or not my_data.detected_criminal then
+	--Keepers sets kpr_done when its special objective is finalized; preserve that guard while LIES owns the body.
+	if (not data.cool or not my_data.detected_criminal) and not data.objective.kpr_done then
 		data.objective_complete_clbk(data.unit, data.objective)
 	end
 	

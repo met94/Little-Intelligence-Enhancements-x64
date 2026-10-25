@@ -61,7 +61,9 @@ function CopActionWalk:_init()
 			end
 		end
 
-		if not action_desc.interrupted or not self._nav_path[1].x then
+		self._nav_path = self._nav_path or {} --standalone LIES guard; vanilla had "not self._nav_path" inline. The Fixes owns this body in the full profile.
+		
+		if not action_desc.interrupted or not self._nav_path[1] or not self._nav_path[1].x then
 			t_ins(self._nav_path, 1, mvec3_cpy(common_data.pos))
 		else
 			self._nav_path[1] = mvec3_cpy(common_data.pos)

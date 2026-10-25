@@ -295,6 +295,28 @@ Hooks:PostHook(ElementSpecialObjective, "_finalize_values", "lies_send_navlink_e
 	if self._values.so_action == "e_so_ntl_smoke_stand" then --this smoking action has a much too long exit animation for loud gameplay
 		self._values.so_action = "e_so_ntl_look_around"
 	end
+	
+	--Navlink Delays setting: normalize the interval before ElementSpecialObjective:init clones _values.
+	--nav_link_delay() reads _values.interval for the engine, and Iter's register_anim_nav_link wrapper
+	--copies it into values.itr_interval for its nav-link queue, so scaling here feeds both.
+	local interval = self._values.interval
+	
+	if interval and interval > 0 and not self._LIES_nav_interval_scaled then
+		self._LIES_nav_interval_scaled = true
+		
+		if interval > 3 then --same cap as nav_link_delay() below
+			interval = 3
+		end
+		
+		local setting = tonumber(LIES.settings.nav_link_interval) or 1
+		local mult = ({1, 0.5, 0.25, 0})[setting] or 1
+		
+		if mult ~= 1 then
+			self._values.interval = interval * mult
+		else
+			self._values.interval = interval
+		end
+	end
 
 	if self:_is_nav_link() then
 		managers.navigation._LIES_navlink_elements[self._id] = self

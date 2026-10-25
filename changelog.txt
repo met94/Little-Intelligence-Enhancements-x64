@@ -1,5 +1,58 @@
 LIES — changelog
 
+Revision V8.58_x64 — 2026-10-25
+AI-suite compatibility phase 2: restore the Navlink Delays option and absorb
+the Keepers/Monkeepers guards so those mods can drop their own overrides.
+
+- Navlink Delays (`nav_link_interval`) now actually applies. The multiplier is
+  applied once in the `ElementSpecialObjective:_finalize_values` posthook, so it
+  lands before `init` clones `_values` and before `on_executed` registers the
+  animated nav link. Supported values: 1x, 0.5x, 0.25x, NO CHILL. A
+  `_LIES_nav_interval_scaled` flag prevents compounding if finalization runs
+  twice; unset/`-1` intervals are left alone.
+- The interval is capped at 3 in the posthook, matching
+  `ElementSpecialObjective:nav_link_delay()`; the method's own cap is kept as a
+  fallback. Scaling at finalization feeds both consumers: the engine's
+  `nav_link_delay()` and Iter's `NavigationManager:register_anim_nav_link`
+  wrapper, which copies `values.interval` into `itr_interval` and uses it for
+  its nav-link reservation queue.
+- NO CHILL writes an interval of `0`. Iter treats a zero interval as
+  "reservation not needed", so cops can walk the same link simultaneously —
+  that is the advertised effect, and the reason cops may stack.
+- `CopLogicIdle.clbk_action_timeout` now skips `objective_complete_clbk` when
+  the objective carries Keepers' `kpr_done` flag. Keepers sets that flag when
+  its special objective is finalized; its own `clbk_action_timeout` carried the
+  same guard.
+- `TeamAILogicIdle.action_complete_clbk` now fails the old objective only when
+  `my_data.action_expired` is unset, matching Monkeepers' guard. Monkeepers'
+  `action_complete_clbk` override can then be removed without losing behavior.
+  `action_expired` is never set for team AI today, so this is behavior-neutral.
+- `CopActionWalk:_init` restores the vanilla `self._nav_path` / `self._nav_path[1]`
+  nil guards so standalone LIES cannot index an empty nav path. The simplify
+  index and LIES' always-simplify behavior are unchanged.
+
+Compatibility:
+- Iter (full nav, Option 1): Iter owns nav congestion, coarse search, and the
+  nav-link queue; LIES' scaled interval feeds that queue. LIES' squad push
+  coordination (`CopLogicTravel.chk_group_ready_to_move`) is unaffected.
+- Keepers (target priority 10): Phase 3 removes its `CopLogicIdle` overrides;
+  the `kpr_done` guard in LIES preserves their behavior.
+- Monkeepers (priority 99): Phase 4 removes its `action_complete_clbk`
+  override; LIES now carries the `action_expired` guard.
+- Useful Bots: untouched. It still owns bot-side intimidation/marking when
+  installed.
+- The Fixes: still owns `CopActionWalk:_init` in the full profile; the new nil
+  guard is for standalone LIES.
+- NavFixes: still excluded — incompatible navigation signatures.
+
+Player notes: The "Navlink Delays" option finally does something. Setting it to
+0.5x or 0.25x makes cops get through fences, windows and other climb/vault
+links faster instead of pausing on them, and NO CHILL removes the pause
+entirely — expect cops to bunch up on the same window or ladder in exchange.
+Nothing changes if you leave it on 1x. Keepers and Monkeepers users keep the
+same bot/idle behavior after those mods' Phase 3/4 cleanups, and LIES on its own
+is less likely to error out on a unit whose walk path was empty.
+
 Revision V8.57_x64 — 2026-10-24
 Port of LIES V8.57 to PAYDAY 2 248.2 (x64).
 
