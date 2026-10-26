@@ -128,6 +128,27 @@ Writes `[LIES-CHECK]` diagnostic events to the PAYDAY 2 log. Default is OFF.
 Turn it on only while collecting a test log; normal play stays quiet. The
 option affects diagnostics, not AI behaviour.
 
+## Watch digest (`watch_log`) and alarms
+
+Same channel shape as Iter's, so one reader handles both mods:
+
+- **Alarms** are always on and need no setting. They fire only on a hard
+  failure, at most once per name per 60 s and at most 20 per heist:
+  `lies_cover_fallback_rate` (more than half of ≥40 cover reservations in a
+  minute fell back) and `lies_suppression_deny_rate` (more than 80% of ≥40
+  suppression checks in a minute were denied). A healthy heist writes **zero**
+  `[LIES-WATCH]` lines.
+- **Digest** is opt-in: add `"watch_log": true` to
+  `mods\saves\LittleIntelligenceEnhancementS.txt` with the game closed. With it
+  on, LIES writes a header at heist start and one `[LIES-WATCH] evt=digest`
+  line per 60 s of play, carrying the per-minute counts for cover
+  set/fallback, suppression denies, taser allowed/blocked, bag steal-SO
+  registered/skipped/deferred, marshal mapping and civilian follow fallbacks.
+
+`[LIES-CHECK]` remains the per-event detail channel and still needs
+`debug_log`; the watch counters run regardless, which is why a normal session
+now leaves evidence behind for the alarm tier.
+
 ## Legacy localization keys
 
 `loc/en.txt` also contains strings for `fixed_specialspawncaps`, `coplimit`

@@ -1140,6 +1140,10 @@ end
 Hooks:PostHook(NavigationManager, "update", "lies_cover", function(self, t, dt)
 	self:_update_LIES_cached_paths(t)
 
+	if LIES and LIES.WatchTick then
+		LIES:WatchTick(t)
+	end
+
 	--self:_draw_covers()
 	--self:_draw_anim_nav_links()
 	--self:_draw_coarse_graph()
@@ -1152,6 +1156,10 @@ end)
 
 Hooks:PostHook(NavigationManager, "_clear", "LIES_nav_gen_abort_clear", function(self)
 	self:_LIES_cover_gen_abort()
+
+	if LIES and LIES.WatchReset then
+		LIES:WatchReset()
+	end
 end)
 
 function NavigationManager:_add_LIES_cached_path(cached_path_data)

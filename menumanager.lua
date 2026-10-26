@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.57_x64",
+		version = "V8.59_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -22,7 +22,10 @@ if RequiredScript == "lib/managers/menumanager" then
 			spawngroupdelays = 1,
 			hhtacs = false,
 			highperformance = false,
-			debug_log = false
+			debug_log = false,
+			-- Opt-in [LIES-WATCH] digest (one line per minute). Failure alarms are
+			-- always on and need no setting; see MENU_OPTIONS.md.
+			watch_log = false
 		}
 	}
 	LIES.update_url = "https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json"
@@ -99,9 +102,210 @@ if RequiredScript == "lib/managers/menumanager" then
 		end
 	end
 
-	function LIES:LogCheck(message)
+	function LIES:LogCheck(message, kind)
+		-- Counters are always live: the watch digest must work with debug logging
+		-- off, and the alarms only ever look at counters.
+		if kind then
+			self:Count(kind)
+		end
+
 		if self.settings and self.settings.debug_log then
 			log("[LIES-CHECK] " .. tostring(message))
+		end
+	end
+
+	-- Watch channel. Alarms are always on (hard failures only, rate limited);
+	-- the digest is opt-in via `watch_log`. Same shape as Iter's channel so one
+	-- reader handles both mods.
+	LIES.watch_alarm_last = LIES.watch_alarm_last or {}
+	LIES.watch_alarm_budget = LIES.watch_alarm_budget or 20
+	LIES.watch_alarm_window = 60
+	LIES.watch_next_t = LIES.watch_next_t or 0
+	LIES.watch_header_done = LIES.watch_header_done or false
+	LIES.watch_counters = LIES.watch_counters or {}
+	LIES.watch_prev = LIES.watch_prev or {}
+
+	function LIES:Count(kind, amount)
+		self.watch_counters[kind] = (self.watch_counters[kind] or 0) + (amount or 1)
+	end
+
+	local function lies_watch_fields(fields)
+		local parts = {}
+
+		for key, value in pairs(fields or {}) do
+			local text = tostring(value):gsub("%s+", "_"):gsub("[^%w%._%+%-/:%[%]]", "")
+
+			if #text > 120 then
+				text = text:sub(1, 120)
+			end
+
+			parts[#parts + 1] = tostring(key) .. "=" .. text
+		end
+
+		table.sort(parts)
+
+		return table.concat(parts, " ")
+	end
+
+	function LIES:WatchEnabled()
+		return (self.settings and self.settings.watch_log) and true or false
+	end
+
+	function LIES:Watch(event_name, fields)
+		if not self:WatchEnabled() then
+			return
+		end
+
+		log("[LIES-WATCH] v=" .. tostring(self.version) .. " evt=" .. tostring(event_name) .. " " .. lies_watch_fields(fields))
+	end
+
+	function LIES:Alarm(name, fields, now)
+		if (self.watch_alarm_budget or 0) <= 0 then
+			return
+		end
+
+		now = tonumber(now) or 0
+
+		local last = self.watch_alarm_last[name]
+
+		if last and now - last < self.watch_alarm_window then
+			return
+		end
+
+		self.watch_alarm_last[name] = now
+		self.watch_alarm_budget = self.watch_alarm_budget - 1
+
+		log("[LIES-WATCH] v=" .. tostring(self.version) .. " evt=alarm name=" .. tostring(name) .. " " .. lies_watch_fields(fields))
+
+		if self.watch_alarm_budget <= 0 then
+			log("[LIES-WATCH] v=" .. tostring(self.version) .. " evt=alarm_budget_exhausted")
+		end
+	end
+
+	function LIES:WatchReset()
+		self.watch_alarm_last = {}
+		self.watch_alarm_budget = 20
+		self.watch_next_t = 0
+		self.watch_header_done = false
+		self.watch_prev = {}
+		self.watch_prev_ready = false
+	end
+
+	local function lies_level_id()
+		local level = "?"
+
+		pcall(function()
+			if managers.job then
+				level = tostring(managers.job:current_level_id() or "?")
+			end
+		end)
+
+		return level
+	end
+
+	function LIES:WatchDigest(t)
+		local c = self.watch_counters
+		local d = {}
+
+		for key, value in pairs(c) do
+			d[key] = value - (self.watch_prev[key] or 0)
+		end
+
+		self.watch_prev = {}
+
+		for key, value in pairs(c) do
+			self.watch_prev[key] = value
+		end
+
+		self:Watch("digest", {
+			level = lies_level_id(),
+			t = math.floor(t or 0),
+			cover_set = d.cover_set or 0,
+			cover_fallback = d.cover_fallback or 0,
+			suppression_deny = d.suppression_deny or 0,
+			taser_allowed = d.taser_allowed or 0,
+			taser_blocked = d.taser_blocked or 0,
+			bag_registered = d.bag_registered or 0,
+			bag_skipped = d.bag_skipped or 0,
+			phalanx_spawn = d.phalanx_spawn or 0,
+			marshal = d.marshal or 0
+		})
+	end
+
+	-- Alarms. Evaluated every 60 s whether or not the digest is on, so a normal
+	-- session still records a hard failure (that is the whole point).
+	local function lies_alarm_ratio(counters, prev, a, b, minimum)
+		local total = (counters[a] or 0) - (prev[a] or 0) + (counters[b] or 0) - (prev[b] or 0)
+
+		if total < minimum then
+			return nil
+		end
+
+		local bad = (counters[a] or 0) - (prev[a] or 0)
+
+		return bad / total, total, bad
+	end
+
+	function LIES:WatchTick(t)
+		t = tonumber(t) or 0
+
+		if not self.watch_header_done then
+			self.watch_header_done = true
+			self:Watch("header", {
+				version = self.version,
+				level = lies_level_id(),
+				lua_cover = tostring(self.settings.lua_cover),
+				highperformance = tostring(self.settings.highperformance),
+				hhtacs = tostring(self.settings.hhtacs),
+				nav_link_interval = tostring(self.settings.nav_link_interval),
+				debug_log = tostring(self.settings.debug_log)
+			})
+		end
+
+		if t < (self.watch_next_t or 0) then
+			return
+		end
+
+		self.watch_next_t = t + 60
+
+		-- First full minute: snapshot the counters, do not alarm on cumulative
+		-- history from level start.
+		if not self.watch_prev_ready then
+			self.watch_prev_ready = true
+
+			for key, value in pairs(self.watch_counters) do
+				self.watch_prev[key] = value
+			end
+
+			if self:WatchEnabled() then
+				self:WatchDigest(t)
+			end
+
+			return
+		end
+
+		local ratio, total, bad = lies_alarm_ratio(self.watch_counters, self.watch_prev, "cover_fallback", "cover_set", 40)
+
+		if ratio and ratio > 0.5 then
+			self:Alarm("lies_cover_fallback_rate", {
+				rate = string.format("%.2f", ratio),
+				fallback = bad,
+				total = total
+			}, t)
+		end
+
+		ratio, total, bad = lies_alarm_ratio(self.watch_counters, self.watch_prev, "suppression_deny", "suppression_allow", 40)
+
+		if ratio and ratio > 0.8 then
+			self:Alarm("lies_suppression_deny_rate", {
+				rate = string.format("%.2f", ratio),
+				deny = bad,
+				total = total
+			}, t)
+		end
+
+		if self:WatchEnabled() then
+			self:WatchDigest(t)
 		end
 	end
 	

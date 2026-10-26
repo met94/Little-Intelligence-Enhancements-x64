@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-25T09:55:53.447Z
+Generated: 2026-10-26T11:42:16.115Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,7 +13,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 24 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 190 |
+| MOD_ONLY | 200 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 2 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -23,20 +23,30 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit | `lies_alarm_ratio` | 11 | 0 | 0 |  |
+| [ ] | audit | `lies_level_id` | 11 | 0 | 0 |  |
+| [ ] | audit | `lies_watch_fields` | 17 | 0 | 0 |  |
 | [ ] | audit | `LIES._optimize_path` | 37 | 0 | 0 |  |
 | [ ] | audit | `LIES._path_is_straight_line` | 25 | 0 | 0 |  |
+| [ ] | audit | `LIES.Alarm` | 22 | 0 | 0 |  |
 | [ ] | audit | `LIES.check_for_updates` | 5 | 0 | 0 |  |
+| [ ] | audit | `LIES.Count` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_away_from_pos` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_from_threat` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_in_cone_from_threat_pos_1` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_in_nav_seg_3` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_near_pos_1` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.Load` | 11 | 0 | 0 |  |
-| [ ] | audit | `LIES.LogCheck` | 5 | 0 | 0 |  |
+| [ ] | audit | `LIES.LogCheck` | 11 | 0 | 0 |  |
 | [ ] | audit | `LIES.Save` | 8 | 0 | 0 |  |
 | [ ] | audit | `LIES.set_update_data` | 19 | 0 | 0 |  |
 | [ ] | audit | `LIES.tprint` | 38 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
+| [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchDigest` | 28 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchReset` | 8 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchTick` | 62 | 0 | 0 |  |
 
 ## menunodegui.lua
 
@@ -106,9 +116,9 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `NavigationManager.register_cover_units` | 132 | 80 | 75 |  |
 | [ ] | **PORT** | `NavigationManager.remove_obstacle` | 46 | 15 | 46 |  |
 | [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 93 | 36 | 38 |  |
-| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._clear:LIES_nav_gen_abort_clear` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._clear:LIES_nav_gen_abort_clear` | 7 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._unregister_cover_units:LIES_nav_gen_abort_unregister` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager.update:lies_cover` | 8 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager.update:lies_cover` | 12 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `_lies_cover_grid_add` | 12 | 0 | 0 |  |
 | [ ] | audit | `_lies_cover_mode` | 9 | 0 | 0 |  |
 | [ ] | audit | `_lies_cover_too_close` | 22 | 0 | 0 |  |
@@ -452,7 +462,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopActionWalk.enforce_gravity_on_simple_path` | 28 | 0 | 0 |  |
 | [ ] | keep | `CopActionWalk._apply_padding_to_simplified_path` | 52 | 50 | 50 |  |
 | [ ] | keep | `CopActionWalk._calculate_simplified_path` | 53 | 33 | 33 |  |
-| [ ] | keep | `CopActionWalk._init` | 170 | 160 | 160 |  |
+| [ ] | keep | `CopActionWalk._init` | 171 | 160 | 160 |  |
 | [ ] | keep | `CopActionWalk.on_attention` | 27 | 21 | 21 |  |
 
 ## lua/coplogics/coplogicintimidated.lua

@@ -1769,7 +1769,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1233,
+      "line": 1241,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -1777,7 +1777,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1316,
+      "line": 1324,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1785,7 +1785,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1428,
+      "line": 1436,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1793,7 +1793,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1452,
+      "line": 1460,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1801,7 +1801,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1461,
+      "line": 1469,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1809,7 +1809,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1463,
+      "line": 1471,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1817,7 +1817,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1514,
+      "line": 1522,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1825,7 +1825,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1520,
+      "line": 1528,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1833,7 +1833,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1586,
+      "line": 1594,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1841,7 +1841,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1596,
+      "line": 1604,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1849,7 +1849,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1598,
+      "line": 1606,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1857,7 +1857,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1600,
+      "line": 1608,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1865,7 +1865,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1633,
+      "line": 1641,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1873,7 +1873,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1635,
+      "line": 1643,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1881,7 +1881,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1637,
+      "line": 1645,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1889,7 +1889,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1644,
+      "line": 1652,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1897,7 +1897,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1647,
+      "line": 1655,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1905,7 +1905,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1771,
+      "line": 1779,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1913,7 +1913,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1789,
+      "line": 1797,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1921,7 +1921,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1866,
+      "line": 1874,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1929,7 +1929,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1888,
+      "line": 1896,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1937,7 +1937,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1965,
+      "line": 1973,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1945,7 +1945,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1990,
+      "line": 1998,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1953,7 +1953,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2029,
+      "line": 2037,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1961,7 +1961,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2033,
+      "line": 2041,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1969,7 +1969,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2084,
+      "line": 2092,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1977,7 +1977,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2090,
+      "line": 2098,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1985,7 +1985,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2157,
+      "line": 2165,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1993,7 +1993,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2220,
+      "line": 2228,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -2001,7 +2001,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2251,
+      "line": 2259,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -2009,7 +2009,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2303,
+      "line": 2311,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -2017,7 +2017,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2356,
+      "line": 2364,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",

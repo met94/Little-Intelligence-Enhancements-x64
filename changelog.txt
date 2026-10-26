@@ -1,4 +1,12 @@
-LIES — changelog
+Revision V8.59_x64 — 2026-10-26
+Watch channel: opt-in digest + always-on failure alarms.
+- every `LIES:LogCheck` call site may now pass a counter kind: `suppression_deny`, `cover_set`, `cover_fallback`, `taser_allowed`, `taser_blocked`, `bag_registered`, `bag_skipped`, `bag_deferred`, `marshal`, `door_raw`, `civ_follow_fallback`; `LIES:LogCheck` counts the kind **before** the `debug_log` gate, so the counters are live in a normal session while the per-event `[LIES-CHECK]` lines still need `debug_log`
+- added `LIES:Watch` (gated by the new `settings.watch_log`, default `false`), `LIES:WatchDigest`, and `LIES:WatchTick` driven from the existing `NavigationManager.update` posthook `lies_cover`; the tick writes one header per heist and, with the digest on, one `[LIES-WATCH] evt=digest` line per 60 s of sim time with the per-minute counter deltas
+- added `LIES:Alarm` on the same tier as Iter's: always on, no setting needed, one line per alarm name per 60 s, 20 per heist, then `evt=alarm_budget_exhausted`; alarms are `lies_cover_fallback_rate` (fallback share above 0.5 over at least 40 cover events in a minute) and `lies_suppression_deny_rate` (deny share above 0.8 over at least 40 suppression checks), both evaluated on per-minute deltas so cumulative history cannot trigger them; `LIES:WatchReset` runs from the `NavigationManager._clear` posthook
+- why: `[LIES-CHECK]` is off by default, so a player session recorded nothing at all - the FPS/Counterfeit investigation on 2026-10-26 needed a dev harness bolted onto Iter to see anything
+- static gate: `dev/tools/test/watch-channel.test.mjs` (8 tests) pins the default, the count-before-gate order, the guard split, the rate limits, the 60 s cadence, the reset hook and every tagged call site
+
+Player notes: nothing changes in a normal session - no menu entry, no HUD output, and no log lines unless something goes badly wrong (most cover reservations falling back, or almost every suppression check being denied). If you are troubleshooting, set `"watch_log": true` in the LIES save file and the log then carries one `[LIES-WATCH]` line per minute with the counters that explain the AI's behaviour.LIES — changelog
 
 Revision V8.58_x64 — 2026-10-25
 AI-suite compatibility phase 2: restore the Navlink Delays option and absorb
