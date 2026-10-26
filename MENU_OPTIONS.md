@@ -130,21 +130,6 @@ option affects diagnostics, not AI behaviour.
 
 ## Watch digest (`watch_log`) and alarms
 
-## Instant Spawn Groups (`instant_spawn_groups`)
-
-Upstream LIES force-spawns every executed spawn group at once
-(`ElementSpawnEnemyGroup:on_executed` → `_perform_group_spawning(spawn_task, true)`),
-and that `true` bypasses the game's `_MAX_SIMULTANEOUS_SPAWNS` of 3 per tick.
-That is why a LIES session carries several times the live cop count of a vanilla
-one (measured 2026-10-26: ~35 vanilla, ~100 with the suite, peak 130).
-
-`"instant_spawn_groups": false` in
-`mods\saves\LittleIntelligenceEnhancementS.txt` (game closed) restores vanilla
-pacing and leaves the normal `force_spawn_group` path as the only spawner.
-Default is `true` (unchanged LIES behaviour). Related dead options:
-`coplimit` ("Max Enemies Multiplier") and `spawngroupdelays` are stored but
-never read by this port, so they cannot change density.
-
 Same channel shape as Iter's, so one reader handles both mods:
 
 - **Alarms** are always on and need no setting. They fire only on a hard
@@ -163,6 +148,38 @@ Same channel shape as Iter's, so one reader handles both mods:
 `[LIES-CHECK]` remains the per-event detail channel and still needs
 `debug_log`; the watch counters run regardless, which is why a normal session
 now leaves evidence behind for the alarm tier.
+
+## Instant Spawn Groups (`instant_spawn_groups`)
+
+Upstream LIES force-spawns every executed spawn group at once
+(`ElementSpawnEnemyGroup:on_executed` → `_perform_group_spawning(spawn_task, true)`),
+and that `true` bypasses the game's `_MAX_SIMULTANEOUS_SPAWNS` of 3 per tick.
+That is why a LIES session carries several times the live cop count of a vanilla
+one (measured 2026-10-26: ~35 vanilla, ~100 with the suite, peak 130).
+
+**Origin:** not a flag and never documented. The call is unconditional code,
+introduced in upstream **7.1** (2023-04-05, `b0207e5`) and byte-identical in the
+V8.57 tree; the upstream repo has no README or changelog, and the ModWorkshop
+page never mentions spawn pacing. Turning it OFF is fork-only (V8.60/61).
+
+`"instant_spawn_groups": false` in
+`mods\saves\LittleIntelligenceEnhancementS.txt` (game closed), or the
+**Instant Spawn Groups** toggle in Mod Options, restores vanilla pacing and
+leaves the normal `force_spawn_group` path as the only spawner. Default is `true`
+(unchanged LIES behaviour). The change applies to the next spawn group; restart
+the heist for a clean comparison.
+
+### Dead options and their upstream history
+
+| key | what it did | removed upstream |
+| --- | --- | --- |
+| `coplimit` ("Max Enemies Multiplier") | multiplied `besiege.assault.force[1..3]` and `force_pool[]` in `groupaitweakdata.lua` | **6.4** (2023-01-08) - code and menu entry deleted |
+| `spawngroupdelays` ("Forced Spawn Delays") | lengthened randomized spawn-group delays in `groupaistatebesiege.lua`, "reducing cases of enemies constantly pouring out of nearby spawn points" | **8.51** (2026-05-07) - code and menu entry deleted |
+
+Both are vestigial in the V8.57 tree: only the settings key, the menu callback
+and the localization strings remain, and nothing reads them. The ModWorkshop page
+for V8.57 still advertises "Forced Spawn Delays ... Toggleable", which no longer
+exists - a stale description upstream, not something this port removed.
 
 ## Legacy localization keys
 
