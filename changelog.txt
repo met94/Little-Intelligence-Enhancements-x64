@@ -2,6 +2,7 @@ Revision V8.61_x64 — 2026-10-26
 Instant Spawn Groups in the menu.
 - added the `Instant Spawn Groups` toggle to `menu/options.txt` with `callback_lies_instant_spawn_groups` (sets and saves `settings.instant_spawn_groups`), plus `menu_lies_instant_spawn_groups_title` / `_desc` in `loc/en.txt`; the switch itself landed in V8.60 and is unchanged (`true` = upstream LIES behaviour, `false` = vanilla 3-per-tick pacing)
 - the description states the trade in the menu: ON = a group appears all at once (bigger, denser waves), OFF = groups trickle in at the vanilla rate (fewer cops at once, lighter frame times), and that a heist restart gives a clean comparison
+- history check: the forced call is upstream (2023, `b0207e5`) and byte-identical in the V8.57 import, so there was never a setting for it; `coplimit` and `spawngroupdelays` are dead in upstream too (stored only, never read, never in upstream `menu/options.txt`) and are not a port regression
 - static gate `dev/tools/test/spawn-pacing.test.mjs` now also pins the menu item (type/callback/value), the callback body and both localization keys
 
 Player notes: Options -> Mod Options -> LIES -> Instant Spawn Groups. Default is ON, which is how LIES has always spawned. Turn it OFF if you want the vanilla trickle and a lighter assault load; the change affects the next spawn group, so restart the heist when comparing.Revision V8.60_x64 — 2026-10-26
