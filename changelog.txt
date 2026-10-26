@@ -1,4 +1,10 @@
-Revision V8.60_x64 — 2026-10-26
+Revision V8.61_x64 — 2026-10-26
+Instant Spawn Groups in the menu.
+- added the `Instant Spawn Groups` toggle to `menu/options.txt` with `callback_lies_instant_spawn_groups` (sets and saves `settings.instant_spawn_groups`), plus `menu_lies_instant_spawn_groups_title` / `_desc` in `loc/en.txt`; the switch itself landed in V8.60 and is unchanged (`true` = upstream LIES behaviour, `false` = vanilla 3-per-tick pacing)
+- the description states the trade in the menu: ON = a group appears all at once (bigger, denser waves), OFF = groups trickle in at the vanilla rate (fewer cops at once, lighter frame times), and that a heist restart gives a clean comparison
+- static gate `dev/tools/test/spawn-pacing.test.mjs` now also pins the menu item (type/callback/value), the callback body and both localization keys
+
+Player notes: Options -> Mod Options -> LIES -> Instant Spawn Groups. Default is ON, which is how LIES has always spawned. Turn it OFF if you want the vanilla trickle and a lighter assault load; the change affects the next spawn group, so restart the heist when comparing.Revision V8.60_x64 — 2026-10-26
 Spawn pacing switch (`instant_spawn_groups`).
 - added `settings.instant_spawn_groups` (default **true**, i.e. unchanged behaviour): when `false`, `ElementSpawnEnemyGroup:on_executed` skips the extra `_perform_group_spawning(spawn_task, true)` and leaves only the vanilla `force_spawn_group` path
 - why: `_perform_group_spawning`'s `force` argument bypasses `GroupAIStateBesiege._MAX_SIMULTANEOUS_SPAWNS` (3 per tick), so upstream LIES dumps a whole spawn group the moment its element executes instead of trickling 3 per tick. Measured on 2026-10-26 with the player's own counter: **~35 live cops on vanilla, ~100 with the suite (peaks 130)** on the same heist and difficulty - this is the switch that isolates that difference

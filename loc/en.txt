@@ -73,6 +73,8 @@
 	"menu_lies_highperformance_title" : "High Performance Mode",
 	"menu_lies_highperformance_desc" : "If your frames are dropping a lot, or you're getting stutters, try turning this on, it'll sacrifice some AI functionality unique to LIES in exchange for more consistent framerates. OFF has more responsive/fluid AI.",
 
+	"menu_lies_instant_spawn_groups_title" : "Instant Spawn Groups",
+	"menu_lies_instant_spawn_groups_desc" : "ON (default, upstream LIES): a spawn group appears all at once, bypassing the game 3-per-tick spawn cap, so waves are bigger and denser. OFF: groups trickle in at the vanilla rate - fewer cops at once, lighter frame times. Applies to the next spawn group; restart the heist for a clean comparison.",
 	"menu_lies_debug_log_title" : "Debug Logging",
 	"menu_lies_debug_log_desc" : "Writes [LIES-CHECK] diagnostic events to the PAYDAY 2 log. Leave OFF for normal play; turn ON only when collecting a test log.",
 }

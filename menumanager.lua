@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.60_x64",
+		version = "V8.61_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -558,6 +558,13 @@ if RequiredScript == "lib/managers/menumanager" then
 		MenuCallbackHandler.callback_lies_debug_log = function(self, item)
 			local on = item:value() == "on"
 			LIES.settings.debug_log = on
+
+			LIES:Save()
+		end
+
+		MenuCallbackHandler.callback_lies_instant_spawn_groups = function(self, item)
+			local on = item:value() == "on"
+			LIES.settings.instant_spawn_groups = on
 
 			LIES:Save()
 		end

@@ -63,6 +63,26 @@ test('group_guaranteed keeps its vanilla force path', () => {
   assert.match(guaranteed, /_perform_group_spawning\(spawn_task, true\)/, 'guaranteed branch lost its forced spawn');
 });
 
+test('the menu exposes the switch', () => {
+  const options = fs.readFileSync(path.join(repoRoot, 'menu', 'options.txt'), 'utf8');
+  const entry = /\{[^{}]*"lies_instant_spawn_groups"[^{}]*\}/.exec(options);
+  assert.ok(entry, 'menu item missing');
+  assert.match(entry[0], /"type"\s*:\s*"toggle"/, 'must be a toggle');
+  assert.match(entry[0], /"callback"\s*:\s*"callback_lies_instant_spawn_groups"/, 'menu callback missing');
+  assert.match(entry[0], /"value"\s*:\s*"instant_spawn_groups"/, 'menu value binding missing');
+
+  // The callback persists the setting, like every other LIES toggle.
+  const callback = /callback_lies_instant_spawn_groups = function\(self, item\)([\s\S]*?)\n\t\tend/.exec(manager);
+  assert.ok(callback, 'callback missing');
+  assert.match(callback[1], /LIES\.settings\.instant_spawn_groups = on/, 'callback must set the setting');
+  assert.match(callback[1], /LIES:Save\(\)/, 'callback must persist');
+
+  // Localization keys exist, or the menu shows raw ids.
+  const loc = fs.readFileSync(path.join(repoRoot, 'loc', 'en.txt'), 'utf8');
+  assert.match(loc, /"menu_lies_instant_spawn_groups_title"/, 'title loc missing');
+  assert.match(loc, /"menu_lies_instant_spawn_groups_desc"/, 'description loc missing');
+});
+
 test('gate predicate truth table', () => {
   // JS mirror of `if LIES.settings.instant_spawn_groups ~= false and has_spawned_group then`
   const forces = (setting, hasGroup) => setting !== false && Boolean(hasGroup);

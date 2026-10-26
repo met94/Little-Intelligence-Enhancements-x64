@@ -130,7 +130,7 @@ option affects diagnostics, not AI behaviour.
 
 ## Watch digest (`watch_log`) and alarms
 
-### Spawn pacing (`instant_spawn_groups`, settings file only)
+## Instant Spawn Groups (`instant_spawn_groups`)
 
 Upstream LIES force-spawns every executed spawn group at once
 (`ElementSpawnEnemyGroup:on_executed` → `_perform_group_spawning(spawn_task, true)`),
