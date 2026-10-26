@@ -1,4 +1,11 @@
-Revision V8.59_x64 — 2026-10-26
+Revision V8.60_x64 — 2026-10-26
+Spawn pacing switch (`instant_spawn_groups`).
+- added `settings.instant_spawn_groups` (default **true**, i.e. unchanged behaviour): when `false`, `ElementSpawnEnemyGroup:on_executed` skips the extra `_perform_group_spawning(spawn_task, true)` and leaves only the vanilla `force_spawn_group` path
+- why: `_perform_group_spawning`'s `force` argument bypasses `GroupAIStateBesiege._MAX_SIMULTANEOUS_SPAWNS` (3 per tick), so upstream LIES dumps a whole spawn group the moment its element executes instead of trickling 3 per tick. Measured on 2026-10-26 with the player's own counter: **~35 live cops on vanilla, ~100 with the suite (peaks 130)** on the same heist and difficulty - this is the switch that isolates that difference
+- the override itself is upstream (git blame: 2023-04-05, "7.1"), not a port artifact; the switch exists so density can be A/B'd without losing the AI changes
+- no default change, no menu entry (settings file only, same as `debug_log`/`watch_log`); static gate `dev/tools/test/spawn-pacing.test.mjs` pins the default, the gate and the untouched `group_guaranteed` branch
+
+Player notes: nothing changes unless you set `"instant_spawn_groups": false` in the LIES save file. With it off, assault groups spawn at the game's normal trickle (three per tick) instead of the whole group at once, so a wave should feel smaller and steadier and long-session frame times should improve. Turn it back to `true` to restore LIES' original spawn behaviour.Revision V8.59_x64 — 2026-10-26
 Watch channel: opt-in digest + always-on failure alarms.
 - every `LIES:LogCheck` call site may now pass a counter kind: `suppression_deny`, `cover_set`, `cover_fallback`, `taser_allowed`, `taser_blocked`, `bag_registered`, `bag_skipped`, `bag_deferred`, `marshal`, `door_raw`, `civ_follow_fallback`; `LIES:LogCheck` counts the kind **before** the `debug_log` gate, so the counters are live in a normal session while the per-event `[LIES-CHECK]` lines still need `debug_log`
 - added `LIES:Watch` (gated by the new `settings.watch_log`, default `false`), `LIES:WatchDigest`, and `LIES:WatchTick` driven from the existing `NavigationManager.update` posthook `lies_cover`; the tick writes one header per heist and, with the digest on, one `[LIES-WATCH] evt=digest` line per 60 s of sim time with the per-minute counter deltas

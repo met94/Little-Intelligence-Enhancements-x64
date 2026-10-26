@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-26T11:42:16.117Z",
+  "generated": "2026-10-26T13:57:09.811Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -20,7 +20,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 237
+          "startLine": 243
         },
         {
           "name": "lies_level_id",
@@ -35,7 +35,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 194
+          "startLine": 200
         },
         {
           "name": "lies_watch_fields",
@@ -50,7 +50,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 132
+          "startLine": 138
         },
         {
           "name": "LIES._optimize_path",
@@ -65,7 +65,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 370
+          "startLine": 376
         },
         {
           "name": "LIES._path_is_straight_line",
@@ -80,7 +80,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 344
+          "startLine": 350
         },
         {
           "name": "LIES.Alarm",
@@ -95,7 +95,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 162
+          "startLine": 168
         },
         {
           "name": "LIES.check_for_updates",
@@ -110,7 +110,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 408
+          "startLine": 414
         },
         {
           "name": "LIES.Count",
@@ -125,7 +125,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 128
+          "startLine": 134
         },
         {
           "name": "LIES.find_cover_away_from_pos",
@@ -140,7 +140,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 338
+          "startLine": 344
         },
         {
           "name": "LIES.find_cover_from_threat",
@@ -155,7 +155,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 326
+          "startLine": 332
         },
         {
           "name": "LIES.find_cover_in_cone_from_threat_pos_1",
@@ -170,7 +170,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 314
+          "startLine": 320
         },
         {
           "name": "LIES.find_cover_in_nav_seg_3",
@@ -185,7 +185,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 320
+          "startLine": 326
         },
         {
           "name": "LIES.find_cover_near_pos_1",
@@ -200,7 +200,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 332
+          "startLine": 338
         },
         {
           "name": "LIES.Load",
@@ -215,7 +215,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 84
+          "startLine": 90
         },
         {
           "name": "LIES.LogCheck",
@@ -230,7 +230,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 105
+          "startLine": 111
         },
         {
           "name": "LIES.Save",
@@ -245,7 +245,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 96
+          "startLine": 102
         },
         {
           "name": "LIES.set_update_data",
@@ -260,7 +260,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 414
+          "startLine": 420
         },
         {
           "name": "LIES.tprint",
@@ -275,7 +275,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 41
+          "startLine": 47
         },
         {
           "name": "LIES.UseLuaCover",
@@ -290,7 +290,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 80
+          "startLine": 86
         },
         {
           "name": "LIES.Watch",
@@ -305,7 +305,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 154
+          "startLine": 160
         },
         {
           "name": "LIES.WatchDigest",
@@ -320,7 +320,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 206
+          "startLine": 212
         },
         {
           "name": "LIES.WatchEnabled",
@@ -335,7 +335,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 150
+          "startLine": 156
         },
         {
           "name": "LIES.WatchReset",
@@ -350,7 +350,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 185
+          "startLine": 191
         },
         {
           "name": "LIES.WatchTick",
@@ -365,7 +365,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 249
+          "startLine": 255
         }
       ],
       "errors": [],
@@ -1910,7 +1910,7 @@
         {
           "name": "ElementSpawnEnemyGroup.on_executed",
           "category": "LIES_EDIT_CLEAN",
-          "modLines": 43,
+          "modLines": 48,
           "oldLines": 35,
           "newLines": 35,
           "modParams": "instigator",

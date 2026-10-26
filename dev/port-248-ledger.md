@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-26T11:42:16.115Z
+Generated: 2026-10-26T13:57:09.808Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -240,7 +240,7 @@ No function definitions (hook/overlay file).
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
 | [ ] | audit (hook) | `Hooks.PostHook:ElementSpawnEnemyGroup._finalize_values:lies_finalize_values` | 51 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | keep | `ElementSpawnEnemyGroup.on_executed` | 43 | 35 | 35 |  |
+| [ ] | keep | `ElementSpawnEnemyGroup.on_executed` | 48 | 35 | 35 |  |
 
 ## lua/managers/mapelements/elementspecialobjective.lua
 

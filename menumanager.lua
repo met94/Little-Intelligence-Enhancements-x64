@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.59_x64",
+		version = "V8.60_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -25,7 +25,13 @@ if RequiredScript == "lib/managers/menumanager" then
 			debug_log = false,
 			-- Opt-in [LIES-WATCH] digest (one line per minute). Failure alarms are
 			-- always on and need no setting; see MENU_OPTIONS.md.
-			watch_log = false
+			watch_log = false,
+			-- Upstream LIES forces every executed spawn group to spawn at once
+			-- (`_perform_group_spawning(spawn_task, true)`), which bypasses
+			-- GroupAIStateBesiege._MAX_SIMULTANEOUS_SPAWNS = 3. false = vanilla
+			-- pacing (3 per tick). Measured density, 2026-10-26: ~35 live cops on
+			-- vanilla, ~100 with the suite; this is the switch that isolates it.
+			instant_spawn_groups = true
 		}
 	}
 	LIES.update_url = "https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json"

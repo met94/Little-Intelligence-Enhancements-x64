@@ -130,6 +130,21 @@ option affects diagnostics, not AI behaviour.
 
 ## Watch digest (`watch_log`) and alarms
 
+### Spawn pacing (`instant_spawn_groups`, settings file only)
+
+Upstream LIES force-spawns every executed spawn group at once
+(`ElementSpawnEnemyGroup:on_executed` → `_perform_group_spawning(spawn_task, true)`),
+and that `true` bypasses the game's `_MAX_SIMULTANEOUS_SPAWNS` of 3 per tick.
+That is why a LIES session carries several times the live cop count of a vanilla
+one (measured 2026-10-26: ~35 vanilla, ~100 with the suite, peak 130).
+
+`"instant_spawn_groups": false` in
+`mods\saves\LittleIntelligenceEnhancementS.txt` (game closed) restores vanilla
+pacing and leaves the normal `force_spawn_group` path as the only spawner.
+Default is `true` (unchanged LIES behaviour). Related dead options:
+`coplimit` ("Max Enemies Multiplier") and `spawngroupdelays` are stored but
+never read by this port, so they cannot change density.
+
 Same channel shape as Iter's, so one reader handles both mods:
 
 - **Alarms** are always on and need no setting. They fire only on a hard

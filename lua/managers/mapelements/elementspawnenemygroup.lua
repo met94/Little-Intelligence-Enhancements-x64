@@ -62,8 +62,13 @@ function ElementSpawnEnemyGroup:on_executed(instigator)
 			local spawn_group_data = managers.groupai:state():create_spawn_group(self._id, self, self._spawn_points)
 
 			local has_spawned_group = managers.groupai:state():force_spawn_group(spawn_group_data, self._values.preferred_spawn_groups)
-			
-			if has_spawned_group then
+
+			-- Upstream LIES force-spawns the whole group here, bypassing
+			-- GroupAIStateBesiege._MAX_SIMULTANEOUS_SPAWNS (3 per tick). That is
+			-- why a LIES session carries several times the live cop count of a
+			-- vanilla one. `instant_spawn_groups = false` restores vanilla pacing
+			-- and leaves the `force_spawn_group` call above as the only spawner.
+			if LIES.settings.instant_spawn_groups ~= false and has_spawned_group then
 				local spawn_task = managers.groupai:state()._spawning_groups[1]
 
 				if spawn_task then
