@@ -135,6 +135,41 @@ if RequiredScript == "lib/managers/menumanager" then
 		self.watch_counters[kind] = (self.watch_counters[kind] or 0) + (amount or 1)
 	end
 
+	-- Gauges keep the maximum seen inside the digest window (cache length, id
+	-- age); sums keep sum+count so the digest can print an average (timings).
+	LIES.watch_gauges = LIES.watch_gauges or {}
+	LIES.watch_sums = LIES.watch_sums or {}
+
+	function LIES:Gauge(kind, value)
+		local v = tonumber(value)
+
+		if not v then
+			return
+		end
+
+		if v > (self.watch_gauges[kind] or -1) then
+			self.watch_gauges[kind] = v
+		end
+	end
+
+	function LIES:Sum(kind, value)
+		local v = tonumber(value)
+
+		if not v then
+			return
+		end
+
+		local entry = self.watch_sums[kind]
+
+		if not entry then
+			entry = { sum = 0, n = 0 }
+			self.watch_sums[kind] = entry
+		end
+
+		entry.sum = entry.sum + v
+		entry.n = entry.n + 1
+	end
+
 	local function lies_watch_fields(fields)
 		local parts = {}
 
@@ -195,6 +230,8 @@ if RequiredScript == "lib/managers/menumanager" then
 		self.watch_header_done = false
 		self.watch_prev = {}
 		self.watch_prev_ready = false
+		self.watch_gauges = {}
+		self.watch_sums = {}
 	end
 
 	local function lies_level_id()
@@ -223,7 +260,7 @@ if RequiredScript == "lib/managers/menumanager" then
 			self.watch_prev[key] = value
 		end
 
-		self:Watch("digest", {
+		local fields = {
 			level = lies_level_id(),
 			t = math.floor(t or 0),
 			cover_set = d.cover_set or 0,
@@ -234,8 +271,81 @@ if RequiredScript == "lib/managers/menumanager" then
 			bag_registered = d.bag_registered or 0,
 			bag_skipped = d.bag_skipped or 0,
 			phalanx_spawn = d.phalanx_spawn or 0,
-			marshal = d.marshal or 0
-		})
+			marshal = d.marshal or 0,
+
+			-- path cache: is it growing, is it being hit, what does the scan cost
+			cache_len = math.floor((self.watch_gauges.cache_len or 0) + 0.5),
+			cache_keys = self:_count_cache_keys(),
+			cache_hit = d.cache_hit or 0,
+			cache_miss = d.cache_miss or 0,
+			cache_scan_n = self:_avg_sum("cache_scan_n"),
+			cache_scan_us = self:_avg_sum("cache_scan_us"),
+			cache_hit_inclusions = d.cache_hit_inclusions or 0,
+
+			-- where searches actually go: straight line, cache, or the engine
+			search_sync_line = d.search_sync_line or 0,
+			search_sync_cache = d.search_sync_cache or 0,
+			search_engine = d.search_engine or 0,
+			engine_us = self:_avg_sum("engine_us"),
+
+			-- cover lifecycle: why a search was issued and how it ended
+			cover_issued_gate = d.cover_issued_gate or 0,
+			cover_issued_failed_path = d.cover_issued_failed_path or 0,
+			cover_issued_refused_walk = d.cover_issued_refused_walk or 0,
+			cover_walk_refused = d.cover_walk_refused or 0,
+			cover_walk_refused_movement = d.cover_walk_refused_movement or 0,
+			cover_walk_refused_action = d.cover_walk_refused_action or 0,
+			cover_walk_refused_other = d.cover_walk_refused_other or 0,
+			cover_path_failed = d.cover_path_failed or 0,
+			cover_id_age_ms = self:_avg_sum("cover_id_age_ms"),
+			cover_id_age_max_ms = math.floor((self.watch_gauges.cover_id_age_ms or 0) + 0.5),
+			cover_abandoned_inflight = d.cover_abandoned_inflight or 0,
+			cover_stale_applied = d.cover_stale_applied or 0
+		}
+
+		self.watch_gauges = {}
+		self.watch_sums = {}
+
+		self:Watch("digest", fields)
+	end
+
+	-- Average of a Sum() accumulator inside the window, for the digest.
+	function LIES:_avg_sum(kind)
+		local entry = self.watch_sums and self.watch_sums[kind]
+
+		if not entry or entry.n == 0 then
+			return 0
+		end
+
+		return entry.sum / entry.n
+	end
+
+	-- Distinct access strings currently in the path cache: how many buckets a
+	-- real index would need. Bounded scan, skipped if the cache is huge.
+	function LIES:_count_cache_keys()
+		local cache = managers and managers.navigation and managers.navigation._cached_paths
+
+		if type(cache) ~= "table" or #cache > 5000 then
+			return -1
+		end
+
+		local keys = {}
+
+		for index = 1, #cache do
+			local entry = cache[index]
+
+			if type(entry) == "table" and entry.access_pos_str then
+				keys[entry.access_pos_str] = true
+			end
+		end
+
+		local n = 0
+
+		for _ in pairs(keys) do
+			n = n + 1
+		end
+
+		return n
 	end
 
 	-- Alarms. Evaluated every 60 s whether or not the digest is on, so a normal

@@ -1,3 +1,13 @@
+Revision V8.63_x64 — 2026-10-29
+Path-cache cost cut and cover-path instrumentation.
+- `search_pos_to_pos` now tests the access string before the two `_path_is_straight_line` calls; each of those is a native navworld raycast, so the scan used to pay two raycasts per cache entry before the cheap rejection. Same predicate, different order
+- `_clear` now drops `_cached_paths`. The cache is per-heist data, and its TTL compared against `TimerManager:game():time()`, which restarts at 0 after a level change, so entries could never expire once the clock wrapped
+- new `[LIES-WATCH]` digest fields, all deltas per 60 s unless noted: `cache_len` (max in window), `cache_keys`, `cache_hit`, `cache_miss`, `cache_scan_n`, `cache_scan_us` (avg), `cache_hit_inclusions`, `search_sync_line`, `search_sync_cache`, `search_engine`, `engine_us` (avg; it measures the call into `detailed_search`, which is a queue insert, not the async search), `cover_issued_gate`, `cover_issued_failed_path`, `cover_issued_refused_walk`, `cover_walk_refused`, `cover_walk_refused_movement`, `cover_walk_refused_action`, `cover_path_failed`, `cover_id_age_ms` (avg) and `cover_id_age_max_ms`, `cover_abandoned_inflight`
+- `_cancel_cover_pathing` is wrapped (guarded against double install) so abandonment with a search still in flight is counted; the wrapper still calls the original, so behaviour is unchanged
+- why: a 4-player heist showed cover searches rising from 5 to 2 127 per minute while the live cop count fell 92 to 45, at 0.4 to 2.0 ms per call. These counters decide whether to cap the cache, index it, restore cover single-flight, or fix the cancel; none of that is enabled by this revision
+
+Player notes: nothing changes in play. This release only removes a wasted raycast per cache entry, drops a stale path cache between heists, and adds detail to the opt-in `[LIES-WATCH]` line so a session can say why cover searches were issued and how long they lived.
+
 Revision V8.62_x64 — 2026-10-29
 Fix the session-global `prio` in cover pathing.
 - `CopBrain:search_for_path_to_cover` had no `prio` parameter and no `local`, so `if not prio then prio = CopLogicTravel.get_pathing_prio(...) end` wrote `_G.prio`: the block is a copy of the two sibling functions (`search_for_path`, `search_for_path_from_pos`) where `prio` *is* a parameter

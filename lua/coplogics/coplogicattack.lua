@@ -575,7 +575,19 @@ function CopLogicAttack._upd_combat_movement(data)
 				action_taken = CopLogicAttack._chk_request_action_walk_to_cover(data, my_data)
 			end
 		elseif not my_data.cover_path and not my_data.cover_path_search_id and not action_taken and best_cover and (not in_cover or best_cover[1] ~= in_cover[1]) and (not my_data.cover_path_failed_t or data.t - my_data.cover_path_failed_t > 2) then
+			LIES:Count("cover_issued_gate")
+
+			if my_data.cover_path_failed_t then
+				LIES:Count("cover_issued_failed_path")
+			end
+
+			if my_data.cover_walk_refused_t then
+				LIES:Count("cover_issued_refused_walk")
+				my_data.cover_walk_refused_t = nil
+			end
+
 			my_data.cover_path_search_id = tostring(unit:key()) .. "cover"
+			my_data.cover_search_t = TimerManager:game():time()
 
 			data.unit:brain():search_for_path_to_cover(my_data.cover_path_search_id, best_cover[1], best_cover[5])
 		end
@@ -1771,6 +1783,14 @@ function CopLogicAttack._process_pathing_results(data, my_data)
 	local path = pathing_results[my_data.cover_path_search_id]
 
 	if path then
+		if my_data.cover_search_t then
+			local age_ms = (TimerManager:game():time() - my_data.cover_search_t) * 1000
+
+			LIES:Sum("cover_id_age_ms", age_ms)
+			LIES:Gauge("cover_id_age_ms", age_ms)
+			my_data.cover_search_t = nil
+		end
+
 		my_data.processing_cover_path = nil
 		my_data.cover_path_search_id = nil
 	
@@ -1778,6 +1798,8 @@ function CopLogicAttack._process_pathing_results(data, my_data)
 			my_data.cover_path = path
 			my_data.cover_path_failed_t = nil
 		else
+			LIES:Count("cover_path_failed")
+
 			CopLogicAttack._set_best_cover(data, my_data, nil)
 
 			my_data.cover_path_failed_t = TimerManager:game():time()
@@ -2480,6 +2502,19 @@ function CopLogicAttack._chk_request_action_walk_to_cover(data, my_data)
 		
 		return true
 	end
+
+	-- The walk was refused after the path had already been consumed above, so
+	-- nothing re-arms a guard: the next logic update can issue another search.
+	-- Count it, and remember why, so the next issue can be attributed.
+	LIES:Count("cover_walk_refused")
+
+	my_data.cover_walk_refused_t = TimerManager:game():time()
+
+	if data.unit:movement():chk_action_forbidden("walk") then
+		LIES:Count("cover_walk_refused_movement")
+	else
+		LIES:Count("cover_walk_refused_action")
+	end
 end
 
 function CopLogicAttack.is_available_for_assignment(data, new_objective)
@@ -2982,6 +3017,26 @@ function CopLogicAttack._chk_exit_attack_logic(data, new_reaction)
 			if CopLogicIdle._chk_objective_needs_travel(data, data.objective) then
 				CopLogicBase._exit(data.unit, "travel")
 			end
+		end
+	end
+end
+-- Instrumentation: LIES calls _cancel_cover_pathing in six places but never
+-- defines it, so vanilla's body runs and — because LIES never sets
+-- processing_cover_path — the cancel is a no-op. Count how often a cop abandons
+-- a cover while its search is still in flight; that is the number that decides
+-- whether fixing the cancel is worth any code.
+if not LIES._cancel_cover_pathing_instrumented then
+	LIES._cancel_cover_pathing_instrumented = true
+
+	local lies_cancel_cover_pathing_original = CopLogicAttack._cancel_cover_pathing
+
+	function CopLogicAttack._cancel_cover_pathing(data, my_data)
+		if my_data and my_data.cover_path_search_id then
+			LIES:Count("cover_abandoned_inflight")
+		end
+
+		if lies_cancel_cover_pathing_original then
+			return lies_cancel_cover_pathing_original(data, my_data)
 		end
 	end
 end

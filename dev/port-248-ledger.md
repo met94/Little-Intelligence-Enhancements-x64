@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-29T08:06:56.729Z
+Generated: 2026-10-29T09:39:56.120Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,11 +13,11 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 24 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 200 |
+| MOD_ONLY | 204 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 2 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 288 |
+| LIES_EDIT_CLEAN | 289 |
 
 ## menumanager.lua
 
@@ -26,6 +26,8 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `lies_alarm_ratio` | 11 | 0 | 0 |  |
 | [ ] | audit | `lies_level_id` | 11 | 0 | 0 |  |
 | [ ] | audit | `lies_watch_fields` | 17 | 0 | 0 |  |
+| [ ] | audit | `LIES._avg_sum` | 9 | 0 | 0 |  |
+| [ ] | audit | `LIES._count_cache_keys` | 25 | 0 | 0 |  |
 | [ ] | audit | `LIES._optimize_path` | 37 | 0 | 0 |  |
 | [ ] | audit | `LIES._path_is_straight_line` | 25 | 0 | 0 |  |
 | [ ] | audit | `LIES.Alarm` | 22 | 0 | 0 |  |
@@ -36,16 +38,18 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.find_cover_in_cone_from_threat_pos_1` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_in_nav_seg_3` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_near_pos_1` | 5 | 0 | 0 |  |
+| [ ] | audit | `LIES.Gauge` | 11 | 0 | 0 |  |
 | [ ] | audit | `LIES.Load` | 11 | 0 | 0 |  |
 | [ ] | audit | `LIES.LogCheck` | 11 | 0 | 0 |  |
 | [ ] | audit | `LIES.Save` | 8 | 0 | 0 |  |
 | [ ] | audit | `LIES.set_update_data` | 19 | 0 | 0 |  |
+| [ ] | audit | `LIES.Sum` | 17 | 0 | 0 |  |
 | [ ] | audit | `LIES.tprint` | 38 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchDigest` | 28 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchDigest` | 62 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchReset` | 8 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchReset` | 10 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchTick` | 62 | 0 | 0 |  |
 
 ## menunodegui.lua
@@ -116,7 +120,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `NavigationManager.register_cover_units` | 132 | 80 | 75 |  |
 | [ ] | **PORT** | `NavigationManager.remove_obstacle` | 46 | 15 | 46 |  |
 | [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 93 | 36 | 38 |  |
-| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._clear:LIES_nav_gen_abort_clear` | 7 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._clear:LIES_nav_gen_abort_clear` | 12 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._unregister_cover_units:LIES_nav_gen_abort_unregister` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager.update:lies_cover` | 12 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `_lies_cover_grid_add` | 12 | 0 | 0 |  |
@@ -155,7 +159,7 @@ No function definitions (hook/overlay file).
 | [ ] | drop/rewrite | `NavigationManager.get_nav_segments_in_direction` | 24 | 55 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
 | [ ] | keep | `NavigationManager.draw_path` | 59 | 36 | 36 |  |
 | [ ] | keep | `NavigationManager.register_anim_nav_link` | 51 | 45 | 45 |  |
-| [ ] | keep | `NavigationManager.search_pos_to_pos` | 85 | 7 | 7 |  |
+| [ ] | keep | `NavigationManager.search_pos_to_pos` | 114 | 7 | 7 |  |
 
 ## lua/characters/characterattentionobject.lua
 
@@ -608,10 +612,11 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopLogicAttack._move_back_into_field_position` | 27 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._pathing_complete_clbk` | 21 | 0 | 0 |  |
 | [ ] | keep | `CopLogicAttack._can_move` | 3 | 3 | 3 |  |
+| [ ] | keep | `CopLogicAttack._cancel_cover_pathing` | 9 | 16 | 16 |  |
 | [ ] | keep | `CopLogicAttack._chk_covered` | 20 | 23 | 23 |  |
 | [ ] | keep | `CopLogicAttack._chk_exit_attack_logic` | 39 | 19 | 19 |  |
 | [ ] | keep | `CopLogicAttack._chk_request_action_turn_to_enemy` | 21 | 19 | 19 |  |
-| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover` | 72 | 32 | 32 |  |
+| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover` | 85 | 32 | 32 |  |
 | [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover_shoot_pos` | 26 | 23 | 23 |  |
 | [ ] | keep | `CopLogicAttack._chk_start_action_move_back` | 77 | 32 | 32 |  |
 | [ ] | keep | `CopLogicAttack._chk_start_action_move_out_of_the_way` | 59 | 21 | 21 |  |
@@ -621,8 +626,8 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopLogicAttack._find_retreat_position` | 122 | 72 | 72 |  |
 | [ ] | keep | `CopLogicAttack._get_cover_offset_pos` | 41 | 33 | 33 |  |
 | [ ] | keep | `CopLogicAttack._peek_for_pos_sideways` | 53 | 54 | 54 |  |
-| [ ] | keep | `CopLogicAttack._process_pathing_results` | 65 | 48 | 48 |  |
-| [ ] | keep | `CopLogicAttack._upd_combat_movement` | 307 | 150 | 150 |  |
+| [ ] | keep | `CopLogicAttack._process_pathing_results` | 75 | 48 | 48 |  |
+| [ ] | keep | `CopLogicAttack._upd_combat_movement` | 319 | 150 | 150 |  |
 | [ ] | keep | `CopLogicAttack._upd_enemy_detection` | 48 | 49 | 49 |  |
 | [ ] | keep | `CopLogicAttack._upd_pose` | 38 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack._upd_stop_old_action` | 24 | 15 | 15 |  |

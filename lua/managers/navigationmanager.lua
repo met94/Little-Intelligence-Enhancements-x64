@@ -1157,6 +1157,11 @@ end)
 Hooks:PostHook(NavigationManager, "_clear", "LIES_nav_gen_abort_clear", function(self)
 	self:_LIES_cover_gen_abort()
 
+	-- The path cache is per-heist data. Dropping it here also fixes the TTL
+	-- comparison, which used TimerManager:game():time() and therefore went
+	-- negative after a level restart, leaving entries that could never expire.
+	self._cached_paths = nil
+
 	if LIES and LIES.WatchReset then
 		LIES:WatchReset()
 	end
@@ -1265,18 +1270,30 @@ function NavigationManager:search_pos_to_pos(params)
 		
 		--managers.navigation:draw_path(path, nil, nil, 5)
 		local result_clbk = params.result_clbk
+
+		LIES:Count("search_sync_line")
+
 		result_clbk(path, true)
-		
+
 		return
 	elseif self._cached_paths and #self._cached_paths > 0 then
 		local t = TimerManager:game():time()
-	
+		local scan_t0 = os.clock()
+
+		LIES:Gauge("cache_len", #self._cached_paths)
+		LIES:Sum("cache_scan_n", #self._cached_paths)
+
 		for i = 1, #self._cached_paths do
 			local cached_path_info = self._cached_paths[i]
-			
+
 			local inclusions = access_inclusions[cached_path_info.access_pos_str]
-			
-			if not cached_path_info.invalidated and LIES:_path_is_straight_line(start_pos, cached_path_info.start_pos) and LIES:_path_is_straight_line(end_pos, cached_path_info.end_pos) and (inclusions and inclusions[params.access_pos_str] == true or cached_path_info.access_pos_str == params.access_pos_str) then
+			local exact_access = cached_path_info.access_pos_str == params.access_pos_str
+			local via_inclusions = inclusions and inclusions[params.access_pos_str] == true
+
+			-- Cheap discriminators first: the two _path_is_straight_line calls
+			-- below each cost a native raycast, so reject on the access string
+			-- before paying for them. Same predicate, different order.
+			if not cached_path_info.invalidated and (exact_access or via_inclusions) and LIES:_path_is_straight_line(start_pos, cached_path_info.start_pos) and LIES:_path_is_straight_line(end_pos, cached_path_info.end_pos) then
 				local good_path = true
 				
 				for cached_path_i = 1, #cached_path_info.path do
@@ -1299,7 +1316,15 @@ function NavigationManager:search_pos_to_pos(params)
 
 				if good_path then
 					cached_path_info.last_useful_t = TimerManager:game():time()
-				
+
+					LIES:Count("search_sync_cache")
+					LIES:Count("cache_hit")
+					LIES:Sum("cache_scan_us", (os.clock() - scan_t0) * 1000000)
+
+					if via_inclusions and not exact_access then
+						LIES:Count("cache_hit_inclusions")
+					end
+
 					local result_path = {
 						start_pos
 					}
@@ -1319,9 +1344,18 @@ function NavigationManager:search_pos_to_pos(params)
 				end
 			end
 		end
+
+		LIES:Count("cache_miss")
+		LIES:Sum("cache_scan_us", (os.clock() - scan_t0) * 1000000)
 	end
 
+	LIES:Count("search_engine")
+
+	local engine_t0 = os.clock()
+
 	self._quad_field:detailed_search(params)
+
+	LIES:Sum("engine_us", (os.clock() - engine_t0) * 1000000)
 end
 
 function NavigationManager:draw_path(path, color_link, color_node, duration)
