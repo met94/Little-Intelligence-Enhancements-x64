@@ -1,3 +1,12 @@
+Revision V8.62_x64 — 2026-10-29
+Fix the session-global `prio` in cover pathing.
+- `CopBrain:search_for_path_to_cover` had no `prio` parameter and no `local`, so `if not prio then prio = CopLogicTravel.get_pathing_prio(...) end` wrote `_G.prio`: the block is a copy of the two sibling functions (`search_for_path`, `search_for_path_from_pos`) where `prio` *is* a parameter
+- because LIES' `get_pathing_prio` always returns a number (0-11, never nil), the first cover search of a Lua session froze that one cop's priority for every other cop for the rest of the session, across heist restarts
+- converted cops (10/11), player-team squad (9), phalanx (8) and fleeing civilians (1/2) therefore all searched with one stale queue weight; vanilla only ever used 4/5 for the most urgent travel, so the scale itself is LIES'
+- the value is consumed natively (`QuadField:detailed_search`): neither LIES' nor Iter's `search_pos_to_pos` reads it, so this cannot change cache keys or search counts - it is a priority-weight bug, not a frame-time one
+- now computed per call from the cop's own logic data; the leftover `--log("Waaaah")` is gone with it, and `_G.prio` is no longer written
+
+Player notes: cover-taking cops should behave a little more sensibly - converted cops, your AI squad and fleeing civilians ask for cover paths at their own urgency again instead of inheriting one cop's value from early in the session. No menu entry, no new setting, and no expected change in frame rate.
 Revision V8.61_x64 — 2026-10-26
 Instant Spawn Groups in the menu.
 - added the `Instant Spawn Groups` toggle to `menu/options.txt` with `callback_lies_instant_spawn_groups` (sets and saves `settings.instant_spawn_groups`), plus `menu_lies_instant_spawn_groups_title` / `_desc` in `loc/en.txt`; the switch itself landed in V8.60 and is unchanged (`true` = upstream LIES behaviour, `false` = vanilla 3-per-tick pacing)

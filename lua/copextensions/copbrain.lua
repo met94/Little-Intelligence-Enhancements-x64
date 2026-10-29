@@ -925,10 +925,12 @@ function CopBrain:search_for_path_from_pos(search_id, from_pos, to_pos, prio, ac
 end
 
 function CopBrain:search_for_path_to_cover(search_id, cover, offset_pos, access_neg)
-	if not prio then
-		prio = CopLogicTravel.get_pathing_prio(self._logic_data)
-		--log("Waaaah")
-	end
+	-- `prio` used to be an undeclared global here: the block was copied from
+	-- search_for_path / search_for_path_from_pos, where `prio` is a parameter.
+	-- get_pathing_prio never returns nil, so the first cover search of a Lua
+	-- session froze one cop's priority for every cop afterwards. Compute it per
+	-- call, from this cop's own logic data.
+	local prio = CopLogicTravel.get_pathing_prio(self._logic_data)
 
 	local params = {
 		tracker_from = self._unit:movement():nav_tracker(),
