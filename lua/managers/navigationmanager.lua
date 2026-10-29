@@ -1261,6 +1261,12 @@ function NavigationManager:search_pos_to_pos(params)
 	elseif params.pos_to then
 		end_pos = params.pos_to
 	end
+
+	-- How often the destination has no nav segment at all: that decides whether a
+	-- segment-keyed cache index would need a permanent fallback path.
+	if not self:get_nav_seg_from_pos(end_pos, true) then
+		LIES:Count("lookup_nil_seg")
+	end
 	
 	if LIES:_path_is_straight_line(start_pos, end_pos) then
 		local path = {
@@ -1276,7 +1282,7 @@ function NavigationManager:search_pos_to_pos(params)
 		result_clbk(path, true)
 
 		return
-	elseif self._cached_paths and #self._cached_paths > 0 then
+	elseif self._cached_paths and #self._cached_paths > 0 and LIES.settings.cache_lookup ~= false then
 		local t = TimerManager:game():time()
 		local scan_t0 = os.clock()
 
@@ -1320,6 +1326,8 @@ function NavigationManager:search_pos_to_pos(params)
 					LIES:Count("search_sync_cache")
 					LIES:Count("cache_hit")
 					LIES:Sum("cache_scan_us", (os.clock() - scan_t0) * 1000000)
+
+					cached_path_info.hits = (cached_path_info.hits or 0) + 1
 
 					if via_inclusions and not exact_access then
 						LIES:Count("cache_hit_inclusions")

@@ -181,6 +181,24 @@ and the localization strings remain, and nothing reads them. The ModWorkshop pag
 for V8.57 still advertises "Forced Spawn Delays ... Toggleable", which no longer
 exists - a stale description upstream, not something this port removed.
 
+## Path-cache lookup (`cache_lookup`)
+
+Settings file only, no menu entry. Default **true**, which is upstream LIES
+behaviour.
+
+| value | effect |
+| --- | --- |
+| `true` | Before asking the engine for a path, `NavigationManager:search_pos_to_pos` scans the cached paths and reuses one whose endpoints are still in a straight walkable line. The cop gets a path in the same frame. |
+| `false` | Skip the scan and always ask the engine. The path arrives about one frame later, and the lookup costs ~10 us instead of a scan of ~900 entries (~3.5 ms of CPU on a measured 4-player heist). |
+
+Why it exists: the cache is an upstream optimisation that was never bounded
+(measured 927-975 entries, 20-24% hit rate, two navworld raycasts per entry). The
+switch lets the cost be measured against the benefit without changing any code
+path that the engine or the cover search depends on.
+
+`Ruling` in the investigation doc: this is an unadvertised internal optimisation,
+so any change to it ships default-off; `true` keeps the author's behaviour.
+
 ## Legacy localization keys
 
 `loc/en.txt` also contains strings for `fixed_specialspawncaps`, `coplimit`

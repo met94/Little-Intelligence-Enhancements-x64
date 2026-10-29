@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.63_x64",
+		version = "V8.64_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -31,7 +31,14 @@ if RequiredScript == "lib/managers/menumanager" then
 			-- GroupAIStateBesiege._MAX_SIMULTANEOUS_SPAWNS = 3. false = vanilla
 			-- pacing (3 per tick). Measured density, 2026-10-26: ~35 live cops on
 			-- vanilla, ~100 with the suite; this is the switch that isolates it.
-			instant_spawn_groups = true
+			instant_spawn_groups = true,
+			-- Path-cache lookup in NavigationManager:search_pos_to_pos. `true` is
+			-- upstream behaviour: before asking the engine, scan the cached paths
+			-- and reuse one whose endpoints are still in a straight walkable line.
+			-- `false` skips the scan and always asks the engine (one frame later,
+			-- ~10 us to enqueue instead of ~3.5 ms of scanning). Settings file
+			-- only, no menu entry; see MENU_OPTIONS.md.
+			cache_lookup = true
 		}
 	}
 	LIES.update_url = "https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json"
@@ -260,9 +267,10 @@ if RequiredScript == "lib/managers/menumanager" then
 			self.watch_prev[key] = value
 		end
 
+		local hits0, hits1, hits2_7, hits8p = self:_cache_hit_histogram()
+
 		local fields = {
-			level = lies_level_id(),
-			t = math.floor(t or 0),
+			level = lies_level_id(),			t = math.floor(t or 0),
 			cover_set = d.cover_set or 0,
 			cover_fallback = d.cover_fallback or 0,
 			suppression_deny = d.suppression_deny or 0,
@@ -281,6 +289,15 @@ if RequiredScript == "lib/managers/menumanager" then
 			cache_scan_n = self:_avg_sum("cache_scan_n"),
 			cache_scan_us = self:_avg_sum("cache_scan_us"),
 			cache_hit_inclusions = d.cache_hit_inclusions or 0,
+			cache_hits0 = hits0,
+			cache_hits1 = hits1,
+			cache_hits2_7 = hits2_7,
+			cache_hits8p = hits8p,
+
+			-- where the lookups come from, and whether the destination has a segment
+			lookup_cover = d.lookup_cover or 0,
+			lookup_path = d.lookup_path or 0,
+			lookup_nil_seg = d.lookup_nil_seg or 0,
 
 			-- where searches actually go: straight line, cache, or the engine
 			search_sync_line = d.search_sync_line or 0,
@@ -318,6 +335,35 @@ if RequiredScript == "lib/managers/menumanager" then
 		end
 
 		return entry.sum / entry.n
+	end
+
+	-- Distribution of cache entries by how often they have ever been hit: tells us
+	-- whether hits cluster in a hot few (= a small cache would do) or spread.
+	function LIES:_cache_hit_histogram()
+		local cache = managers and managers.navigation and managers.navigation._cached_paths
+
+		if type(cache) ~= "table" then
+			return 0, 0, 0, 0
+		end
+
+		local zero, one, few, many = 0, 0, 0, 0
+
+		for index = 1, #cache do
+			local entry = cache[index]
+			local hits = type(entry) == "table" and (entry.hits or 0) or 0
+
+			if hits == 0 then
+				zero = zero + 1
+			elseif hits == 1 then
+				one = one + 1
+			elseif hits < 8 then
+				few = few + 1
+			else
+				many = many + 1
+			end
+		end
+
+		return zero, one, few, many
 	end
 
 	-- Distinct access strings currently in the path cache: how many buckets a

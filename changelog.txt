@@ -1,3 +1,12 @@
+Revision V8.64_x64 — 2026-10-29
+Cache-lookup switch and the counters that decide any further cache work.
+- new setting `cache_lookup` (default **true**, i.e. upstream behaviour). `false` skips the cached-path scan in `search_pos_to_pos` and always asks the engine. Settings file only, no menu entry; documented in `MENU_OPTIONS.md`
+- why: on a measured 4-player heist the cache held 927-975 entries with a 20-24% hit rate, and each lookup that reached it scanned ~918 entries at **3.5 ms** of Lua CPU because every entry pays two `_path_is_straight_line` navworld raycasts first. The engine call it saves is a ~10 us enqueue that completes about one frame later. The switch exists so that trade can be measured instead of assumed
+- new `[LIES-WATCH]` digest fields: `lookup_cover` and `lookup_path` (which callers drive the lookups), `lookup_nil_seg` (destination has no nav segment - decides whether a segment-keyed index would need a permanent fallback), and the per-entry hit histogram `cache_hits0` / `cache_hits1` / `cache_hits2_7` / `cache_hits8p` (are hits a hot few or spread thin?)
+- no behaviour change with the default: the switch only gates the cache branch, and the counters only increment. The straight-line shortcut and the engine fallback are untouched
+
+Player notes: nothing changes in play. If you set `"cache_lookup": false` in the LIES save file, cops stop reusing recently computed paths and ask the engine instead - a path then arrives about one frame later, and the per-search CPU cost drops from ~3.5 ms to ~10 us. Useful only for measuring; leave it at true otherwise.
+
 Revision V8.63_x64 — 2026-10-29
 Path-cache cost cut and cover-path instrumentation.
 - `search_pos_to_pos` now tests the access string before the two `_path_is_straight_line` calls; each of those is a native navworld raycast, so the scan used to pay two raycasts per cache entry before the cheap rejection. Same predicate, different order

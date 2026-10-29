@@ -896,6 +896,8 @@ function CopBrain:search_for_path(search_id, to_pos, prio, access_neg, nav_segs)
 	
 	self._logic_data.active_searches[search_id] = true
 
+	LIES:Count("lookup_path")
+
 	managers.navigation:search_pos_to_pos(params)
 
 	return true
@@ -919,6 +921,9 @@ function CopBrain:search_for_path_from_pos(search_id, from_pos, to_pos, prio, ac
 	}
 	
 	self._logic_data.active_searches[search_id] = true
+
+	LIES:Count("lookup_path")
+
 	managers.navigation:search_pos_to_pos(params)
 
 	return true
@@ -949,6 +954,9 @@ function CopBrain:search_for_path_to_cover(search_id, cover, offset_pos, access_
 	end
 
 	self._logic_data.active_searches[search_id] = true
+
+	LIES:Count("lookup_cover")
+
 	managers.navigation:search_pos_to_pos(params)
 
 	return true

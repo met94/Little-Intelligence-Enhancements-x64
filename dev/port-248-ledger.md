@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-29T10:44:22.831Z
+Generated: 2026-10-29T12:45:42.493Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,7 +13,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 24 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 204 |
+| MOD_ONLY | 205 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 2 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -27,6 +27,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `lies_level_id` | 11 | 0 | 0 |  |
 | [ ] | audit | `lies_watch_fields` | 17 | 0 | 0 |  |
 | [ ] | audit | `LIES._avg_sum` | 9 | 0 | 0 |  |
+| [ ] | audit | `LIES._cache_hit_histogram` | 26 | 0 | 0 |  |
 | [ ] | audit | `LIES._count_cache_keys` | 25 | 0 | 0 |  |
 | [ ] | audit | `LIES._optimize_path` | 37 | 0 | 0 |  |
 | [ ] | audit | `LIES._path_is_straight_line` | 25 | 0 | 0 |  |
@@ -47,7 +48,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.tprint` | 38 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchDigest` | 62 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchDigest` | 72 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchReset` | 10 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchTick` | 62 | 0 | 0 |  |
@@ -159,7 +160,7 @@ No function definitions (hook/overlay file).
 | [ ] | drop/rewrite | `NavigationManager.get_nav_segments_in_direction` | 24 | 55 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
 | [ ] | keep | `NavigationManager.draw_path` | 59 | 36 | 36 |  |
 | [ ] | keep | `NavigationManager.register_anim_nav_link` | 51 | 45 | 45 |  |
-| [ ] | keep | `NavigationManager.search_pos_to_pos` | 114 | 7 | 7 |  |
+| [ ] | keep | `NavigationManager.search_pos_to_pos` | 122 | 7 | 7 |  |
 
 ## lua/characters/characterattentionobject.lua
 
@@ -433,9 +434,9 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopBrain.on_suppressed` | 11 | 13 | 13 |  |
 | [ ] | keep | `CopBrain.on_team_set` | 10 | 5 | 5 |  |
 | [ ] | keep | `CopBrain.post_init` | 58 | 46 | 46 |  |
-| [ ] | keep | `CopBrain.search_for_path` | 23 | 18 | 18 |  |
-| [ ] | keep | `CopBrain.search_for_path_from_pos` | 22 | 18 | 18 |  |
-| [ ] | keep | `CopBrain.search_for_path_to_cover` | 29 | 16 | 16 |  |
+| [ ] | keep | `CopBrain.search_for_path` | 25 | 18 | 18 |  |
+| [ ] | keep | `CopBrain.search_for_path_from_pos` | 25 | 18 | 18 |  |
+| [ ] | keep | `CopBrain.search_for_path_to_cover` | 32 | 16 | 16 |  |
 | [ ] | keep | `CopBrain.set_objective` | 141 | 13 | 13 |  |
 | [ ] | keep | `CopBrain.set_pos_rsrv` | 23 | 19 | 19 |  |
 | [ ] | keep | `CopBrain.set_spawn_ai` | 37 | 17 | 17 |  |
