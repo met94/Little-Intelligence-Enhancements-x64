@@ -1,23 +1,23 @@
-// Instant spawn groups: the density switch behind "3x more cops with mods".
+// Scripted group spawning: the retired `instant_spawn_groups` switch.
 //
-// Player measurement (2026-10-26): live cops ~35 on vanilla, ~100 with the
-// suite (peaks 130) on the same heist and difficulty.
-//
-// Cause, verified in source: `ElementSpawnEnemyGroup:on_executed` in LIES (an
-// upstream override, `git blame` -> 2023-04-05) force-spawns the whole group
-// right after `force_spawn_group`:
+// History: the fork shipped a toggle in V8.60-V8.65 in front of an upstream
+// LIES 7.1 addition (`b0207e5`) that calls
 //
 //   managers.groupai:state():_perform_group_spawning(spawn_task, true)
 //
-// Vanilla only calls `force_spawn_group`, which goes through `_upd_group_spawning`
-// and therefore respects `GroupAIStateBesiege._MAX_SIMULTANEOUS_SPAWNS = 3`.
-// The `true` argument is the `force` flag, and `_perform_group_spawning` skips
-// the cap when it is set, so every executed `spawn_type == "group"` element
-// dumps its group at once instead of trickling 3 per tick.
+// right after `force_spawn_group` in `ElementSpawnEnemyGroup:on_executed`.
+// The claim was that `force` bypasses `_MAX_SIMULTANEOUS_SPAWNS` and dumps the
+// whole group at once. It cannot: `_spawn_in_group` sets every spawn point of
+// the fresh group to `delay_t = self._t + math.rand(0.5)`, and
+// `_perform_group_spawning` skips points whose delay has not expired
+// (`sp_data.delay_t < self._t`). `force` only lifts the per-tick cap, and both
+// calls run in the same frame with the same `self._t`. The only task the extra
+// call could reach was `_spawning_groups[1]` - the oldest queued group, since
+// the new task is appended at the tail - so it could only force an unrelated
+// group. The switch and that extra call were removed in V8.66.
 //
-// The switch keeps upstream behaviour by default (LIES has always done this) and
-// offers a vanilla-paced mode for A/B: `instant_spawn_groups = false` skips the
-// forced call and leaves only the vanilla `force_spawn_group` path.
+// `spawn_type == "group_guaranteed"` keeps its forced call: that branch is
+// vanilla's own code.
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -28,67 +28,66 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(repoRoot, ...parts), 'utf8');
 
-const manager = fs.readFileSync(path.join(repoRoot, 'menumanager.lua'), 'utf8');
-const spawner = read('lua', 'managers', 'mapelements', 'elementspawnenemygroup.lua');
+const manager = read('menumanager.lua');
+const spawnerRaw = read('lua', 'managers', 'mapelements', 'elementspawnenemygroup.lua');
 
-test('the switch exists and keeps upstream behaviour by default', () => {
+// Strip Lua comments so a claim cannot be satisfied (or broken) by prose: the
+// removal rationale in this file quotes the retired call.
+const stripLuaComments = (source) =>
+  source.replace(/--\[\[[\s\S]*?\]\]/g, '').replace(/--[^\n]*/g, '');
+
+const spawner = stripLuaComments(spawnerRaw);
+const onExecuted = /function ElementSpawnEnemyGroup:on_executed\(instigator\)([\s\S]*?)\nend/.exec(spawner);
+const body = onExecuted ? onExecuted[1] : '';
+const groupBranch = body.slice(
+  body.indexOf('if self._group_data.spawn_type == "group" then'),
+  body.indexOf('elseif self._group_data.spawn_type == "group_guaranteed"')
+);
+const guaranteedBranch = body.slice(body.indexOf('elseif self._group_data.spawn_type == "group_guaranteed"'));
+
+test('the toggle and its plumbing are gone', () => {
+  assert.doesNotMatch(manager, /instant_spawn_groups/, 'setting or callback still in menumanager.lua');
+  assert.doesNotMatch(read('menu', 'options.txt'), /instant_spawn_groups/, 'menu entry still exists');
+  assert.doesNotMatch(read('loc', 'en.txt'), /menu_lies_instant_spawn_groups/, 'localisation keys still exist');
+});
+
+test('on_executed survives and is the vanilla shape', () => {
+  assert.ok(onExecuted, 'on_executed override missing');
+  assert.match(groupBranch, /create_spawn_group\(self\._id, self, self\._spawn_points\)/, 'group data creation lost');
   assert.match(
-    manager,
-    /instant_spawn_groups = true/,
-    'instant_spawn_groups must default to true (upstream LIES behaviour)'
+    groupBranch,
+    /managers\.groupai:state\(\):force_spawn_group\(spawn_group_data, self\._values\.preferred_spawn_groups\)/,
+    'vanilla force_spawn_group call lost'
   );
 });
 
-test('the forced spawn call is gated, the vanilla path is not', () => {
-  const onExecuted = /function ElementSpawnEnemyGroup:on_executed\(instigator\)([\s\S]*?)\nend/.exec(spawner);
-  assert.ok(onExecuted, 'on_executed override missing');
-  const body = onExecuted[1];
-
-  // Vanilla path stays in every configuration.
-  assert.match(body, /managers\.groupai:state\(\):force_spawn_group\(spawn_group_data, self\._values\.preferred_spawn_groups\)/, 'vanilla force_spawn_group lost');
-
-  // The extra forced spawn is behind the switch.
-  const gate = /if\s+LIES\.settings\.instant_spawn_groups\s*~=\s*false\s+and\s+has_spawned_group\s+then/.exec(body);
-  assert.ok(gate, 'the forced spawn must be gated by instant_spawn_groups ~= false');
-
-  const forced = body.indexOf('_perform_group_spawning(spawn_task, true)');
-  const gateAt = body.search(/instant_spawn_groups/);
-  assert.ok(gateAt >= 0 && forced > gateAt, 'the forced spawn must sit inside the gate');
+test('the group branch makes no forced spawn call', () => {
+  assert.doesNotMatch(groupBranch, /_perform_group_spawning/, 'the retired forced spawn is back in the group branch');
+  assert.doesNotMatch(groupBranch, /_spawning_groups/, 'the group branch must not poke the spawn queue directly');
 });
 
-test('group_guaranteed keeps its vanilla force path', () => {
-  const onExecuted = /function ElementSpawnEnemyGroup:on_executed\(instigator\)([\s\S]*?)\nend/.exec(spawner)[1];
-  const guaranteed = onExecuted.slice(onExecuted.indexOf('elseif self._group_data.spawn_type == "group_guaranteed"'));
-  assert.match(guaranteed, /force_spawn_group\(spawn_group_data, self\._values\.preferred_spawn_groups, true\)/, 'guaranteed branch changed');
-  assert.match(guaranteed, /_perform_group_spawning\(spawn_task, true\)/, 'guaranteed branch lost its forced spawn');
+test('group_guaranteed keeps vanilla forced spawning', () => {
+  assert.match(
+    guaranteedBranch,
+    /force_spawn_group\(spawn_group_data, self\._values\.preferred_spawn_groups, true\)/,
+    'guaranteed branch lost its guarantee flag'
+  );
+  assert.match(guaranteedBranch, /_perform_group_spawning\(spawn_task, true\)/, 'guaranteed branch lost its forced spawn');
 });
 
-test('the menu exposes the switch', () => {
-  const options = fs.readFileSync(path.join(repoRoot, 'menu', 'options.txt'), 'utf8');
-  const entry = /\{[^{}]*"lies_instant_spawn_groups"[^{}]*\}/.exec(options);
-  assert.ok(entry, 'menu item missing');
-  assert.match(entry[0], /"type"\s*:\s*"toggle"/, 'must be a toggle');
-  assert.match(entry[0], /"callback"\s*:\s*"callback_lies_instant_spawn_groups"/, 'menu callback missing');
-  assert.match(entry[0], /"value"\s*:\s*"instant_spawn_groups"/, 'menu value binding missing');
-
-  // The callback persists the setting, like every other LIES toggle.
-  const callback = /callback_lies_instant_spawn_groups = function\(self, item\)([\s\S]*?)\n\t\tend/.exec(manager);
-  assert.ok(callback, 'callback missing');
-  assert.match(callback[1], /LIES\.settings\.instant_spawn_groups = on/, 'callback must set the setting');
-  assert.match(callback[1], /LIES:Save\(\)/, 'callback must persist');
-
-  // Localization keys exist, or the menu shows raw ids.
-  const loc = fs.readFileSync(path.join(repoRoot, 'loc', 'en.txt'), 'utf8');
-  assert.match(loc, /"menu_lies_instant_spawn_groups_title"/, 'title loc missing');
-  assert.match(loc, /"menu_lies_instant_spawn_groups_desc"/, 'description loc missing');
+test('no other code path reintroduces a forced spawn', () => {
+  for (const [file, source] of [
+    ['lua/managers/mapelements/elementspawnenemygroup.lua', spawner],
+    ['menumanager.lua', manager]
+  ]) {
+    const forced = [...source.matchAll(/_perform_group_spawning\([^)]*true\)/g)];
+    const expected = file.includes('elementspawnenemygroup') ? 1 : 0;
+    assert.equal(forced.length, expected, `${file}: unexpected forced-spawn call count`);
+  }
 });
 
-test('gate predicate truth table', () => {
-  // JS mirror of `if LIES.settings.instant_spawn_groups ~= false and has_spawned_group then`
-  const forces = (setting, hasGroup) => setting !== false && Boolean(hasGroup);
-
-  assert.equal(forces(true, true), true, 'default keeps upstream behaviour');
-  assert.equal(forces(undefined, true), true, 'a missing key behaves like upstream');
-  assert.equal(forces(false, true), false, 'vanilla-paced mode skips the forced spawn');
-  assert.equal(forces(true, false), false, 'no group means nothing to force');
+test('the retired switch is documented as removed', () => {
+  const doc = read('MENU_OPTIONS.md');
+  assert.match(doc, /Instant Spawn Groups \(`instant_spawn_groups`\) - removed in V8\.66/, 'removal record missing');
+  assert.doesNotMatch(doc, /restores vanilla pacing and\s+leaves the normal `force_spawn_group` path/, 'stale description survived');
 });

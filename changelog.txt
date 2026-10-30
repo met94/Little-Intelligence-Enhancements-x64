@@ -1,3 +1,13 @@
+Revision V8.66_x64 — 2026-10-30
+Remove the Instant Spawn Groups switch: it never did what it said.
+- upstream LIES 7.1 (`b0207e5`, 2023-04-05) added an extra `_perform_group_spawning(spawn_task, true)` to `ElementSpawnEnemyGroup:on_executed` in the `spawn_type == "group"` branch, to bypass `GroupAIStateBesiege._MAX_SIMULTANEOUS_SPAWNS` and dump the whole group at once. It cannot: `_spawn_in_group` gives every spawn point of the fresh group `delay_t = self._t + math.rand(0.5)` (`groupaistatebesiege.lua:1275-1277`) and `_perform_group_spawning` skips points whose delay has not expired (`sp_data.delay_t < self._t`); `force` only lifts the per-tick cap, and both calls run in the same frame with the same `self._t`
+- the only task the extra call could reach was `_spawning_groups[1]`, the oldest queued group (the new task is appended at the tail), so at best it spawned a few cops of an unrelated group ahead of schedule, ignoring the cap
+- measured legs with the fork's switch off still showed 85-100 live cops on Death Wish 4-player, so the suite's cop density was never this line's doing; the V8.61 notes that blamed it were wrong
+- removed: the `instant_spawn_groups` setting, its menu entry and callback, both localisation keys, and the forced call itself. The `spawn_type == "group_guaranteed"` branch keeps its forced call because that branch is vanilla's own code
+- `MENU_OPTIONS.md` records the removal and the corrected density attribution; `dev/tools/test/spawn-pacing.test.mjs` pins the vanilla shape instead of the switch
+
+Player notes: group-spawn elements now behave exactly like vanilla - a scripted group is queued and arrives at the game's normal rate. The only thing lost is the occasional early pop of a few already-queued cops. The Instant Spawn Groups option is gone from Mod Options; a leftover key in your save file is simply ignored.
+
 Revision V8.65_x64 — 2026-10-30
 Do not fill the path cache when the lookup is switched off.
 - `cache_lookup = false` gated the read path only; `CopBrain:clbk_pathing_results` still appended every result to `_cached_paths`, so a session with the switch off kept growing the list (measured 601 entries after 20 minutes) while nothing could ever read it

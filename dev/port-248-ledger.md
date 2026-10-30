@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-30T12:36:03.929Z
+Generated: 2026-10-30T19:11:20.742Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -15,9 +15,9 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | MOD_ONLY_HOOK | 43 |
 | MOD_ONLY | 205 |
 | VANISHED_IN_NEW | 1 |
-| SAME_AS_OLD_VANILLA | 2 |
+| SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 289 |
+| LIES_EDIT_CLEAN | 288 |
 
 ## menumanager.lua
 
@@ -245,7 +245,7 @@ No function definitions (hook/overlay file).
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
 | [ ] | audit (hook) | `Hooks.PostHook:ElementSpawnEnemyGroup._finalize_values:lies_finalize_values` | 51 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | keep | `ElementSpawnEnemyGroup.on_executed` | 48 | 35 | 35 |  |
+| [ ] | delete | `ElementSpawnEnemyGroup.on_executed` | 45 | 35 | 35 | stale 246.1 copy; delete unless intentionally kept |
 
 ## lua/managers/mapelements/elementspecialobjective.lua
 

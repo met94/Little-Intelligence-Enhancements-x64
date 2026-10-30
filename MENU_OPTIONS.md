@@ -149,25 +149,40 @@ Same channel shape as Iter's, so one reader handles both mods:
 `debug_log`; the watch counters run regardless, which is why a normal session
 now leaves evidence behind for the alarm tier.
 
-## Instant Spawn Groups (`instant_spawn_groups`)
+## Instant Spawn Groups (`instant_spawn_groups`) - removed in V8.66
 
-Upstream LIES force-spawns every executed spawn group at once
-(`ElementSpawnEnemyGroup:on_executed` → `_perform_group_spawning(spawn_task, true)`),
-and that `true` bypasses the game's `_MAX_SIMULTANEOUS_SPAWNS` of 3 per tick.
-That is why a LIES session carries several times the live cop count of a vanilla
-one (measured 2026-10-26: ~35 vanilla, ~100 with the suite, peak 130).
+The fork exposed an upstream code path as a toggle in V8.60-V8.65 and retired
+the option in V8.66. What it was, and why it is gone:
 
-**Origin:** not a flag and never documented. The call is unconditional code,
-introduced in upstream **7.1** (2023-04-05, `b0207e5`) and byte-identical in the
-V8.57 tree; the upstream repo has no README or changelog, and the ModWorkshop
-page never mentions spawn pacing. Turning it OFF is fork-only (V8.60/61).
+- Upstream LIES **7.1** (`b0207e5`, 2023-04-05) overrode
+  `ElementSpawnEnemyGroup:on_executed` and, for `spawn_type == "group"`, added
+  an extra `_perform_group_spawning(spawn_task, true)` right after
+  `force_spawn_group`. The intent was to bypass
+  `GroupAIStateBesiege._MAX_SIMULTANEOUS_SPAWNS` (3 per tick) so the whole
+  group appears at once.
+- It could never do that for the group it was called for. `_spawn_in_group`
+  sets every spawn point of the fresh group to
+  `delay_t = self._t + math.rand(0.5)` (`groupaistatebesiege.lua:1275-1277`),
+  and `_perform_group_spawning` skips any point whose delay has not expired
+  (`sp_data.delay_t < self._t`, `:4623` in LIES, `:1409` vanilla). `force` only
+  lifts the per-tick cap, not the delay gate, and both calls happen in the same
+  frame with the same `self._t`.
+- The only task the extra call could reach was `_spawning_groups[1]` - the
+  **oldest** queued group, because the new task is appended at the tail
+  (`:1287`). So it could only spawn a few cops of an unrelated, already queued
+  group ahead of schedule, ignoring the cap.
+- Density was therefore never this line's doing: it cannot speed up the group
+  whose element fired. Measured legs with the switch off still showed 85-100
+  live cops on Death Wish 4-player, so the suite's cop counts come from
+  elsewhere. An earlier version of this document claimed "~35 vanilla vs ~100
+  suite, this is the switch that isolates it" - that attribution was wrong.
+- `spawn_type == "group_guaranteed"` keeps its forced call: that branch is
+  vanilla's own code, not a LIES addition.
 
-`"instant_spawn_groups": false` in
-`mods\saves\LittleIntelligenceEnhancementS.txt` (game closed), or the
-**Instant Spawn Groups** toggle in Mod Options, restores vanilla pacing and
-leaves the normal `force_spawn_group` path as the only spawner. Default is `true`
-(unchanged LIES behaviour). The change applies to the next spawn group; restart
-the heist for a clean comparison.
+Player POV: scripted group spawns now arrive exactly like vanilla - the group is
+queued and trickles in at the game's normal rate (LIES lowers the per-tick cap
+to 2). The only visible difference is that a handful of already-queued cops no
+longer pops out early when a spawn element fires.
 
 ### Dead options and their upstream history
 
@@ -180,6 +195,9 @@ Both are vestigial in the V8.57 tree: only the settings key, the menu callback
 and the localization strings remain, and nothing reads them. The ModWorkshop page
 for V8.57 still advertises "Forced Spawn Delays ... Toggleable", which no longer
 exists - a stale description upstream, not something this port removed.
+
+The fork's own `instant_spawn_groups` switch (V8.60-V8.65) joined the retired
+list in V8.66 - see the section above.
 
 ## Path-cache lookup (`cache_lookup`)
 
