@@ -1,6 +1,6 @@
 ﻿# LIES 248.2 static gates
 
-Generated: 2026-10-30 19:11:13Z
+Generated: 2026-10-30 19:12:11Z
 
 ## Node tool tests
 
@@ -11,7 +11,7 @@ Result: PASS
 Γä╣ cancelled 0
 Γä╣ skipped 0
 Γä╣ todo 0
-Γä╣ duration_ms 121.0827
+Γä╣ duration_ms 124.1303
 
 ## Test-harness parser
 
