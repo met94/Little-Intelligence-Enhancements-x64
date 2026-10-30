@@ -1305,7 +1305,9 @@ function CopBrain:clbk_pathing_results(search_id, path, do_not_cache)
 			end
 		end
 		
-		if not do_not_cache then
+		-- Also honour the lookup switch: with cache_lookup = false nothing reads the
+		-- cache, so storing into it would only cost memory.
+		if not do_not_cache and LIES.settings.cache_lookup ~= false then
 			local cached_path_info_params = {
 				start_pos = path[1],
 				end_pos = path[#path],

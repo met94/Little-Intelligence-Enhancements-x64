@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-29T12:45:42.494Z",
+  "generated": "2026-10-30T12:36:03.930Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -3875,12 +3875,12 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1323
+          "startLine": 1325
         },
         {
           "name": "CopBrain.clbk_pathing_results",
           "category": "LIES_EDIT_CLEAN",
-          "modLines": 54,
+          "modLines": 56,
           "oldLines": 41,
           "newLines": 41,
           "modParams": "search_id, path, do_not_cache",
@@ -4055,7 +4055,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1367
+          "startLine": 1369
         },
         {
           "name": "CopBrain.search_for_path",
@@ -4175,7 +4175,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 1335
+          "startLine": 1337
         },
         {
           "name": "Hooks.PostHook:CopBrain._add_pathing_result:lies_pathing",

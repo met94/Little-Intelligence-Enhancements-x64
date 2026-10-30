@@ -1,3 +1,11 @@
+Revision V8.65_x64 — 2026-10-30
+Do not fill the path cache when the lookup is switched off.
+- `cache_lookup = false` gated the read path only; `CopBrain:clbk_pathing_results` still appended every result to `_cached_paths`, so a session with the switch off kept growing the list (measured 601 entries after 20 minutes) while nothing could ever read it
+- the insert now honours the same setting, so switching the lookup off also stops the memory growth. Default behaviour is unchanged: with `cache_lookup = true` (the default) every result is cached exactly as before
+- why: several measurement legs ran with the switch off and `lies_cache` still climbed in every one, which muddied the readings and wasted heap
+
+Player notes: nothing changes unless you have set `"cache_lookup": false` in the LIES save file - in that case the path cache now stays empty instead of filling up for nothing.
+
 Revision V8.64_x64 — 2026-10-29
 Cache-lookup switch and the counters that decide any further cache work.
 - new setting `cache_lookup` (default **true**, i.e. upstream behaviour). `false` skips the cached-path scan in `search_pos_to_pos` and always asks the engine. Settings file only, no menu entry; documented in `MENU_OPTIONS.md`

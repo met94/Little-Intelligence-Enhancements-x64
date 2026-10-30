@@ -969,7 +969,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 1383,
+      "line": 1385,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
