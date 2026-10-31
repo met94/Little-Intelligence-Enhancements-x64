@@ -421,17 +421,21 @@ function CopLogicAttack._upd_combat_movement(data)
 				if action_taken then
 					my_data.charging = true
 				end
-			elseif not my_data.charge_path_search_id and data.attention_obj.nav_tracker then
-				my_data.charge_pos = CopLogicAttack._find_charge_pos(data, my_data, data.attention_obj.nav_tracker, wanted_attack_range and wanted_attack_range * 0.9 or my_data.weapon_range.close)
+			else
+				local enemy_tracker = lies_enemy_tracker(data.attention_obj)
 
-				if my_data.charge_pos then
-					my_data.charge_path_search_id = "charge" .. tostring(data.key)
+				if not my_data.charge_path_search_id and enemy_tracker then
+					my_data.charge_pos = CopLogicAttack._find_charge_pos(data, my_data, enemy_tracker, wanted_attack_range and wanted_attack_range * 0.9 or my_data.weapon_range.close)
 
-					unit:brain():search_for_path(my_data.charge_path_search_id, my_data.charge_pos, nil, nil, nil)
-				else
-					debug_pause_unit(data.unit, "failed to find charge_pos", data.unit)
+					if my_data.charge_pos then
+						my_data.charge_path_search_id = "charge" .. tostring(data.key)
 
-					my_data.charge_path_failed_t = TimerManager:game():time()
+						unit:brain():search_for_path(my_data.charge_path_search_id, my_data.charge_pos, nil, nil, nil)
+					else
+						debug_pause_unit(data.unit, "failed to find charge_pos", data.unit)
+
+						my_data.charge_path_failed_t = TimerManager:game():time()
+					end
 				end
 			end
 		elseif aggro_level < 4 and focus_enemy.verified_t and t - focus_enemy.verified_t < 2 and best_cover and (not in_cover or best_cover[1] ~= in_cover[1]) then
@@ -529,17 +533,21 @@ function CopLogicAttack._upd_combat_movement(data)
 					if action_taken then
 						my_data.charging = true
 					end
-				elseif not my_data.charge_path_search_id and data.attention_obj.nav_tracker then
-					my_data.charge_pos = CopLogicAttack._find_charge_pos(data, my_data, data.attention_obj.nav_tracker, wanted_attack_range and wanted_attack_range * 0.9 or my_data.weapon_range.close)
+				else
+					local enemy_tracker = lies_enemy_tracker(data.attention_obj)
 
-					if my_data.charge_pos then
-						my_data.charge_path_search_id = "charge" .. tostring(data.key)
+					if not my_data.charge_path_search_id and enemy_tracker then
+						my_data.charge_pos = CopLogicAttack._find_charge_pos(data, my_data, enemy_tracker, wanted_attack_range and wanted_attack_range * 0.9 or my_data.weapon_range.close)
 
-						unit:brain():search_for_path(my_data.charge_path_search_id, my_data.charge_pos, nil, nil, nil)
-					else
-						debug_pause_unit(data.unit, "failed to find charge_pos", data.unit)
+						if my_data.charge_pos then
+							my_data.charge_path_search_id = "charge" .. tostring(data.key)
 
-						my_data.charge_path_failed_t = TimerManager:game():time()
+							unit:brain():search_for_path(my_data.charge_path_search_id, my_data.charge_pos, nil, nil, nil)
+						else
+							debug_pause_unit(data.unit, "failed to find charge_pos", data.unit)
+
+							my_data.charge_path_failed_t = TimerManager:game():time()
+						end
 					end
 				end
 			else
@@ -1233,7 +1241,7 @@ function CopLogicAttack._upd_aim(data, my_data)
 		CopLogicAttack._chk_enrage(data, focus_enemy)
 	end
 	
-	if shoot and data.tactics and data.tactics.harass and data.char_tweak.chatter and data.char_tweak.chatter.clear and focus_enemy.verified then
+	if shoot and data.tactics and data.tactics.harass and data.char_tweak.chatter and data.char_tweak.chatter.clear and focus_enemy.verified and alive(focus_enemy.unit) then
 		if focus_enemy.is_local_player then
 			local cur_state = focus_enemy.unit:movement():current_state()
 			
@@ -2760,12 +2768,12 @@ function CopLogicAttack._update_cover(data)
 	local best_cover = my_data.best_cover
 	local satisfied = true
 	local my_pos = data.m_pos
+	local enemy_tracker = lies_enemy_tracker(data.attention_obj)
 
-	if data.attention_obj and data.attention_obj.nav_tracker and AIAttentionObject.REACT_COMBAT <= data.attention_obj.reaction then
+	if data.attention_obj and enemy_tracker and AIAttentionObject.REACT_COMBAT <= data.attention_obj.reaction then
 		local find_new = not my_data.moving_to_cover and not my_data.walking_to_cover_shoot_pos and not my_data.surprised and not my_data.advancing and not my_data.processing_cover_path and not my_data.charge_path_search_id
 
 		if find_new then
-			local enemy_tracker = data.attention_obj.nav_tracker
 			local threat_pos = enemy_tracker:field_position()
 			local want_to_take_cover = my_data.want_to_take_cover
 			local friend_pos, friend_unit, try_stillness

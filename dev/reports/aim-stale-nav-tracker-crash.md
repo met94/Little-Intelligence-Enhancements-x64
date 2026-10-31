@@ -56,7 +56,7 @@ Why LIES reaches it while vanilla does not:
   for bots even though their logic also aims.
 - Vanilla 248.2 reads the enemy tracker only inside a logic update, right after
   detection, and bails when the tracker is nil
-  (`coplogicattack.lua:1506-1516`). LIES's own `_upd_aim` (572 lines, ledger
+  (`coplogicattack.lua:1506-1516`). LIES's own `_upd_aim` (573 lines, ledger
   status **PORT**, still pending) is the old implementation and dereferences the
   cached tracker in four places.
 
@@ -74,15 +74,17 @@ local function lies_enemy_tracker(focus_enemy)
 end
 ```
 
-- The tracker is destroyed exactly when the unit stops being alive
-  (`pre_destroy`), so liveness is the validity predicate; the helper returns the
-  same tracker the registry stored, so **live enemies behave exactly as before**.
-- Call sites: `_upd_aim` same-segment check, the expected-position branch
-  (`enemy_tracker` replaces `focus_enemy.nav_tracker`), the `obstructed()` test,
-  `_get_expected_pos` (now bails with `expected_pos_path = nil`, mirroring
-  vanilla's `if not e_nav_tracker then return end`), and
-  `_chk_start_action_move_back`.
-- Dead/removed enemies simply stop producing aim and expected-position work.
+- The tracker is freed no later than the unit's destruction (`pre_destroy`), so
+  unit liveness is the validity predicate; the helper returns the same tracker
+  the registry stored, so **live enemies behave exactly as before**.
+- Call sites (six): `_upd_aim` same-segment check, its `obstructed()` test, the
+  expected-position branch (`enemy_tracker` replaces `focus_enemy.nav_tracker`),
+  `_get_expected_pos` (bails with `expected_pos_path = nil`, mirroring vanilla's
+  `if not e_nav_tracker then return end`), `_update_cover`'s `field_position()`
+  search, both charge branches feeding `_find_charge_pos`, and
+  `_chk_start_action_move_back`'s retreat search. The enemy-unit chatter read at
+  the end of `_upd_aim` is gated on the same liveness test.
+- Dead/removed enemies simply stop producing aim, cover and charge work.
 
 Player POV: enemies that are alive are aimed at exactly as before; a dead or
 despawned enemy no longer takes the session down.
@@ -96,7 +98,7 @@ in one place instead of five inline checks.
 
 Artifacts:
 
-- `lua/coplogics/coplogicattack.lua` - `lies_enemy_tracker`, four call sites,
+- `lua/coplogics/coplogicattack.lua` - `lies_enemy_tracker`, six call sites,
   `_get_expected_pos` bail-out.
 - `dev/tools/test/aim-tracker-guard.test.mjs` - pins the helper, forbids
   `focus_enemy.nav_tracker` method/field reads elsewhere in the file, pins the
