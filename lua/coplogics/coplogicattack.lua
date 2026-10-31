@@ -762,6 +762,31 @@ local tankboss = {
 	deep_boss = true
 }
 
+-- The enemy's nav tracker is destroyed together with the enemy unit
+-- (`CopMovement:pre_destroy` -> `NavigationManager:destroy_nav_tracker`), while
+-- the attention object keeps the pointer (`AIAttentionObject:_register` stored
+-- `unit:movement():nav_tracker()`). LIES also runs this aim pass from the
+-- movement update (`CopBrain:check_upd_aim` via `CopMovement:_upd_actions`), i.e.
+-- outside the logic update that refreshes `attention_obj`, so the cached tracker
+-- can already be freed. Calling `nav_segment()`/`obstructed()` on it is an
+-- engine access violation, not a catchable Lua error.
+-- Crash report: 2026-10-31 11:03, heist `red2`, bot movement update ->
+-- `check_upd_aim` -> `_upd_aim` line 998.
+-- Rule: the cached tracker is only touched while its owner unit is alive.
+local function lies_enemy_tracker(focus_enemy)
+	if not focus_enemy then
+		return
+	end
+
+	local unit = focus_enemy.unit
+
+	if not (unit and alive(unit)) then
+		return
+	end
+
+	return focus_enemy.nav_tracker
+end
+
 function CopLogicAttack._upd_aim(data, my_data)
 	local shoot, aim, expected_pos = nil
 	local focus_enemy = data.attention_obj
@@ -995,7 +1020,8 @@ function CopLogicAttack._upd_aim(data, my_data)
 			local time_since_verification = focus_enemy.verified_t and data.t - focus_enemy.verified_t
 			local my_tracker = data.unit:movement():nav_tracker()
 			local my_seg = my_tracker:nav_segment()
-			local enemy_nav_seg = focus_enemy.nav_tracker and focus_enemy.nav_tracker:nav_segment()
+			local enemy_tracker = lies_enemy_tracker(focus_enemy)
+			local enemy_nav_seg = enemy_tracker and enemy_tracker:nav_segment()
 			
 			if time_since_verification and not focus_enemy.lost_track or my_seg == enemy_nav_seg then
 				if aim == nil and enemy_dis > 200 then
@@ -1093,7 +1119,7 @@ function CopLogicAttack._upd_aim(data, my_data)
 						shoot = true
 					end
 				end				
-			elseif AIAttentionObject.REACT_COMBAT <= focus_enemy.reaction and focus_enemy.nav_tracker and not LIES.settings.highperformance then
+			elseif AIAttentionObject.REACT_COMBAT <= focus_enemy.reaction and enemy_tracker and not LIES.settings.highperformance then
 				local raycast_f, head_pos
 				
 				local expected_path = my_data.expected_pos_path
@@ -1169,7 +1195,7 @@ function CopLogicAttack._upd_aim(data, my_data)
 							end
 						end
 						
-						if not expected_pos and not focus_enemy.nav_tracker:obstructed() and not my_tracker:obstructed() then
+						if not expected_pos and not enemy_tracker:obstructed() and not my_tracker:obstructed() then
 							local expected_pos_func = CopLogicAttack._get_expected_pos
 							expected_pos = expected_pos_func(data, my_data)
 						end						
@@ -1345,7 +1371,16 @@ function CopLogicAttack._get_expected_pos(data, my_data)
 	
 	local my_tracker = data.unit:movement():nav_tracker()
 	local my_seg = my_tracker:nav_segment()
-	local enemy_tracker = focus_enemy.nav_tracker
+	local enemy_tracker = lies_enemy_tracker(focus_enemy)
+
+	if not enemy_tracker then
+		-- Enemy already gone: no live tracker to search from. Vanilla 248.2
+		-- bails out the same way (`_get_expected_attention_position`).
+		my_data.expected_pos_path = nil
+
+		return
+	end
+
 	local enemy_seg = enemy_tracker:nav_segment()
 
 	local expected_path = my_data.expected_pos_path
@@ -1987,9 +2022,10 @@ function CopLogicAttack._chk_start_action_move_out_of_the_way(data, my_data)
 end
 
 function CopLogicAttack._chk_start_action_move_back(data, my_data, focus_enemy, engage)
-	if not my_data.advancing and focus_enemy and focus_enemy.nav_tracker and focus_enemy.verified and CopLogicAttack._can_move(data) then
+	local threat_tracker = lies_enemy_tracker(focus_enemy)
+
+	if not my_data.advancing and focus_enemy and threat_tracker and focus_enemy.verified and CopLogicAttack._can_move(data) then
 		local from_pos = mvector3.copy(data.m_pos)
-		local threat_tracker = focus_enemy.nav_tracker
 		local threat_head_pos = focus_enemy.m_head_pos
 		local max_walk_dis = 400
 		local vis_required = engage
