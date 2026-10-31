@@ -14,6 +14,72 @@ local m_rot_x = mrotation.x
 local m_rot_y = mrotation.y
 local m_rot_z = mrotation.z
 
+-- Every cop logic picks its exit state from a reaction table that assumes the
+-- unit's brain owns the whole cop logic set. Bots and civilians do not:
+-- `TeamAIBrain` has no "attack"/"arrest" and `CivilianBrain` has neither, so a
+-- cop logic running on one of them reached `CopBrain:set_logic` with a state
+-- name its `_logics` table does not contain and took the whole game down
+-- ("attempt to index local 'logic' (a nil value)").
+-- Report: 2026-10-31, heist `auc`, `CopLogicTravel.upd_advance` line 915.
+local exit_original = CopLogicBase._exit
+local exit_fallback_name = "idle"
+
+local function lies_logic_exists(brain, name)
+	local logics = brain and brain._logics
+
+	return (name and logics and logics[name]) and true or false
+end
+
+local function lies_report_missing_logic(unit, brain, wanted, fallback)
+	if not (LIES and LIES.Alarm) then
+		return
+	end
+
+	local available = {}
+
+	for name in pairs(brain._logics or {}) do
+		available[#available + 1] = tostring(name)
+	end
+
+	table.sort(available)
+
+	local base = unit:base()
+
+	LIES:Alarm("exit_missing_logic", {
+		tweak = base and base._tweak_table or "?",
+		wanted = wanted or "nil",
+		current = brain._current_logic_name or "?",
+		fallback = fallback or "none",
+		logics = table.concat(available, ",")
+	})
+end
+
+-- Landing point for every `CopLogicBase._exit` caller in the mod and in the
+-- game. Swapping the missing state for one the brain actually holds keeps the
+-- unit alive instead of crashing the session; the alarm names the offender so
+-- the caller can be fixed at its source.
+function CopLogicBase._exit(unit, state_name, params)
+	local brain = unit and alive(unit) and unit:brain() or nil
+
+	if brain and not lies_logic_exists(brain, state_name) then
+		local fallback = lies_logic_exists(brain, exit_fallback_name) and exit_fallback_name or brain._current_logic_name
+
+		if not lies_logic_exists(brain, fallback) then
+			fallback = nil
+		end
+
+		lies_report_missing_logic(unit, brain, state_name, fallback)
+
+		if not fallback then
+			return
+		end
+
+		state_name = fallback
+	end
+
+	return exit_original(unit, state_name, params)
+end
+
 function CopLogicBase._can_arrest(data)
 	if not data.tactics or not data.tactics.tackle then
 		return not data.char_tweak.no_arrest and (not data.objective or not data.objective.no_arrest or data.objective.grp_objective and data.objective.grp_objective.no_arrest)
