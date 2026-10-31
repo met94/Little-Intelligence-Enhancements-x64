@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-10-30T19:12:18.668Z",
+  "generated": "2026-10-31T07:27:53.084Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -4665,7 +4665,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 17
+          "startLine": 83
         },
         {
           "name": "CopLogicBase._chk_call_the_police",
@@ -4680,7 +4680,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 61
+          "startLine": 127
         },
         {
           "name": "CopLogicBase._create_detected_attention_object_data",
@@ -4695,7 +4695,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 674
+          "startLine": 740
         },
         {
           "name": "CopLogicBase._evaluate_reason_to_surrender",
@@ -4710,7 +4710,22 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1368
+          "startLine": 1434
+        },
+        {
+          "name": "CopLogicBase._exit",
+          "category": "LIES_EDIT_CLEAN",
+          "modLines": 21,
+          "oldLines": 3,
+          "newLines": 3,
+          "modParams": "unit, state_name, params",
+          "oldParams": "unit, state_name, params",
+          "newParams": "unit, state_name, params",
+          "isLocal": false,
+          "isHook": false,
+          "form": "decl",
+          "note": "",
+          "startLine": 61
         },
         {
           "name": "CopLogicBase._get_logic_state_from_reaction",
@@ -4725,7 +4740,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 25
+          "startLine": 91
         },
         {
           "name": "CopLogicBase._report_detections",
@@ -4740,7 +4755,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 77
+          "startLine": 143
         },
         {
           "name": "CopLogicBase._set_attention_obj",
@@ -4755,7 +4770,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 451
+          "startLine": 517
         },
         {
           "name": "CopLogicBase._upd_attention_obj_detection",
@@ -4770,7 +4785,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 802
+          "startLine": 868
         },
         {
           "name": "CopLogicBase._upd_suspicion",
@@ -4785,7 +4800,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 543
+          "startLine": 609
         },
         {
           "name": "CopLogicBase.check_sabotage_objective_not_allowed",
@@ -4800,7 +4815,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 244
+          "startLine": 310
         },
         {
           "name": "CopLogicBase.chk_start_action_dodge",
@@ -4815,7 +4830,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1540
+          "startLine": 1606
         },
         {
           "name": "CopLogicBase.death_clbk",
@@ -4830,7 +4845,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1315
+          "startLine": 1381
         },
         {
           "name": "CopLogicBase.identify_attention_obj_instant",
@@ -4845,7 +4860,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 750
+          "startLine": 816
         },
         {
           "name": "CopLogicBase.is_obstructed",
@@ -4860,7 +4875,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 287
+          "startLine": 353
         },
         {
           "name": "CopLogicBase.on_attention_obj_identified",
@@ -4875,7 +4890,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 101
+          "startLine": 167
         },
         {
           "name": "CopLogicBase.on_attention_obj_verified",
@@ -4890,7 +4905,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 87
+          "startLine": 153
         },
         {
           "name": "CopLogicBase.on_new_objective",
@@ -4905,7 +4920,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1333
+          "startLine": 1399
         },
         {
           "name": "CopLogicBase.on_objective_unit_damaged",
@@ -4920,7 +4935,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 105
+          "startLine": 171
         },
         {
           "name": "CopLogicBase.on_objective_unit_destroyed",
@@ -4935,7 +4950,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 122
+          "startLine": 188
         },
         {
           "name": "CopLogicBase.pre_destroy",
@@ -4950,7 +4965,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 143
+          "startLine": 209
         },
         {
           "name": "CopLogicBase.queue_task",
@@ -4965,7 +4980,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 417
+          "startLine": 483
         },
         {
           "name": "CopLogicBase.should_duck_on_alert",
@@ -4980,7 +4995,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 139
+          "startLine": 205
         },
         {
           "name": "CopLogicBase.upd_falloff_sim",
@@ -4995,14 +5010,44 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 149
+          "startLine": 215
+        },
+        {
+          "name": "lies_logic_exists",
+          "category": "MOD_ONLY",
+          "modLines": 5,
+          "oldLines": 0,
+          "newLines": 0,
+          "modParams": "brain, name",
+          "oldParams": "",
+          "newParams": "",
+          "isLocal": true,
+          "isHook": false,
+          "form": "decl",
+          "note": "",
+          "startLine": 27
+        },
+        {
+          "name": "lies_report_missing_logic",
+          "category": "MOD_ONLY",
+          "modLines": 23,
+          "oldLines": 0,
+          "newLines": 0,
+          "modParams": "unit, brain, wanted, fallback",
+          "oldParams": "",
+          "newParams": "",
+          "isLocal": true,
+          "isHook": false,
+          "form": "decl",
+          "note": "",
+          "startLine": 33
         }
       ],
       "errors": [],
       "totals": {
-        "LIES_EDIT_CLEAN": 18,
+        "LIES_EDIT_CLEAN": 19,
         "LIES_EDIT_VANILLA_CHANGED": 1,
-        "MOD_ONLY": 4
+        "MOD_ONLY": 6
       }
     },
     {

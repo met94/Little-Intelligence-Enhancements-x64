@@ -1073,7 +1073,7 @@
     },
     {
       "file": "lua/coplogics/coplogicbase.lua",
-      "line": 263,
+      "line": 329,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1081,7 +1081,7 @@
     },
     {
       "file": "lua/coplogics/coplogicbase.lua",
-      "line": 417,
+      "line": 483,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1089,7 +1089,7 @@
     },
     {
       "file": "lua/coplogics/coplogicbase.lua",
-      "line": 448,
+      "line": 514,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",

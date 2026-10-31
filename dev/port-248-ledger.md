@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-30T19:12:18.666Z
+Generated: 2026-10-31T07:27:53.082Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,11 +13,11 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 24 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 205 |
+| MOD_ONLY | 207 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 288 |
+| LIES_EDIT_CLEAN | 289 |
 
 ## menumanager.lua
 
@@ -491,10 +491,13 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopLogicBase.on_attention_obj_verified` | 13 | 0 | 0 |  |
 | [ ] | audit | `CopLogicBase.pre_destroy` | 5 | 0 | 0 |  |
 | [ ] | audit | `CopLogicBase.upd_falloff_sim` | 94 | 0 | 0 |  |
+| [ ] | audit | `lies_logic_exists` | 5 | 0 | 0 |  |
+| [ ] | audit | `lies_report_missing_logic` | 23 | 0 | 0 |  |
 | [ ] | keep | `CopLogicBase._can_arrest` | 7 | 3 | 3 |  |
 | [ ] | keep | `CopLogicBase._chk_call_the_police` | 15 | 17 | 17 |  |
 | [ ] | keep | `CopLogicBase._create_detected_attention_object_data` | 75 | 74 | 74 |  |
 | [ ] | keep | `CopLogicBase._evaluate_reason_to_surrender` | 171 | 186 | 186 |  |
+| [ ] | keep | `CopLogicBase._exit` | 21 | 3 | 3 |  |
 | [ ] | keep | `CopLogicBase._get_logic_state_from_reaction` | 35 | 23 | 23 |  |
 | [ ] | keep | `CopLogicBase._report_detections` | 9 | 9 | 9 |  |
 | [ ] | keep | `CopLogicBase._set_attention_obj` | 91 | 67 | 67 |  |
