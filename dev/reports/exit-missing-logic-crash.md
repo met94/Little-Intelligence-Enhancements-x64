@@ -58,19 +58,25 @@ Vanilla 248.2 exits the same situation to a literal `"idle"`
 `"arrest"` and `"attack"` (`lua/coplogics/coplogicbase.lua:25-59`). Non-cop
 brains reaching this branch therefore request a state they cannot enter.
 
-How non-cop brains reach cop travel: Useful Bots' objective-less travel
-delegation runs `CopLogicTravel.upd_advance` for team AI
-(`mods/Useful Bots/lua/teamailogictravel.lua:71-74`), i.e. `TeamAIBrain`
-instances. That brain has no `"attack"`/`"arrest"`.
+How non-cop brains reach cop travel: vanilla `TeamAILogicTravel.update` already
+delegates to `CopLogicTravel.upd_advance` for every bot that has an objective
+(`lib/units/player_team/logics/teamailogictravel.lua:169-177`, but dereferences
+`data.objective.type` first), and the installed Useful Bots wrapper adds the
+objective-less case (`<game>\mods\Useful Bots\lua\teamailogictravel.lua:71-74`).
+Both run the cop travel body on `TeamAIBrain` instances, which have no
+`"attack"`/`"arrest"`. Which of the two dispatched the failing exit is not
+proven by the dump; the alarm records the owning brain on the next occurrence.
 
 Player POV: the heist ended instantly with the Payday crash reporter.
 
 ## 3. Why the dump cannot name the unit
 
-`crash.dmp` carries no Lua values, the crash entry has no game log line naming
-the unit, and the run's `[ITER-TEST]` dumps sampled only objective-carrying
-cops. The state that was requested is therefore inferred from the code path, not
-read from the dump; the fix below records it on the next occurrence.
+`crash.dmp` is a minidump with no readable Lua strings (ASCII/UTF-16 scan for
+`LIES`, `logic`, `travel`, tweak names: zero hits), the crash entry has no game
+log line naming the unit, and the run's `[ITER-TEST]` samplers (about one line
+per second) never sampled the crashing unit. The state that was requested is
+therefore inferred from the code path, not read from the dump; the fix below
+records it on the next occurrence.
 
 ## 4. Fix
 
@@ -78,16 +84,20 @@ read from the dump; the fix below records it on the next occurrence.
 single choke point every mod and game caller uses.
 
 - If `unit:brain()._logics[state_name]` is missing, the exit is downgraded to
-  `"idle"`, or to the brain's own `_current_logic_name` if even that is absent,
-  instead of handing `set_logic` a nil table entry.
-- If neither exists the exit is skipped (no state change) rather than crashing.
-- Every downgrade emits a rate-limited
-  `[LIES-WATCH] evt=alarm name=exit_missing_logic ...` line carrying `tweak`,
-  `wanted`, `current`, `fallback` and the brain's available `logics`, so the
-  offending caller/unit can be fixed at its source.
+  `"idle"` (or `"inactive"` for a brain that lacks idle), instead of handing
+  `set_logic` a nil table entry.
+- A brain with no usable state at all keeps its current logic: the exit is
+  skipped rather than crashing.
+- The guard does **not** gate on `alive(unit)`. A dead or mid-destroy unit still
+  updates its logic for a frame, and the guard only reads tables, so checking
+  those units is safe and is the point.
+- Every downgrade emits a `[LIES-WATCH] evt=alarm name=exit_missing_logic ...
+  tweak=<tweak> wanted=<state> current=<logic> fallback=<state or none>
+  logics=<idle.attack.travel...>` line; the no-fallback case uses
+  `name=exit_no_fallback`. Throttle: one line per name per 60 s of game time,
+  20 per session, and no field building once the budget is gone.
 - Untouched paths: a valid state still goes straight to the game function
-  (`return exit_original(unit, state_name, params)`), and dead/invalid units are
-  forwarded unchanged.
+  (`return exit_original(unit, state_name, params)`).
 
 Player POV: no visible change in normal play. The rare unit that previously
 would crash the session falls back to its idle behaviour for one update.
@@ -96,9 +106,13 @@ would crash the session falls back to its idle behaviour for one update.
 
 Decision: **safety net plus probe**. The exact brain/state pair could not be
 recovered from the dump, and a nil-index ban in one place protects every LIES
-exit (`travel` x7, `idle`, `attack`, `arrest`, `sniper`, `base`) without
-guessing which one is wrong. Once the alarm names the pair, the source exit can
-be restricted instead of downgraded.
+exit (`travel` 10 sites, plus `idle`, `attack`, `arrest`, `sniper`, `base`)
+without guessing which one is wrong. Once the alarm names the pair, the source
+exit can be restricted instead of downgraded.
+
+Note for the next port pass: `dev/port-248-ledger.md` lists
+`CopLogicBase._exit` as `LIES_EDIT_CLEAN` with status `keep`. In that tool
+`keep` means "no port work", not "regenerate from vanilla"; the guard stays.
 
 Artifacts:
 

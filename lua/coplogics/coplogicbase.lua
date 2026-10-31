@@ -21,8 +21,9 @@ local m_rot_z = mrotation.z
 -- name its `_logics` table does not contain and took the whole game down
 -- ("attempt to index local 'logic' (a nil value)").
 -- Report: 2026-10-31, heist `auc`, `CopLogicTravel.upd_advance` line 915.
+-- Owning brain is recorded by the alarm below; the dump does not carry it.
 local exit_original = CopLogicBase._exit
-local exit_fallback_name = "idle"
+local exit_fallback_names = {"idle", "inactive"}
 
 local function lies_logic_exists(brain, name)
 	local logics = brain and brain._logics
@@ -30,8 +31,18 @@ local function lies_logic_exists(brain, name)
 	return (name and logics and logics[name]) and true or false
 end
 
-local function lies_report_missing_logic(unit, brain, wanted, fallback)
-	if not (LIES and LIES.Alarm) then
+local function lies_game_time()
+	if not TimerManager then
+		return 0
+	end
+
+	local timer = TimerManager:game()
+
+	return timer and timer:time() or 0
+end
+
+local function lies_report_missing_exit(unit, brain, wanted, fallback)
+	if not (LIES and LIES.Alarm) or (LIES.watch_alarm_budget or 0) <= 0 then
 		return
 	end
 
@@ -45,32 +56,44 @@ local function lies_report_missing_logic(unit, brain, wanted, fallback)
 
 	local base = unit:base()
 
-	LIES:Alarm("exit_missing_logic", {
+	-- `lies_watch_fields` strips punctuation, so join with "." and keep the list
+	-- readable: logics=arrest.attack.idle.travel
+	LIES:Alarm(fallback and "exit_missing_logic" or "exit_no_fallback", {
 		tweak = base and base._tweak_table or "?",
 		wanted = wanted or "nil",
 		current = brain._current_logic_name or "?",
 		fallback = fallback or "none",
-		logics = table.concat(available, ",")
-	})
+		logics = table.concat(available, ".")
+	}, lies_game_time())
+end
+
+local function lies_pick_exit_fallback(brain)
+	for _, name in ipairs(exit_fallback_names) do
+		if lies_logic_exists(brain, name) then
+			return name
+		end
+	end
 end
 
 -- Landing point for every `CopLogicBase._exit` caller in the mod and in the
 -- game. Swapping the missing state for one the brain actually holds keeps the
 -- unit alive instead of crashing the session; the alarm names the offender so
 -- the caller can be fixed at its source.
+-- No `alive(unit)` gate on purpose: a dead or mid-destroy unit still updates its
+-- logic for a frame, and that delayed path is exactly where a foreign state can
+-- arrive. The guard only reads tables, so it is safe on those units too.
 function CopLogicBase._exit(unit, state_name, params)
-	local brain = unit and alive(unit) and unit:brain() or nil
+	local brain = unit and unit:brain() or nil
 
 	if brain and not lies_logic_exists(brain, state_name) then
-		local fallback = lies_logic_exists(brain, exit_fallback_name) and exit_fallback_name or brain._current_logic_name
+		local fallback = lies_pick_exit_fallback(brain)
 
-		if not lies_logic_exists(brain, fallback) then
-			fallback = nil
-		end
-
-		lies_report_missing_logic(unit, brain, state_name, fallback)
+		lies_report_missing_exit(unit, brain, state_name, fallback)
 
 		if not fallback then
+			-- Nothing safe to switch to (a brain with no logic table at all):
+			-- keep the unit where it is rather than crash. It stays frozen in its
+			-- current logic and the alarm above is the only trace.
 			return
 		end
 
