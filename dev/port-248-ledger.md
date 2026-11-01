@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T06:05:54.454Z
+Generated: 2026-11-01T06:13:50.524Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -637,7 +637,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopLogicAttack._process_pathing_results` | 75 | 48 | 48 |  |
 | [ ] | keep | `CopLogicAttack._upd_combat_movement` | 364 | 150 | 150 |  |
 | [ ] | keep | `CopLogicAttack._upd_enemy_detection` | 48 | 49 | 49 |  |
-| [ ] | keep | `CopLogicAttack._upd_pose` | 40 | 15 | 15 |  |
+| [ ] | keep | `CopLogicAttack._upd_pose` | 26 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack._upd_stop_old_action` | 24 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack._update_cover` | 264 | 149 | 149 |  |
 | [ ] | keep | `CopLogicAttack._verify_cover` | 15 | 15 | 15 |  |

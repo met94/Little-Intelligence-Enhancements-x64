@@ -70,7 +70,7 @@ test('the crash-prone phases are instrumented', () => {
   const spooc = readStripped('lua', 'coplogics', 'specials', 'spooc', 'spooclogicattack.lua');
   const base = readStripped('lua', 'coplogics', 'coplogicbase.lua');
 
-  for (const phase of ['combat', 'combat_no_attention', 'charge_search', 'cover_path_search', 'cover_upd', 'peek', 'retreat', 'aim', 'dodge_dead_enemy', 'stale_tracker', 'pose', 'flank', 'cover_path', 'dodge', 'dodge_preemptive', 'move_out', 'pose_upd', 'move_out_lost_test']) {
+  for (const phase of ['combat', 'combat_no_attention', 'charge_search', 'cover_path_search', 'cover_upd', 'peek', 'retreat', 'aim', 'dodge_dead_enemy', 'stale_tracker', 'pose', 'flank', 'cover_path', 'dodge', 'dodge_preemptive', 'move_out', 'pose_upd', 'pose_req_crouch', 'pose_req_stand', 'move_out_lost_test']) {
     assert.match(attack, new RegExp(`"${phase}"`), `missing trace phase ${phase}`);
   }
 

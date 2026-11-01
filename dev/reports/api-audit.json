@@ -1065,7 +1065,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 3018,
+      "line": 3004,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",

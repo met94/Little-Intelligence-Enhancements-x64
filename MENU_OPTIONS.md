@@ -159,12 +159,13 @@ the breadcrumbs are what was written *before* it. Add `"trace": false` to
 Each line looks like:
 
 ```
-[LIES-TRACE] v=V8.70_x64 t=143.27 u=1081 tweak=spooc logic=attack phase=combat att=769 att_alive=true att_trk=true dropped=0
+[LIES-TRACE] v=V8.71_x64 t=143.27 u=1081 tweak=spooc logic=attack phase=combat att=769 att_alive=true att_trk=true dropped=0
 ```
 
 - `u` is the acting unit, `tweak` its character type, `logic` its current logic,
-  `phase` the AI step that just started (`combat`, `pose`, `flank`,
-  `cover_path`, `dodge`, `move_out`, `charge_search`, `cover_upd`, `peek`,
+  `phase` the AI step that just started (`combat`, `pose`, `pose_upd`,
+  `pose_req_crouch`, `pose_req_stand`, `flank`, `cover_path`, `dodge`,
+  `dodge_preemptive`, `move_out`, `charge_search`, `cover_upd`, `peek`,
   `retreat`, `aim`, `spooc`, `spooc_combat`), `att` the enemy it is working with
   (`att_alive`, `att_trk` = an enemy nav tracker is present), `dropped` how many
   lines were suppressed so far.

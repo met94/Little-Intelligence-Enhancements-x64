@@ -1,3 +1,14 @@
+Revision V8.71_x64 — 2026-11-01
+Port `CopLogicAttack._upd_pose` to 248.2: the stump/stand visibility raycasts were the crash.
+- third run (2026-11-01 06:09, `u=0xb32 tweak=spooc logic=attack`): the game closed with no crash handler. Windows Application log: `PAYDAY2.exe`, exception `0xc0000409`, fault offset `0x81018c`; WER minidump `%LOCALAPPDATA%\CrashDumps\PAYDAY2.exe.39364.dmp`, exception parameters `0x5` = `FAST_FAIL_INVALID_ARG`. That is a fail-fast on an invalid argument to an engine/CRT call, which bypasses Diesel's crash reporter - hence `crash.txt` stayed at the 06:03 entry
+- log tail (new sub-step breadcrumbs): `spooc_combat` -> `combat` -> `pose` -> `pose_upd`, then silence. The fault is inside `_upd_pose`, and its only engine calls besides the pose requests were `CopLogicSniper._chk_stand_visibility` / `_chk_crouch_visibility`, i.e. `World:raycast(..., target_pos = attention_obj.verified_pos, ...)` twice per aim tick
+- why that is wrong on 248.2: vanilla's `CopLogicAttack._upd_pose` is 15 lines and contains **no** raycasts - the game dropped the stand/crouch visibility probing; LIES still ran the old 40-line version. The same call is the best fit for the 06:03 access violation too (that build had no `pose` traces, so `combat` was the last line it could print)
+- fix: `_upd_pose` now carries the 248.2 body (stance from cover need / objective / `cover_test_step`, `_chk_request_action_crouch` / `_chk_request_action_stand`), with `cover_test_step` nil-safe for team AI. The pose decision no longer touches the world at all
+- breadcrumbs: `pose_req_crouch` / `pose_req_stand` name the remaining pose requests; `pose_upd` still marks entry
+- expected player impact: cops and cloakers choose stance by the current game's rule instead of the removed visibility probe; no more fail-fast during cloak rushes
+
+Player notes: fixes the sudden silent close (no error box) that could happen when a cloaker decided whether to stand or crouch at you. Cops still stand, crouch and use cover normally - they just follow the game's own stance rules again.
+
 Revision V8.70_x64 — 2026-11-01
 Breadcrumbs narrowed the spooc crash to its step; finer sub-step tracing plus a walk-forbidden guard.
 - second run with breadcrumbs (2026-11-01 06:03, same heist family) crashed at `update() @.../spooclogicattack.lua:153` (the `_upd_combat_movement` call, one line later than before because the trace line shifted it). The last trace lines name the unit: `u=0xb71 tweak=spooc logic=attack` with phases `spooc` (t=173.05) -> `cover_upd` (173.25) -> `combat` (173.47), `att=0x968 att_alive=true att_trk=true`, so the enemy was alive and the fault is inside the combat movement body itself, after `_update_cover`

@@ -2301,40 +2301,26 @@ end
 function CopLogicAttack._upd_pose(data, my_data)
 	LIES:Trace(data.unit, data, "pose_upd")
 
-	if data.unit:anim_data().to_idle or data.unit:anim_data().hurt then
-		return
-	end
-
-	local am_crouching = data.unit:anim_data().crouch
-	local am_standing = data.unit:anim_data().standing
+	-- Ported to 248.2: vanilla dropped the sniper-style stand/crouch visibility
+	-- raycasts this function used to run (`World:raycast` per pose decision).
+	-- 2026-11-01 06:09: the log stops right after `pose_upd` for a cloaker with a
+	-- live enemy, i.e. inside this function, and those raycasts were its only
+	-- engine calls besides the pose requests.
 	local unit_can_stand = not data.char_tweak.allowed_poses or data.char_tweak.allowed_poses.stand
 	local unit_can_crouch = not data.char_tweak.allowed_poses or data.char_tweak.allowed_poses.crouch
-	local has_no_pose_demand = not data.char_tweak.allowed_poses 
 	local stand_objective = data.objective and data.objective.pose == "stand"
 	local crouch_objective = data.objective and data.objective.pose == "crouch"
 	local need_cover = my_data.want_to_take_cover and (not my_data.in_cover or not my_data.in_cover[4])
-	
-	if not unit_can_stand or has_no_pose_demand and need_cover and my_data.cover_test_step and my_data.cover_test_step < 3 then
-		if not am_crouching then
-			return CopLogicAttack._chk_request_action_crouch(data)
-		end
-		
-		return
-	end
-	
-	if my_data.attitude == "engage" and has_no_pose_demand and data.attention_obj and AIAttentionObject.REACT_SHOOT <= data.attention_obj.reaction then
-		local target_pos = data.attention_obj.verified_pos
 
-		if unit_can_stand and CopLogicSniper._chk_stand_visibility(data.m_pos, target_pos, data.visibility_slotmask)  then
-			return CopLogicAttack._chk_request_action_stand(data)
-		elseif unit_can_crouch and CopLogicSniper._chk_crouch_visibility(data.m_pos, target_pos, data.visibility_slotmask) then
+	if not unit_can_stand or need_cover and not stand_objective or crouch_objective then
+		if not data.unit:anim_data().crouch and unit_can_crouch then
+			LIES:Trace(data.unit, data, "pose_req_crouch")
+
 			return CopLogicAttack._chk_request_action_crouch(data)
 		end
-		
-		return
-	end
-	
-	if not am_standing and unit_can_stand then
+	elseif (not unit_can_crouch or (my_data.cover_test_step or 0) > 2 and not crouch_objective or stand_objective) and data.unit:anim_data().crouch and unit_can_stand then
+		LIES:Trace(data.unit, data, "pose_req_stand")
+
 		return CopLogicAttack._chk_request_action_stand(data)
 	end
 end
