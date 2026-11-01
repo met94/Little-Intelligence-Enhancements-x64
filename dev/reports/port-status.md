@@ -85,12 +85,15 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
 ## Open — core AI (needs in-game testing)
 
 **Backlog closed (2026-11-01, V8.83).** Every one of the 23 rows that
-`dev/port-248-ledger.md` still marks `**PORT**` maps to a recorded decision or an
-already-applied commit; there is no unexamined 248.2 hotspot left. The ledger
-keeps saying `PORT` because its status column is generated from source
-classification (a *proposed action*), not a completion tracker — that is the trap
-that left the last four backlog entries stale. `dev/reports/port-decisions.md`
-plus this file are the completion record.
+`dev/port-248-ledger.md` still marks `**PORT**` now has a record in
+`dev/port-decisions.json` (verdict + reference) and
+`dev/tools/test/port-backlog.test.mjs` keeps it closed: the gates fail when a
+`PORT`/`BLOCKED` row has no decision, when a decision names a function the ledger
+lost, or when a reference does not resolve. The ledger's status column is a
+source classification (a *proposed* action) generated per function — it is not a
+completion tracker, and it must not be read as a backlog pointer.
+`dev/port-decisions.json` is the authority for "is it done"; this file and
+`dev/reports/port-decisions.md` are the narrative record.
 
 | Function | Verdict | Reference |
 |---|---|---|
