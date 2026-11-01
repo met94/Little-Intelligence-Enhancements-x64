@@ -55,7 +55,18 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
 Backlog order: door watching — **done (V8.79)**
 (`dev/reports/door-watch-port.md`); `CopLogicBase._upd_attention_obj_detection`
 — **done (V8.80)** (`dev/reports/port-decisions.md`, "Near-visible probe
-height"); next is `CopLogicAttack.action_complete_clbk`.
+height"); `CopLogicAttack.action_complete_clbk` — **done** (merged in
+`f0370d4`, re-verified complete 2026-11-01).
+
+Next block: the **`NavigationManager` nav-v6 set** in
+`lua/managers/navigationmanager.lua` — `register_cover_units`,
+`_execute_coarce_search`, `_sort_nav_segs_after_pos`, `remove_obstacle`,
+`_draw_covers`. `add_obstacle` and `set_nav_segment_state` are already applied
+(`dev/reports/port-decisions.md` §12/§13, including the v6 `tostring(id)`
+segment keys); the ledger rows for the remaining five still read `PORT`, as do
+those two — `dev/port-248-ledger.md` records the *proposed* action per function,
+not completion, so it is not the "is it done" source; this file and
+`port-decisions.md` are.
 
 Dossiers in `dev/reports/dossiers/`:
 
@@ -63,7 +74,7 @@ Dossiers in `dev/reports/dossiers/`:
 |---|---:|---|
 | `CopLogicBase._upd_attention_obj_detection` | 531L | Detection core; 248.2 changed fields/flow. **Done** — kept the LIES rewrite, merged only the 248.2 near-visible probe height (V8.80, `c409ba4`; `dev/reports/port-decisions.md` "Near-visible probe height"). In-game feel not yet observed. |
 | `CopLogicAttack._upd_aim` | 560L | Aim/cover/fire; **done** — V8.75 port + V8.77/V8.78 restores, V8.79 door watch (`dev/reports/door-watch-port.md`). |
-| `CopLogicAttack.action_complete_clbk` | 101L | Action completion + state transitions. **Next** — 248.2 delta is `math.lerp(a,b,math.random())` → `math.rand(a,b)`; decision already `merge`. |
+| `CopLogicAttack.action_complete_clbk` | 101L | Action completion + state transitions. **Done** — merged in `f0370d4` (`math.rand` dodge timeout); re-verified 2026-11-01 that this is the function's only 246.1→248.2 delta and the LIES body carries it (`port-decisions.md` §3). |
 | `CopLogicAttack.is_available_for_assignment` | 51L | Assignment gating. |
 | `CopLogicIdle.damage_clbk` | 61L | Damage reaction / relocation. |
 | `TaserLogicAttack._upd_enemy_detection` | 75L | Taser target selection. |
@@ -80,7 +91,8 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 - `set_nav_segment_state`: stringified `tostring(id)` keys; LIES cache invalidation kept.
 - `add_obstacle`: 248.2 nil guard + destroy listener; LIES cache invalidation kept.
 - `force_end_assault_phase`: 248.2 timestamp poke.
-- `CopLogicAttack.action_complete_clbk`: `math.rand` dodge timeout.
+- `CopLogicAttack.action_complete_clbk`: `math.rand` dodge timeout (applied
+  `f0370d4`; verified complete 2026-11-01 via `pd2fn`).
 - `CopLogicAttack.is_available_for_assignment`: restored the 248.2 `data.is_suppressed` gate ahead of walk-forbidden/path-fail; LIES 3 s lockout and sabotage gate kept. Smoke 2026-10-24: 128 suppression denials, no stuck assignments observed.
 - `CopLogicIdle.damage_clbk`: `data.t = t` before `identify_attention_obj_instant`.
 - `TaserLogicAttack._chk_play_charge_weapon_sound`: restored the 300-unit vertical guard; LIES distance-scaled cooldown and 3000 range kept. Smoke 2026-10-24: 14 allowed, 7 cross-floor blocked.

@@ -32,7 +32,7 @@ Two facts that drive most decisions:
 |---|---|---|---|---|
 | `CopLogicBase._upd_attention_obj_detection` | full rewrite: instant acquire (weapons hot), quick-register, hhtacs ranges, whisper delay, blind-enemy purge, own `_nearly_visible_chk` | only `_nearly_visible_chk` (distance-scaled probe height) | **keep LIES + merge 248.2 near-visible height (V8.80)** | smoke |
 | `CopLogicAttack._upd_aim` | full rewrite: nav-segment sight logic, wall-peek (`find_walls_across_pos`), cover-fire, aggro/reaction caps, no charge-by-default | **none functional** (`math.lerp(c,o,0)` → `c` is a no-op; dead `debug_pause_unit`/`same_z` removed) | **port 248.2 body + ledger blocks 5-9** (V8.75/V8.77; blocks 1-4 retired) | smoke |
-| `CopLogicAttack.action_complete_clbk` | adds `act`/`heal`/`healed`, cover+movement+aim re-run on completion, `in_cover[7]`, `charging`, `at_cover_shoot_pos` gated on `expired()` | `math.lerp(a,b,math.random())` → `math.rand(a,b)` | **merge** | smoke |
+| `CopLogicAttack.action_complete_clbk` | adds `act`/`heal`/`healed`, cover+movement+aim re-run on completion, `in_cover[7]`, `charging`, `at_cover_shoot_pos` gated on `expired()` | `math.lerp(a,b,math.random())` → `math.rand(a,b)` | **merge — applied `f0370d4`, verified complete 2026-11-01** | smoke |
 | `CopLogicAttack.is_available_for_assignment` | sets `my_data.attitude`, honours `is_default`, path-fail window 6 → 3 s, sabotage gate; **drops `data.is_suppressed`** | reorders `is_suppressed` ahead of walk/path-fail | **merge** | smoke |
 | `CopLogicIdle.damage_clbk` | no forced verify/`verified_pos`; `identify_attention_obj_instant` instead of create+patch; `data.group` guard around `criminal_spotted` | create-time `data.t` → fresh `t` | **keep LIES** (+1-line fresh-time inherit) | static |
 | `TaserLogicAttack._upd_enemy_detection` | returns `delay`, drops the wind-up focus lock | local declaration order only | **keep LIES** | smoke |
@@ -193,6 +193,12 @@ timeout[2])` replaces `math.lerp(timeout[1], timeout[2], math.random())`.
 function changed, and `healed` is still unhandled by vanilla.
 
 **Decision: merge.** Keep the whole LIES body; change one expression.
+
+**Applied `f0370d4`; verified complete 2026-11-01.** Re-ran `tools/pd2fn.ps1
+-From 246.1 -To 248.2 -Path lib/units/enemies/cop/logics/coplogicattack.lua
+-Class CopLogicAttack -Name action_complete_clbk`: one hunk, the `math.rand`
+line, and the LIES body carries it (`lua/coplogics/coplogicattack.lua:2547`).
+No other 248.2-only construct in the function.
 
 **Merge point.** In the `action_type == "dodge"` branch, replace the LIES
 `math.lerp(timeout[1], timeout[2], math.random())` with
@@ -563,7 +569,7 @@ whether cops path in.
 1. `set_nav_segment_state` — string ids; log-scan for `nonexistent nav_segment`.
 2. `add_obstacle` — nil guard + destroy listener, keep cache invalidation.
 3. `is_available_for_assignment` — restore suppression gate in 248.2 order.
-4. `action_complete_clbk` — `math.rand` only.
+4. `action_complete_clbk` — `math.rand` only (done: `f0370d4`).
 5. `ShieldLogicAttack.queued_update` — 248.2 reservation block.
 6. `CarryData._chk_register_steal_SO` — 248.2 head guards + helper, keep
    sabotage markers.
