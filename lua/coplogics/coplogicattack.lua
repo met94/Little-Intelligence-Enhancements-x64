@@ -315,6 +315,17 @@ function CopLogicAttack._upd_combat_movement(data)
 	local focus_enemy = data.attention_obj
 	local in_cover = my_data.in_cover
 	local best_cover = my_data.best_cover
+
+	if not focus_enemy then
+		-- Old code dereferenced it three lines down: this used to be a Lua error
+		-- crash, and a missing attention object means there is no movement plan.
+		LIES:Trace(data.unit, data, "combat_no_attention")
+
+		return
+	end
+
+	LIES:Trace(data.unit, data, "combat")
+
 	local enemy_visible = focus_enemy.verified
 	local enemy_visible_soft = focus_enemy.verified_t and t - focus_enemy.verified_t < 7
 	local enemy_visible_softer = focus_enemy.verified_t and t - focus_enemy.verified_t < 15
@@ -425,6 +436,8 @@ function CopLogicAttack._upd_combat_movement(data)
 				local enemy_tracker = lies_enemy_tracker(data.attention_obj)
 
 				if not my_data.charge_path_search_id and enemy_tracker then
+					LIES:Trace(data.unit, data, "charge_search")
+
 					my_data.charge_pos = CopLogicAttack._find_charge_pos(data, my_data, enemy_tracker, wanted_attack_range and wanted_attack_range * 0.9 or my_data.weapon_range.close)
 
 					if my_data.charge_pos then
@@ -537,6 +550,8 @@ function CopLogicAttack._upd_combat_movement(data)
 					local enemy_tracker = lies_enemy_tracker(data.attention_obj)
 
 					if not my_data.charge_path_search_id and enemy_tracker then
+						LIES:Trace(data.unit, data, "charge_search")
+
 						my_data.charge_pos = CopLogicAttack._find_charge_pos(data, my_data, enemy_tracker, wanted_attack_range and wanted_attack_range * 0.9 or my_data.weapon_range.close)
 
 						if my_data.charge_pos then
@@ -597,6 +612,8 @@ function CopLogicAttack._upd_combat_movement(data)
 			my_data.cover_path_search_id = tostring(unit:key()) .. "cover"
 			my_data.cover_search_t = TimerManager:game():time()
 
+			LIES:Trace(data.unit, data, "cover_path_search")
+
 			data.unit:brain():search_for_path_to_cover(my_data.cover_path_search_id, best_cover[1], best_cover[5])
 		end
 	end
@@ -609,7 +626,12 @@ function CopLogicAttack._upd_combat_movement(data)
 		if not action_taken and focus_enemy.is_person and focus_enemy.dis < 2000 then
 			local dodge = nil
 
-			if focus_enemy.is_local_player then
+			if not (focus_enemy.unit and alive(focus_enemy.unit)) then
+				-- Enemy died/despawned since the last detection pass: its movement
+				-- and anim data are gone, and reading them is what took the game
+				-- down (2026-11-01 05:46, spooc -> combat movement).
+				LIES:Trace(data.unit, data, "dodge_dead_enemy")
+			elseif focus_enemy.is_local_player then
 				local e_movement_state = focus_enemy.unit:movement():current_state()
 
 				if not e_movement_state:_is_reloading() and not e_movement_state:_interacting() and not e_movement_state:is_equipping() then
@@ -630,6 +652,8 @@ function CopLogicAttack._upd_combat_movement(data)
 	end
 
 	if not action_taken and (want_to_take_cover or move_to_cover) and not best_cover then
+		LIES:Trace(data.unit, data, "retreat")
+
 		action_taken = CopLogicAttack._chk_start_action_move_back(data, my_data, focus_enemy, false)
 	end
 
@@ -796,6 +820,8 @@ local function lies_enemy_tracker(focus_enemy)
 end
 
 function CopLogicAttack._upd_aim(data, my_data)
+	LIES:Trace(data.unit, data, "aim")
+
 	local shoot, aim, expected_pos = nil
 	local focus_enemy = data.attention_obj
 	local walk_action
@@ -1540,6 +1566,8 @@ function CopLogicAttack._chk_request_action_turn_to_enemy(data, my_data, my_pos,
 end
 
 function CopLogicAttack._peek_for_pos_sideways(data, my_data, from_racker, peek_to_pos, height, short_back_vec)
+	LIES:Trace(data.unit, data, "peek")
+
 	local unit = data.unit
 	local my_tracker = from_racker
 	local enemy_pos = peek_to_pos
@@ -2763,6 +2791,8 @@ function CopLogicAttack._find_friend_pos(data, my_data)
 end
 
 function CopLogicAttack._update_cover(data)
+	LIES:Trace(data.unit, data, "cover_upd")
+
 	local my_data = data.internal_data
 	local cover_release_dis_sq = 10000
 	local best_cover = my_data.best_cover

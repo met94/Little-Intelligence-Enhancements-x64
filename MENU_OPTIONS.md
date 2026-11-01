@@ -149,6 +149,33 @@ Same channel shape as Iter's, so one reader handles both mods:
 `debug_log`; the watch counters run regardless, which is why a normal session
 now leaves evidence behind for the alarm tier.
 
+## Crash breadcrumbs (`trace`)
+
+On by default, settings file only, no menu entry. A native access violation
+kills the game without a Lua error, so nothing can be logged *after* the fault;
+the breadcrumbs are what was written *before* it. Add `"trace": false` to
+`mods\saves\LittleIntelligenceEnhancementS.txt` (game closed) to silence them.
+
+Each line looks like:
+
+```
+[LIES-TRACE] v=V8.69_x64 t=143.27 u=1081 tweak=spooc logic=attack phase=combat att=769 att_alive=true att_trk=true
+```
+
+- `u` is the acting unit, `tweak` its character type, `logic` its current logic,
+  `phase` the AI step that just started (`combat`, `charge_search`,
+  `cover_path_search`, `cover_upd`, `peek`, `retreat`, `aim`, `movement_aim`,
+  `spooc`), `att` the enemy it is working with with its liveness and whether an
+  enemy nav tracker is present.
+- One line per unit per phase per 2.5 s, capped at 25 lines per second, so a
+  busy heist adds at most a few hundred lines per session.
+- Failure phases (`combat_no_attention`, `dodge_dead_enemy`,
+  `spooc_dead_enemy`) mean the AI was about to use a dead enemy and skipped it;
+  the game keeps running and the line names the unit.
+
+Report a crash by attaching the last `[LIES-TRACE]` lines from
+`mods\logs\<date>_log.txt` together with `crash.txt`.
+
 ## Instant Spawn Groups (`instant_spawn_groups`) - removed in V8.66
 
 The fork exposed an upstream code path as a toggle in V8.60-V8.65 and retired

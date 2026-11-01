@@ -239,6 +239,8 @@ function CopBrain:check_upd_aim()
 		return
 	end
 	
+	LIES:Trace(self._unit, self._logic_data, "movement_aim")
+
 	local dt = self._timer:time() - self._logic_data.t 
 	
 	self._logic_data.t = self._timer:time()

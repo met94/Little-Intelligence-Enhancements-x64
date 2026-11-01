@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.68_x64",
+		version = "V8.69_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -26,6 +26,11 @@ if RequiredScript == "lib/managers/menumanager" then
 			-- Opt-in [LIES-WATCH] digest (one line per minute). Failure alarms are
 			-- always on and need no setting; see MENU_OPTIONS.md.
 			watch_log = false,
+			-- Crash breadcrumbs: one [LIES-TRACE] line per unit per phase per
+			-- 2.5 s (global cap 25 lines/s). Native access violations leave no
+			-- Lua error, so the last trace line is the only record of what the
+			-- crashing unit was doing. Settings file only; see MENU_OPTIONS.md.
+			trace = true,
 			-- Path-cache lookup in NavigationManager:search_pos_to_pos. `true` is
 			-- upstream behaviour: before asking the engine, scan the cached paths
 			-- and reuse one whose endpoints are still in a straight walkable line.
@@ -201,6 +206,65 @@ if RequiredScript == "lib/managers/menumanager" then
 		log("[LIES-WATCH] v=" .. tostring(self.version) .. " evt=" .. tostring(event_name) .. " " .. lies_watch_fields(fields))
 	end
 
+	-- Crash breadcrumbs. A native access violation in engine code leaves no Lua
+	-- error message and cannot be caught, so the only record of what a unit was
+	-- doing is what we logged just before the fault. One line per unit per phase
+	-- per 2.5 s, 25 lines/s globally, all state kept in tables (no allocation
+	-- when a line is suppressed).
+	LIES.trace_state = LIES.trace_state or {}
+	LIES.trace_window_t = LIES.trace_window_t or 0
+	LIES.trace_window_n = LIES.trace_window_n or 0
+
+	function LIES:Trace(unit, logic_data, phase, extra)
+		if not (self.settings and self.settings.trace) then
+			return
+		end
+
+		local timer = TimerManager and TimerManager:game()
+
+		if not timer then
+			return
+		end
+
+		local t = timer:time()
+		local u_key = unit and unit:key() or 0
+		local state = self.trace_state[u_key]
+
+		if state and state.phase == phase and t - state.t < 2.5 then
+			return
+		end
+
+		if t > self.trace_window_t + 1 then
+			self.trace_window_t = t
+			self.trace_window_n = 0
+		end
+
+		if self.trace_window_n >= 25 then
+			return
+		end
+
+		self.trace_window_n = self.trace_window_n + 1
+		self.trace_state[u_key] = {
+			phase = phase,
+			t = t
+		}
+
+		local att = logic_data and logic_data.attention_obj
+		local att_unit = att and att.unit
+		local base = unit and unit:base()
+		local brain = unit and unit:brain()
+
+		log(string.format("[LIES-TRACE] v=%s t=%.2f u=%s tweak=%s logic=%s phase=%s att=%s att_alive=%s att_trk=%s%s",
+			tostring(self.version), t, tostring(u_key),
+			tostring(base and base._tweak_table or "?"),
+			tostring(brain and brain._current_logic_name or "?"),
+			tostring(phase),
+			tostring(att_unit and att_unit:key() or "-"),
+			tostring(att_unit and alive(att_unit) or "-"),
+			tostring((att and att.nav_tracker) and true or false),
+			extra and (" " .. tostring(extra)) or ""))
+	end
+
 	function LIES:Alarm(name, fields, now)
 		if (self.watch_alarm_budget or 0) <= 0 then
 			return
@@ -233,6 +297,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		self.watch_prev_ready = false
 		self.watch_gauges = {}
 		self.watch_sums = {}
+		self.trace_state = {}
 	end
 
 	local function lies_level_id()

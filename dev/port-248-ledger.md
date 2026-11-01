@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-31T13:01:50.382Z
+Generated: 2026-11-01T05:50:38.347Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,7 +13,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 24 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 210 |
+| MOD_ONLY | 211 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -46,11 +46,12 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.set_update_data` | 19 | 0 | 0 |  |
 | [ ] | audit | `LIES.Sum` | 17 | 0 | 0 |  |
 | [ ] | audit | `LIES.tprint` | 38 | 0 | 0 |  |
+| [ ] | audit | `LIES.Trace` | 49 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchDigest` | 72 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchReset` | 10 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchReset` | 11 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchTick` | 62 | 0 | 0 |  |
 
 ## menunodegui.lua
@@ -416,7 +417,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit (hook) | `Hooks.PostHook:CopBrain.set_spawn_entry:lies_accessentry` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `CopBrain._do_hhtacs_damage_modifiers` | 152 | 0 | 0 |  |
 | [ ] | audit | `CopBrain._on_player_slow_pos_rsrv_upd` | 9 | 0 | 0 |  |
-| [ ] | audit | `CopBrain.check_upd_aim` | 39 | 0 | 0 |  |
+| [ ] | audit | `CopBrain.check_upd_aim` | 41 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.clbk_group_member_attention_verified` | 11 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.get_movement_delay` | 15 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.is_criminal` | 5 | 0 | 0 |  |
@@ -605,7 +606,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 573 | 195 | 192 |  |
+| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 575 | 195 | 192 |  |
 | [ ] | **PORT** | `CopLogicAttack.action_complete_clbk` | 101 | 47 | 47 |  |
 | [ ] | **PORT** | `CopLogicAttack.is_available_for_assignment` | 60 | 43 | 43 |  |
 | [ ] | audit | `CopLogicAttack._check_needs_reload` | 48 | 0 | 0 |  |
@@ -632,13 +633,13 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopLogicAttack._find_flank_pos` | 38 | 86 | 86 |  |
 | [ ] | keep | `CopLogicAttack._find_retreat_position` | 122 | 72 | 72 |  |
 | [ ] | keep | `CopLogicAttack._get_cover_offset_pos` | 41 | 33 | 33 |  |
-| [ ] | keep | `CopLogicAttack._peek_for_pos_sideways` | 53 | 54 | 54 |  |
+| [ ] | keep | `CopLogicAttack._peek_for_pos_sideways` | 55 | 54 | 54 |  |
 | [ ] | keep | `CopLogicAttack._process_pathing_results` | 75 | 48 | 48 |  |
-| [ ] | keep | `CopLogicAttack._upd_combat_movement` | 327 | 150 | 150 |  |
+| [ ] | keep | `CopLogicAttack._upd_combat_movement` | 351 | 150 | 150 |  |
 | [ ] | keep | `CopLogicAttack._upd_enemy_detection` | 48 | 49 | 49 |  |
 | [ ] | keep | `CopLogicAttack._upd_pose` | 38 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack._upd_stop_old_action` | 24 | 15 | 15 |  |
-| [ ] | keep | `CopLogicAttack._update_cover` | 262 | 149 | 149 |  |
+| [ ] | keep | `CopLogicAttack._update_cover` | 264 | 149 | 149 |  |
 | [ ] | keep | `CopLogicAttack._verify_cover` | 15 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack.action_taken` | 3 | 3 | 3 |  |
 | [ ] | keep | `CopLogicAttack.aim_allow_fire` | 37 | 19 | 19 |  |
@@ -721,8 +722,8 @@ No function definitions (hook/overlay file).
 |---:|---|---|---:|---:|---:|---|
 | [ ] | audit | `SpoocLogicAttack._chk_play_charge_spooc_sound` | 7 | 0 | 0 |  |
 | [ ] | audit | `SpoocLogicAttack._chk_wants_to_take_cover` | 49 | 0 | 0 |  |
-| [ ] | audit | `SpoocLogicAttack.update` | 104 | 0 | 0 |  |
-| [ ] | keep | `SpoocLogicAttack._upd_spooc_attack` | 53 | 45 | 45 |  |
+| [ ] | audit | `SpoocLogicAttack.update` | 106 | 0 | 0 |  |
+| [ ] | keep | `SpoocLogicAttack._upd_spooc_attack` | 63 | 45 | 45 |  |
 | [ ] | keep | `SpoocLogicAttack.action_complete_clbk` | 91 | 49 | 49 |  |
 | [ ] | keep | `SpoocLogicAttack.enter` | 51 | 55 | 55 |  |
 
