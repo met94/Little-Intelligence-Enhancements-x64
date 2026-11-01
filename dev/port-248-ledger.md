@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T07:23:53.764Z
+Generated: 2026-11-01T07:29:09.084Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -11,13 +11,14 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 
 | category | count |
 |---|---:|
-| LIES_EDIT_VANILLA_CHANGED | 24 |
+| LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 43 |
 | MOD_ONLY | 214 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
 | LIES_EDIT_CLEAN | 290 |
+| SAME_AS_NEW_VANILLA | 1 |
 
 ## menumanager.lua
 
@@ -309,8 +310,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `GroupAIStateBesiege._chk_group_use_flash_grenade` | 145 | 45 | 45 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._chk_group_use_smoke_grenade` | 179 | 47 | 47 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._queue_police_upd_task` | 17 | 7 | 13 |  |
-| [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 48 | 28 | 22 |  |
-| [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 18 | 18 | 20 |  |
+| [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 38 | 28 | 22 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBase.sync_event:lies_check_phalanx_sync` | 5 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire` | 101 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 132 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
@@ -375,6 +375,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `GroupAIStateBesiege.on_objective_complete` | 130 | 88 | 88 |  |
 | [ ] | keep | `GroupAIStateBesiege.remove_from_surrendered` | 12 | 18 | 18 |  |
 | [ ] | keep | `make_dis_id` | 6 | 5 | 5 |  |
+| [ ] | keep (new) | `GroupAIStateBesiege.force_end_assault_phase` | 20 | 18 | 20 | matches 248.2 vanilla; no override needed |
 
 ## lua/copextensions/copdamage.lua
 
