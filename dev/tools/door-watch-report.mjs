@@ -8,11 +8,28 @@
 //
 // Usage:
 //   node dev/tools/door-watch-report.mjs <log...> [--ab <control-log>] [--mod DIR]
+//                                        [--session last|all|<n>]
 //                                        [--json out.json] [--out out.md]
+//
+// A SuperBLT log file can hold more than one play (the header is written at
+// each level load), so the report reads one game session by default instead of
+// every `evt=digest` in the file: a control play (High Performance Mode on) in
+// the same file would otherwise contaminate the armed play's verdict. A session
+// starts at each `[LIES-WATCH] evt=header` line; the header also repeats after a
+// level change, which splits the play into one segment per level — a new segment
+// with its own digest windows, which is what we want. Lines before the first
+// header are a pre-session segment and only feed the "mod loaded" claim. A log
+// with no header at all (watch_log off) is one session holding everything, and
+// the verdict stays INCOMPLETE.
+//
+// `--session last` (default) reads the highest-numbered session, `all` merges
+// every session (counters summed, the last header wins, the report says how many
+// were merged), `<n>` reads the 1-based session `n`. `--ab` applies the same
+// selection to the control log.
 //
 // Exit codes: 0 PASS, 1 FAIL, 2 INCOMPLETE (the run cannot prove the feature:
 // no header, or the header shows it disarmed), 3 usage error (unknown flag,
-// missing/unreadable log).
+// missing/unreadable log, session index out of range).
 //
 // Digest counters are per-window DELTAS (`menumanager.lua` `WatchDigest`), so
 // every counter below is summed across digests before it is judged.
@@ -23,7 +40,7 @@ import { fileURLToPath } from 'node:url';
 import { scanLog } from './log-scan.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const USAGE = 'Usage: node dev/tools/door-watch-report.mjs <log...> [--ab <control-log>] [--mod DIR] [--json out.json] [--out out.md]';
+const USAGE = 'Usage: node dev/tools/door-watch-report.mjs <log...> [--ab <control-log>] [--mod DIR] [--session last|all|<n>] [--json out.json] [--out out.md]';
 
 // What the six outcome counters are, and what a "sub-event" is. Every call to
 // `lies_upd_expected_pos` increments exactly one outcome (menumanager.lua
@@ -134,6 +151,52 @@ function round(value, digits = 1) {
   return Math.round(value * factor) / factor;
 }
 
+// A SuperBLT log file can hold several plays, so a `[LIES-WATCH] evt=header`
+// line is the only reliable session boundary: `menumanager.lua` writes it when
+// the level loads (and repeats it after a level change, which splits the play
+// into one segment per level — a new segment with its own digest windows).
+// Lines before the first header form a pre-session segment: they hold the
+// `Setting up mod 'LIES'` line and nothing this tool judges, so only the "mod
+// loaded" claim reads them.
+function buildSessions({ lineCount, watch, traces, events }) {
+  const headers = watch.filter(entry => entry.event === 'header');
+  const within = (list, start, end) => list.filter(entry => entry.line >= start && entry.line <= end);
+  const make = (index, total, header, start, end) => {
+    const picked = within(watch, start, end);
+
+    return {
+      index,
+      total,
+      header,
+      header_line: header ? header.line : null,
+      start_line: start,
+      end_line: end === Infinity ? lineCount : end,
+      watch: picked,
+      digests: picked.filter(entry => entry.event === 'digest'),
+      alarms: picked.filter(entry => entry.event === 'alarm'),
+      alarm_budget_exhausted: picked.filter(entry => entry.event === 'alarm_budget_exhausted').length,
+      first: picked.find(entry => entry.event === 'door_watch_first') || null,
+      traces: within(traces, start, end),
+      events: within(events, start, end)
+    };
+  };
+
+  if (!headers.length) {
+    // `watch_log` off: no header, and no digest either. Everything is one
+    // session so the verdict stays INCOMPLETE with the "enable the digest" hint,
+    // exactly as before sessions existed.
+    return [make(1, 1, null, 1, Infinity)];
+  }
+
+  return headers.map((header, i) => make(
+    i + 1,
+    headers.length,
+    header,
+    header.line,
+    i + 1 < headers.length ? headers[i + 1].line - 1 : Infinity
+  ));
+}
+
 // Parse one log (or several concatenated) into the shapes the claims need.
 export function parseLog(text, { file = '' } = {}) {
   const lines = String(text || '').split(/\r?\n/);
@@ -185,6 +248,7 @@ export function parseLog(text, { file = '' } = {}) {
     alarms: watch.filter(entry => entry.event === 'alarm'),
     alarmBudgetExhausted: watch.filter(entry => entry.event === 'alarm_budget_exhausted').length,
     first: watch.find(entry => entry.event === 'door_watch_first') || null,
+    sessions: buildSessions({ lineCount: lines.length, watch, traces, events }),
     traces,
     events,
     version: (watch.find(entry => entry.event === 'header') || {}).version
@@ -192,6 +256,72 @@ export function parseLog(text, { file = '' } = {}) {
       || (traces.length ? traces[0].fields.v : '')
       || ''
   };
+}
+
+// Bad `--session` value or index: a usage error (exit 3), not a bad play.
+export class SessionRangeError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'SessionRangeError';
+  }
+}
+
+function sessionMode(selector) {
+  const text = String(selector ?? 'last').trim().toLowerCase();
+
+  if (text === 'last' || text === 'all') return text;
+  if (/^\d+$/.test(text)) return Number(text);
+
+  throw new SessionRangeError(`--session expects last, all or a 1-based index (got "${selector}")`);
+}
+
+// Which sessions of one parsed log the report reads. `last` is the default and
+// is the whole point of the flag: the newest launch in the file, not every
+// launch the file happens to hold.
+export function selectSessions(parsed, selector = 'last') {
+  const mode = sessionMode(selector);
+  const total = parsed.sessions.length;
+
+  if (mode === 'all') {
+    return { mode, total, sessions: parsed.sessions.slice() };
+  }
+
+  const index = mode === 'last' ? total : mode;
+
+  if (index < 1 || index > total) {
+    throw new SessionRangeError(
+      `--session ${index} is out of range: ${parsed.file || 'the log'} has ${total} session(s)`
+    );
+  }
+
+  return { mode, index, total, sessions: [parsed.sessions[index - 1]] };
+}
+
+// Short "which sessions" label for the report, the CLI summary and the control.
+export function describeSession(info) {
+  if (info.count === 1 && info.selected.length === 1) {
+    const only = info.selected[0];
+    const index = only.indexes[0];
+
+    if (only.header_lines[0] === null) {
+      return `${index} of ${only.total} (no watch header: the whole log is one session)`;
+    }
+
+    return `${index} of ${only.total} (header at line ${only.header_lines[0]})`;
+  }
+
+  if (info.selected.length === 1) {
+    const only = info.selected[0];
+    const lines = only.header_lines.filter(line => line !== null);
+
+    return `all (merged ${only.indexes.length} of ${only.total} sessions; ` +
+      `header${lines.length === 1 ? '' : 's'} at ${lines.join(', ') || 'none'})`;
+  }
+
+  // Several logs, each with its own session numbering.
+  return info.selected
+    .map(entry => `${path.basename(entry.file || 'log')}: ${entry.indexes.join('+')} of ${entry.total}`)
+    .join('; ') + ` (merged ${info.count} sessions)`;
 }
 
 // Sum the per-window deltas across digests; keep the gauges as gauges.
@@ -269,29 +399,59 @@ function listCounters(counters, keys) {
 }
 
 // Turn a parsed log into the claim table. `modVersion` is the `mod.txt` version
-// of the build under test; `control` is another analysed log for `--ab`.
-export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null, modDir = '', controlText = null, controlFile = '' } = {}) {
+// of the build under test; `controlText` is another analysed log for `--ab`;
+// `session` picks the game session(s) of every input log (`last`/`all`/`<n>`).
+export function analyzeLog(text, {
+  file = '',
+  otherFiles = [],
+  modVersion = null,
+  modDir = '',
+  controlText = null,
+  controlFile = '',
+  session = 'last'
+} = {}) {
   const logs = [{ file, text }, ...otherFiles];
-  const parsed = parseLog(text, { file });
+  const parsedLogs = logs.map(log => parseLog(log.text, { file: log.file }));
+  const selections = parsedLogs.map(parsed => selectSessions(parsed, session));
+  const chosen = selections.flatMap(selection => selection.sessions);
 
-  // Several logs are adjudicated as one play: counters add up, a header from
-  // any of them counts.
-  for (const other of otherFiles) {
-    const extra = parseLog(other.text, { file: other.file });
+  // The selected sessions are adjudicated as one play: counters add up, and the
+  // last header wins (it is the newest launch's settings). The `Setting up mod`
+  // lines are collected log-wide, because a later launch's setup line sits
+  // before that launch's header, i.e. outside its own session segment.
+  const parsed = {
+    file,
+    setup: parsedLogs.flatMap(entry => entry.setup),
+    watch: chosen.flatMap(entry => entry.watch),
+    traces: chosen.flatMap(entry => entry.traces),
+    events: chosen.flatMap(entry => entry.events)
+  };
 
-    parsed.setup.push(...extra.setup);
-    parsed.watch.push(...extra.watch);
-    parsed.traces.push(...extra.traces);
-    parsed.events.push(...extra.events);
-  }
+  parsed.digests = parsed.watch.filter(entry => entry.event === 'digest');
+  parsed.header = [...chosen].reverse().map(entry => entry.header).find(Boolean) || null;
+  parsed.alarms = parsed.watch.filter(entry => entry.event === 'alarm');
+  parsed.alarmBudgetExhausted = chosen.reduce((sum, entry) => sum + entry.alarm_budget_exhausted, 0);
+  parsed.first = parsed.watch.find(entry => entry.event === 'door_watch_first') || null;
+  parsed.version = (parsed.header && parsed.header.version)
+    || (parsed.watch.length ? parsed.watch[0].version : '')
+    || (parsed.traces.length ? parsed.traces[0].fields.v : '')
+    || '';
 
-  if (otherFiles.length) {
-    parsed.digests = parsed.watch.filter(entry => entry.event === 'digest');
-    parsed.header = parsed.watch.find(entry => entry.event === 'header') || null;
-    parsed.alarms = parsed.watch.filter(entry => entry.event === 'alarm');
-    parsed.alarmBudgetExhausted = parsed.watch.filter(entry => entry.event === 'alarm_budget_exhausted').length;
-    parsed.first = parsed.watch.find(entry => entry.event === 'door_watch_first') || null;
-  }
+  const sessionInfo = {
+    requested: String(session ?? 'last'),
+    mode: selections[0].mode === 'all' ? 'all' : (selections[0].mode === 'last' ? 'last' : 'index'),
+    count: chosen.length,
+    merged: chosen.length > 1,
+    total: parsedLogs[0].sessions.length,
+    index: chosen.length === 1 ? chosen[0].index : null,
+    header_line: chosen.length === 1 ? chosen[0].header_line : null,
+    selected: selections.map((selection, index) => ({
+      file: parsedLogs[index].file,
+      total: selection.total,
+      indexes: selection.sessions.map(entry => entry.index),
+      header_lines: selection.sessions.map(entry => entry.header_line)
+    }))
+  };
 
   const aggregate = aggregateDigests(parsed.digests);
   const counters = aggregate.counters;
@@ -498,8 +658,19 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
   }
 
   // --- cost ---------------------------------------------------------------
+  // `--ab` reads the same session(s) as the log under test: a control file that
+  // holds both an armed launch and a High Performance one would otherwise
+  // compare against the wrong window.
   const cost = costFigures(aggregate);
-  const controlCost = controlText ? costFigures(aggregateDigests(parseLog(controlText, { file: controlFile }).digests)) : null;
+  const controlParsed = controlText ? parseLog(controlText, { file: controlFile }) : null;
+  const controlSelection = controlParsed ? selectSessions(controlParsed, session) : null;
+  const controlDigests = controlSelection ? controlSelection.sessions.flatMap(entry => entry.digests) : [];
+  const controlCost = controlParsed ? costFigures(aggregateDigests(controlDigests)) : null;
+  const controlSession = controlSelection
+    ? `; control session ${controlSelection.mode === 'all'
+      ? `all (merged ${controlSelection.sessions.length} of ${controlSelection.total})`
+      : `${controlSelection.sessions[0].index} of ${controlSelection.total}`}`
+    : '';
   const controlUsable = !controlCost || controlCost.windows > 0;
 
   if (!parsed.digests.length) {
@@ -511,7 +682,7 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
       'INFO',
       `dw_us avg ${cost.dw_us_avg} us, dw_us_max ${cost.dw_us_max} us, dw_ray ${cost.dw_ray} (${cost.dw_ray_per_min}/min) ` +
         `over ${cost.windows} minute window(s), dw_call=${cost.dw_call}; control unusable: ` +
-        `no digest window in \`${controlFile}\` (watch_log off?), so no delta is printed`
+        `no digest window in \`${controlFile}\` (watch_log off?), so no delta is printed${controlSession}`
     );
   } else {
     const usDelta = controlCost ? round(cost.dw_us_avg - controlCost.dw_us_avg, 2) : null;
@@ -520,7 +691,7 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
     const delta = controlCost
       ? `; control dw_us avg ${controlCost.dw_us_avg} us (${sign(usDelta)} us), ` +
         `dw_us_max ${controlCost.dw_us_max} us, dw_ray ${controlCost.dw_ray} (${controlCost.dw_ray_per_min}/min)` +
-        `; delta dw_ray/min ${sign(rayDelta)}`
+        `; delta dw_ray/min ${sign(rayDelta)}${controlSession}`
       : '';
 
     claim(
@@ -605,6 +776,8 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
     files: [file, ...otherFiles.map(other => other.file)].filter(Boolean),
     modDir,
     modVersion,
+    session: sessionInfo,
+    session_label: describeSession(sessionInfo),
     verdict,
     verdict_reason: verdictReason,
     armed,
@@ -656,6 +829,7 @@ export function renderReport(report) {
   lines.push('# LIES door-watch report');
   lines.push('');
   lines.push(`- Log: \`${report.files.join('`, `') || '(none)'}\``);
+  lines.push(`- Session: ${report.session_label}`);
   lines.push(`- Mod: \`${report.modDir || '(unknown)'}\`${report.modVersion ? ` (${report.modVersion})` : ''}`);
   lines.push(`- Digest windows: ${report.digest_windows}`);
   lines.push(`- \`[LIES-TRACE] phase=door_watch\` lines: ${report.door_watch_traces}` +
@@ -704,7 +878,8 @@ export const VALUE_FLAGS = new Map([
   ['--mod', 'mod'],
   ['--out', 'out'],
   ['--json', 'json'],
-  ['--ab', 'ab']
+  ['--ab', 'ab'],
+  ['--session', 'session']
 ]);
 
 // Pure: no process.exit, no console output, so the parser can be unit-tested.
@@ -712,7 +887,7 @@ export const VALUE_FLAGS = new Map([
 // usage error instead of a silent `undefined` that would turn `--out` into a
 // write to the string "--json".
 export function parseArgs(argv) {
-  const args = { logs: [], mod: path.resolve(HERE, '..', '..'), out: '', json: '', ab: '', help: false };
+  const args = { logs: [], mod: path.resolve(HERE, '..', '..'), out: '', json: '', ab: '', session: 'last', help: false };
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -723,6 +898,9 @@ export function parseArgs(argv) {
 
       if (value === undefined || value === '' || (value.startsWith('-') && value !== '-')) {
         throw new Error(`${arg} requires a value`);
+      }
+      if (arg === '--session' && !/^(last|all|\d+)$/i.test(value)) {
+        throw new Error('--session expects last, all or a 1-based index');
       }
       args[key] = value;
       i++;
@@ -780,14 +958,28 @@ function main() {
     return;
   }
 
-  const report = analyzeLog(texts[0], {
-    file: path.resolve(first),
-    otherFiles: rest.map((log, index) => ({ file: path.resolve(log), text: texts[index + 1] })),
-    modVersion: modTxt ? modTxt.version || null : null,
-    modDir: path.resolve(args.mod),
-    controlText,
-    controlFile: args.ab ? path.resolve(args.ab) : ''
-  });
+  const report = (() => {
+    try {
+      return analyzeLog(texts[0], {
+        file: path.resolve(first),
+        otherFiles: rest.map((log, index) => ({ file: path.resolve(log), text: texts[index + 1] })),
+        modVersion: modTxt ? modTxt.version || null : null,
+        modDir: path.resolve(args.mod),
+        controlText,
+        controlFile: args.ab ? path.resolve(args.ab) : '',
+        session: args.session
+      });
+    } catch (err) {
+      // A session index outside the log is a bad command, not a bad play.
+      if (err instanceof SessionRangeError) {
+        usageError(err.message);
+        return null;
+      }
+      throw err;
+    }
+  })();
+
+  if (!report) return;
 
   const markdown = renderReport(report);
 
@@ -806,7 +998,11 @@ function main() {
   if (!args.out && !args.json) process.stdout.write(markdown);
 
   const fails = report.claims.filter(entry => entry.result === 'FAIL').map(entry => entry.claim);
-  console.log(`verdict=${report.verdict} digests=${report.digest_windows} door_watch_traces=${report.door_watch_traces}` +
+  const sessionTag = report.session.count === 1
+    ? `${report.session.index}/${report.session.total}`
+    : `merged(${report.session.count})`;
+
+  console.log(`verdict=${report.verdict} session=${sessionTag} digests=${report.digest_windows} door_watch_traces=${report.door_watch_traces}` +
     (fails.length ? ` failed=${fails.join(',')}` : '') +
     (report.verdict_reason ? ` reason="${report.verdict_reason}"` : ''));
 

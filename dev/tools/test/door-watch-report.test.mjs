@@ -9,15 +9,20 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
+  SessionRangeError,
   VALUE_FLAGS,
   analyzeLog,
   aggregateDigests,
   parseArgs,
   parseLog,
-  renderReport
+  renderReport,
+  selectSessions
 } from '../door-watch-report.mjs';
 
 const VERSION = 'V8.79_x64';
@@ -313,16 +318,26 @@ test('parseArgs rejects a flag with no value instead of passing undefined on', (
 });
 
 test('parseArgs collects logs and flag values', () => {
-  const args = parseArgs(['a.txt', 'b.txt', '--ab', 'control.txt', '--out', 'r.md', '--json', 'r.json', '--mod', 'm']);
+  const args = parseArgs(['a.txt', 'b.txt', '--ab', 'control.txt', '--out', 'r.md', '--json', 'r.json', '--mod', 'm', '--session', '2']);
 
   assert.deepEqual(args.logs, ['a.txt', 'b.txt']);
   assert.equal(args.ab, 'control.txt');
   assert.equal(args.out, 'r.md');
   assert.equal(args.json, 'r.json');
   assert.equal(args.mod, 'm');
+  assert.equal(args.session, '2');
   assert.equal(args.help, false);
+  // The default is the newest session, not the whole file.
+  assert.equal(parseArgs(['a.txt']).session, 'last');
   // Every value flag is declared once, in the exported table.
-  assert.deepEqual([...VALUE_FLAGS.keys()].sort(), ['--ab', '--json', '--mod', '--out']);
+  assert.deepEqual([...VALUE_FLAGS.keys()].sort(), ['--ab', '--json', '--mod', '--out', '--session']);
+});
+
+test('parseArgs rejects a --session value that is not last, all or an index', () => {
+  assert.throws(() => parseArgs(['a.txt', '--session', 'first']), /--session expects/);
+  assert.throws(() => parseArgs(['a.txt', '--session', '-1']), /requires a value/);
+  assert.throws(() => parseArgs(['a.txt', '--session', '--out', 'x']), /requires a value/);
+  assert.equal(parseArgs(['a.txt', '--session', 'all']).session, 'all');
 });
 
 test('a missing flag value exits 3 through the CLI', () => {
@@ -519,4 +534,203 @@ test('parseLog keeps the per-window fields the digest is judged on', () => {
   assert.equal(aggregate.counters.dw_us_max, undefined);
   assert.equal(aggregate.counters.dw_call, 15);
   assert.equal(aggregate.dw_us_max, 180);
+});
+
+// --- game sessions ---------------------------------------------------------
+//
+// One SuperBLT log file accumulates every launch that day. This fixture is two
+// launches in one file: an armed run (High Performance off, a raw position) and
+// after it a High Performance run whose calls all land in `dw_gate_off`. Reading
+// both as one play was the bug: the armed verdict could never be trusted.
+const twoRunLines = [
+  SETUP, // 1
+  header(), // 2 — session 1
+  digest({ t: 60 }), // 3
+  header({ highperformance: 'true', level: 'auc', enemy_reaction_level: 3 }), // 4 — session 2
+  digest({ // 5
+    t: 60,
+    level: 'auc',
+    dw_call: 20,
+    dw_gate_off: 20,
+    dw_hit: 0,
+    dw_none: 0,
+    dw_cadence_skip: 0,
+    dw_cached_reuse: 0,
+    dw_path_prestep: 0,
+    dw_raw_hit: 0,
+    dw_expected_pos_hit: 0,
+    dw_ray: 0,
+    dw_us: 0,
+    dw_us_max: 0,
+    react_hold: 0,
+    react_allow: 9,
+    react_level: 3
+  })
+];
+const twoRunLog = twoRunLines.join('\n');
+
+test('a two-launch log is split at each watch header', () => {
+  const parsed = parseLog(twoRunLog, { file: 'two_runs.txt' });
+
+  assert.equal(parsed.sessions.length, 2);
+  assert.equal(parsed.sessions[0].index, 1);
+  assert.equal(parsed.sessions[0].header_line, 2);
+  assert.equal(parsed.sessions[0].digests.length, 1);
+  assert.equal(parsed.sessions[1].index, 2);
+  assert.equal(parsed.sessions[1].header_line, 4);
+  assert.equal(parsed.sessions[1].digests.length, 1);
+  // The whole-log view is unchanged for callers that still read it.
+  assert.equal(parsed.digests.length, 2);
+  // The first launch's setup line is before the first header: pre-session, and
+  // outside both session segments.
+  assert.equal(parsed.sessions[0].start_line, 2);
+  assert.equal(parsed.setup.length, 1);
+});
+
+test('session last reads only the newest launch and keeps its verdict', () => {
+  const report = analyzeLog(twoRunLog, { file: 'two_runs.txt', modVersion: VERSION });
+
+  assert.equal(report.session.mode, 'last');
+  assert.equal(report.session.count, 1);
+  assert.equal(report.session.index, 2);
+  assert.equal(report.session.total, 2);
+  assert.equal(report.session.merged, false);
+  assert.equal(report.session.header_line, 4);
+
+  // Only the High Performance digest counts: 20 calls, all gated off.
+  assert.equal(report.digest_windows, 1);
+  assert.equal(report.counters.dw_call, 20);
+  assert.equal(report.counters.dw_raw_hit, 0);
+  assert.equal(claimOf(report, 'gate').result, 'PASS');
+  assert.match(claimOf(report, 'gate').evidence, /dw_call=20 dw_gate_off=20/);
+  assert.equal(report.armed, false);
+  assert.equal(report.verdict, 'INCOMPLETE');
+  assert.match(renderReport(report), /Session: 2 of 2 \(header at line 4\)/);
+});
+
+test('session 1 reads the armed launch, not the later control one', () => {
+  const report = analyzeLog(twoRunLog, { file: 'two_runs.txt', modVersion: VERSION, session: '1' });
+  const markdown = renderReport(report);
+
+  assert.equal(report.session.index, 1);
+  assert.equal(report.session.total, 2);
+  assert.equal(report.digest_windows, 1);
+  assert.equal(report.counters.dw_call, 10);
+  assert.equal(report.counters.dw_raw_hit, 1);
+  assert.equal(report.armed, true);
+  assert.equal(claimOf(report, 'positions').result, 'PASS');
+  assert.equal(report.verdict, 'PASS');
+  assert.match(markdown, /Session: 1 of 2 \(header at line 2\)/);
+  // The second launch's settings are not in the header block.
+  assert.match(markdown, /door_watch=on highperformance=off/);
+});
+
+test('session all sums both launches, the last header wins and the report says so', () => {
+  const report = analyzeLog(twoRunLog, { file: 'two_runs.txt', modVersion: VERSION, session: 'all' });
+  const markdown = renderReport(report);
+
+  assert.equal(report.session.mode, 'all');
+  assert.equal(report.session.count, 2);
+  assert.equal(report.session.merged, true);
+  assert.deepEqual(report.session.selected[0].indexes, [1, 2]);
+  assert.equal(report.digest_windows, 2);
+  assert.equal(report.counters.dw_call, 30);
+  assert.equal(report.counters.dw_gate_off, 20);
+  assert.equal(report.counters.dw_raw_hit, 1);
+  // Merged headers: the newest one is the run's settings.
+  assert.equal(report.header.highperformance, 'true');
+  assert.equal(report.armed, false);
+  // Merging an armed launch with a gated one cannot pass the gate claim: the
+  // summed counters show sub-events next to `dw_gate_off` calls. That is honest
+  // — `all` is for "how much did this file do", not for a verdict.
+  assert.equal(claimOf(report, 'gate').result, 'FAIL');
+  assert.equal(report.verdict, 'FAIL');
+  assert.match(markdown, /Session: all \(merged 2 of 2 sessions; headers at 2, 4\)/);
+});
+
+test('an out-of-range session index exits 3 through the CLI', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lies-session-'));
+  const log = path.join(dir, 'two_runs.txt');
+
+  fs.writeFileSync(log, twoRunLog);
+
+  try {
+    const last = spawnSync(process.execPath, [CLI, log, '--session', '2'], { encoding: 'utf8' });
+
+    assert.equal(last.status, 2, last.stderr);
+    assert.match(last.stdout, /Session: 2 of 2 \(header at line 4\)/);
+    assert.match(last.stdout, /session=2\/2/);
+
+    for (const index of ['3', '0']) {
+      const result = spawnSync(process.execPath, [CLI, log, '--session', index], { encoding: 'utf8' });
+
+      assert.equal(result.status, 3, `--session ${index} must be a usage error`);
+      assert.match(result.stderr, /out of range: .*two_runs\.txt has 2 session\(s\)/);
+      assert.match(result.stderr, /Usage:/);
+      assert.equal(result.stdout, '');
+    }
+
+    // A bad value is a usage error before any log is read.
+    const bad = spawnSync(process.execPath, [CLI, 'missing.txt', '--session', 'newest'], { encoding: 'utf8' });
+
+    assert.equal(bad.status, 3);
+    assert.match(bad.stderr, /--session expects last, all or a 1-based index/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  // The API reports the same thing without exiting.
+  assert.throws(() => analyzeLog(twoRunLog, { file: 'two_runs.txt', session: '3' }), SessionRangeError);
+  assert.throws(() => selectSessions(parseLog(twoRunLog), '0'), /out of range/);
+  assert.throws(() => selectSessions(parseLog(twoRunLog), 'nope'), /--session expects/);
+});
+
+test('a header-less log is one session holding everything and stays INCOMPLETE', () => {
+  const log = [SETUP, digest()].join('\n');
+  const report = analyzeLog(log, { file: 'no_header.txt', modVersion: VERSION });
+  const markdown = renderReport(report);
+
+  assert.equal(report.session.count, 1);
+  assert.equal(report.session.index, 1);
+  assert.equal(report.session.total, 1);
+  assert.equal(report.session.header_line, null);
+  // No header means no session boundary: every digest line is still read.
+  assert.equal(report.digest_windows, 1);
+  assert.equal(report.verdict, 'INCOMPLETE');
+  assert.match(markdown, /Session: 1 of 1 \(no watch header: the whole log is one session\)/);
+  assert.match(markdown, /"watch_log": true/);
+});
+
+test('--ab applies the session selection to the control log too', () => {
+  const control = [
+    SETUP,
+    header({ door_watch: 'false' }),
+    digest({ dw_call: 10, dw_gate_off: 10, dw_hit: 0, dw_none: 0, dw_ray: 10, dw_us: 100, dw_us_max: 900 }),
+    header({ door_watch: 'false', highperformance: 'true' }),
+    digest({ dw_call: 10, dw_gate_off: 10, dw_hit: 0, dw_none: 0, dw_ray: 10, dw_us: 8, dw_us_max: 90 })
+  ].join('\n');
+  const report = analyzeLog(happyLog, {
+    file: 'a.txt',
+    modVersion: VERSION,
+    controlText: control,
+    controlFile: 'b.txt'
+  });
+
+  // The newest control launch is the comparison, not the 100 us one before it.
+  assert.equal(report.cost.control.dw_us_avg, 8);
+  assert.match(claimOf(report, 'cost').evidence, /control dw_us avg 8 us/);
+  assert.match(claimOf(report, 'cost').evidence, /control session 2 of 2/);
+  assert.equal(report.verdict, 'PASS');
+
+  const earlier = analyzeLog(happyLog, {
+    file: 'a.txt',
+    modVersion: VERSION,
+    controlText: control,
+    controlFile: 'b.txt',
+    session: '1'
+  });
+
+  assert.equal(earlier.cost.control.dw_us_avg, 100);
+  assert.match(claimOf(earlier, 'cost').evidence, /control session 1 of 2/);
+  assert.equal(earlier.verdict, 'PASS');
 });

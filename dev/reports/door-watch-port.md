@@ -285,9 +285,32 @@ node dev\tools\door-watch-report.mjs "C:\Program Files (x86)\Steam\steamapps\com
   --out dev\reports\door-watch-run-a.md --json dev\reports\door-watch-run-a.json
 ```
 
+A SuperBLT log file can hold more than one play (the header is written at each
+level load), so the report reads one **game session** at a time and the header
+block names what it read:
+
+- A session starts at each `[LIES-WATCH] evt=header`. The header also repeats
+  after a level change, which the tool treats as a new session segment: a new
+  level starts its own digest windows, and mixing two levels is the same
+  mistake as mixing two launches. Lines before the first header are a
+  pre-session segment and only feed the "mod loaded" claim.
+- `--session last` (the default) reads the highest-numbered session, i.e. the
+  newest launch — the armed play after a settings change, never the control
+  launch that preceded it.
+- `--session all` merges every session (counters summed, the last header wins)
+  and says `merged N of M sessions`. Do not read a verdict out of it: an armed
+  launch merged with a gated one fails the gate claim by construction.
+- `--session <n>` reads the 1-based session `n`; an index outside the log is a
+  usage error (exit 3).
+- `--ab` applies the same selection to the control log, so both sides of the
+  cost delta come from the same launch number.
+- A log with no header at all (`watch_log` off) is one session holding
+  everything, and the verdict stays `INCOMPLETE` with the settings hint.
+
 Exit code 0 is PASS, 1 is FAIL, 2 is INCOMPLETE (no header, or the header shows
-the feature disarmed), 3 is a usage error (unknown flag, unreadable log). The
-markdown/JSON are the artifacts to attach to the next session.
+the feature disarmed), 3 is a usage error (unknown flag, unreadable log, session
+index out of range). The markdown/JSON are the artifacts to attach to the next
+session.
 
 ## 7. Open questions
 
@@ -374,11 +397,17 @@ not reopened.
   `dw_path_prestep_hit` as a position counter, `_get_expected_pos` dead-branch
   fix, report CLI flag values as usage errors and a narrowed read-only `try`,
   UTF-8 gates report.
+- Third follow-up (the same unreleased V8.79): the report splits a log into game
+  sessions (`--session last|all|<n>`, default `last`, `--ab` follows the same
+  selection, out-of-range exits 3). A SuperBLT file can hold several plays, so a
+  control play used to be summed into the armed play's claim table and made the
+  gate claim unjudgeable. Every claim rule and exit code is unchanged.
 - Tests: `dev/tools/test/door-watch.test.mjs` (source pins),
   `dev/test-harness/test/find_segment_doors.lua` (tracker balance, raw
   `Vector3` contract, nav-link segment filter),
   `dev/tools/test/door-watch-report.test.mjs` (every claim, all three verdicts,
-  header normalisation, disarmed run, empty control),
+  header normalisation, disarmed run, empty control, game-session split and the
+  out-of-range exit code),
   `dev/tools/test/compat.test.mjs` (in-code version pinned to `mod.txt`).
 
 **Not verified.** No in-game play; nothing in §5 is observed yet. The report
