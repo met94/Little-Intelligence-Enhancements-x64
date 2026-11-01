@@ -97,6 +97,31 @@ Deploy/test split: build with `dev/build.ps1`, user deploys and plays. On the
 next crash, attach `crash.txt` plus the tail of `mods\logs\<date>_log.txt`
 (the `[LIES-TRACE]` lines immediately before the end).
 
+## 5b. Review pass (post-implementation)
+
+The review of the first breadcrumb implementation found one blocker and several
+risks, all fixed here:
+
+- **Blocker:** the 25 lines/s window (`trace_window_t`) survived `WatchReset`
+  while `time()` restarts near zero on a level change, so the budget never
+  refilled and tracing could go silent for a whole heist. `WatchReset` now
+  resets the window and a backwards clock also starts a new one.
+- Failure phases are exempt from the cap (they used to be dropped once healthy
+  traffic filled it) and a `dropped=<n>` field records suppressions.
+- Throttling is per phase now: `combat`/`charge_search`/`retreat` alternate every
+  frame, so a single "last phase" stamp let the pair through on every call.
+- Units that stop tracing are pruned after 60 s instead of holding a table entry
+  for the whole heist; recycled unit keys no longer inherit a stale timestamp.
+- The log line uses `att.u_key` instead of `att_unit:key()`, so the breadcrumb
+  itself never calls into the (possibly dead) attention unit.
+- The V8.67 and V8.68 guards now leave breadcrumbs too: `exit_missing_logic` /
+  `exit_no_fallback` with `wanted=<state>`, and `stale_tracker` when the tracker
+  guard refuses a dead enemy's tracker.
+- `movement_aim` was dropped: every branch of `check_upd_aim` immediately emits
+  `aim`, so it spent two cap slots for one step.
+
+Player POV: unchanged; the extra lines only appear when a guard steps in.
+
 ## 6. Backlog
 
 `CopLogicAttack._upd_aim` and its neighbours remain ledger status **PORT**

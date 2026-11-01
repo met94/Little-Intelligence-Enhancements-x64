@@ -433,7 +433,7 @@ function CopLogicAttack._upd_combat_movement(data)
 					my_data.charging = true
 				end
 			else
-				local enemy_tracker = lies_enemy_tracker(data.attention_obj)
+				local enemy_tracker = lies_enemy_tracker(data.attention_obj, data)
 
 				if not my_data.charge_path_search_id and enemy_tracker then
 					LIES:Trace(data.unit, data, "charge_search")
@@ -547,7 +547,7 @@ function CopLogicAttack._upd_combat_movement(data)
 						my_data.charging = true
 					end
 				else
-					local enemy_tracker = lies_enemy_tracker(data.attention_obj)
+					local enemy_tracker = lies_enemy_tracker(data.attention_obj, data)
 
 					if not my_data.charge_path_search_id and enemy_tracker then
 						LIES:Trace(data.unit, data, "charge_search")
@@ -805,18 +805,27 @@ local tankboss = {
 -- Crash report: 2026-10-31 11:03, heist `red2`, bot movement update ->
 -- `check_upd_aim` -> `_upd_aim` line 998.
 -- Rule: the cached tracker is only touched while its owner unit is alive.
-local function lies_enemy_tracker(focus_enemy)
+local function lies_enemy_tracker(focus_enemy, data)
 	if not focus_enemy then
 		return
 	end
 
 	local unit = focus_enemy.unit
 
-	if not (unit and alive(unit)) then
+	if not unit then
 		return
 	end
 
-	return focus_enemy.nav_tracker
+	if alive(unit) then
+		return focus_enemy.nav_tracker
+	end
+
+	-- The enemy is gone while its attention entry survives: everything the aim,
+	-- cover and charge code would do with this tracker is unsafe, and seeing this
+	-- phase in the breadcrumbs is how the V8.68 crash class gets confirmed.
+	if data and LIES and LIES.Trace then
+		LIES:Trace(data.unit, data, "stale_tracker")
+	end
 end
 
 function CopLogicAttack._upd_aim(data, my_data)
@@ -1054,7 +1063,7 @@ function CopLogicAttack._upd_aim(data, my_data)
 			local time_since_verification = focus_enemy.verified_t and data.t - focus_enemy.verified_t
 			local my_tracker = data.unit:movement():nav_tracker()
 			local my_seg = my_tracker:nav_segment()
-			local enemy_tracker = lies_enemy_tracker(focus_enemy)
+			local enemy_tracker = lies_enemy_tracker(focus_enemy, data)
 			local enemy_nav_seg = enemy_tracker and enemy_tracker:nav_segment()
 			
 			if time_since_verification and not focus_enemy.lost_track or my_seg == enemy_nav_seg then
@@ -1405,7 +1414,7 @@ function CopLogicAttack._get_expected_pos(data, my_data)
 	
 	local my_tracker = data.unit:movement():nav_tracker()
 	local my_seg = my_tracker:nav_segment()
-	local enemy_tracker = lies_enemy_tracker(focus_enemy)
+	local enemy_tracker = lies_enemy_tracker(focus_enemy, data)
 
 	if not enemy_tracker then
 		-- Enemy already gone: no live tracker to search from. Vanilla 248.2
@@ -2058,7 +2067,7 @@ function CopLogicAttack._chk_start_action_move_out_of_the_way(data, my_data)
 end
 
 function CopLogicAttack._chk_start_action_move_back(data, my_data, focus_enemy, engage)
-	local threat_tracker = lies_enemy_tracker(focus_enemy)
+	local threat_tracker = lies_enemy_tracker(focus_enemy, data)
 
 	if not my_data.advancing and focus_enemy and threat_tracker and focus_enemy.verified and CopLogicAttack._can_move(data) then
 		local from_pos = mvector3.copy(data.m_pos)
@@ -2798,7 +2807,7 @@ function CopLogicAttack._update_cover(data)
 	local best_cover = my_data.best_cover
 	local satisfied = true
 	local my_pos = data.m_pos
-	local enemy_tracker = lies_enemy_tracker(data.attention_obj)
+	local enemy_tracker = lies_enemy_tracker(data.attention_obj, data)
 
 	if data.attention_obj and enemy_tracker and AIAttentionObject.REACT_COMBAT <= data.attention_obj.reaction then
 		local find_new = not my_data.moving_to_cover and not my_data.walking_to_cover_shoot_pos and not my_data.surprised and not my_data.advancing and not my_data.processing_cover_path and not my_data.charge_path_search_id

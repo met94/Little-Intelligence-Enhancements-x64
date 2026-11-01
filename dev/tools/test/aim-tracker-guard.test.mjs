@@ -46,7 +46,7 @@ function funcBody(text, signature) {
 // an engine access violation, not a catchable Lua error.
 // Crash: 2026-10-31 11:03, `_upd_aim` line 998, driven by team AI movement.
 test('the tracker helper returns the cached pointer only for a live unit', () => {
-  const helper = source().match(/local function lies_enemy_tracker\(focus_enemy\)([\s\S]*?)\nend/);
+  const helper = source().match(/local function lies_enemy_tracker\(focus_enemy, data\)([\s\S]*?)\nend/);
 
   assert.ok(helper, 'lies_enemy_tracker helper is missing');
 
@@ -71,13 +71,13 @@ test('every tracker read goes through the helper', () => {
 
   // Aim pass: same-segment check and the obstruction test.
   const aim = funcBody(text, 'function CopLogicAttack._upd_aim(');
-  assert.match(aim, /local enemy_tracker = lies_enemy_tracker\(focus_enemy\)\r?\n\s*local enemy_nav_seg = enemy_tracker and enemy_tracker:nav_segment\(\)/);
+  assert.match(aim, /local enemy_tracker = lies_enemy_tracker\(focus_enemy, data\)\r?\n\s*local enemy_nav_seg = enemy_tracker and enemy_tracker:nav_segment\(\)/);
   assert.match(aim, /focus_enemy\.reaction and enemy_tracker and not LIES\.settings\.highperformance/);
   assert.match(aim, /not enemy_tracker:obstructed\(\)/);
 
   // Charge branches (both copies) and cover selection.
   assert.equal(
-    (text.match(/local enemy_tracker = lies_enemy_tracker\(data\.attention_obj\)/g) || []).length,
+    (text.match(/local enemy_tracker = lies_enemy_tracker\(data\.attention_obj, data\)/g) || []).length,
     3,
     'two charge sites plus cover selection',
   );
@@ -89,13 +89,13 @@ test('every tracker read goes through the helper', () => {
   );
 
   // Retreat search.
-  assert.match(funcBody(text, 'function CopLogicAttack._chk_start_action_move_back('), /local threat_tracker = lies_enemy_tracker\(focus_enemy\)/);
+  assert.match(funcBody(text, 'function CopLogicAttack._chk_start_action_move_back('), /local threat_tracker = lies_enemy_tracker\(focus_enemy, data\)/);
 });
 
 test('missing tracker bails out instead of searching from nil', () => {
   const expected = funcBody(source(), 'function CopLogicAttack._get_expected_pos(');
 
-  assert.match(expected, /local enemy_tracker = lies_enemy_tracker\(focus_enemy\)/);
+  assert.match(expected, /local enemy_tracker = lies_enemy_tracker\(focus_enemy, data\)/);
   assert.match(expected, /if not enemy_tracker then[\s\S]{0,160}?return[\s\S]{0,40}?end/, 'must return before nav_segment');
   assert.match(expected, /local enemy_seg = enemy_tracker:nav_segment\(\)/);
 });

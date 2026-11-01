@@ -209,11 +209,22 @@ if RequiredScript == "lib/managers/menumanager" then
 	-- Crash breadcrumbs. A native access violation in engine code leaves no Lua
 	-- error message and cannot be caught, so the only record of what a unit was
 	-- doing is what we logged just before the fault. One line per unit per phase
-	-- per 2.5 s, 25 lines/s globally, all state kept in tables (no allocation
-	-- when a line is suppressed).
+	-- per 2.5 s, 25 normal lines/s globally; failure phases are exempt because a
+	-- crash report cannot be reconstructed without them.
 	LIES.trace_state = LIES.trace_state or {}
 	LIES.trace_window_t = LIES.trace_window_t or 0
 	LIES.trace_window_n = LIES.trace_window_n or 0
+	LIES.trace_prune_t = LIES.trace_prune_t or 0
+	LIES.trace_dropped = LIES.trace_dropped or 0
+
+	local trace_failure_phases = {
+		combat_no_attention = true,
+		dodge_dead_enemy = true,
+		spooc_dead_enemy = true,
+		stale_tracker = true,
+		exit_missing_logic = true,
+		exit_no_fallback = true
+	}
 
 	function LIES:Trace(unit, logic_data, phase, extra)
 		if not (self.settings and self.settings.trace) then
@@ -230,38 +241,68 @@ if RequiredScript == "lib/managers/menumanager" then
 		local u_key = unit and unit:key() or 0
 		local state = self.trace_state[u_key]
 
-		if state and state.phase == phase and t - state.t < 2.5 then
+		if not state then
+			state = {
+				phases = {}
+			}
+
+			self.trace_state[u_key] = state
+		end
+
+		-- Per-phase throttle: `combat` -> `charge_search` -> `retreat` alternates
+		-- every frame, so a single "last phase" timestamp would let the pair
+		-- through on every call and burn the whole cap.
+		local last = state.phases[phase]
+
+		if last and t >= last and t - last < 2.5 then
 			return
 		end
 
-		if t > self.trace_window_t + 1 then
+		-- Window refill. `time()` restarts near zero on a level change or script
+		-- reload, so a clock that moved backwards also starts a new window.
+		if t < self.trace_window_t or t > self.trace_window_t + 1 then
 			self.trace_window_t = t
 			self.trace_window_n = 0
 		end
 
-		if self.trace_window_n >= 25 then
+		if self.trace_window_n >= 25 and not trace_failure_phases[phase] then
+			self.trace_dropped = self.trace_dropped + 1
+
 			return
 		end
 
 		self.trace_window_n = self.trace_window_n + 1
-		self.trace_state[u_key] = {
-			phase = phase,
-			t = t
-		}
+
+		state.phases[phase] = t
+		state.last = t
+
+		-- Drop units that stopped tracing (despawned, changed logic) without
+		-- waiting for the next level change.
+		if t < self.trace_prune_t or t - self.trace_prune_t > 60 then
+			self.trace_prune_t = t
+
+			for key, entry in pairs(self.trace_state) do
+				if t - (entry.last or 0) > 60 then
+					self.trace_state[key] = nil
+				end
+			end
+		end
 
 		local att = logic_data and logic_data.attention_obj
-		local att_unit = att and att.unit
 		local base = unit and unit:base()
 		local brain = unit and unit:brain()
 
-		log(string.format("[LIES-TRACE] v=%s t=%.2f u=%s tweak=%s logic=%s phase=%s att=%s att_alive=%s att_trk=%s%s",
+		-- `att.u_key` instead of `att.unit:key()`: the attention object carries
+		-- the key, and a dead unit must not be touched just to log about it.
+		log(string.format("[LIES-TRACE] v=%s t=%.2f u=%s tweak=%s logic=%s phase=%s att=%s att_alive=%s att_trk=%s dropped=%d%s",
 			tostring(self.version), t, tostring(u_key),
 			tostring(base and base._tweak_table or "?"),
 			tostring(brain and brain._current_logic_name or "?"),
 			tostring(phase),
-			tostring(att_unit and att_unit:key() or "-"),
-			tostring(att_unit and alive(att_unit) or "-"),
+			tostring(att and att.u_key or "-"),
+			tostring((att and att.unit and alive(att.unit)) and true or false),
 			tostring((att and att.nav_tracker) and true or false),
+			self.trace_dropped,
 			extra and (" " .. tostring(extra)) or ""))
 	end
 
@@ -298,6 +339,9 @@ if RequiredScript == "lib/managers/menumanager" then
 		self.watch_gauges = {}
 		self.watch_sums = {}
 		self.trace_state = {}
+		self.trace_window_t = 0
+		self.trace_window_n = 0
+		self.trace_prune_t = 0
 	end
 
 	local function lies_level_id()

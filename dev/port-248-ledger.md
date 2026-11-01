@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T05:50:38.347Z
+Generated: 2026-11-01T05:54:52.014Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -46,12 +46,12 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.set_update_data` | 19 | 0 | 0 |  |
 | [ ] | audit | `LIES.Sum` | 17 | 0 | 0 |  |
 | [ ] | audit | `LIES.tprint` | 38 | 0 | 0 |  |
-| [ ] | audit | `LIES.Trace` | 49 | 0 | 0 |  |
+| [ ] | audit | `LIES.Trace` | 79 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchDigest` | 72 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchReset` | 11 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchReset` | 14 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchTick` | 62 | 0 | 0 |  |
 
 ## menunodegui.lua
@@ -417,7 +417,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit (hook) | `Hooks.PostHook:CopBrain.set_spawn_entry:lies_accessentry` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `CopBrain._do_hhtacs_damage_modifiers` | 152 | 0 | 0 |  |
 | [ ] | audit | `CopBrain._on_player_slow_pos_rsrv_upd` | 9 | 0 | 0 |  |
-| [ ] | audit | `CopBrain.check_upd_aim` | 41 | 0 | 0 |  |
+| [ ] | audit | `CopBrain.check_upd_aim` | 39 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.clbk_group_member_attention_verified` | 11 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.get_movement_delay` | 15 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.is_criminal` | 5 | 0 | 0 |  |
@@ -500,7 +500,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopLogicBase._chk_call_the_police` | 15 | 17 | 17 |  |
 | [ ] | keep | `CopLogicBase._create_detected_attention_object_data` | 75 | 74 | 74 |  |
 | [ ] | keep | `CopLogicBase._evaluate_reason_to_surrender` | 171 | 186 | 186 |  |
-| [ ] | keep | `CopLogicBase._exit` | 20 | 3 | 3 |  |
+| [ ] | keep | `CopLogicBase._exit` | 24 | 3 | 3 |  |
 | [ ] | keep | `CopLogicBase._get_logic_state_from_reaction` | 35 | 23 | 23 |  |
 | [ ] | keep | `CopLogicBase._report_detections` | 9 | 9 | 9 |  |
 | [ ] | keep | `CopLogicBase._set_attention_obj` | 91 | 67 | 67 |  |
@@ -618,7 +618,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopLogicAttack._get_expected_pos` | 147 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._move_back_into_field_position` | 27 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._pathing_complete_clbk` | 21 | 0 | 0 |  |
-| [ ] | audit | `lies_enemy_tracker` | 13 | 0 | 0 |  |
+| [ ] | audit | `lies_enemy_tracker` | 22 | 0 | 0 |  |
 | [ ] | keep | `CopLogicAttack._can_move` | 3 | 3 | 3 |  |
 | [ ] | keep | `CopLogicAttack._cancel_cover_pathing` | 9 | 16 | 16 |  |
 | [ ] | keep | `CopLogicAttack._chk_covered` | 20 | 23 | 23 |  |

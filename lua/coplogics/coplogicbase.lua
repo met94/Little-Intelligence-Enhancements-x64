@@ -90,6 +90,10 @@ function CopLogicBase._exit(unit, state_name, params)
 
 		lies_report_missing_exit(unit, brain, state_name, fallback)
 
+		if LIES and LIES.Trace then
+			LIES:Trace(unit, brain._logic_data, fallback and "exit_missing_logic" or "exit_no_fallback", "wanted=" .. tostring(state_name))
+		end
+
 		if not fallback then
 			-- Nothing safe to switch to (a brain with no logic table at all):
 			-- keep the unit where it is rather than crash. It stays frozen in its
