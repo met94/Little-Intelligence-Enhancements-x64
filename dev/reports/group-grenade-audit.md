@@ -452,3 +452,60 @@ failing tests, ready to be flipped green by the follow-up edit.
   `alive(u_data.tracker)` gate at LIES:3935/4100 to match `:3431`/`:3877`, at
   the cost of one extra `alive()` per unit per check; (3) leave the
   `smoke_grenade_lifetime`-for-flash mismatch alone (inert).
+
+## Applied
+
+Supersedes the "No Lua edited" paragraph above, which described the read-only
+pass. The audit's two open items were decided as: guard now, dead branch parked.
+
+- **Guards added** (`b4d5b61`, released `V8.82_x64`). Both tracker reads now sit
+  under the file's own liveness pattern, folded into the existing per-unit
+  condition so no indentation or nesting changed:
+
+  ```lua
+  -- LIES:3934 (smoke) and :4099 (flash), unchanged except for the last two terms
+  if not u_data.unit:movement():chk_action_forbidden("action") and u_data.unit:movement()._anim_global ~= "shield" and mvec3_dis(u_data.m_pos, target_area.pos) < 4000000 and u_data.tracker and alive(u_data.tracker) then
+  ```
+
+  Scope is exactly the two `nav_segment()` sites section 4 names (`:3935`,
+  `:4100`); the other unguarded tracker reads in the file (`:718`, `:1571`,
+  `:2307`, `:3585`) are untouched, as is the `all_nav_segs[m_nav_seg_id]`
+  dereference behind the guard. Cost: one `alive()` per unit per check.
+  Pinned by `dev/tools/test/group-grenade-guards.test.mjs` (6 cases), which was
+  confirmed red against `e1f7d90` (both sites `UNGUARDED`) and green after.
+
+- **Dead `detonate_pos` branch kept dead — decision pending.** The branch is
+  unchanged in both functions. The exact one-line fix, should the decision land,
+  is `local objective = u_data.unit:brain():objective()` inside the `else` loop
+  of each function — `lua/groupaistate/groupaistatebesiege.lua:4022` (smoke) and
+  `:4173` (flash). Why it is not applied here:
+
+  - it is inherited pre-port behaviour, present in every 8.x build
+    (`git show 997e95e`: declared at 4249, tested in the `else` at 4322), and
+    the current outcome equals vanilla's — vanilla also never throws when a
+    `detonate_pos` is handed in (`shooter_u_data` is only set inside
+    `if not detonate_pos`, 248.2:3413-3433). Fixing it is a **LIES feature
+    revival**, not a 248.2 port;
+  - it changes **difficulty**: charge-specific flashes and smokes would land on
+    a camping player's last known position (the call sites that build
+    `detonate_pos` are `:3163-3168`/`:3218-3226`, passed at `:3244-3245`), i.e.
+    more grenades exactly where a player is holding a corner on Death Wish+;
+  - there is **no test capacity** for it here: no static pin can show the
+    branch firing (the shape is a static fact either way), and observing it in
+    game needs a camping-charge scenario with counters that do not exist. A
+    wrong call would be felt as a stealth difficulty bump, with no evidence
+    trail to argue from.
+
+  Until that decision, ledger rows 312-313 stay `PORT`. The test file pins the
+  dead shape deliberately, so reviving it turns the suite red — the intended
+  marker that a decision was taken.
+
+- **Flash duration mismatch left alone** — inert, as section 2.2 established:
+  `QuickFlashGrenade:activate(position)` accepts no duration, so passing
+  `smoke_grenade_lifetime` changes nothing in game. Recorded as a cosmetic
+  mismatch; no Lua edit.
+
+- **No vanilla port applied** — the only functional 246.1→248.2 hunk in either
+  function (`door.x` / nav-link unit) was already in the LIES bodies, so the
+  port side of both rows was already satisfied before this release.
+

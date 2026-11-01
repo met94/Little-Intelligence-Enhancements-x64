@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-11-01 (after the tank/taser re-verify close-out, `38b8582`).
+Last updated: 2026-11-01 (after the group smoke/flash grenade audit close-out, V8.82).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -27,7 +27,7 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   marshal harasser swap).
 - API review triage: 147 known-safe, 5 engine/uncertain, 0 confirmed drift
   (`dev/reports/api-audit-triage.md`).
-- Static gates (V8.81): 179 Node test cases (0 fail), 71/71 LuaJIT syntax,
+- Static gates (V8.82): 185 Node test cases (0 fail), 71/71 LuaJIT syntax,
   68/68 freevars, ledger (`errors=0`, 580 functions), API audit
   (`hooks=68/68`, `errors=0`, `review=151`). Report:
   `dev/reports/static-gates.md`.
@@ -68,6 +68,19 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   `tasing` nil'd first) and `_chk_play_charge_weapon_sound` (300-unit guard
   `:446`, `math.lerp(15, 30, …)` `:441`, 3000 range) were verified present.
   Report: `dev/reports/tank-taser-reverify.md`.
+- Group smoke/flash grenades closed (V8.82, `b4d5b61` Lua + docs): the audit
+  (`dev/reports/group-grenade-audit.md`) found the only functional 246.1→248.2
+  hunk in both functions already merged (the 247 nav rewrite's `door.x` /
+  nav-link-unit form is what LIES tests), shipped the crash-class guard the
+  file already uses elsewhere (`u_data.tracker and alive(u_data.tracker)`
+  folded into the per-unit condition at `:3934`/`:4099`, protecting the
+  `nav_segment()` reads at `:3935`/`:4100`; the V8.68 tracker-AV shape), and
+  parked the dead explicit-`detonate_pos` branch as a decision (reviving it
+  turns charge flashes/smokes on a camper's last known position — a difficulty
+  change, not a port). Test: `dev/tools/test/group-grenade-guards.test.mjs`
+  (6 cases, red before the guard). **Not observed in game** — the guard only
+  matters when a group member's tracker dies inside the check window, and the
+  parked branch is unchanged in play.
 
 ## Open — core AI (needs in-game testing)
 
@@ -75,7 +88,8 @@ Backlog order: door watching — **done (V8.79)**
 (`dev/reports/door-watch-port.md`); `CopLogicBase._upd_attention_obj_detection`
 — **done (V8.80)** (`dev/reports/port-decisions.md`, "Near-visible probe
 height"); `CopLogicAttack.action_complete_clbk` — **done** (merged in
-`f0370d4`, re-verified complete 2026-11-01).
+`f0370d4`, re-verified complete 2026-11-01); group smoke/flash grenade checks —
+**done (V8.82)**.
 
 Next block: the **`NavigationManager` nav-v6 set** in
 `lua/managers/navigationmanager.lua` — **done (V8.81)**. The audit
@@ -103,29 +117,38 @@ latent `old_action_advancing` latch is documented, not fixed;
 plumbing and dropped wind-up focus lock stand as LIES intent (§6), and both
 already-applied taser rows were verified present in the body (§7, §8).
 
-Next block: the **group smoke/flash grenade checks** — the remaining item from
-`dev/reports/handoff-2026-11-01.md` §7 item 5 (`ShieldLogicAttack`,
-`TankCopLogicAttack`, `TaserLogicAttack.*` and `CarryData` in that item are all
-done or recorded). Both are ledger `PORT` rows in
-`dev/port-248-ledger.md:312-313` and neither the group-AI audit
-(`dev/reports/groupai-audit.md`, LIES_EDIT_CLEAN bodies only) nor
-`port-status.md` line 15 covers them — line 15 is the *door handling* port
-(besiege `_upd_assault_task` / `force_end_assault_phase`), a different surface.
+Next block: the **group smoke/flash grenade checks** — **done (V8.82, docs +
+one guard)**. Both ledger `PORT` rows (`dev/port-248-ledger.md:312-313`) were
+the remaining item from `dev/reports/handoff-2026-11-01.md` §7 item 5. The
+audit-first pass (`dev/reports/group-grenade-audit.md`) found the only
+functional 246.1→248.2 hunk in both functions — the 247 nav rewrite's numeric
+room-door id → `door.x` / nav-link unit — already merged in the LIES bodies,
+so there was **no vanilla port** to make. What shipped was the crash-class
+guard on the two tracker reads (`b4d5b61`; `u_data.tracker and
+alive(u_data.tracker)` folded into the per-unit condition at `:3934`/`:4099`,
+the `:3877` pattern), pinned by
+`dev/tools/test/group-grenade-guards.test.mjs`.
 
-| Function (ledger row) | LIES / 246.1 / 248.2 lines | Why |
-|---|---:|---|
-| `GroupAIStateBesiege._chk_group_use_flash_grenade` (`:312`) | 145 / 45 / 45 | group flashbang decision; LIES body is ~3× vanilla, so expect a real rewrite delta, not restyle |
-| `GroupAIStateBesiege._chk_group_use_smoke_grenade` (`:313`) | 179 / 47 / 47 | same shape; smoke screening for assault groups |
+What is **parked, not done**: the explicit-`detonate_pos` `else` branch in
+both functions is dead (`objective` is an undefined global there — declared
+only in the `if not detonate_pos` arm). Reviving it makes charge-specific
+flashes/smokes land on a camping player's last known position, a difficulty
+change on Death Wish+ with no test capacity here, so it needs an explicit
+decision; the one-line fix (`local objective = u_data.unit:brain():objective()`
+inside the `else` loop at `:4022` and `:4173`) is recorded in
+`port-decisions.md` ("Group smoke/flash grenade audit outcome") and
+`group-grenade-audit.md` (§Applied). Ledger rows 312-313 therefore stay
+`PORT`. The test pins the dead shape so a revival turns the suite red.
 
-Shape: one `pd2fn` 246.1 → 248.2 delta per function plus a line-by-line read of
-the LIES body, then a `keep LIES` / `merge` decision in `port-decisions.md` —
-the same audit-first pass the nav-v6 and tank/taser blocks used. Do the two
-together: they share the `tweak_data.group_ai.smoke_and_flash_grenade_timeout`
-window and are always evaluated as a random first/second pair by the same
-callers (`lua/groupaistate/groupaistatebesiege.lua:2944-2945`, `:3095-3096`,
-`:3242-3243`, `:3409-3410`), so one read answers both. Adjacent ledger `PORT`
-rows left after them: `_queue_police_upd_task` (17/7/13) and
-`_upd_police_activity` (38/28/22), both in the same file.
+Next backlog item: the two adjacent ledger `PORT` rows in the same file,
+`GroupAIStateBesiege._queue_police_upd_task` (17 / 7 / 13 lines) and
+`GroupAIStateBesiege._upd_police_activity` (38 / 28 / 22) — small bodies, same
+audit-first shape: one `pd2fn` 246.1 → 248.2 delta each, a read of the LIES
+body, then a `keep LIES` / `merge` decision. The rest of the ledger's `PORT`
+set is either already decided in `port-decisions.md` (the dossier-sized
+`CopLogic*`/`Taser*` rows and the nav-v6 `NavigationManager` rows) or the two
+rows just audited above; the ledger's unticked boxes are not the completion
+source, as noted for nav-v6.
 
 Dossiers in `dev/reports/dossiers/`:
 
@@ -154,6 +177,12 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
   `_execute_coarce_search` and `_sort_nav_segs_after_pos`. `remove_obstacle`
   and `_draw_covers` stay LIES (dead-code / no-reachable-state; see
   `port-decisions.md` "Nav-v6 audit outcome").
+- group smoke/flash grenades (V8.82, `b4d5b61`): tracker liveness guard folded
+  into the per-unit condition at `:3934`/`:4099`
+  (`u_data.tracker and alive(u_data.tracker)`), matching `:3877`. The
+  explicit-`detonate_pos` branch stays dead until an explicit decision — it is
+  a difficulty change, not a port; fix spec in `port-decisions.md`
+  ("Group smoke/flash grenade audit outcome").
 - `force_end_assault_phase`: 248.2 timestamp poke.
 - `CopLogicAttack.action_complete_clbk`: `math.rand` dodge timeout (applied
   `f0370d4`; verified complete 2026-11-01 via `pd2fn`).
@@ -163,7 +192,8 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 - `ShieldLogicAttack.queued_update`: adopted 248.2's reservation split (`set_pos_rsrv` success / `add_pos_rsrv` fallback), kept LIES 70 radius and movement gates. Smoke 2026-10-24: 53 set, 4 fallback, no leak.
 - `CarryData._chk_register_steal_SO`: adopted 248.2's guard order + `_add_body_activation_clbk()`, kept LIES `sabotage`/`sabo_voiceline`; fixed the nil drop-point fall-through so no broken drop objective is registered. Smoke 2026-10-24: 12 registered, 5 expected skips.
 - Keep LIES body (no edit): `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update` (inert fallback — remapped away, see `port-decisions.md` §9), `CopLogicIdle.damage_clbk`. `CopLogicBase._upd_attention_obj_detection` keeps the LIES body but now carries the 248.2 near-visible probe height (V8.80, `c409ba4`).
-- Merge pending: none from the current decisions doc.
+- Merge pending: none from the current decisions doc. The parked group-grenade
+  `detonate_pos` branch awaits a user decision (see "Decisions applied" above).
 
 ## Group AI / data / periphery — audited
 

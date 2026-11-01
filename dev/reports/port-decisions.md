@@ -915,3 +915,55 @@ whether cops path in.
   with nav links that are still cooling down during a search, and only with
   Iter's nav search off.
 
+## Group smoke/flash grenade audit outcome (2026-11-01, V8.82)
+
+Last two `PORT` rows of the group-AI set (`dev/port-248-ledger.md:312-313`):
+`GroupAIStateBesiege._chk_group_use_flash_grenade` (LIES 145 L / 246.1 45 L /
+248.2 45 L) and `_chk_group_use_smoke_grenade` (179 / 47 / 47). Audit with the
+complete vanilla hunk sets, the LIES-intent read and the crash-class table:
+`dev/reports/group-grenade-audit.md`. Release: `V8.82_x64`.
+
+- **Vanilla half already merged — no port.** Both functions changed in exactly
+  the same two ways in `5d84b4be` "247" (246.1 `b36f5fbb` → 248.2
+  `e3a8b616`): `local a, b = nil` → bare locals (restyle) and numeric
+  room-door id → `door.x` / nav-link unit. The door change is forced by the 247
+  nav rewrite (neighbour lists carry door positions,
+  `navigationmanager.lua:326-347` @ `e3a8b616`; `_room_doors` and
+  `_refresh_data_from_builder` are gone). LIES already tests `door.x` and
+  falls back to `nav_link_end_pos()`, and its residual numeric branch maps an
+  id to `test_pos = nil` ("skip that door") — dead-but-safe, since numbers no
+  longer occur. Net: the only functional hunk was already in the LIES bodies.
+- **Guards shipped** (`b4d5b61`). Both bodies read
+  `u_data.tracker:nav_segment()` unguarded (`:3935`, `:4100`) in a file
+  that guards the same field at `:3877`; a freed tracker at that read is the
+  V8.68 engine-AV shape (`dev/reports/aim-stale-nav-tracker-crash.md`), and the
+  two reads are reached from the group-AI update, not the movement update. Both
+  sites now fold `u_data.tracker and alive(u_data.tracker)` into the existing
+  per-unit condition (no new nesting, no other behaviour change, one extra
+  `alive()` per unit per check). Pinned by
+  `dev/tools/test/group-grenade-guards.test.mjs` (red against `e1f7d90`,
+  green after).
+- **Parked as a decision: the dead explicit-`detonate_pos` branch.** In both
+  functions the `else` arm tests `objective` as an undefined global —
+  `local objective = u_data.unit:brain():objective()` is declared only in the
+  `if not detonate_pos` arm — so no shooter is ever selected there and the
+  branch is dead. Inherited pre-port behaviour in every 8.x build
+  (`git show 997e95e`), and the outcome equals vanilla's (vanilla never throws
+  when a position is handed in either). Reviving it makes charge-specific
+  flashes/smokes land on a camping player's last known position — a real
+  difficulty increase on Death Wish+ with no test capacity here — so it stays
+  dead until an explicit decision. **Fix spec (one line per function):**
+  `local objective = u_data.unit:brain():objective()` inside the `else` loop
+  at `lua/groupaistate/groupaistatebesiege.lua:4022` (smoke) and `:4173`
+  (flash). The test pins the dead shape on purpose, so applying the fix turns
+  the suite red — the marker that the decision was taken.
+- **Inert, left alone.** The flash passes
+  `tweak_data.group_ai.smoke_grenade_lifetime` where vanilla gates on
+  `flash_grenade_lifetime` (`:4078`); `QuickFlashGrenade:activate(position)`
+  takes no duration (`quickflashgrenade.lua:112` @ `e3a8b616`), so the value
+  never reaches the blind window. Cosmetic mismatch, no edit.
+- **Ledger.** Rows 312-313 stay `PORT` until the dead-branch decision is
+  recorded — the ledger records the proposed action, not completion, so this
+  file and `port-status.md` are the "is it done" source. The vanilla half of
+  both rows is audited as already merged.
+
