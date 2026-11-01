@@ -53,20 +53,34 @@ const DW_OUTCOMES = [
   'dw_hit',
   'dw_none'
 ];
-const DW_SUBEVENTS = [
-  'dw_cadence_skip',
-  'dw_advancing_skip',
+// The three counters that end a call before any watch work. `dw_stale_bail`
+// comes first in the helper by design: the enemy-tracker liveness check runs
+// before the `door_watch`/`highperformance` gate, because vanilla dereferences a
+// freed tracker unguarded. A correctly disarmed run therefore splits its calls
+// between `dw_stale_bail` and `dw_gate_off`, plus `dw_no_my_tracker` when the
+// cop's own tracker is nil just under the gate, so "gate respected" cannot be
+// judged on `dw_gate_off` alone.
+const DW_TERMINATIONS = ['dw_gate_off', 'dw_stale_bail', 'dw_no_my_tracker'];
+// Anything that proves the feature actually did work. A disarmed run must show
+// every one of these at zero, together with the terminations summing to
+// `dw_call`: no work, and no call unaccounted for.
+const DW_WORK_COUNTERS = [
+  'dw_raw_hit',
+  'dw_expected_pos_hit',
+  'dw_path_prestep',
+  'dw_path_prestep_hit',
+  'dw_hit',
+  'dw_ray',
   'dw_cached_reuse',
   'dw_cached_unsighted',
   'dw_height_skip',
   'dw_seg_same',
-  'dw_path_prestep',
-  'dw_path_prestep_hit',
-  'dw_raw_hit',
-  'dw_expected_pos_hit',
-  'dw_vanilla_call',
   'dw_path_kick',
-  'dw_ray'
+  'dw_vanilla_call',
+  'dw_none',
+  'dw_outer_gate_skip',
+  'dw_cadence_skip',
+  'dw_advancing_skip'
 ];
 // Every counter that proves a watch position was actually produced.
 // `dw_path_prestep` is deliberately NOT here: it increments before
@@ -571,23 +585,32 @@ export function analyzeLog(text, {
   );
 
   // --- gate respected -----------------------------------------------------
-  const subeventTotal = DW_SUBEVENTS.reduce((sum, key) => sum + counter(counters, key), 0);
-  const subeventDetail = listCounters(counters, DW_SUBEVENTS) || 'all zero';
+  const workTotal = DW_WORK_COUNTERS.reduce((sum, key) => sum + counter(counters, key), 0);
+  const workDetail = listCounters(counters, DW_WORK_COUNTERS) || 'all zero';
+  const calls = counter(counters, 'dw_call');
+  const staleBail = counter(counters, 'dw_stale_bail');
 
   if (!header || !parsed.digests.length) {
-    claim('gate', 'gate respected', 'INFO', `no digest: ${subeventDetail}`);
+    claim('gate', 'gate respected', 'INFO', `no digest: ${workDetail}`);
   } else if (highPerformance === 'on' || doorWatch === 'off') {
-    const calls = counter(counters, 'dw_call');
-    const gated = counter(counters, 'dw_gate_off');
-    const ok = gated === calls && subeventTotal === 0;
+    const terminationDetail = DW_TERMINATIONS
+      .map(key => `${key}=${counter(counters, key)}`)
+      .join(' ');
+    const terminated = DW_TERMINATIONS.reduce((sum, key) => sum + counter(counters, key), 0);
+    const share = calls > 0 ? `${round((staleBail / calls) * 100, 1)}%` : 'n/a (no calls)';
+    const ok = terminated === calls && workTotal === 0;
+    const reasons = [];
+
+    if (terminated !== calls) reasons.push(`${terminated} of ${calls} calls ended in a termination counter`);
+    if (workTotal !== 0) reasons.push(`work counters ran while the feature was off: ${workDetail}`);
 
     claim(
       'gate',
       'gate respected',
       ok ? 'PASS' : 'FAIL',
-      ok
-        ? `dw_call=${calls} dw_gate_off=${gated}, sub-events ${subeventDetail}`
-        : `dw_call=${calls} dw_gate_off=${gated}, sub-events ${subeventDetail}: the feature ran while it should have been off`
+      `dw_call=${calls} ${terminationDetail} (sum ${terminated} vs dw_call ${calls}), ` +
+        `stale-bail share ${share}; work counters ${workDetail}` +
+        (ok ? '' : `: ${reasons.join('; ')}`)
     );
   } else {
     claim('gate', 'gate respected', 'INFO', 'not applicable: the feature is armed');
@@ -614,7 +637,6 @@ export function analyzeLog(text, {
   }
 
   // --- tracker safety -----------------------------------------------------
-  const staleBail = counter(counters, 'dw_stale_bail');
   const errors = scan.fatal.length + scan.liesErrors.length;
 
   claim(
@@ -625,6 +647,21 @@ export function analyzeLog(text, {
       (errors === 0
         ? `; 0 FATAL, 0 LIES-attributable Lua error${scan.luaErrors.length ? ` (${scan.luaErrors.length} unrelated Lua error line(s))` : ''}`
         : `; ${scan.fatal.length} FATAL, ${scan.liesErrors.length} LIES-attributable Lua error(s)`)
+  );
+
+  // --- tracker bails ------------------------------------------------------
+  // Always printed, armed runs included: an enemy dying between the attention
+  // update and the door branch legitimately trips the liveness guard, so a
+  // non-zero share is expected. A share near 100 % would mean the guard is
+  // misclassifying live enemies as stale — worth a look, never a failure.
+  claim(
+    'bails',
+    'tracker bails',
+    'INFO',
+    `dw_stale_bail=${staleBail} of dw_call=${calls} ` +
+      `(${calls > 0 ? `${round((staleBail / calls) * 100, 1)}%` : 'n/a: no calls'}): ` +
+      `the liveness guard runs before the feature gate, so a disarmed run and an enemy that died both land here; ` +
+      `a share near 100 % means the guard is misclassifying live trackers`
   );
 
   // --- nav-link doors -----------------------------------------------------

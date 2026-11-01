@@ -88,6 +88,42 @@ function digest(overrides = {}) {
   });
 }
 
+// A disarmed run does no watch work: every work counter is zero and every call
+// ends in one of the three termination counters (`dw_gate_off`,
+// `dw_stale_bail`, `dw_no_my_tracker`).
+const IDLE_COUNTERS = {
+  dw_call: 0,
+  dw_gate_off: 0,
+  dw_stale_bail: 0,
+  dw_no_my_tracker: 0,
+  dw_outer_gate_skip: 0,
+  dw_hit: 0,
+  dw_none: 0,
+  dw_cadence_skip: 0,
+  dw_advancing_skip: 0,
+  dw_cached_reuse: 0,
+  dw_cached_unsighted: 0,
+  dw_height_skip: 0,
+  dw_seg_same: 0,
+  dw_path_prestep: 0,
+  dw_path_prestep_hit: 0,
+  dw_raw_hit: 0,
+  dw_expected_pos_hit: 0,
+  dw_vanilla_call: 0,
+  dw_path_kick: 0,
+  dw_ray: 0,
+  dw_us: 0,
+  dw_us_max: 0,
+  dw_gap: 0,
+  react_hold: 0,
+  react_allow: 9,
+  react_level: 3
+};
+
+function disarmedDigest(overrides = {}) {
+  return digest({ ...IDLE_COUNTERS, ...overrides });
+}
+
 function trace(src, extra = '') {
   return `[LIES-TRACE] v=${VERSION} t=61.00 u=100 tweak=swat logic=attack phase=door_watch ` +
     `att=5 att_alive=true att_trk=true dropped=0 src=${src} seg=42 dis=800 cached=1 height=1${extra}`;
@@ -219,6 +255,79 @@ test('a door_watch=off run must also land in dw_gate_off', () => {
   assert.equal(report.verdict, 'INCOMPLETE');
   assert.match(report.verdict_reason, /door_watch=off/);
   assert.match(renderReport(report), /header shows it disarmed/);
+});
+
+test('a disarmed run that bails on stale trackers still respects the gate', () => {
+  // The enemy-tracker liveness guard runs before the `door_watch`/
+  // `highperformance` gate by design, so a correct disarmed run splits its calls
+  // between `dw_stale_bail` and `dw_gate_off`. The 2026-11-01 High Performance
+  // run (90869 calls: 83168 gated, 7701 stale, every work counter 0) was such a
+  // run; the old `dw_gate_off === dw_call` rule marked it FAIL.
+  const log = [
+    SETUP,
+    header({ highperformance: 'true', enemy_reaction_level: 3 }),
+    disarmedDigest({ dw_call: 20, dw_gate_off: 12, dw_stale_bail: 8 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'hp_log.txt', modVersion: VERSION });
+  const gate = claimOf(report, 'gate');
+
+  assert.equal(gate.result, 'PASS');
+  assert.match(gate.evidence, /dw_call=20 dw_gate_off=12 dw_stale_bail=8 dw_no_my_tracker=0/);
+  assert.match(gate.evidence, /sum 20 vs dw_call 20/);
+  // Informational, not a failure: a third of the calls bailed on a dying enemy.
+  assert.match(gate.evidence, /stale-bail share 40%/);
+  assert.match(gate.evidence, /work counters all zero/);
+  assert.equal(report.verdict, 'INCOMPLETE');
+  assert.match(report.verdict_reason, /highperformance=on/);
+});
+
+test('a disarmed run whose calls do not all terminate fails the gate', () => {
+  // 12 + 7 of 20: one call reached the door branch without incrementing a
+  // termination counter, so the gate cannot be proven.
+  const log = [
+    SETUP,
+    header({ highperformance: 'true', enemy_reaction_level: 3 }),
+    disarmedDigest({ dw_call: 20, dw_gate_off: 12, dw_stale_bail: 7 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'hp_log.txt', modVersion: VERSION });
+
+  assert.equal(claimOf(report, 'gate').result, 'FAIL');
+  assert.match(claimOf(report, 'gate').evidence, /19 of 20 calls ended in a termination counter/);
+  assert.equal(report.verdict, 'FAIL');
+});
+
+test('a disarmed run that did any watch work fails the gate', () => {
+  // The terminations add up, but a `dw_hit` proves the door branch ran while the
+  // feature was off.
+  const log = [
+    SETUP,
+    header({ door_watch: 'false', enemy_reaction_level: 3 }),
+    disarmedDigest({ dw_call: 20, dw_gate_off: 20, dw_hit: 1 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'off_log.txt', modVersion: VERSION });
+
+  assert.equal(claimOf(report, 'gate').result, 'FAIL');
+  assert.match(claimOf(report, 'gate').evidence, /work counters ran while the feature was off: dw_hit=1/);
+  assert.equal(report.verdict, 'FAIL');
+});
+
+test('the tracker-bail share is an always-on INFO claim, armed runs included', () => {
+  const report = analyzeLog(happyLog, { file: 'happy_log.txt', modVersion: VERSION });
+  const bails = claimOf(report, 'bails');
+
+  assert.equal(bails.result, 'INFO');
+  assert.match(bails.evidence, /dw_stale_bail=0 of dw_call=15 \(0%\)/);
+  assert.equal(report.verdict, 'PASS');
+
+  // A guard firing while the feature is armed is expected, so it stays INFO.
+  const bailing = analyzeLog(happyLog.replace('dw_stale_bail=0', 'dw_stale_bail=3'), {
+    file: 'happy_log.txt',
+    modVersion: VERSION
+  });
+
+  assert.equal(bailing.armed, true);
+  assert.match(claimOf(bailing, 'bails').evidence, /dw_stale_bail=3 of dw_call=15 \(20%\)/);
+  assert.equal(bailing.verdict, 'PASS');
 });
 
 test('a hand-edited on/off header is normalised like the real true/false one', () => {

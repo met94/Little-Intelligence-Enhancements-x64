@@ -201,7 +201,8 @@ it. The report tool turns this table into PASS/FAIL
 | the right build ran | `[LIES-WATCH] evt=header version=…`, `[LIES-TRACE] v=…` | the log is from another build; counters cannot be compared |
 | the feature was armed | header `door_watch=true highperformance=false` (the reader normalises `true`/`on`/`1` and `false`/`off`/`0`) | the run proved nothing about the feature, and the tool returns INCOMPLETE |
 | the probe produced a position | digest `dw_raw_hit + dw_expected_pos_hit + dw_path_prestep_hit > 0`; `[LIES-WATCH] evt=door_watch_first src=… seg=…` | no run reached the door branch: bad map, no cross-segment loss of sight, or a regression. `dw_path_prestep` does **not** count here: it increments before `_get_expected_pos`, so it proves an attempt, not a position. `[LIES-TRACE] phase=door_watch src=…` is supporting evidence (it names which branch ran for which unit) and never an input to this claim — a run can pass with the trace off |
-| the gate is honest | with `highperformance=true` or `door_watch=false`: `dw_gate_off == dw_call` and every sub-event 0 | the feature ran while disabled |
+| the gate is honest | with `highperformance=true` or `door_watch=false`: `dw_gate_off + dw_stale_bail + dw_no_my_tracker == dw_call` and every work counter 0; the evidence also prints the stale-bail share | the feature ran while disabled, or a call did not end in a termination |
+| tracker bails | `dw_stale_bail` / `dw_call` share (INFO, printed for armed runs too) | — (an enemy dying between the attention update and the door branch trips the guard; a share near 100 % would mean it is misclassifying live trackers) |
 | outcome accounting | `dw_gap` summed over digests == 0 | a call returned without an outcome: a `return` path lost its counter |
 | tracker safety | `dw_stale_bail` and `dw_no_my_tracker` (informational) plus 0 FATAL / 0 LIES Lua errors | a freed or nil tracker reached engine code |
 | nav-link doors are handled | `fsd_navlink_seg_ok`, `fsd_navlink_seg_mismatch`, `fsd_nil_element`, `fsd_nil_tracker` (INFO only) | — (a map without nav-link doors shows 0) |
@@ -268,9 +269,12 @@ counts only the window-closed arm (a saved position reused as-is), and
 proves the re-test via `dw_cached_unsighted` (or not at all); there is no
 "visible re-test" counter to look for.
 
-Run B — gate. Same map, High Performance Mode **on**. Every `dw_call` must land
-in `dw_gate_off`; the report expects `gate respected` PASS and the overall
-verdict `INCOMPLETE` (the run cannot prove the feature by construction).
+Run B — gate. Same map, High Performance Mode **on**. Every `dw_call` must end
+in `dw_stale_bail`, `dw_gate_off` or `dw_no_my_tracker` (the liveness guard runs
+before the gate, so a run with dying enemies splits the calls between the first
+two and is still correctly gated); no work counter may move. The report expects
+`gate respected` PASS and the overall verdict `INCOMPLETE` (the run cannot prove
+the feature by construction).
 
 Run C — control (`--ab` only). `door_watch` off, otherwise identical to Run A,
 same duration, with `watch_log` on so the control has digest windows. The cost
