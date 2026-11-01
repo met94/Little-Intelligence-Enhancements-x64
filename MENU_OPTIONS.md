@@ -159,17 +159,19 @@ the breadcrumbs are what was written *before* it. Add `"trace": false` to
 Each line looks like:
 
 ```
-[LIES-TRACE] v=V8.69_x64 t=143.27 u=1081 tweak=spooc logic=attack phase=combat att=769 att_alive=true att_trk=true dropped=0
+[LIES-TRACE] v=V8.70_x64 t=143.27 u=1081 tweak=spooc logic=attack phase=combat att=769 att_alive=true att_trk=true dropped=0
 ```
 
 - `u` is the acting unit, `tweak` its character type, `logic` its current logic,
-  `phase` the AI step that just started (`combat`, `charge_search`,
-  `cover_path_search`, `cover_upd`, `peek`, `retreat`, `aim`, `spooc`), `att` the
-  enemy it is working with (`att_alive`, `att_trk` = an enemy nav tracker is
-  present), `dropped` how many lines were suppressed so far.
-- Throttle: one line per unit per phase per 2.5 s, plus a global cap of 25 lines
-  per second. A sustained worst case is ~1500 lines per minute; a normal heist
-  stays in the low hundreds. `dropped` tells you when the cap was hit.
+  `phase` the AI step that just started (`combat`, `pose`, `flank`,
+  `cover_path`, `dodge`, `move_out`, `charge_search`, `cover_upd`, `peek`,
+  `retreat`, `aim`, `spooc`, `spooc_combat`), `att` the enemy it is working with
+  (`att_alive`, `att_trk` = an enemy nav tracker is present), `dropped` how many
+  lines were suppressed so far.
+- Throttle: one line per unit per phase per 2.5 s, and per call where the phase
+  needs it (`spooc_combat` uses a 0.2 s window), plus a global cap of 60 lines
+  per second. A sustained worst case is ~3600 lines per minute; a normal heist
+  stays well below that. `dropped` tells you when the cap was hit.
 - Failure phases are exempt from the cap because they are the ones a crash
   report cannot be reconstructed without: `combat_no_attention` (no attention
   object at all), `dodge_dead_enemy` / `spooc_dead_enemy` (AI met a dead enemy

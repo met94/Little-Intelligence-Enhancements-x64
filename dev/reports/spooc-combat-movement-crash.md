@@ -122,7 +122,35 @@ risks, all fixed here:
 
 Player POV: unchanged; the extra lines only appear when a guard steps in.
 
-## 6. Backlog
+## 7. Second run (06:03) - breadcrumbs named the unit
+
+`[LIES-TRACE]` lines before the crash:
+
+```
+t=173.05 u=0xb71 tweak=spooc logic=attack phase=spooc        att=0x968 att_alive=true att_trk=true
+t=173.25 u=0xb71 tweak=spooc logic=attack phase=cover_upd    att=0x968 att_alive=true att_trk=true
+t=173.47 u=0xb71 tweak=spooc logic=attack phase=combat       att=0x968 att_alive=true att_trk=true
+```
+
+then `update() @spooclogicattack.lua:153` (the `_upd_combat_movement` call).
+So the crashing unit is a **cloaker in attack logic with a live, verified enemy**;
+the fault happens inside `_upd_combat_movement` after `_update_cover`, not in the
+dead-enemy family.
+
+V8.70 therefore instruments the sub-steps of that function (`pose`,
+`pose_upd`, `flank`, `cover_path`, `dodge`, `dodge_preemptive`, `move_out`,
+`move_out_lost_test`) and gives the spooc its own `spooc_combat` phase with a
+0.2 s window. Rate cap raised to 60 normal lines/s, with a per-call window
+argument so a tight phase is not squeezed out.
+
+Also added the guard the cop attack update already had: `SpoocLogicAttack.update`
+does not run combat movement when `chk_action_forbidden("walk")` (mid-tackle,
+tased, staggered). It logs `spooc_no_walk` instead.
+
+Player POV: a cloaker that is mid-tackle or stunned no longer receives walk/cover
+action requests; everything else is unchanged.
+
+## 8. Backlog
 
 `CopLogicAttack._upd_aim` and its neighbours remain ledger status **PORT**
 (573 vs 195 lines for `_upd_aim` alone). Each crash so far has been an old-game

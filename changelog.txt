@@ -1,3 +1,13 @@
+Revision V8.70_x64 — 2026-11-01
+Breadcrumbs narrowed the spooc crash to its step; finer sub-step tracing plus a walk-forbidden guard.
+- second run with breadcrumbs (2026-11-01 06:03, same heist family) crashed at `update() @.../spooclogicattack.lua:153` (the `_upd_combat_movement` call, one line later than before because the trace line shifted it). The last trace lines name the unit: `u=0xb71 tweak=spooc logic=attack` with phases `spooc` (t=173.05) -> `cover_upd` (173.25) -> `combat` (173.47), `att=0x968 att_alive=true att_trk=true`, so the enemy was alive and the fault is inside the combat movement body itself, after `_update_cover`
+- added sub-step phases so the next occurrence lands on one call: `pose` and `pose_upd` (around `_upd_pose`), `flank`, `cover_path`, `dodge`, `dodge_preemptive`, `move_out`, `move_out_lost_test`. The spooc's combat step also gets its own `spooc_combat` phase with a 0.2 s window, so the last cloaker step on screen is never older than a quarter second
+- rate cap raised 25 -> 60 normal lines/s and `LIES:Trace` now takes an optional per-call window (`LIES:Trace(unit, data, phase, extra, window)`), so tighter instrumentation does not push the interesting line out of the log
+- `SpoocLogicAttack.update` now applies the same `chk_action_forbidden("walk")` check the cop attack update already had before running combat movement. A cloaker mid-tackle, tased or staggered no longer gets walk/cover actions requested; it logs `spooc_no_walk` instead
+- not claimed: the faulting engine call is still unidentified. The next crash will name the sub-step (`pose`, `dodge_preemptive`, `move_out_lost_test`, ...)
+
+Player notes: no visible AI change except a cloaker that is mid-tackle or stunned no longer tries to start walking. The diagnostic log is more detailed: it now records each sub-step of the combat decision, so a crash points at one call instead of a 300-line function.
+
 Revision V8.69_x64 — 2026-11-01
 Crash breadcrumbs, plus dead-enemy guards in the spooc/combat movement path.
 - third crash class: `Application has crashed: access violation` (no Lua message), script stack `update() @mods/LIES/lua/coplogics/specials/spooc/spooclogicattack.lua:151` -> `original() @mods/LIES/lua/copextensions/copbrain.lua:1365` -> `Hooks.lua:293`; heist `dinner`, 2026-11-01 05:46, `%LOCALAPPDATA%\PAYDAY 2\crash.txt`. Line 151 enters `CopLogicAttack._upd_combat_movement`; the fault is native and inside a JIT frame, so the dump names no deeper line. `[LIES-WATCH]` shows the run had `debug_log=false`, `highperformance=false`, `lua_cover=1`

@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.69_x64",
+		version = "V8.70_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -209,8 +209,9 @@ if RequiredScript == "lib/managers/menumanager" then
 	-- Crash breadcrumbs. A native access violation in engine code leaves no Lua
 	-- error message and cannot be caught, so the only record of what a unit was
 	-- doing is what we logged just before the fault. One line per unit per phase
-	-- per 2.5 s, 25 normal lines/s globally; failure phases are exempt because a
-	-- crash report cannot be reconstructed without them.
+	-- per 2.5 s (per phase window can be tightened by the caller), 60 normal
+	-- lines/s globally; failure phases are exempt because a crash report cannot
+	-- be reconstructed without them.
 	LIES.trace_state = LIES.trace_state or {}
 	LIES.trace_window_t = LIES.trace_window_t or 0
 	LIES.trace_window_n = LIES.trace_window_n or 0
@@ -226,7 +227,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		exit_no_fallback = true
 	}
 
-	function LIES:Trace(unit, logic_data, phase, extra)
+	function LIES:Trace(unit, logic_data, phase, extra, window)
 		if not (self.settings and self.settings.trace) then
 			return
 		end
@@ -254,7 +255,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		-- through on every call and burn the whole cap.
 		local last = state.phases[phase]
 
-		if last and t >= last and t - last < 2.5 then
+		if last and t >= last and t - last < (window or 2.5) then
 			return
 		end
 
@@ -265,7 +266,7 @@ if RequiredScript == "lib/managers/menumanager" then
 			self.trace_window_n = 0
 		end
 
-		if self.trace_window_n >= 25 and not trace_failure_phases[phase] then
+		if self.trace_window_n >= 60 and not trace_failure_phases[phase] then
 			self.trace_dropped = self.trace_dropped + 1
 
 			return

@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T05:54:52.014Z
+Generated: 2026-11-01T06:05:54.454Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -627,7 +627,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover` | 85 | 32 | 32 |  |
 | [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover_shoot_pos` | 26 | 23 | 23 |  |
 | [ ] | keep | `CopLogicAttack._chk_start_action_move_back` | 78 | 32 | 32 |  |
-| [ ] | keep | `CopLogicAttack._chk_start_action_move_out_of_the_way` | 59 | 21 | 21 |  |
+| [ ] | keep | `CopLogicAttack._chk_start_action_move_out_of_the_way` | 61 | 21 | 21 |  |
 | [ ] | keep | `CopLogicAttack._chk_wants_to_take_cover` | 49 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack._correct_path_start_pos` | 16 | 8 | 8 |  |
 | [ ] | keep | `CopLogicAttack._find_flank_pos` | 38 | 86 | 86 |  |
@@ -635,9 +635,9 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopLogicAttack._get_cover_offset_pos` | 41 | 33 | 33 |  |
 | [ ] | keep | `CopLogicAttack._peek_for_pos_sideways` | 55 | 54 | 54 |  |
 | [ ] | keep | `CopLogicAttack._process_pathing_results` | 75 | 48 | 48 |  |
-| [ ] | keep | `CopLogicAttack._upd_combat_movement` | 351 | 150 | 150 |  |
+| [ ] | keep | `CopLogicAttack._upd_combat_movement` | 364 | 150 | 150 |  |
 | [ ] | keep | `CopLogicAttack._upd_enemy_detection` | 48 | 49 | 49 |  |
-| [ ] | keep | `CopLogicAttack._upd_pose` | 38 | 15 | 15 |  |
+| [ ] | keep | `CopLogicAttack._upd_pose` | 40 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack._upd_stop_old_action` | 24 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack._update_cover` | 264 | 149 | 149 |  |
 | [ ] | keep | `CopLogicAttack._verify_cover` | 15 | 15 | 15 |  |
@@ -722,7 +722,7 @@ No function definitions (hook/overlay file).
 |---:|---|---|---:|---:|---:|---|
 | [ ] | audit | `SpoocLogicAttack._chk_play_charge_spooc_sound` | 7 | 0 | 0 |  |
 | [ ] | audit | `SpoocLogicAttack._chk_wants_to_take_cover` | 49 | 0 | 0 |  |
-| [ ] | audit | `SpoocLogicAttack.update` | 106 | 0 | 0 |  |
+| [ ] | audit | `SpoocLogicAttack.update` | 115 | 0 | 0 |  |
 | [ ] | keep | `SpoocLogicAttack._upd_spooc_attack` | 63 | 45 | 45 |  |
 | [ ] | keep | `SpoocLogicAttack.action_complete_clbk` | 91 | 49 | 49 |  |
 | [ ] | keep | `SpoocLogicAttack.enter` | 51 | 55 | 55 |  |

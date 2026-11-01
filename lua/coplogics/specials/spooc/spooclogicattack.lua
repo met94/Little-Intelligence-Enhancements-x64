@@ -150,7 +150,16 @@ function SpoocLogicAttack.update(data)
 		CopLogicAttack._update_cover(data)
 		
 		if not data.next_mov_time or data.next_mov_time < data.t then
-			CopLogicAttack._upd_combat_movement(data)
+			-- Same guard the cop attack update applies before running movement:
+			-- a unit that cannot walk (mid spooc tackle, taser, stagger) must not
+			-- be given walk/cover actions.
+			if data.unit:movement():chk_action_forbidden("walk") then
+				LIES:Trace(data.unit, data, "spooc_no_walk")
+			else
+				LIES:Trace(data.unit, data, "spooc_combat", nil, 0.2)
+
+				CopLogicAttack._upd_combat_movement(data)
+			end
 		end
 	end
 

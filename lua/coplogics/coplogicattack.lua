@@ -332,6 +332,9 @@ function CopLogicAttack._upd_combat_movement(data)
 	local alert_soft = data.is_suppressed
 	local action_taken = data.logic.action_taken(data, my_data)
 	local want_to_take_cover = my_data.want_to_take_cover
+
+	LIES:Trace(data.unit, data, "pose")
+
 	action_taken = action_taken or CopLogicAttack._upd_pose(data, my_data)
 	local move_to_cover, want_flank_cover = nil
 	local aggro_level = data.unit:base()._tweak_table == "marshal_shield_break" and 4 or LIES.settings.enemy_aggro_level
@@ -574,6 +577,8 @@ function CopLogicAttack._upd_combat_movement(data)
 	end
 	
 	local have_flank_cover = my_data.flank_cover and true
+
+	LIES:Trace(data.unit, data, "flank")
 	
 	if want_flank_cover then
 		if not my_data.flank_cover then
@@ -590,6 +595,8 @@ function CopLogicAttack._upd_combat_movement(data)
 	end
 	
 	if not want_flank_cover or want_flank_cover and have_flank_cover then
+		LIES:Trace(data.unit, data, "cover_path")
+
 		if not action_taken and move_to_cover and my_data.cover_path then
 			if not best_cover then
 				--log("path is outdated, something funky happened in taserlogicattack probably")
@@ -619,6 +626,8 @@ function CopLogicAttack._upd_combat_movement(data)
 	end
 
 	if not data.is_converted and not my_data.moving_to_cover and not data.unit:movement():chk_action_forbidden("walk") and CopLogicAttack._can_move(data) and data.attention_obj.verified and not action_taken then
+		LIES:Trace(data.unit, data, "dodge")
+
 		if data.is_suppressed and data.t - data.unit:character_damage():last_suppression_t() < 0.7 then
 			action_taken = CopLogicBase.chk_start_action_dodge(data, "scared")
 		end
@@ -646,6 +655,8 @@ function CopLogicAttack._upd_combat_movement(data)
 			end
 
 			if dodge and focus_enemy.aimed_at then
+				LIES:Trace(data.unit, data, "dodge_preemptive")
+
 				action_taken = CopLogicBase.chk_start_action_dodge(data, "preemptive")
 			end
 		end
@@ -656,6 +667,8 @@ function CopLogicAttack._upd_combat_movement(data)
 
 		action_taken = CopLogicAttack._chk_start_action_move_back(data, my_data, focus_enemy, false)
 	end
+
+	LIES:Trace(data.unit, data, "move_out")
 
 	action_taken = action_taken or CopLogicAttack._chk_start_action_move_out_of_the_way(data, my_data)
 end
@@ -2011,6 +2024,8 @@ function CopLogicAttack._chk_start_action_move_out_of_the_way(data, my_data)
 		return
 	end
 
+	LIES:Trace(data.unit, data, "move_out_lost_test")
+
 	local my_tracker = data.unit:movement():nav_tracker()
 	
 	if my_tracker:lost() then
@@ -2284,6 +2299,8 @@ function CopLogicAttack._confirm_retreat_position_visless(retreat_pos, threat_po
 end
 
 function CopLogicAttack._upd_pose(data, my_data)
+	LIES:Trace(data.unit, data, "pose_upd")
+
 	if data.unit:anim_data().to_idle or data.unit:anim_data().hurt then
 		return
 	end

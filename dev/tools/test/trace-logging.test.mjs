@@ -31,7 +31,7 @@ function stripLuaComments(source) {
 
 const readStripped = (...parts) => stripLuaComments(read(...parts));
 const traceBody = () => {
-  const match = readStripped('menumanager.lua').match(/function LIES:Trace\(unit, logic_data, phase, extra\)([\s\S]*?)\n\tend/);
+  const match = readStripped('menumanager.lua').match(/function LIES:Trace\(unit, logic_data, phase, extra, window\)([\s\S]*?)\n\tend/);
   assert.ok(match, 'LIES:Trace is missing');
   return match[1];
 };
@@ -47,7 +47,7 @@ test('LIES:Trace throttles per phase and stays opt-outable', () => {
   assert.match(manager, /trace = true/, 'trace must default on: a crash cannot opt in afterwards');
   assert.match(body, /self\.settings\.trace/, 'must be switchable off from the settings file');
   assert.match(body, /state\.phases\[phase\]/, 'throttle must be per phase, phases alternate every frame');
-  assert.match(body, /t - last < 2\.5/, 'per-phase dedupe window');
+  assert.match(body, /t - last < \(window or 2\.5\)/, 'per-phase dedupe window');
   assert.match(body, /\[LIES-TRACE\] v=%s t=%\.2f u=%s tweak=%s logic=%s phase=%s att=%s att_alive=%s att_trk=%s dropped=%d/);
 });
 
@@ -70,12 +70,14 @@ test('the crash-prone phases are instrumented', () => {
   const spooc = readStripped('lua', 'coplogics', 'specials', 'spooc', 'spooclogicattack.lua');
   const base = readStripped('lua', 'coplogics', 'coplogicbase.lua');
 
-  for (const phase of ['combat', 'combat_no_attention', 'charge_search', 'cover_path_search', 'cover_upd', 'peek', 'retreat', 'aim', 'dodge_dead_enemy', 'stale_tracker']) {
+  for (const phase of ['combat', 'combat_no_attention', 'charge_search', 'cover_path_search', 'cover_upd', 'peek', 'retreat', 'aim', 'dodge_dead_enemy', 'stale_tracker', 'pose', 'flank', 'cover_path', 'dodge', 'dodge_preemptive', 'move_out', 'pose_upd', 'move_out_lost_test']) {
     assert.match(attack, new RegExp(`"${phase}"`), `missing trace phase ${phase}`);
   }
 
   assert.match(spooc, /"spooc"/);
   assert.match(spooc, /"spooc_dead_enemy"/);
+  assert.match(spooc, /LIES:Trace\(data\.unit, data, "spooc_combat", nil, 0\.2\)/, 'the spooc combat step needs a tight window');
+  assert.match(spooc, /chk_action_forbidden\("walk"\)[\s\S]{0,200}?"spooc_no_walk"/, 'spooc must not run movement while walking is forbidden');
   assert.match(base, /"exit_missing_logic" or "exit_no_fallback"|exit_missing_logic"\), "wanted=/, 'the V8.67 exit guard must leave a breadcrumb');
 });
 
