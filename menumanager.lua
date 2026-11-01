@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.74_x64",
+		version = "V8.75_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -229,6 +229,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		dodge_dead_enemy = true,
 		spooc_dead_enemy = true,
 		stale_tracker = true,
+		movement_aim_stale = true,
 		exit_missing_logic = true,
 		exit_no_fallback = true
 	}

@@ -259,6 +259,20 @@ function CopBrain:check_upd_aim()
 		self._aim_update_counter = self._aim_update_counter + 1
 		return
 	end
+
+	-- The aim body dereferences the enemy unit (`search_for_path_to_unit`, expected
+	-- attention position). LIES runs it from the movement update, outside the logic
+	-- update that refreshes `attention_obj`, so the entry can already point at a
+	-- dead unit.
+	local att = self._logic_data.attention_obj
+
+	if att and att.unit and not alive(att.unit) then
+		if LIES and LIES.Trace then
+			LIES:Trace(self._unit, self._logic_data, "movement_aim_stale")
+		end
+
+		return
+	end
 	
 	local dt = self._timer:time() - self._logic_data.t 
 	

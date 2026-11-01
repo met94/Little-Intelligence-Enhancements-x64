@@ -937,7 +937,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 909,
+      "line": 923,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -945,7 +945,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 933,
+      "line": 947,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -953,7 +953,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 959,
+      "line": 973,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -961,7 +961,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 992,
+      "line": 1006,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -969,7 +969,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 1424,
+      "line": 1438,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1025,23 +1025,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1227,
-      "symbol": "_nav_segments",
-      "severity": "review",
-      "reason": "Keyed by tostring(id); neighbours are door vectors",
-      "text": "local all_nav_segs = managers.navigation._nav_segments"
-    },
-    {
-      "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1234,
-      "symbol": "find_segment_doors",
-      "severity": "review",
-      "reason": "Returns position vectors, not door tables",
-      "text": "local doors = managers.navigation:find_segment_doors(enemy_nav_seg)"
-    },
-    {
-      "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1474,
+      "line": 1103,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1049,7 +1033,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1530,
+      "line": 1159,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1057,7 +1041,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1534,
+      "line": 1163,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1065,7 +1049,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 3023,
+      "line": 2652,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",

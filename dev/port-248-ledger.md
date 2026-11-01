@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T06:40:48.583Z
+Generated: 2026-11-01T07:23:53.764Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -418,7 +418,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit (hook) | `Hooks.PostHook:CopBrain.set_spawn_entry:lies_accessentry` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `CopBrain._do_hhtacs_damage_modifiers` | 152 | 0 | 0 |  |
 | [ ] | audit | `CopBrain._on_player_slow_pos_rsrv_upd` | 9 | 0 | 0 |  |
-| [ ] | audit | `CopBrain.check_upd_aim` | 39 | 0 | 0 |  |
+| [ ] | audit | `CopBrain.check_upd_aim` | 53 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.clbk_group_member_attention_verified` | 11 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.get_movement_delay` | 15 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.is_criminal` | 5 | 0 | 0 |  |
@@ -608,7 +608,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 575 | 195 | 192 |  |
+| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 201 | 195 | 192 |  |
 | [ ] | **PORT** | `CopLogicAttack.action_complete_clbk` | 101 | 47 | 47 |  |
 | [ ] | **PORT** | `CopLogicAttack.is_available_for_assignment` | 60 | 43 | 43 |  |
 | [ ] | audit | `CopLogicAttack._check_needs_reload` | 48 | 0 | 0 |  |

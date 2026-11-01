@@ -37,7 +37,7 @@ What should appear in `mods\logs\` (in addition to prior LIES lines):
 | `[LIES-CHECK] bag steal SO registered ...` | Bag steal objective registered | Cops can pick up/secure a bag; no broken objective |
 | `[LIES-CHECK] taser charge allowed vertical=...` or `blocked vertical=...` | Taser vertical gate ran | Taser does not tase through floors; same-floor charge still works |
 | `[LIES-CHECK] marshal marksman attack=CopLogicAttack` | LIES marshal mapping loaded | Only meaningful on a marshal heist |
-| `[LIES-CHECK] door watch raw position used` | AI-01 raw-door branch reached | Optional; cops pre-aim at doorways |
+| ~~`[LIES-CHECK] door watch raw position used`~~ | Retired: the door-probing branch was removed with the `_upd_aim` port to 248.2, so `door_raw` has no producer | Nothing to check; no cop pre-aim at doorways from this branch |
 
 Absence of shield/taser/bag lines is not a failure if that unit or bag did not
 appear. Send the log either way; we check the events that did occur.
@@ -87,7 +87,7 @@ Two games, one log (`2026_10_24_log.txt`). Counts from `[LIES-CHECK]`:
 | Bag steal SO | `registered` x12; `deferred` x13; `skipped: enemy loot drop area` x5 | Pass; registration and expected skip paths exercised |
 | Taser vertical gate | `allowed` x14; `blocked` x7 (1000/830/400 units) | Pass; same-floor allowed, cross-floor blocked |
 | Phalanx | `spawn group` x1; `group created` x1; `spawned units=11` x1; `pending` x0; `buff enabled` x1; `buff disabled` x1; `buff increased` x0 | Pass for spawn/buff lifecycle; no increase because the VIP died before the 15 s tick |
-| Raw-door aim | `door watch raw position used` x2 | Pass (branch reached) |
+| Raw-door aim | `door watch raw position used` x2 — counter retired with the `_upd_aim` port (no producer now) | N/A (branch removed) |
 | Marshal | load-time mapping x2 | Mapping confirmed; marksman behaviour not exercised |
 
 No new `crash.txt` timestamp (still 2026-10-23 17:35). Only BeardLib

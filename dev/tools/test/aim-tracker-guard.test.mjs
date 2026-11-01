@@ -67,13 +67,9 @@ test('every tracker read goes through the helper', () => {
   const text = source();
   const calls = text.match(/lies_enemy_tracker\(/g) || [];
 
-  assert.equal(calls.length, 7, `expected 1 definition + 6 call sites, found ${calls.length}`);
-
-  // Aim pass: same-segment check and the obstruction test.
-  const aim = funcBody(text, 'function CopLogicAttack._upd_aim(');
-  assert.match(aim, /local enemy_tracker = lies_enemy_tracker\(focus_enemy, data\)\r?\n\s*local enemy_nav_seg = enemy_tracker and enemy_tracker:nav_segment\(\)/);
-  assert.match(aim, /focus_enemy\.reaction and enemy_tracker and not LIES\.settings\.highperformance/);
-  assert.match(aim, /not enemy_tracker:obstructed\(\)/);
+  // 1 definition + 5 call sites. The aim pass is no longer one of them: it runs
+  // the vanilla 248.2 body, which resolves its target through the nav graph.
+  assert.equal(calls.length, 6, `expected 1 definition + 5 call sites, found ${calls.length}`);
 
   // Charge branches (both copies) and cover selection.
   assert.equal(
@@ -100,13 +96,54 @@ test('missing tracker bails out instead of searching from nil', () => {
   assert.match(expected, /local enemy_seg = enemy_tracker:nav_segment\(\)/);
 });
 
-test('the aim pass does not touch a dead enemy unit', () => {
+test('the aim pass uses the vanilla expected-position helper, not a cached tracker', () => {
   const aim = funcBody(source(), 'function CopLogicAttack._upd_aim(');
 
-  assert.match(aim, /focus_enemy\.unit:movement\(\):current_state\(\)/);
-  assert.match(
-    aim,
-    /focus_enemy\.verified and alive\(focus_enemy\.unit\) then/,
-    'state/chatter reads of the enemy unit must be gated on liveness',
+  for (const token of ['nav_tracker', 'nav_segment', 'obstructed', 'World:raycast']) {
+    assert.ok(!aim.includes(token), `_upd_aim must not reference ${token}`);
+  }
+
+  assert.match(aim, /CopLogicAttack\._get_expected_attention_position\(data, my_data\)/);
+});
+
+test('the aim pass keeps the breadcrumb first and hands the enemy unit on untouched', () => {
+  const aim = funcBody(source(), 'function CopLogicAttack._upd_aim(');
+  const firstStatement = aim.split('\n').map((line) => line.trim()).filter(Boolean)[1];
+
+  assert.equal(
+    firstStatement,
+    'LIES:Trace(data.unit, data, "aim", nil, lies_aim_window(data))',
+    'the crash breadcrumb must stay the first statement',
   );
+
+  // The 248.2 body never calls a method on the attention unit itself, but it does
+  // hand `focus_enemy.unit` to `search_for_path_to_unit`, which resolves the target
+  // through `unit:movement():nav_tracker()`. A unit that died between the detection
+  // pass and this update would fault there, so the caller has to gate it (the
+  // second use below is that liveness check on the coverfire branch).
+  assert.doesNotMatch(aim, /focus_enemy\.unit:/, 'no method calls on the (possibly dead) attention unit');
+  assert.equal(
+    (aim.match(/focus_enemy\.unit(?![\w:.])/g) || []).length,
+    2,
+    'the only uses are the liveness check and the coarse-path search argument',
+  );
+  assert.match(aim, /alive\(focus_enemy\.unit\)/, 'the coverfire branch must check liveness before it fires');
+  assert.match(aim, /search_for_path_to_unit\("hunt" \.\. tostring\(my_data\.key\), focus_enemy\.unit\)/);
+});
+
+test('the movement-driven aim pass is gated on attention liveness before it runs', () => {
+  const brain = stripLuaComments(read('lua', 'copextensions', 'copbrain.lua'));
+  const body = funcBody(brain, 'function CopBrain:check_upd_aim(');
+
+  const gateAt = body.indexOf('if att and att.unit and not alive(att.unit) then');
+
+  assert.notEqual(gateAt, -1, 'check_upd_aim must refuse a dead attention unit');
+  assert.match(body.slice(gateAt, gateAt + 400), /"movement_aim_stale"/, 'the refusal must leave a breadcrumb');
+
+  for (const call of ['self._logics.attack._upd_aim', 'CopLogicAttack._upd_aim']) {
+    const callAt = body.indexOf(call);
+
+    assert.notEqual(callAt, -1, `${call} is missing from check_upd_aim`);
+    assert.ok(gateAt < callAt, `the liveness gate must precede ${call}`);
+  }
 });

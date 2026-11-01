@@ -59,6 +59,7 @@ test('the trace survives a level clock restart and caps normal lines only', () =
   assert.match(manager, /self\.trace_window_t = 0[\s\S]{0,80}?self\.trace_window_n = 0/, 'WatchReset must restart the rate window');
   assert.match(body, /trace_failure_phases\[phase\]/, 'failure phases must bypass the cap');
   assert.match(manager, /exit_missing_logic = true[\s\S]{0,120}?exit_no_fallback = true/, 'guard failures must be exempt too');
+  assert.match(manager, /stale_tracker = true[\s\S]{0,80}?movement_aim_stale = true/, 'the stale-attention phases must be exempt too');
   assert.match(body, /self\.trace_dropped = self\.trace_dropped \+ 1/, 'dropped lines must be counted');
   assert.match(body, /entry\.last or 0\) > 60/, 'stale units must be pruned mid-heist');
   assert.match(body, /att and att\.u_key/, 'log must not call into the (possibly dead) attention unit');

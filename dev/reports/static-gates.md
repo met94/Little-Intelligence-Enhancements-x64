@@ -1,17 +1,17 @@
 ﻿# LIES 248.2 static gates
 
-Generated: 2026-11-01 06:40:40Z
+Generated: 2026-11-01 07:23:45Z
 
 ## Node tool tests
 
 Result: PASS
 
-Γä╣ pass 94
+Γä╣ pass 96
 Γä╣ fail 0
 Γä╣ cancelled 0
 Γä╣ skipped 0
 Γä╣ todo 0
-Γä╣ duration_ms 148.3853
+Γä╣ duration_ms 158.7221
 
 ## Test-harness parser
 
@@ -46,6 +46,6 @@ wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-ai-suite-compat\dev\reports\p
 
 Result: PASS
 
-hooks=68/68 methods=50/50 errors=0 review=152
+hooks=68/68 methods=50/50 errors=0 review=150
 Baseline errors: 50 (current: 0)
 
