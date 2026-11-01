@@ -7,7 +7,9 @@ inert since V7.84** because of an operator-precedence mistake (`enemy_reaction_l
 fire delay), and the rest are either covered by vanilla's expected-position helper or
 should stay retired.
 
-Analysis only — no code was changed. Report path:
+Analysis only at the time of writing — no code was changed then. The verdict column
+records the restores that followed (V8.77/V8.78) and the V8.79 door-watch restore;
+the per-block detail keeps the pre-restore evidence. Report path:
 `dev/reports/aim-port-behaviour-ledger.md`.
 
 ## 1. Method
@@ -61,10 +63,10 @@ Anchor line numbers are for the **current worktree file**
 
 | # | Block (removed) | Provenance (commit / date / author / version) | Author purpose | Setting contract | Vanilla 248.2 equivalent | Tracker-dependent | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1 | Cached-tracker aim path: `nav_segment()`, `obstructed()`, `_nav_segments[seg].pos` height preference | `46a93f2` 2025-10-22 fugsystem (8.49 cycle); `nav_segment` file-wide first `083c856` 2022-04-30 Fuglore; guarded form `f67323c` 2026-10-31 met94 | Aim at last known pos when both units share a segment; otherwise watch the enemy's segment | `highperformance` (off-gate only) | `_get_expected_attention_position`, `coplogicattack.lua:1506-1523` (same-seg `+140` z), `1525-1618` (path/doors) | **Yes** (enemy tracker; guard test forbids `.nav_tracker[.:]`) | **PORT** (segment gate) + **RETIRE** (`_nav_segments` height preference: private field, tracker-derived) |
-| 2 | Door probing: `find_segment_doors(enemy_nav_seg)`, raw-door `with_z(+140)` rays, `door_raw` counter | `46a93f2` 2025-10-22 fugsystem; raw-position branch `78dab8a` 2026-10-23 met94 (AI-01); counter `4a80b5f` 2026-10-26 met94 | Predict the target through a doorway when it is in another segment ("cops never predict a target through a doorway") | `highperformance` (off-gate only) | `_get_expected_attention_position` `1544` `find_segment_doors(..., "_chk_is_right_segment", to_nav_seg)` + door `+140` pick (`1549-1580`) | **Yes** (`enemy_nav_seg`) | **PORT** (vanilla door watch) + **RETIRE** the `door_raw` diagnostic (already retired in `dev/reports/smoke-check-logging.md`) |
-| 3 | Lateral sight search: `find_walls_across_pos`, per-position `ai_vision` rays, writes to `focus_enemy.last_verified_pos/_m_pos/_dis` | `46a93f2` 2025-10-22 fugsystem | Re-authorise aim around cover by finding a nearby position with a clear line to the target's last known position | `highperformance` (off-gate only) | **None** in aim; nearest analogue `find_walls_accross_tracker` at vanilla `coplogicattack.lua:1312`, `coplogictravel.lua:591` | **No** (pure position math) — but it *mutates* shared attention state | **RETIRE** |
-| 4 | Expected-position machinery: `_get_expected_pos`, `my_data.expected_pos*`, `_set_attention_on_pos` | `46a93f2` 2025-10-22 fugsystem (`_set_attention_on_pos` itself from base `083c856` 2022-04-30) | Keep a look position on the nav graph across segments | `highperformance` (off-gate only) | `_get_expected_attention_position` `1506-1618`, `_chk_is_right_segment` `1620`, search kick-off `1613-1616` | **Yes**, but vanilla reads `main_enemy.nav_tracker` (`1508/1516`) and the current body is gated by `CopBrain:check_upd_aim` `copbrain.lua:267-275` | **PORT** (already in place). Cleanup: `_get_expected_pos` at `1066` is now dead code |
+| 1 | Cached-tracker aim path: `nav_segment()`, `obstructed()`, `_nav_segments[seg].pos` height preference | `46a93f2` 2025-10-22 fugsystem (8.49 cycle); `nav_segment` file-wide first `083c856` 2022-04-30 Fuglore; guarded form `f67323c` 2026-10-31 met94 | Aim at last known pos when both units share a segment; otherwise watch the enemy's segment | `highperformance` (off-gate only) | `_get_expected_attention_position`, `coplogicattack.lua:1506-1523` (same-seg `+140` z), `1525-1618` (path/doors) | **Yes** (enemy tracker; guard test forbids `.nav_tracker[.:]`) | **PORT** (segment gate) + **RE-ADD** (height preference, tracker-free substitute; V8.79) |
+| 2 | Door probing: `find_segment_doors(enemy_nav_seg)`, raw-door `with_z(+140)` rays, `door_raw` counter | `46a93f2` 2025-10-22 fugsystem; raw-position branch `78dab8a` 2026-10-23 met94 (AI-01); counter `4a80b5f` 2026-10-26 met94 | Predict the target through a doorway when it is in another segment ("cops never predict a target through a doorway") | `highperformance` (off-gate only) | `_get_expected_attention_position` `1544` `find_segment_doors(..., "_chk_is_right_segment", to_nav_seg)` + door `+140` pick (`1549-1580`) | **Yes** (`enemy_nav_seg`) | **RE-ADD (V8.79)** — the LIES layer watches the enemy segment's doors, including nav-link doors vanilla skips; `door_raw` has a producer again |
+| 3 | Lateral sight search: `find_walls_across_pos`, per-position `ai_vision` rays, writes to `focus_enemy.last_verified_pos/_m_pos/_dis` | `46a93f2` 2025-10-22 fugsystem | Re-authorise aim around cover by finding a nearby position with a clear line to the target's last known position | `highperformance` (off-gate only) | **None** in aim; nearest analogue `find_walls_accross_tracker` at vanilla `coplogicattack.lua:1312`, `coplogictravel.lua:591` | **No** (pure position math) — but it *mutates* shared attention state | **RETIRE** — deferred planned future work under the door-watch umbrella (`dev/reports/door-watch-port.md`) |
+| 4 | Expected-position machinery: `_get_expected_pos`, `my_data.expected_pos*`, `_set_attention_on_pos` | `46a93f2` 2025-10-22 fugsystem (`_set_attention_on_pos` itself from base `083c856` 2022-04-30) | Keep a look position on the nav graph across segments | `highperformance` (off-gate only) | `_get_expected_attention_position` `1506-1618`, `_chk_is_right_segment` `1620`, search kick-off `1613-1616` | **Yes**, but vanilla reads `main_enemy.nav_tracker` (`1508/1516`) and the current body is gated by `CopBrain:check_upd_aim` `copbrain.lua:267-275` | **RE-ADD** (caller restored; no longer dead code) — V8.79 |
 | 5 | Charge abort: `try_stop_charge`, aggro/`dis <= 200` condition, `_cancel_charge`, `cover_test_step`, `at_cover_shoot_pos` | `_cancel_charge` fn `cb9f15d` 2022-07-05 Fuglore (4.5); in-aim block + condition `46a93f2` / `997e95e` 2025-10-22 fugsystem | Code comment: "stop the charge, we are not chargers we do not push unless nescessary" | **`enemy_aggro_level`** (default 2; only `MOSH PIT`/4 keeps charging) + `data.tactics.charge`, `has_tag("tank")`, `tankboss` | `_cancel_charge` exists and is called at vanilla `561/873/884/1011`, but vanilla `_upd_aim` (`1051-1200`) has **no** charge handling | **No** | **RE-ADD** at `_upd_aim` line **872**, plus restore `local tankboss = { triad_boss, deep_boss }` above `864` |
 | 6 | Turn-to-shoot concessions: `dmg_t < 5`, `acquire_t < 4` + `weapon_range.close` | `dot<0.7` base `083c856` 2022-04-30 / `cb9f15d` (4.5); `acquire_t` `712387f` 2022-06-20 (v4); `dmg_t` `997e95e` 2025-10-22 fugsystem; `can_turn_to_shoot` `a3b79a1` 2026-01-03 fugsystem (8.5); distance clause `4215a39` 2026-06-06 (8.57) | Do not stop to shoot a target you are running away from — unless you were just damaged or just acquired it at close range | none | Run-direction gate only: vanilla `1068-1071` (`dot < 0.6` → `shoot = false; aim = false`), adopted at current line `883` | **No** | **RE-ADD** inside the existing `dot < 0.6` branch, current lines **883-887** |
 | 7 | Hostage safe weapon: `request_switch_to_safe_weapon(3)` / `request_switch_to_normal_weapon(7)`, `safe_equipped`, `hhtacs` + `hostageblock` chatter | `df5d673` 2023-09-05 Fuglore (**7.35**); restore half `29488f1` 2023-09-06 (**7.36**); `verified_t`/`shooting` window `2080f65` 2023-12-01 (**7.61**) | A cop whose shot is blocked by a hostage drops to its `char_tweak.safe_weapon`, stops firing, and swaps back 7 s later | **`hhtacs`** (default `false`; "Adds LIES-specific AI behaviours") | **None.** `request_switch_to_safe_weapon` does not exist in 248.2 (`Select-String` over the whole game-data tree: no hits). They are LIES `CopBrain` methods, `copbrain.lua:1141` / `1193`; `hostage_blocked` is LIES-only too (`coplogicidle.lua:1465-1510`) | **No** | **RE-ADD** at `_upd_aim` line **872** — both halves together (see §3.7) |
@@ -74,10 +76,13 @@ Anchor line numbers are for the **current worktree file**
 | 11 | Shoot-stop guard: `my_data.start_shoot_t`, 0.5 s hold | `46a93f2` 2025-10-22 fugsystem | Keep the reload decision from flapping when the target flickers in and out of the aim window | none | **None**; vanilla requests `idle`/`reload` immediately (`1033-1050`, current `1033-1050`) | **No** | **RETIRE** (the state it guarded no longer exists: `my_data.shooting` is now the vanilla boolean, set at current `1030`) |
 | 12 | Weapon-range self-heal: 2000/5000/1000 backup + `complained_about_invalid_range` logs | `4215a39` 2026-06-06 fugsystem (**8.57**) | Rebuild `weapon_range` from the equipped weapon when it was unset | none | Not needed: `CopBrain:check_upd_aim` returns early without `internal_data.weapon_range` (`copbrain.lua:248-250`, from `49d4d9e` 2024-01-27 Fuglore **7.81**); vanilla body reads it only at `874` (guarded by that caller) and `895` (nil-checked) | **No** | **RETIRE** (`port-decisions.md:119` already called it "belt-and-braces") |
 
-Counts (12 blocks): **RE-ADD** 6 — blocks 5 and 7 unconditional, 6 and 8 with
+Counts (12 blocks): **RE-ADD** 8 — block 1's height preference (tracker-free
+substitute), blocks 2 and 4 (V8.79), 5 and 7 unconditional, 6 and 8 with
 conditions, 9 deferred, 10 in corrected form (§3.10, restored in V8.78 as
-**RE-ADD (fixed)**); **PORT** 3 — blocks 1, 2, 4 (block 1 also retires its
-`_nav_segments` height preference); **RETIRE** 3 — blocks 3, 11, 12.
+**RE-ADD (fixed)**); **PORT** 1 — block 1's segment gate itself, reached through
+vanilla `_get_expected_attention_position`; **RETIRE** 3 — blocks 3, 11, 12
+(block 3 is deferred planned future work under the door-watch umbrella, not
+deleted).
 
 ## 3. Per-block detail
 
@@ -124,13 +129,15 @@ The height preference has no vanilla counterpart and reads a private manager fie
 (`NavigationManager._nav_segments`, `navigationmanager.lua:94`) to decide whether to
 bother watching the enemy segment. Verdict: the segment gate is **PORTed already**
 (reached through `_get_expected_attention_position`, current lines `949` and `982`); the
-height preference is **RETIRE**. If it is ever wanted back, it does not need a tracker:
-`managers.navigation:get_nav_seg_from_pos(focus_enemy.m_pos)` (`navigationmanager.lua:1609`)
-yields the same segment from the last known position.
+height preference is **RE-ADD (tracker-free substitute)** in V8.79. It keeps the
+author's three conditions (`data.m_pos.z >= enemy_z`, `|Δz| < 250`, target distance
+`>= 2000`) but reads Z from `focus_enemy.m_pos` (the attention object's last known
+position, falling back to the cop's own `m_pos.z`) — no `_nav_segments` lookup and no
+enemy tracker. Details, plus the other deviations: `dev/reports/door-watch-port.md` §4.
 
 Player POV: cops still stop and watch the last known spot when the target breaks line of
-sight; they no longer apply the extra verticality heuristic that made them prefer watching
-a target that was below them.
+sight, and they again bother watching a target that is below them instead of ignoring it.
+Not yet observed in game in the restored form.
 
 ### 3.2 Door probing
 
@@ -162,12 +169,22 @@ local found_doors = managers.navigation:find_segment_doors(
 
 with the `+140` sight test applied to `door.end_pos` (`1552-1560`). Vanilla's door list is
 already the "raw position" shape (AI-02 in the gap audit says 248.2 callers assume
-`Vector3`), so the port inherits AI-01's fix rather than losing it. Verdict: **PORT**. The
-`door_raw` counter has no producer left and was already retired in
-`dev/reports/smoke-check-logging.md`; keep it retired.
+`Vector3`), so the port inherits AI-01's fix rather than losing it.
 
-Player POV: cops still pre-aim at doorways when the target is in another nav segment; the
-`[LIES-CHECK] door_raw` smoke event no longer appears in the log.
+Verdict: **RE-ADD (V8.79)**. The restore is a LIES layer *around* the vanilla helper,
+gated by `door_watch and not highperformance`, not a method override: `BossLogicAttack:694`
+calls the vanilla method, so the watch runs inside the shared `_upd_aim` body
+(`lies_upd_expected_pos`, `lua/coplogics/coplogicattack.lua`). Deliberate deviations from
+the pre-port probe: it calls the 2-arg `find_segment_doors(enemy_seg)` so nav-link doors
+arrive as raw `Vector3` (vanilla's default branch shape), it probes on cadence only (the
+pre-port shared `not advancing` gate made the probe unreachable at the only call site),
+and the height gate is tracker-free (§3.1). `door_raw` has a producer again and is
+un-retired in `dev/reports/smoke-check-logging.md`. Evidence table and test-play
+procedure: `dev/reports/door-watch-port.md` §5-§6.
+
+Player POV: cops pre-aim at doorways of the segment the target is in again, including
+animated nav-link doors vanilla's own door list skips, and `[LIES-CHECK] door_raw` smoke
+events appear again when `debug_log` is on. Not yet observed in game.
 
 ### 3.3 Lateral sight search
 
@@ -195,8 +212,14 @@ LIES code (`coplogicbase.lua:1044/1048/1342`, `copbrain.lua:1379`,
 (the "aim at a watch position instead of nothing") is what vanilla's
 `_get_expected_attention_position` now provides. Verdict: **RETIRE**.
 
+Recorded as **deferred planned future work** under the door-watch umbrella: if the watch
+layer's write target ever moves off `focus_enemy.last_verified_*` (e.g. a private
+`lies_last_verified_*` field), the lateral search becomes safe to evaluate again. It is not
+part of the V8.79 restore and needs its own play test (`dev/reports/door-watch-port.md` §1).
+
 Player POV: cops no longer sidestep to peek around cover to keep a bead on a hidden target;
-they watch the last known position or the likely doorway instead.
+they watch the last known position or the likely doorway instead. Not a regression of the
+V8.79 restore — the watch-position layer covers the same outcome.
 
 ### 3.4 Expected-position machinery
 
@@ -206,15 +229,20 @@ itself is base-level (`083c856`, 2022-04-30, Fuglore).
 
 Vanilla's replacement is `_get_expected_attention_position` (`coplogicattack.lua:1506-1618`)
 plus `_chk_is_right_segment` (`1620`) and the coarse-path kick-off (`1613-1616`), called
-from the current body at lines `949` and `982`. This is a genuine PORT, not a retirement:
-the port's own changelog states it, and the vanilla helper does the same job (same segment →
-`m_pos + 140`; else walk `expected_pos_path` and pick the door towards the enemy segment).
+from the current body at lines `949` and `982`. Through V8.78 that was a genuine PORT, not
+a retirement: the port's own changelog states it, and the vanilla helper does the same job
+(same segment → `m_pos + 140`; else walk `expected_pos_path` and pick the door towards the
+enemy segment).
 
-Two things the port left behind, both verifiable now:
+V8.79 restores the LIES caller as well (**RE-ADD**, caller restored): the pre-port body's
+armed-path pre-step (`my_data.expected_pos_path` → `CopLogicAttack._get_expected_pos`) and
+the cross-segment fallback both call it again from `lies_upd_expected_pos`, so
+`_get_expected_pos` is no longer dead code. The pre-port state snapshot below is kept as
+the provenance record:
 
 ```powershell
 Get-ChildItem -Recurse -Filter *.lua lua | Select-String -Pattern '_get_expected_pos\b'
-# coplogicattack.lua:1066: function CopLogicAttack._get_expected_pos(data, my_data)     <- definition only, no caller
+# before V8.79: coplogicattack.lua:1066 definition only, no caller
 ```
 
 ```powershell
@@ -225,20 +253,24 @@ Select-String -Path lua\coplogics\coplogicattack.lua -Pattern 'expected_pos'
 # 218: my_data.expected_pos = nil
 ```
 
-`_get_expected_pos` is dead code that still passes the tracker-guard tests
+`_get_expected_pos` still passes the tracker-guard tests
 (`dev/tools/test/aim-tracker-guard.test.mjs` asserts its `lies_enemy_tracker` bail-out);
-`expected_pos` and `expected_pos_last_check_t` are copied between logic re-entries and
-never read. Both are cleanup candidates, not behaviour.
+`expected_pos`, `expected_pos_path` and `expected_pos_last_check_t` are copied between logic
+re-entries and now read again by the restored pre-step and re-test.
 
-Residual risk to watch in game (recorded here, not fixed by this ledger): vanilla's helper
-reads `main_enemy.nav_tracker` **without** a liveness check (`1508`, `1516`), and LIES runs
-the helper from the movement update. The only thing standing between that read and a freed
-tracker is the `CopBrain:check_upd_aim` gate (`copbrain.lua:267-275`, V8.75). Vanilla is
-safe because it only ever calls the helper inside a logic update, right after detection.
-Verdict: **PORT** (done); cleanup + a smoke assertion recommended.
+Residual risk to watch in game: vanilla's helper reads `main_enemy.nav_tracker`
+**without** a liveness check (`1508`, `1516`), and LIES runs the helper from the movement
+update. Two guards stand between that read and a freed tracker: the
+`CopBrain:check_upd_aim` gate (`copbrain.lua:267-275`, V8.75), and — since V8.79 — the
+liveness check at the top of `lies_upd_expected_pos`, which runs *before* the feature gate
+so the feature-off path cannot hand a freed tracker to vanilla either
+(`dw_stale_bail`). Vanilla is safe because it only ever calls the helper inside a logic
+update, right after detection. Verdict: **RE-ADD** (V8.79), with the guard order pinned by
+`dev/tools/test/door-watch.test.mjs`.
 
 Player POV: cops keep aiming at the doorway or corner the player is expected to reappear
-from, using the game's own nav-graph prediction instead of LIES's private tracker copy.
+from, now using LIES's watch position when the target is in another segment and the
+game's own nav-graph prediction otherwise. Not yet observed in game.
 
 ### 3.5 Charge abort
 
@@ -651,9 +683,14 @@ Needs in-game verification before shipping, in this order:
    `groupaitweakdata.lua:4741`. Do not leave it orphaned.
 
 Keep retired, and say so in the changelog so the next port does not re-litigate them:
-block 1's `_nav_segments` height preference, block 2's `door_raw` counter, block 3's lateral
-wall search, block 11's 0.5 s hold, block 12's range self-heal. Blocks 1, 2 and 4 are
-covered by the vanilla expected-position helper and are already live through `949` / `982`.
+block 3's lateral wall search (deferred under the door-watch umbrella, not deleted),
+block 11's 0.5 s hold, block 12's range self-heal.
+
+Blocks 1, 2 and 4 were restored in V8.79 (`dev/reports/door-watch-port.md`) as a LIES
+layer around the vanilla expected-position helper: the height preference is tracker-free
+(`focus_enemy.m_pos`), the door probe uses the 2-arg `find_segment_doors` so nav-link doors
+arrive as raw `Vector3`, and `door_raw` has a producer again. The vanilla helper at `949`
+and `982` is still the fallback, not the only path.
 
 Regression gate for the re-adds: `dev/tools/test/aim-tracker-guard.test.mjs` will need its
 `_upd_aim` token list and call-count assertions reviewed (finding 4), plus the usual

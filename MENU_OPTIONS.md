@@ -163,6 +163,29 @@ and "watch where the target will appear".
 - Player POV: cops peek-aim at the door the enemy is about to step through, so
   walking into a room can meet an already-aimed cop instead of one still turning.
 
+How to verify it from a log (needs `"watch_log": true`, see the next section):
+
+| Counter (per-minute digest) | What it means |
+|---|---|
+| `dw_call` | Aim passes that reached the door-watch helper (the denominator) |
+| `dw_gate_off` | Calls that returned because the setting or High Performance Mode was off; with door watching off, this must equal `dw_call` |
+| `dw_stale_bail` | The feature refused to touch a freed enemy tracker and used no position; informational, the guard working |
+| `dw_outer_gate_skip` | The target is lost (or was never verified) and is in another segment, so the watch was not attempted |
+| `dw_hit` / `dw_none` | A watch position was produced / nothing was found |
+| `dw_gap` | Must be `0`: a call that returned without landing in one of the outcomes above |
+| `dw_raw_hit` / `dw_ray` | Door position raycast that hit / door raycasts attempted |
+| `dw_expected_pos_hit` | The fallback nav-graph position was used |
+| `dw_path_prestep` | A coarse path was already armed and read for a watch position |
+| `dw_cached_reuse` | A cadence window opened without the cached re-test (no saved position, or the cop was running); the probe can still follow in the same call |
+| `dw_height_skip` | The height gate rejected the enemy segment (target far below) |
+| `dw_seg_same` | Same nav segment, so vanilla handles it (`m_pos + 140`) |
+| `dw_cadence_skip` / `dw_advancing_skip` | The 0.2/1.5 s window had not elapsed / the cop was running |
+| `dw_us`, `dw_us_max` | Average and worst time of the armed path in microseconds |
+
+`[LIES-WATCH] evt=door_watch_first` and `[LIES-TRACE] … phase=door_watch`
+name the first produced position (`src=raw` or `src=expected`) and the per-unit
+branch. Not yet observed in game.
+
 ## Debug Logging (`debug_log`)
 
 Writes `[LIES-CHECK]` diagnostic events to the PAYDAY 2 log. Default is OFF.
@@ -185,6 +208,36 @@ Same channel shape as Iter's, so one reader handles both mods:
   line per 60 s of play, carrying the per-minute counts for cover
   set/fallback, suppression denies, taser allowed/blocked, bag steal-SO
   registered/skipped/deferred, marshal mapping and civilian follow fallbacks.
+  V8.79 adds three more groups to the same line:
+  - `dw_*` — door watching: the five outcome counters (`dw_call`,
+    `dw_gate_off`, `dw_stale_bail`, `dw_outer_gate_skip`, `dw_hit`,
+    `dw_none`), the derived `dw_gap` (must be 0), the branch sub-events
+    (`dw_raw_hit`, `dw_expected_pos_hit`, `dw_path_prestep`,
+    `dw_cached_reuse`, `dw_cadence_skip`, `dw_advancing_skip`,
+    `dw_height_skip`, `dw_seg_same`, `dw_vanilla_call`, `dw_path_kick`,
+    `dw_ray`) and the timing (`dw_us`, `dw_us_max`).
+  - `fsd_*` — `find_segment_doors`: why the door list shrank
+    (`fsd_door_dead`, `fsd_door_obstructed`, `fsd_nil_element`,
+    `fsd_nil_position`, `fsd_nil_tracker`, `fsd_nil_end_pos`), which nav-link
+    doors were accepted (`fsd_navlink_seg_ok`/`_mismatch`), tracker churn
+    (`fsd_tracker_created`/`_destroyed`) and the `Vector3` contract
+    (`fsd_bad_shape`, must be 0).
+  - `react_*` — `react_hold` / `react_allow` / `react_level`: whether the
+    Reaction Level fire delay actually held frames.
+  The counter meanings are also listed under "Door Watching" above.
+
+Read a play mechanically — the tool turns the digest into PASS/FAIL claims
+(exit 0 PASS, 1 FAIL, 2 INCOMPLETE with the setting to enable):
+
+```powershell
+node dev\tools\door-watch-report.mjs "…\PAYDAY 2\mods\logs\2026_11_02_log.txt" `
+  --ab "…\PAYDAY 2\mods\logs\2026_11_03_log.txt" `
+  --out dev\reports\door-watch-run-a.md --json dev\reports\door-watch-run-a.json
+```
+
+`--ab` prints the same cost figures for a control log (door watching off) next
+to the run. Claim -> counter mapping and the test-play procedure:
+`dev/reports/door-watch-port.md`.
 
 `[LIES-CHECK]` remains the per-event detail channel and still needs
 `debug_log`; the watch counters run regardless, which is why a normal session

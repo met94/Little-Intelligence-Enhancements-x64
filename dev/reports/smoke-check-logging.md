@@ -37,7 +37,7 @@ What should appear in `mods\logs\` (in addition to prior LIES lines):
 | `[LIES-CHECK] bag steal SO registered ...` | Bag steal objective registered | Cops can pick up/secure a bag; no broken objective |
 | `[LIES-CHECK] taser charge allowed vertical=...` or `blocked vertical=...` | Taser vertical gate ran | Taser does not tase through floors; same-floor charge still works |
 | `[LIES-CHECK] marshal marksman attack=CopLogicAttack` | LIES marshal mapping loaded | Only meaningful on a marshal heist |
-| ~~`[LIES-CHECK] door watch raw position used`~~ | Retired: the door-probing branch was removed with the `_upd_aim` port to 248.2, so `door_raw` has no producer | Nothing to check; no cop pre-aim at doorways from this branch |
+| `door_raw` watch counter (producer `lies_upd_expected_pos`) | The aim pass took a raw door position as the watch position; surfaced in the digest as `dw_raw_hit`, priced by `dw_ray` | Cops pre-aim at a doorway in the target's segment; `dw_raw_hit > 0` in one digest is the proof |
 
 Absence of shield/taser/bag lines is not a failure if that unit or bag did not
 appear. Send the log either way; we check the events that did occur.
@@ -87,7 +87,7 @@ Two games, one log (`2026_10_24_log.txt`). Counts from `[LIES-CHECK]`:
 | Bag steal SO | `registered` x12; `deferred` x13; `skipped: enemy loot drop area` x5 | Pass; registration and expected skip paths exercised |
 | Taser vertical gate | `allowed` x14; `blocked` x7 (1000/830/400 units) | Pass; same-floor allowed, cross-floor blocked |
 | Phalanx | `spawn group` x1; `group created` x1; `spawned units=11` x1; `pending` x0; `buff enabled` x1; `buff disabled` x1; `buff increased` x0 | Pass for spawn/buff lifecycle; no increase because the VIP died before the 15 s tick |
-| Raw-door aim | `door watch raw position used` x2 — counter retired with the `_upd_aim` port (no producer now) | N/A (branch removed) |
+| Raw-door aim | `door_raw` counter (producer restored in V8.79: `lies_upd_expected_pos`); observed as `dw_raw_hit` in the digest. Not yet observed in game | Pending — no V8.79 test play yet |
 | Marshal | load-time mapping x2 | Mapping confirmed; marksman behaviour not exercised |
 
 No new `crash.txt` timestamp (still 2026-10-23 17:35). Only BeardLib
@@ -120,6 +120,48 @@ These prove the Group AI/periphery fixes actually executed:
 Missing lines mean the corresponding event did not occur; they are not failures by
 themselves. Send the log after one normal loud run, plus HRT/drill if they occur
 naturally.
+
+## Door-watch logging (V8.79)
+
+The restore is only claimable from a log, so a door-watch test play needs
+`watch_log`:
+
+- `"watch_log": true` in `mods\saves\LittleIntelligenceEnhancementS.txt` (game
+  closed) — required. Without it there is no header and no digest.
+- `"debug_log": true` — optional, for the `[LIES-CHECK]` detail lines.
+- `trace` is on by default and produces the breadcrumbs below.
+
+What the new lines prove, not yet observed in game:
+
+| Line / field | Meaning | What it proves |
+|---|---|---|
+| `[LIES-WATCH] … evt=header … door_watch=on highperformance=off` | Settings snapshot at heist start | The feature was armed; with `highperformance=on` the same header must be paired with all calls in `dw_gate_off` |
+| `[LIES-WATCH] … evt=door_watch_first src=raw\|expected seg=… u=… tweak=…` | One line per session, the first derived watch position and its source | The probe reached a real position and which branch produced it |
+| `[LIES-TRACE] … phase=door_watch … src=… seg=… dis=… cached=… height=…` | Breadcrumb for a derived (not cached) position, one per unit per 2.5 s | Which branch ran for which unit, and whether the height gate let it through (`height=1`) |
+| `[LIES-WATCH] … evt=alarm name=door_outcome_gap …` | A call returned without exactly one outcome | Accounting bug, not a gameplay result |
+| `[LIES-WATCH] … evt=alarm name=door_contract_violation …` | A non-`Vector3` door position reached a caller | `find_segment_doors` contract break |
+
+Digest groups in `[LIES-WATCH] … evt=digest` (per-minute deltas):
+
+| Group | Fields | What it proves |
+|---|---|---|
+| outcome set | `dw_call`, `dw_gate_off`, `dw_stale_bail`, `dw_outer_gate_skip`, `dw_hit`, `dw_none`, `dw_gap` | Every call landed in exactly one outcome; `dw_gap` must be 0. `dw_stale_bail > 0` is the tracker guard working |
+| branch detail | `dw_cadence_skip`, `dw_advancing_skip`, `dw_cached_reuse`, `dw_cached_unsighted`, `dw_height_skip`, `dw_seg_same`, `dw_path_prestep`, `dw_raw_hit`, `dw_expected_pos_hit`, `dw_vanilla_call`, `dw_path_kick`, `dw_ray` | Which path ran: raw door hit, expected-position fallback, cadence/height/advancing skips, and whether the cached position survived its re-test. `dw_cached_reuse` means the re-test did not run (no saved position, or advancing), so the probe may follow in the same call. `dw_ray` is the door-ray count |
+| cost | `dw_us`, `dw_us_max` | Average and high-water time of the armed path (`os.clock`, ~1 ms granularity — read as an average) |
+| `find_segment_doors` | `fsd_call_2arg`, `fsd_call_center`, `fsd_no_from_seg`, `fsd_neighbour_missing`, `fsd_disabled`, `fsd_raw`, `fsd_door_dead`, `fsd_door_obstructed`, `fsd_nil_element`, `fsd_nil_position`, `fsd_nil_tracker`, `fsd_nil_end_pos`, `fsd_navlink_seg_ok`, `fsd_navlink_seg_mismatch`, `fsd_tracker_created`, `fsd_tracker_destroyed`, `fsd_bad_shape` | Why the door list shrank, whether nav-link doors were included (`fsd_navlink_seg_ok`), and that the `Vector3` contract held (`fsd_bad_shape=0`). A map with no nav-link doors legitimately shows 0 |
+| reaction | `react_hold`, `react_allow`, `react_level` | The V8.78 `enemy_reaction_level` delay actually held (or did not) frames |
+
+Read a play with:
+
+```powershell
+node dev\tools\door-watch-report.mjs "C:\Program Files (x86)\Steam\steamapps\common\PAYDAY 2\mods\logs\2026_11_02_log.txt" `
+  --ab "C:\Program Files (x86)\Steam\steamapps\common\PAYDAY 2\mods\logs\2026_11_03_log.txt" `
+  --out dev\reports\door-watch-run-a.md --json dev\reports\door-watch-run-a.json
+```
+
+Exit 0 = PASS, 1 = FAIL, 2 = INCOMPLETE (the message names the setting to
+enable). Claim -> counter mapping and the run procedure:
+`dev/reports/door-watch-port.md` §5-§6.
 
 ## Log collection
 

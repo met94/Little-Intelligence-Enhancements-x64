@@ -602,3 +602,37 @@ whether cops path in.
 - **Recon truncation:** keep the 248.2 `#coarse_path - forwardmost_i_nav_point`
   loop form, including its one-extra removal. Parity-safe; re-target node is
   the one behind the forwardmost point.
+
+---
+
+## Door watching (2026-11-01, V8.79)
+
+- **Function:** `CopLogicAttack._upd_aim` (LIES restored body) via the local
+  helper `lies_upd_expected_pos` in `lua/coplogics/coplogicattack.lua`;
+  `NavigationManager.find_segment_doors` in its 2-arg (default) contract.
+- **Decision:** restore ledger blocks #1/#2/#4 as a LIES layer *over* the
+  vanilla `_get_expected_attention_position`, gated by
+  `door_watch and not highperformance`, instead of overriding the vanilla
+  method. Review finding: `BossLogicAttack:694` calls the vanilla
+  `CopLogicAttack._upd_aim` directly (boss logic also runs its own copy at
+  `bosslogicattack.lua:451-466`), so a method override would either miss the
+  boss path or need a second override; keeping the watch as a call target
+  inside the shared body reaches every caller (attack family, team-AI assault,
+  bosses) with one gate.
+- **Deviations, all deliberate:**
+  - the height gate reads `focus_enemy.m_pos.z` (fallback `data.m_pos.z`)
+    instead of `managers.navigation._nav_segments[seg].pos` — that table is
+    private, string-keyed at 248.2, and the value was tracker-derived;
+  - the same-segment case delegates to vanilla (`dw_seg_same`): a self-to-self
+    `search_coarse` can never satisfy `i_to_seg ~= i_from_seg`, so the pre-port
+    fallback burned a search per cadence window and returned nothing;
+  - the probe calls the 2-arg `find_segment_doors(enemy_seg)`, so nav-link
+    doors arrive as raw `Vector3` `nav_link_end_pos()` (AI-02 shape) and the
+    `if door.x` test holds; `center_only` callers keep the table shape.
+- **Safety order:** the tracker liveness check runs before the feature gate,
+  because vanilla `_get_expected_attention_position` dereferences
+  `attention_obj.nav_tracker` unguarded (`248.2:1508/1516`); with the feature
+  off, handing it a freed tracker re-opens the V8.68/V8.75 crash class.
+- **Gate:** smoke. `[LIES-WATCH] evt=digest` with `watch_log=true`, read by
+  `node dev/tools/door-watch-report.mjs`; the claim -> counter table and the
+  test-play procedure are in `dev/reports/door-watch-port.md`.

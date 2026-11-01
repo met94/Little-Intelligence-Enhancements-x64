@@ -5,7 +5,7 @@ Target: `e3a8b616`
 - hooks: 68/68 ok
 - method checks: 50/50 ok
 - errors: 0
-- review: 150
+- review: 151
 
 ## Hook checks
 
@@ -159,12 +159,13 @@ None.
 - `lua/coplogics/boss/bosslogicattack.lua:938` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, LIESBossLogicAttack._upd_enemy_detection, data, data.t + delay, true)`
 - `lua/coplogics/coplogicarrest.lua:245` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.update_task_key, CopLogicArrest.queued_update, data, data.t + delay, data.important)`
 - `lua/coplogics/coplogicarrest.lua:312` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.update_task_key, CopLogicArrest.queued_update, data, data.t + delay, data.important)`
-- `lua/coplogics/coplogicattack.lua:166` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.update_queue_id, data.logic.queued_update, data, data.t + (data.important and 0 or 0.2), true)`
-- `lua/coplogics/coplogicattack.lua:237` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicAttack._upd_enemy_detection, data, delay and data.t + delay, data.important and true)`
-- `lua/coplogics/coplogicattack.lua:1284` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/coplogics/coplogicattack.lua:1340` `find_segment_doors` — Returns position vectors, not door tables. `local found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", to_nav_seg), true)`
-- `lua/coplogics/coplogicattack.lua:1344` `find_segment_doors` — Returns position vectors, not door tables. `found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", enemy_seg), true)`
-- `lua/coplogics/coplogicattack.lua:2833` `_quad_field` — New engine surface; verify method/arg shapes. `found_cover = managers.navigation._quad_field:find_cover(search_params)`
+- `lua/coplogics/coplogicattack.lua:208` `find_segment_doors` — Returns position vectors, not door tables. `local doors = nav and nav.find_segment_doors and nav:find_segment_doors(enemy_seg)`
+- `lua/coplogics/coplogicattack.lua:405` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.update_queue_id, data.logic.queued_update, data, data.t + (data.important and 0 or 0.2), true)`
+- `lua/coplogics/coplogicattack.lua:476` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicAttack._upd_enemy_detection, data, delay and data.t + delay, data.important and true)`
+- `lua/coplogics/coplogicattack.lua:1538` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/coplogics/coplogicattack.lua:1594` `find_segment_doors` — Returns position vectors, not door tables. `local found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", to_nav_seg), true)`
+- `lua/coplogics/coplogicattack.lua:1598` `find_segment_doors` — Returns position vectors, not door tables. `found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", enemy_seg), true)`
+- `lua/coplogics/coplogicattack.lua:3087` `_quad_field` — New engine surface; verify method/arg shapes. `found_cover = managers.navigation._quad_field:find_cover(search_params)`
 - `lua/coplogics/coplogicbase.lua:367` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = managers.navigation._nav_segments`
 - `lua/coplogics/coplogicbase.lua:521` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `function CopLogicBase.queue_task(internal_data, id, func, data, exec_t, asap)`
 - `lua/coplogics/coplogicbase.lua:552` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `managers.enemy:queue_task(id, func, data, exec_t, callback(CopLogicBase, CopLogicBase, "on_queued_task", internal_data), asap)`
@@ -226,64 +227,64 @@ None.
 - `lua/groupaistate/groupaistatebesiege.lua:4359` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
 - `lua/groupaistate/groupaistatebesiege.lua:4422` `search_coarse` — Start/end validation added at 247. `local path = managers.navigation:search_coarse(coarse_params)`
 - `lua/managers/mapelements/elementspecialobjective.lua:398` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/managers/navigationmanager.lua:35` `find_segment_doors` — Returns position vectors, not door tables. `function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)`
-- `lua/managers/navigationmanager.lua:36` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = self._nav_segments`
-- `lua/managers/navigationmanager.lua:58` `_quad_field` — New engine surface; verify method/arg shapes. `local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true)`
-- `lua/managers/navigationmanager.lua:84` `_quad_field` — New engine surface; verify method/arg shapes. `local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true)`
-- `lua/managers/navigationmanager.lua:106` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local from_seg = self._nav_segments[from_seg_id]`
-- `lua/managers/navigationmanager.lua:115` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local neighbour = self._nav_segments[neighbour_id]`
-- `lua/managers/navigationmanager.lua:135` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = self._nav_segments`
-- `lua/managers/navigationmanager.lua:159` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = self._nav_segments`
-- `lua/managers/navigationmanager.lua:165` `find_segment_doors` — Returns position vectors, not door tables. `local doors = door_list or self:find_segment_doors(m_seg_id, nil, true)`
-- `lua/managers/navigationmanager.lua:332` `_quad_field` — New engine surface; verify method/arg shapes. `elseif tracker:obstructed() or not self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) then`
-- `lua/managers/navigationmanager.lua:366` `_quad_field` — New engine surface; verify method/arg shapes. `local nav_tracker = self._quad_field:create_nav_tracker(pos, true)`
-- `lua/managers/navigationmanager.lua:374` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local room_nav_seg = self._nav_segments[seg_id]`
-- `lua/managers/navigationmanager.lua:384` `find_segment_doors` — Returns position vectors, not door tables. `doors = self:find_segment_doors(seg_id, nil, true)`
-- `lua/managers/navigationmanager.lua:388` `_quad_field` — New engine surface; verify method/arg shapes. `local navseg_tracker = self._quad_field:create_nav_tracker(room_nav_seg.pos, true)`
-- `lua/managers/navigationmanager.lua:404` `_quad_field` — New engine surface; verify method/arg shapes. `local location_script_data = self._quad_field:get_script_data(navseg_tracker, true)`
-- `lua/managers/navigationmanager.lua:439` `_quad_field` — New engine surface; verify method/arg shapes. `local nav_tracker = self._quad_field:create_nav_tracker(pos, true)`
-- `lua/managers/navigationmanager.lua:448` `_quad_field` — New engine surface; verify method/arg shapes. `local location_script_data = self._quad_field:get_script_data(nav_tracker)`
-- `lua/managers/navigationmanager.lua:567` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local first_key = next(self._nav_segments)`
-- `lua/managers/navigationmanager.lua:576` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `for seg_id, seg in pairs(self._nav_segments) do`
-- `lua/managers/navigationmanager.lua:594` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `total_limit = math.min(LIES_COVER_GEN_PER_SEGMENT * table.size(self._nav_segments), LIES_COVER_GEN_TOTAL_CAP),`
-- `lua/managers/navigationmanager.lua:668` `_quad_field` — New engine surface; verify method/arg shapes. `local ok, pos = pcall(self._quad_field.random_position_in_nav_segment, self._quad_field, arg)`
-- `lua/managers/navigationmanager.lua:774` `_quad_field` — New engine surface; verify method/arg shapes. `local tracker = self._quad_field:create_nav_tracker(candidate, true)`
-- `lua/managers/navigationmanager.lua:864` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local seg = self._nav_segments[seg_id]`
-- `lua/managers/navigationmanager.lua:870` `_quad_field` — New engine surface; verify method/arg shapes. `local seg_tracker = self._quad_field:create_nav_tracker(seg.pos, true)`
-- `lua/managers/navigationmanager.lua:882` `_quad_field` — New engine surface; verify method/arg shapes. `local location_script_data = self._quad_field:get_script_data(seg_tracker, true)`
-- `lua/managers/navigationmanager.lua:908` `find_segment_doors` — Returns position vectors, not door tables. `doors = self:find_segment_doors(seg_id, nil, true)`
-- `lua/managers/navigationmanager.lua:1246` `search_pos_to_pos` — Delegates to _quad_field:detailed_search(params). `function NavigationManager:search_pos_to_pos(params)`
-- `lua/managers/navigationmanager.lua:1364` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:detailed_search(params)`
-- `lua/managers/navigationmanager.lua:1478` `_quad_field` — New engine surface; verify method/arg shapes. `local id = self._quad_field:add_obstacle(obstacle_obj)`
-- `lua/managers/navigationmanager.lua:1502` `_quad_field` — New engine surface; verify method/arg shapes. `local nav_link = self._quad_field:add_nav_link(element:value("position"), element:nav_link_end_pos(), {`
-- `lua/managers/navigationmanager.lua:1511` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local start_nav_seg = self._nav_segments[start_nav_seg_id]`
-- `lua/managers/navigationmanager.lua:1513` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `if not start_nav_seg or not self._nav_segments[end_nav_seg_id] then`
-- `lua/managers/navigationmanager.lua:1564` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:remove_obstacle(obs_data.id)`
-- `lua/managers/navigationmanager.lua:1570` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:remove_obstacle(obs_data.id)`
-- `lua/managers/navigationmanager.lua:1636` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `if not self._nav_segments[unique_id] then`
-- `lua/managers/navigationmanager.lua:1646` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:set_nav_segment_blocked_filter(unique_id, access_filter)`
-- `lua/managers/navigationmanager.lua:1648` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `self._nav_segments[unique_id].blocked_group = filter_group`
-- `lua/managers/navigationmanager.lua:1650` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `if self._nav_segments[unique_id].blocked_group and self._cached_paths and #self._cached_paths > 0 then`
-- `lua/managers/navigationmanager.lua:1683` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:set_nav_segment_blocked_filter(unique_id, 0)`
-- `lua/managers/navigationmanager.lua:1685` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `self._nav_segments[unique_id].blocked_group = nil`
-- `lua/managers/navigationmanager.lua:1687` `_quad_field` — New engine surface; verify method/arg shapes. `local cur_state = self._quad_field:is_nav_segment_enabled(unique_id)`
-- `lua/managers/navigationmanager.lua:1694` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `self._nav_segments[unique_id].disabled = seg_disabled_state`
-- `lua/managers/navigationmanager.lua:1697` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:set_nav_segment_enabled(unique_id, wanted_state)`
-- `lua/managers/navigationmanager.lua:1821` `_quad_field` — New engine surface; verify method/arg shapes. `if not cover[self.COVER_RESERVED] and self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) and not cover[3]:obstructed() and not cover[3]:lost() then`
-- `lua/managers/navigationmanager.lua:1839` `_quad_field` — New engine surface; verify method/arg shapes. `if self._quad_field:is_position_unreserved({radius = 40, position = cover[1], filter = rsrv_filter}) then`
-- `lua/managers/navigationmanager.lua:1916` `_quad_field` — New engine surface; verify method/arg shapes. `if not cover[self.COVER_RESERVED] and self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) and not cover[3]:obstructed() and not cover[3]:lost() then`
+- `lua/managers/navigationmanager.lua:45` `find_segment_doors` — Returns position vectors, not door tables. `function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)`
+- `lua/managers/navigationmanager.lua:48` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = self._nav_segments`
+- `lua/managers/navigationmanager.lua:95` `_quad_field` — New engine surface; verify method/arg shapes. `local nl_tracker = self._quad_field:create_nav_tracker(door_pos, true)`
+- `lua/managers/navigationmanager.lua:161` `_quad_field` — New engine surface; verify method/arg shapes. `local nl_tracker = self._quad_field:create_nav_tracker(door_pos, true)`
+- `lua/managers/navigationmanager.lua:205` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local from_seg = self._nav_segments[from_seg_id]`
+- `lua/managers/navigationmanager.lua:214` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local neighbour = self._nav_segments[neighbour_id]`
+- `lua/managers/navigationmanager.lua:234` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = self._nav_segments`
+- `lua/managers/navigationmanager.lua:258` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = self._nav_segments`
+- `lua/managers/navigationmanager.lua:264` `find_segment_doors` — Returns position vectors, not door tables. `local doors = door_list or self:find_segment_doors(m_seg_id, nil, true)`
+- `lua/managers/navigationmanager.lua:431` `_quad_field` — New engine surface; verify method/arg shapes. `elseif tracker:obstructed() or not self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) then`
+- `lua/managers/navigationmanager.lua:465` `_quad_field` — New engine surface; verify method/arg shapes. `local nav_tracker = self._quad_field:create_nav_tracker(pos, true)`
+- `lua/managers/navigationmanager.lua:473` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local room_nav_seg = self._nav_segments[seg_id]`
+- `lua/managers/navigationmanager.lua:483` `find_segment_doors` — Returns position vectors, not door tables. `doors = self:find_segment_doors(seg_id, nil, true)`
+- `lua/managers/navigationmanager.lua:487` `_quad_field` — New engine surface; verify method/arg shapes. `local navseg_tracker = self._quad_field:create_nav_tracker(room_nav_seg.pos, true)`
+- `lua/managers/navigationmanager.lua:503` `_quad_field` — New engine surface; verify method/arg shapes. `local location_script_data = self._quad_field:get_script_data(navseg_tracker, true)`
+- `lua/managers/navigationmanager.lua:538` `_quad_field` — New engine surface; verify method/arg shapes. `local nav_tracker = self._quad_field:create_nav_tracker(pos, true)`
+- `lua/managers/navigationmanager.lua:547` `_quad_field` — New engine surface; verify method/arg shapes. `local location_script_data = self._quad_field:get_script_data(nav_tracker)`
+- `lua/managers/navigationmanager.lua:666` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local first_key = next(self._nav_segments)`
+- `lua/managers/navigationmanager.lua:675` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `for seg_id, seg in pairs(self._nav_segments) do`
+- `lua/managers/navigationmanager.lua:693` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `total_limit = math.min(LIES_COVER_GEN_PER_SEGMENT * table.size(self._nav_segments), LIES_COVER_GEN_TOTAL_CAP),`
+- `lua/managers/navigationmanager.lua:767` `_quad_field` — New engine surface; verify method/arg shapes. `local ok, pos = pcall(self._quad_field.random_position_in_nav_segment, self._quad_field, arg)`
+- `lua/managers/navigationmanager.lua:873` `_quad_field` — New engine surface; verify method/arg shapes. `local tracker = self._quad_field:create_nav_tracker(candidate, true)`
+- `lua/managers/navigationmanager.lua:963` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local seg = self._nav_segments[seg_id]`
+- `lua/managers/navigationmanager.lua:969` `_quad_field` — New engine surface; verify method/arg shapes. `local seg_tracker = self._quad_field:create_nav_tracker(seg.pos, true)`
+- `lua/managers/navigationmanager.lua:981` `_quad_field` — New engine surface; verify method/arg shapes. `local location_script_data = self._quad_field:get_script_data(seg_tracker, true)`
+- `lua/managers/navigationmanager.lua:1007` `find_segment_doors` — Returns position vectors, not door tables. `doors = self:find_segment_doors(seg_id, nil, true)`
+- `lua/managers/navigationmanager.lua:1345` `search_pos_to_pos` — Delegates to _quad_field:detailed_search(params). `function NavigationManager:search_pos_to_pos(params)`
+- `lua/managers/navigationmanager.lua:1463` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:detailed_search(params)`
+- `lua/managers/navigationmanager.lua:1577` `_quad_field` — New engine surface; verify method/arg shapes. `local id = self._quad_field:add_obstacle(obstacle_obj)`
+- `lua/managers/navigationmanager.lua:1601` `_quad_field` — New engine surface; verify method/arg shapes. `local nav_link = self._quad_field:add_nav_link(element:value("position"), element:nav_link_end_pos(), {`
+- `lua/managers/navigationmanager.lua:1610` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local start_nav_seg = self._nav_segments[start_nav_seg_id]`
+- `lua/managers/navigationmanager.lua:1612` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `if not start_nav_seg or not self._nav_segments[end_nav_seg_id] then`
+- `lua/managers/navigationmanager.lua:1663` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:remove_obstacle(obs_data.id)`
+- `lua/managers/navigationmanager.lua:1669` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:remove_obstacle(obs_data.id)`
+- `lua/managers/navigationmanager.lua:1735` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `if not self._nav_segments[unique_id] then`
+- `lua/managers/navigationmanager.lua:1745` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:set_nav_segment_blocked_filter(unique_id, access_filter)`
+- `lua/managers/navigationmanager.lua:1747` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `self._nav_segments[unique_id].blocked_group = filter_group`
+- `lua/managers/navigationmanager.lua:1749` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `if self._nav_segments[unique_id].blocked_group and self._cached_paths and #self._cached_paths > 0 then`
+- `lua/managers/navigationmanager.lua:1782` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:set_nav_segment_blocked_filter(unique_id, 0)`
+- `lua/managers/navigationmanager.lua:1784` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `self._nav_segments[unique_id].blocked_group = nil`
+- `lua/managers/navigationmanager.lua:1786` `_quad_field` — New engine surface; verify method/arg shapes. `local cur_state = self._quad_field:is_nav_segment_enabled(unique_id)`
+- `lua/managers/navigationmanager.lua:1793` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `self._nav_segments[unique_id].disabled = seg_disabled_state`
+- `lua/managers/navigationmanager.lua:1796` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:set_nav_segment_enabled(unique_id, wanted_state)`
+- `lua/managers/navigationmanager.lua:1920` `_quad_field` — New engine surface; verify method/arg shapes. `if not cover[self.COVER_RESERVED] and self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) and not cover[3]:obstructed() and not cover[3]:lost() then`
 - `lua/managers/navigationmanager.lua:1938` `_quad_field` — New engine surface; verify method/arg shapes. `if self._quad_field:is_position_unreserved({radius = 40, position = cover[1], filter = rsrv_filter}) then`
 - `lua/managers/navigationmanager.lua:2015` `_quad_field` — New engine surface; verify method/arg shapes. `if not cover[self.COVER_RESERVED] and self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) and not cover[3]:obstructed() and not cover[3]:lost() then`
-- `lua/managers/navigationmanager.lua:2040` `_quad_field` — New engine surface; verify method/arg shapes. `if self._quad_field:is_position_unreserved({radius = 40, position = cover[1], filter = rsrv_filter}) then`
-- `lua/managers/navigationmanager.lua:2079` `_quad_field` — New engine surface; verify method/arg shapes. `local position_tracker = self._quad_field:create_nav_tracker(position)`
-- `lua/managers/navigationmanager.lua:2083` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:destroy_nav_tracker(position_tracker)`
-- `lua/managers/navigationmanager.lua:2134` `_quad_field` — New engine surface; verify method/arg shapes. `local position_tracker = self._quad_field:create_nav_tracker(altered_pos, true)`
-- `lua/managers/navigationmanager.lua:2140` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:destroy_nav_tracker(position_tracker)`
-- `lua/managers/navigationmanager.lua:2207` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segments = self._nav_segments`
-- `lua/managers/navigationmanager.lua:2270` `_quad_field` — New engine surface; verify method/arg shapes. `if self._quad_field:is_nav_segment_blocked(i_seg, search_data.access_pos) then`
-- `lua/managers/navigationmanager.lua:2301` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_segs = self._nav_segments`
-- `lua/managers/navigationmanager.lua:2353` `_quad_field` — New engine surface; verify method/arg shapes. `local from_tracker = self._quad_field:create_nav_tracker(pos)`
-- `lua/managers/navigationmanager.lua:2406` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:destroy_nav_tracker(from_tracker)`
+- `lua/managers/navigationmanager.lua:2037` `_quad_field` — New engine surface; verify method/arg shapes. `if self._quad_field:is_position_unreserved({radius = 40, position = cover[1], filter = rsrv_filter}) then`
+- `lua/managers/navigationmanager.lua:2114` `_quad_field` — New engine surface; verify method/arg shapes. `if not cover[self.COVER_RESERVED] and self._quad_field:is_nav_segment_enabled(cover[3]:nav_segment()) and not cover[3]:obstructed() and not cover[3]:lost() then`
+- `lua/managers/navigationmanager.lua:2139` `_quad_field` — New engine surface; verify method/arg shapes. `if self._quad_field:is_position_unreserved({radius = 40, position = cover[1], filter = rsrv_filter}) then`
+- `lua/managers/navigationmanager.lua:2178` `_quad_field` — New engine surface; verify method/arg shapes. `local position_tracker = self._quad_field:create_nav_tracker(position)`
+- `lua/managers/navigationmanager.lua:2182` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:destroy_nav_tracker(position_tracker)`
+- `lua/managers/navigationmanager.lua:2233` `_quad_field` — New engine surface; verify method/arg shapes. `local position_tracker = self._quad_field:create_nav_tracker(altered_pos, true)`
+- `lua/managers/navigationmanager.lua:2239` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:destroy_nav_tracker(position_tracker)`
+- `lua/managers/navigationmanager.lua:2306` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segments = self._nav_segments`
+- `lua/managers/navigationmanager.lua:2369` `_quad_field` — New engine surface; verify method/arg shapes. `if self._quad_field:is_nav_segment_blocked(i_seg, search_data.access_pos) then`
+- `lua/managers/navigationmanager.lua:2400` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_segs = self._nav_segments`
+- `lua/managers/navigationmanager.lua:2452` `_quad_field` — New engine surface; verify method/arg shapes. `local from_tracker = self._quad_field:create_nav_tracker(pos)`
+- `lua/managers/navigationmanager.lua:2505` `_quad_field` — New engine surface; verify method/arg shapes. `self._quad_field:destroy_nav_tracker(from_tracker)`
 - `lua/teamailogics/teamailogicassault.lua:28` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicAssault._upd_enemy_detection, data, data.t)`
 - `lua/teamailogics/teamailogicassault.lua:334` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicAssault._upd_enemy_detection, data, data.t + delay)`
 - `lua/teamailogics/teamailogicidle.lua:404` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.wall_stare_task_key, CopLogicIdle._chk_stare_into_wall_1, data, data.t)`

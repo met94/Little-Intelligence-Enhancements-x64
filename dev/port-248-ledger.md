@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T08:34:56.288Z
+Generated: 2026-11-01T11:17:01.017Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,7 +13,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 214 |
+| MOD_ONLY | 218 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -25,6 +25,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
 | [ ] | audit | `lies_alarm_ratio` | 11 | 0 | 0 |  |
+| [ ] | audit | `lies_delta` | 3 | 0 | 0 |  |
 | [ ] | audit | `lies_level_id` | 11 | 0 | 0 |  |
 | [ ] | audit | `lies_watch_fields` | 17 | 0 | 0 |  |
 | [ ] | audit | `LIES._avg_sum` | 9 | 0 | 0 |  |
@@ -51,10 +52,10 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.Trace` | 81 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchDigest` | 72 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchDigest` | 126 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchReset` | 17 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchTick` | 62 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchTick` | 103 | 0 | 0 |  |
 
 ## menunodegui.lua
 
@@ -120,7 +121,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `NavigationManager._execute_coarce_search` | 110 | 103 | 95 |  |
 | [ ] | **PORT** | `NavigationManager._sort_nav_segs_after_pos` | 51 | 89 | 47 |  |
 | [ ] | **PORT** | `NavigationManager.add_obstacle` | 57 | 20 | 25 |  |
-| [ ] | **PORT** | `NavigationManager.find_segment_doors` | 68 | 18 | 17 |  |
+| [ ] | **PORT** | `NavigationManager.find_segment_doors` | 157 | 18 | 17 |  |
 | [ ] | **PORT** | `NavigationManager.register_cover_units` | 132 | 80 | 75 |  |
 | [ ] | **PORT** | `NavigationManager.remove_obstacle` | 46 | 15 | 46 |  |
 | [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 93 | 36 | 38 |  |
@@ -132,6 +133,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `_lies_cover_too_close` | 22 | 0 | 0 |  |
 | [ ] | audit | `_lies_grid_key` | 3 | 0 | 0 |  |
 | [ ] | audit | `convert_bastards` | 7 | 0 | 0 |  |
+| [ ] | audit | `lies_count` | 5 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._add_LIES_cached_path` | 7 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._change_funcs` | 21 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._check_LIES_invalidated_navlink_cached_paths` | 25 | 0 | 0 |  |
@@ -609,7 +611,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 376 | 195 | 192 |  |
+| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 391 | 195 | 192 |  |
 | [ ] | **PORT** | `CopLogicAttack.action_complete_clbk` | 101 | 47 | 47 |  |
 | [ ] | **PORT** | `CopLogicAttack.is_available_for_assignment` | 60 | 43 | 43 |  |
 | [ ] | audit | `CopLogicAttack._check_needs_reload` | 48 | 0 | 0 |  |
@@ -622,8 +624,10 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopLogicAttack._move_back_into_field_position` | 27 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._pathing_complete_clbk` | 21 | 0 | 0 |  |
 | [ ] | audit | `lies_aim_window` | 5 | 0 | 0 |  |
+| [ ] | audit | `lies_door_watch_first` | 23 | 0 | 0 |  |
 | [ ] | audit | `lies_enemy_tracker` | 22 | 0 | 0 |  |
 | [ ] | audit | `lies_trace_window` | 5 | 0 | 0 |  |
+| [ ] | audit | `lies_upd_expected_pos` | 193 | 0 | 0 |  |
 | [ ] | keep | `CopLogicAttack._can_move` | 3 | 3 | 3 |  |
 | [ ] | keep | `CopLogicAttack._cancel_cover_pathing` | 9 | 16 | 16 |  |
 | [ ] | keep | `CopLogicAttack._chk_covered` | 20 | 23 | 23 |  |

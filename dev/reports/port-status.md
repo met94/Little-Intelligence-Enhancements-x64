@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-10-24 (after Group AI and periphery parity audits).
+Last updated: 2026-11-01 (after the V8.79 door-watch restore).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -29,15 +29,26 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   (`dev/reports/api-audit-triage.md`).
 - Static gates: 54 Node tests, 71/71 LuaJIT syntax, 68/68 freevars, ledger,
   API audit pass.
+- Door watching restored (V8.79, `0edc8bc` + `e389d5e` + `189a053`): ledger
+  blocks #1/#2/#4 are back as a LIES layer over vanilla
+  `_get_expected_attention_position`, gated by
+  `door_watch and not highperformance`, plus the `find_segment_doors` guards
+  (`a9bfba0`). Report, deviations and the test-play procedure:
+  `dev/reports/door-watch-port.md`. Code and static gates are green; **not yet
+  observed in game** — `dev/tools/door-watch-report.mjs` adjudicates the log.
 
 ## Open — core AI (needs in-game testing)
+
+Backlog order: door watching — **done (V8.79)**
+(`dev/reports/door-watch-port.md`); next is
+`CopLogicBase._upd_attention_obj_detection`.
 
 Dossiers in `dev/reports/dossiers/`:
 
 | Function | Size | Why it matters |
 |---|---:|---|
-| `CopLogicBase._upd_attention_obj_detection` | 512L | Detection core; 248.2 changed fields/flow. |
-| `CopLogicAttack._upd_aim` | 560L | Aim/cover/fire; 248.2 changed door/aim flow. |
+| `CopLogicBase._upd_attention_obj_detection` | 512L | Detection core; 248.2 changed fields/flow. **Next.** |
+| `CopLogicAttack._upd_aim` | 560L | Aim/cover/fire; **done** — V8.75 port + V8.77/V8.78 restores, V8.79 door watch (`dev/reports/door-watch-port.md`). |
 | `CopLogicAttack.action_complete_clbk` | 101L | Action completion + state transitions. |
 | `CopLogicAttack.is_available_for_assignment` | 51L | Assignment gating. |
 | `CopLogicIdle.damage_clbk` | 61L | Damage reaction / relocation. |
