@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.73_x64",
+		version = "V8.74_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -218,6 +218,12 @@ if RequiredScript == "lib/managers/menumanager" then
 	LIES.trace_prune_t = LIES.trace_prune_t or 0
 	LIES.trace_dropped = LIES.trace_dropped or 0
 
+	local trace_low_priority = {
+		aim = true,
+		peek = true,
+		cover_upd = true
+	}
+
 	local trace_failure_phases = {
 		combat_no_attention = true,
 		dodge_dead_enemy = true,
@@ -266,7 +272,9 @@ if RequiredScript == "lib/managers/menumanager" then
 			self.trace_window_n = 0
 		end
 
-		if self.trace_window_n >= 60 and not trace_failure_phases[phase] then
+		local trace_limit = trace_low_priority[phase] and 40 or 120
+
+		if self.trace_window_n >= trace_limit and not trace_failure_phases[phase] then
 			self.trace_dropped = self.trace_dropped + 1
 
 			return

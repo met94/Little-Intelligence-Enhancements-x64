@@ -1,3 +1,12 @@
+Revision V8.74_x64 — 2026-11-01
+Cloaker combat path confirmed stable so far; trace volume split by phase value.
+- live session check on V8.73 (3.5 min, cloakers present): a `spooc` unit ran the full previously-fatal path 32 times end to end - `spooc_combat` -> `combat` -> `pose` -> `pose_req_stand/pose_req_crouch` -> `flank` -> `cover_path` -> `move_out` - and also completed a tackle (`kind=spooc_start dis=65 reaction=12`) against a bot at 65 units, then re-targeted and stayed alive for 10+ s. No crash. The removed `World:raycast` pose probes (V8.71 port) remain the best explanation for the 06:09 fail-fast and the 06:03/05:46 access violations
+- found in the same session: 31 logic switches happened **while the unit's own update was running** (`kind=logic ... during=<logic>`), all on team-AI bots (`german`, `bonnie`, `female_1`) moving between `idle`/`travel`/`assault`, including `from==to` re-entries. So mid-update logic switching is real in this install; it is recorded, not changed
+- trace volume: the previous cap saturated (35k suppressed lines in 190 s). Low-value phases (`aim`, `peek`, `cover_upd`) are now capped at 40 lines/s while the decision phases keep 120 lines/s, and spooc `aim` uses a 1 s window instead of 0.2 s. Same information at the crash, a fraction of the bytes (previous log 2.2 MB in 3.5 min)
+- no AI behaviour change
+
+Player notes: nothing changes in play. The diagnostic log is smaller in normal play but still records the exact combat step and objective history of a crashing unit.
+
 Revision V8.73_x64 — 2026-11-01
 Sub-second tracing for the spooc path, re-entrancy marker, and a fixed ordering bug in the helpers.
 - 06:29 crash (81 s session, V8.72): `access violation`, script stack `update() @.../spooclogicattack.lua:161` (the `_upd_combat_movement` call) -> `original() @.../copextensions/copbrain.lua:1396`. The last spooc trace was `phase=spooc_combat` at t=84.62; the sub-phases that would name the exact call were **suppressed by the 2.5 s per-phase dedupe** (the same unit had logged `combat`/`pose` a second earlier)

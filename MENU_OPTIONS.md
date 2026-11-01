@@ -159,7 +159,7 @@ the breadcrumbs are what was written *before* it. Add `"trace": false` to
 Each line looks like:
 
 ```
-[LIES-TRACE] v=V8.73_x64 t=143.27 u=1081 tweak=spooc logic=attack phase=combat att=769 att_alive=true att_trk=true dropped=0
+[LIES-TRACE] v=V8.74_x64 t=143.27 u=1081 tweak=spooc logic=attack phase=combat att=769 att_alive=true att_trk=true dropped=0
 ```
 
 - `u` is the acting unit, `tweak` its character type, `logic` its current logic,
@@ -170,9 +170,10 @@ Each line looks like:
   (`att_alive`, `att_trk` = an enemy nav tracker is present), `dropped` how many
   lines were suppressed so far.
 - Throttle: one line per unit per phase per 2.5 s, and per call where the phase
-  needs it (`spooc_combat` uses a 0.2 s window), plus a global cap of 60 lines
-  per second. A sustained worst case is ~3600 lines per minute; a normal heist
-  stays well below that. `dropped` tells you when the cap was hit.
+  needs it (`spooc_combat` and the spooc combat sub-steps use 0.2 s, spooc `aim`
+  1 s), plus a global cap of 40 lines/s for low-value phases (`aim`, `peek`,
+  `cover_upd`) and 120 lines/s overall. A saturated minute adds roughly 3-6k
+  lines; `dropped` tells you how many were suppressed.
 - Failure phases are exempt from the cap because they are the ones a crash
   report cannot be reconstructed without: `combat_no_attention` (no attention
   object at all), `dodge_dead_enemy` / `spooc_dead_enemy` (AI met a dead enemy
@@ -189,9 +190,9 @@ Report a crash by attaching `crash.txt` plus the last `[LIES-TRACE]` lines from
 Same switch (`trace`), separate tag, one line per unit and kind per second:
 
 ```
-[LIES-EVENT] v=V8.73_x64 kind=objective t=143.20 u=1081 tweak=spooc logic=travel att=769 old=defend_area new=nil forced=false follow=n
-[LIES-EVENT] v=V8.73_x64 kind=logic     t=143.21 u=1081 tweak=spooc logic=travel att=769 from=travel to=idle obj=nil obj_forced=false
-[LIES-EVENT] v=V8.73_x64 kind=exit      t=143.21 u=1081 tweak=spooc logic=travel att=769 req=idle obj=nil internal=y
+[LIES-EVENT] v=V8.74_x64 kind=objective t=143.20 u=1081 tweak=spooc logic=travel att=769 old=defend_area new=nil forced=false follow=n
+[LIES-EVENT] v=V8.74_x64 kind=logic     t=143.21 u=1081 tweak=spooc logic=travel att=769 from=travel to=idle obj=nil obj_forced=false
+[LIES-EVENT] v=V8.74_x64 kind=exit      t=143.21 u=1081 tweak=spooc logic=travel att=769 req=idle obj=nil internal=y
 ```
 
 - `objective` - every objective assignment (old/new type, no objective = `nil`).

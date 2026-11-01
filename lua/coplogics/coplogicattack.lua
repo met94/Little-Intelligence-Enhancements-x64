@@ -23,6 +23,12 @@ local function lies_trace_window(data)
 	end
 end
 
+local function lies_aim_window(data)
+	if data and data.unit and data.unit:base() and data.unit:base()._tweak_table == "spooc" then
+		return 1
+	end
+end
+
 -- The enemy's nav tracker is destroyed together with the enemy unit
 -- (`CopMovement:pre_destroy` -> `NavigationManager:destroy_nav_tracker`), while
 -- the attention object keeps the pointer (`AIAttentionObject:_register` stored
@@ -853,7 +859,7 @@ local tankboss = {
 }
 
 function CopLogicAttack._upd_aim(data, my_data)
-	LIES:Trace(data.unit, data, "aim", nil, lies_trace_window(data))
+	LIES:Trace(data.unit, data, "aim", nil, lies_aim_window(data))
 
 	local shoot, aim, expected_pos = nil
 	local focus_enemy = data.attention_obj
