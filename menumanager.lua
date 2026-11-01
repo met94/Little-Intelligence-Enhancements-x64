@@ -22,6 +22,12 @@ if RequiredScript == "lib/managers/menumanager" then
 			spawngroupdelays = 1,
 			hhtacs = false,
 			highperformance = false,
+			-- Door-watching pre-aim: cops keep their aim on the doorways of the
+			-- segment a target is in, not only the one the cop is walking
+			-- through. Only active while High Performance Mode is off; that mode
+			-- is becoming a section header over per-feature flags like this one.
+			-- See MENU_OPTIONS.md.
+			door_watch = true,
 			debug_log = false,
 			-- Opt-in [LIES-WATCH] digest (one line per minute). Failure alarms are
 			-- always on and need no setting; see MENU_OPTIONS.md.
@@ -880,6 +886,13 @@ if RequiredScript == "lib/managers/menumanager" then
 			local on = item:value() == "on"
 			LIES.settings.highperformance = on
 			log("high performance mode: "..tostring(LIES.settings.highperformance))
+
+			LIES:Save()
+		end
+
+		MenuCallbackHandler.callback_lies_door_watch = function(self, item)
+			local on = item:value() == "on"
+			LIES.settings.door_watch = on
 
 			LIES:Save()
 		end

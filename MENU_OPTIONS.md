@@ -142,6 +142,27 @@ distance engagement starts. Not vanilla-accurate.
 Sacrifices some LIES-specific AI work for steadier frame times. Turn on if the
 mod causes stutter; OFF gives more responsive AI.
 
+High Performance Mode is becoming a section header over the individual
+performance-gated options, and `door_watch` is the first flag placed under it.
+Interim behaviour: the flag is honoured only while High Performance Mode is
+off.
+
+## Door Watching (`door_watch`)
+
+Default: ON. Settings file and menu.
+
+Cops that have lost sight of a target keep a pre-aim position on the doorways of
+the segment the target is in, not only on the doorway of the segment the cop is
+walking through. That is the difference between "watch where I am going" (vanilla)
+and "watch where the target will appear".
+
+- Honoured only while **High Performance Mode is OFF**. Turning High Performance
+  Mode on force-disables door watching; the toggle stays where you left it.
+- Costs up to a handful of `ai_vision` raycasts per cop per 1.5 s (0.2 s for
+  important units) while it runs; instant for doors without a nav-link element.
+- Player POV: cops peek-aim at the door the enemy is about to step through, so
+  walking into a room can meet an already-aimed cop instead of one still turning.
+
 ## Debug Logging (`debug_log`)
 
 Writes `[LIES-CHECK]` diagnostic events to the PAYDAY 2 log. Default is OFF.
