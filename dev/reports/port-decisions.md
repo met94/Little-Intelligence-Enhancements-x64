@@ -967,3 +967,65 @@ complete vanilla hunk sets, the LIES-intent read and the crash-class table:
   file and `port-status.md` are the "is it done" source. The vanilla half of
   both rows is audited as already merged.
 
+## Port backlog close-out (2026-11-01, V8.83)
+
+The 23 rows `dev/port-248-ledger.md` still marks `**PORT**`
+(`LIES_EDIT_VANILLA_CHANGED`) are all decided or applied. The ledger's status is
+generated from source classification — a *proposed action* per function, never a
+completion flag — so it will keep printing `PORT` for these bodies; this section
+and `dev/reports/port-status.md` are the completion record. No unexamined 248.2
+hotspot is left: what remains is in-game verification of already shipped
+behaviour, not porting.
+
+| Function | Verdict | Reference | Reason |
+|---|---|---|---|
+| `NavigationManager.find_segment_doors` | superset + guards | `a9bfba0`, `dev/test-harness/test/find_segment_doors.lua` | LIES body already carries the 248.2 work plus tracker guards; the 2-arg `Vector3` contract is pinned by the test. |
+| `NavigationManager.register_cover_units` | merged: create flag | `cbc4a29` | 248.2 only added the create flag to the legacy branch; LIES now calls `get_script_data(nav_tracker, true)`. |
+| `NavigationManager._execute_coarce_search` | merged: nav-link `delay_time()` gate; 248.2 loop restyle skipped | `cbc4a29` | The gate was the only functional delta; the `for i = 1, 500` rewrite is equivalent and was deliberately not taken. |
+| `NavigationManager._sort_nav_segs_after_pos` | merged: same gate; 7-arg + two-term weight kept | `cbc4a29` | Gate restored in place; LIES' 7-argument signature and two-term distance weight are pinned by `nav-gates.test.mjs`. |
+| `NavigationManager.add_obstacle` | already merged (guard + destroy listener) | earlier port commits | Nil-object guard and `unit_data()` destroy listener are present, with the LIES cache invalidation layered between them. |
+| `NavigationManager.set_nav_segment_state` | already merged (`tostring(id)`) | earlier port commits | All `tostring(id)` / `unique_id` constructs are present, so the v6 string segment keys resolve. |
+| `NavigationManager.remove_obstacle` | keep LIES (id-based removal covers it) | `dev/reports/nav-v6-remaining-audit.md` | LIES removes the quad-field blocker by id, which is stronger than 248.2's one absent object-call line; no caller reaches that state. |
+| `NavigationManager._draw_covers` | keep LIES (dead code; call site commented) | `dev/reports/nav-v6-remaining-audit.md` | Unreachable on both sides (248.2 only from the debug draw option), and the vanilla body would drag in locals the LIES chunk does not declare. |
+| `CarryData._chk_register_steal_SO` | merged (guard order + activation clbk; sabotage kept) | earlier port commits | 248.2 head guards and `_add_body_activation_clbk()` adopted; the LIES `sabotage` / `sabo_voiceline` markers stay exactly as written. |
+| `GroupAIStateBesiege._chk_group_use_flash_grenade` | vanilla hunk already merged; tracker guards added | `b4d5b61`; dead `detonate_pos` branch parked | The only functional vanilla hunk (247 `door.x` / nav-link form) was already in the LIES body; tracker reads are now nil/alive-guarded. |
+| `GroupAIStateBesiege._chk_group_use_smoke_grenade` | same | `b4d5b61`; `dev/reports/group-grenade-audit.md` | Identical hunk set and identical guard; the explicit-`detonate_pos` branch stays parked as a difficulty decision, not a port. |
+| `GroupAIStateBesiege._queue_police_upd_task` | already ported (timestamp scheduler) + LIES `_nr_important_cops` | `ab03d52`, re-verified 2026-11-01 | Body is the 248.2 timestamp scheduler; the only delta is the LIES `_nr_important_cops` line. |
+| `GroupAIStateBesiege._upd_police_activity` | already ported (early-out + single `_upd_group_spawning`), LIES `_last_upd_t`/`_update_criminal_reveal` kept | `703c9af`/`ab03d52`, re-verified 2026-11-01 | Vanilla early-out and single spawn pass are present; `_last_upd_t` and `_update_criminal_reveal` are the documented LIES-only additions. |
+| `CopLogicBase._upd_attention_obj_detection` | keep LIES rewrite + 248.2 near-visible probe height | V8.80 (`c409ba4`) | The LIES detection pass stays; only the vertical fallback probe adopted 248.2's distance-scaled height. |
+| `CopLogicIdle.damage_clbk` | keep LIES + fresh-time inherit | earlier merge | The staged `data.t = t` inherit was taken; the LIES damage reaction (no forced verify) is unchanged. |
+| `CopLogicAttack._upd_aim` | 248.2 body + author-behaviour restores + door watch | V8.75/V8.77/V8.78/V8.79 | Rebuilt on the 248.2 body because the old body read a stale nav tracker; ledger blocks 5-10 restored, blocks 1-4 retired on purpose. |
+| `CopLogicAttack.action_complete_clbk` | merged (`math.rand` dodge timeout) | `f0370d4`, re-verified 2026-11-01 | The `math.rand` expression is the function's only 246.1→248.2 delta and the LIES body carries it. |
+| `CopLogicAttack.is_available_for_assignment` | merged (`is_suppressed` gate) | earlier merge | `data.is_suppressed` restored ahead of walk-forbidden/path-fail; LIES 3 s lockout and sabotage gate kept. |
+| `TankCopLogicAttack.update` | keep LIES (inert under the dozer remap) | `dev/reports/tank-taser-reverify.md` | Every dozer variant is remapped to `LIESBossLogicAttack`, so the restyle-only delta buys nothing; latent latch documented, not fixed. |
+| `ShieldLogicAttack.queued_update` | merged (reservation split) | earlier merge | 248.2's `set_pos_rsrv`/`add_pos_rsrv` split adopted; LIES 70 radius and movement gates kept. |
+| `TaserLogicAttack._cancel_tase_attempt` | keep LIES (handle/data split) | `dev/reports/tank-taser-reverify.md` | The `tasing_action` handle gate with `tasing` nil'd first is the correct fix; the vanilla delta is formatting only. |
+| `TaserLogicAttack._chk_play_charge_weapon_sound` | merged (300-unit guard + LIES scaling) | earlier merge | 300-unit vertical guard restored; LIES distance-scaled 15-30 s cooldown and 3000 range kept instead of 248.2's 3 s cadence. |
+| `TaserLogicAttack._upd_enemy_detection` | keep LIES (`delay` contract, wind-up lock) | `dev/reports/tank-taser-reverify.md` | The `delay` plumbing is required by the LIES detection rewrite and the dropped wind-up focus lock is LIES intent; vanilla changed declaration order only. |
+
+**Verification, the two rows closed today.** Both were re-read 2026-11-01 against
+`game-data/Payday-2-LuaJIT-Complete` @ `e3a8b616`:
+
+- `_queue_police_upd_task` — LIES
+  `lua/groupaistate/groupaistatebesiege.lua:1178-1194` vs 248.2
+  `lib/managers/group_ai_states/groupaistatebesiege.lua:78-90`: identical
+  queued-timestamp guard, identical `next_upd_t` choice, identical
+  `_police_upd_task_queued` assignment. The single addition is the LIES
+  `_nr_important_cops = 12 / table.size(self:all_player_criminals())` block
+  (server, non-single-player).
+- `_upd_police_activity` — LIES `:592-629` vs 248.2 `:152-173`: identical
+  `_ai_enabled` / `_police_activity_blocked` early-out, identical task sequence,
+  identical `_enemy_weapons_hot` block with exactly one `_upd_group_spawning()`
+  call. The additions are the two documented LIES-only blocks: `_last_upd_t`
+  bookkeeping (read by the `_upd_assault_task` posthook) and the
+  `_update_criminal_reveal()` pass.
+- Scheduler constants: `_POLICE_ACTIVITY_DELAY = 2` and
+  `_POLICE_ACTIVITY_DELAY_FAST = 0.4` are declared by the game's own class
+  definition (`248.2 :3-4`), not by LIES, so no mod-side redefinition can drift
+  them. Application commits: `ab03d52` (scheduler), `703c9af` (update shape).
+
+**Player POV:** no behaviour change — this release ships no Lua. It records that
+the 248.2 port surface is fully accounted for, so the "port the ledger" backlog
+no longer reads as outstanding work; the only open items are in-game checks of
+behaviour that already ships.
+

@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-11-01 (after the group smoke/flash grenade audit close-out, V8.82).
+Last updated: 2026-11-01 (after the 248.2 port backlog close-out, V8.83).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -84,14 +84,47 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
 
 ## Open — core AI (needs in-game testing)
 
-Backlog order: door watching — **done (V8.79)**
-(`dev/reports/door-watch-port.md`); `CopLogicBase._upd_attention_obj_detection`
-— **done (V8.80)** (`dev/reports/port-decisions.md`, "Near-visible probe
-height"); `CopLogicAttack.action_complete_clbk` — **done** (merged in
-`f0370d4`, re-verified complete 2026-11-01); group smoke/flash grenade checks —
-**done (V8.82)**.
+**Backlog closed (2026-11-01, V8.83).** Every one of the 23 rows that
+`dev/port-248-ledger.md` still marks `**PORT**` now has a record in
+`dev/port-decisions.json` (verdict + reference) and
+`dev/tools/test/port-backlog.test.mjs` keeps it closed: the gates fail when a
+`PORT`/`BLOCKED` row has no decision, when a decision names a function the ledger
+lost, or when a reference does not resolve. The ledger's status column is a
+source classification (a *proposed* action) generated per function — it is not a
+completion tracker, and it must not be read as a backlog pointer.
+`dev/port-decisions.json` is the authority for "is it done"; this file and
+`dev/reports/port-decisions.md` are the narrative record.
 
-Next block: the **`NavigationManager` nav-v6 set** in
+| Function | Verdict | Reference |
+|---|---|---|
+| `NavigationManager.find_segment_doors` | superset + guards | `a9bfba0` (2-arg Vector3 contract pinned by `dev/test-harness/test/find_segment_doors.lua`) |
+| `NavigationManager.register_cover_units` | merged: create flag | `cbc4a29` (`get_script_data(nav_tracker, true)`) |
+| `NavigationManager._execute_coarce_search` | merged: nav-link `delay_time()` gate; 248.2 loop restyle skipped | `cbc4a29` |
+| `NavigationManager._sort_nav_segs_after_pos` | merged: same gate; 7-arg + two-term weight kept | `cbc4a29` |
+| `NavigationManager.add_obstacle` | already merged (guard + destroy listener) | earlier port commits |
+| `NavigationManager.set_nav_segment_state` | already merged (`tostring(id)`) | earlier port commits |
+| `NavigationManager.remove_obstacle` | keep LIES (id-based removal covers it) | `dev/reports/nav-v6-remaining-audit.md` |
+| `NavigationManager._draw_covers` | keep LIES (dead code; call site commented) | `dev/reports/nav-v6-remaining-audit.md` |
+| `CarryData._chk_register_steal_SO` | merged (guard order + activation clbk; sabotage kept) | earlier port commits |
+| `GroupAIStateBesiege._chk_group_use_flash_grenade` | vanilla hunk already merged; tracker guards added | `b4d5b61`; dead `detonate_pos` branch parked |
+| `GroupAIStateBesiege._chk_group_use_smoke_grenade` | same | `b4d5b61`; `dev/reports/group-grenade-audit.md` |
+| `GroupAIStateBesiege._queue_police_upd_task` | already ported (timestamp scheduler) + LIES `_nr_important_cops` | `ab03d52`, re-verified 2026-11-01 |
+| `GroupAIStateBesiege._upd_police_activity` | already ported (early-out + single `_upd_group_spawning`), LIES `_last_upd_t`/`_update_criminal_reveal` kept | `703c9af`/`ab03d52`, re-verified 2026-11-01 |
+| `CopLogicBase._upd_attention_obj_detection` | keep LIES rewrite + 248.2 near-visible probe height | V8.80 (`dev/reports/port-decisions.md`) |
+| `CopLogicIdle.damage_clbk` | keep LIES + fresh-time inherit | earlier merge |
+| `CopLogicAttack._upd_aim` | 248.2 body + author-behaviour restores + door watch | V8.75/V8.77/V8.78/V8.79 |
+| `CopLogicAttack.action_complete_clbk` | merged (`math.rand` dodge timeout) | `f0370d4`, re-verified 2026-11-01 |
+| `CopLogicAttack.is_available_for_assignment` | merged (`is_suppressed` gate) | earlier merge |
+| `TankCopLogicAttack.update` | keep LIES (inert under the dozer remap) | `dev/reports/tank-taser-reverify.md` |
+| `ShieldLogicAttack.queued_update` | merged (reservation split) | earlier merge |
+| `TaserLogicAttack._cancel_tase_attempt` | keep LIES (handle/data split) | `dev/reports/tank-taser-reverify.md` |
+| `TaserLogicAttack._chk_play_charge_weapon_sound` | merged (300-unit guard + LIES scaling) | earlier merge |
+| `TaserLogicAttack._upd_enemy_detection` | keep LIES (`delay` contract, wind-up lock) | `dev/reports/tank-taser-reverify.md` |
+
+What remains is **in-game verification of already shipped behaviour, not
+porting**.
+
+Closed block: the **`NavigationManager` nav-v6 set** in
 `lua/managers/navigationmanager.lua` — **done (V8.81)**. The audit
 (`dev/reports/nav-v6-remaining-audit.md`) closed four of the seven rows before
 any Lua was written, and the three real gaps landed in `cbc4a29`:
@@ -106,7 +139,7 @@ restyle, and the `check_segment` closure. The ledger rows still read `PORT` —
 completion, so it is not the "is it done" source; this file and
 `port-decisions.md` are.
 
-Next block: tank/taser re-verify — **done (`38b8582`, docs only, no Lua)**.
+Closed block: tank/taser re-verify — **done (`38b8582`, docs only, no Lua)**.
 `dev/reports/tank-taser-reverify.md` re-read
 `TankCopLogicAttack.update`, `TaserLogicAttack._upd_enemy_detection`,
 `_cancel_tase_attempt` and `_chk_play_charge_weapon_sound` via `pd2fn` 246.1 →
@@ -117,7 +150,7 @@ latent `old_action_advancing` latch is documented, not fixed;
 plumbing and dropped wind-up focus lock stand as LIES intent (§6), and both
 already-applied taser rows were verified present in the body (§7, §8).
 
-Next block: the **group smoke/flash grenade checks** — **done (V8.82, docs +
+Closed block: the **group smoke/flash grenade checks** — **done (V8.82, docs +
 one guard)**. Both ledger `PORT` rows (`dev/port-248-ledger.md:312-313`) were
 the remaining item from `dev/reports/handoff-2026-11-01.md` §7 item 5. The
 audit-first pass (`dev/reports/group-grenade-audit.md`) found the only
@@ -140,31 +173,32 @@ inside the `else` loop at `:4022` and `:4173`) is recorded in
 `group-grenade-audit.md` (§Applied). Ledger rows 312-313 therefore stay
 `PORT`. The test pins the dead shape so a revival turns the suite red.
 
-Next backlog item: the two adjacent ledger `PORT` rows in the same file,
-`GroupAIStateBesiege._queue_police_upd_task` (17 / 7 / 13 lines) and
-`GroupAIStateBesiege._upd_police_activity` (38 / 28 / 22) — small bodies, same
-audit-first shape: one `pd2fn` 246.1 → 248.2 delta each, a read of the LIES
-body, then a `keep LIES` / `merge` decision. The rest of the ledger's `PORT`
-set is either already decided in `port-decisions.md` (the dossier-sized
-`CopLogic*`/`Taser*` rows and the nav-v6 `NavigationManager` rows) or the two
-rows just audited above; the ledger's unticked boxes are not the completion
-source, as noted for nav-v6.
+Closed 2026-11-01 — the last unexamined pair, `GroupAIStateBesiege._queue_police_upd_task`
+(17 / 7 / 13) and `_upd_police_activity` (38 / 28 / 22). Both are already the
+248.2 shape (`ab03d52`, `703c9af`): compared against
+`game-data/Payday-2-LuaJIT-Complete` @ `e3a8b616`
+`lib/managers/group_ai_states/groupaistatebesiege.lua:78-90` and `:152-173`, the
+only deltas are the documented LIES-only blocks (`_nr_important_cops`,
+`_last_upd_t`, `_update_criminal_reveal`). `_POLICE_ACTIVITY_DELAY` /
+`_POLICE_ACTIVITY_DELAY_FAST` come from the game's own class definition
+(`:3-4`), so the scheduler is safe. Evidence: `port-decisions.md`, "Port backlog
+close-out".
 
-Dossiers in `dev/reports/dossiers/`:
+Dossiers in `dev/reports/dossiers/` — all closed, none outstanding:
 
 | Function | Size | Why it matters |
 |---|---:|---|
 | `CopLogicBase._upd_attention_obj_detection` | 531L | Detection core; 248.2 changed fields/flow. **Done** — kept the LIES rewrite, merged only the 248.2 near-visible probe height (V8.80, `c409ba4`; `dev/reports/port-decisions.md` "Near-visible probe height"). In-game feel not yet observed. |
 | `CopLogicAttack._upd_aim` | 560L | Aim/cover/fire; **done** — V8.75 port + V8.77/V8.78 restores, V8.79 door watch (`dev/reports/door-watch-port.md`). |
 | `CopLogicAttack.action_complete_clbk` | 101L | Action completion + state transitions. **Done** — merged in `f0370d4` (`math.rand` dodge timeout); re-verified 2026-11-01 that this is the function's only 246.1→248.2 delta and the LIES body carries it (`port-decisions.md` §3). |
-| `CopLogicAttack.is_available_for_assignment` | 51L | Assignment gating. |
-| `CopLogicIdle.damage_clbk` | 61L | Damage reaction / relocation. |
+| `CopLogicAttack.is_available_for_assignment` | 51L | Assignment gating. **Done** — merged: 248.2 `data.is_suppressed` gate restored ahead of walk-forbidden/path-fail; LIES 3 s lockout and sabotage gate kept. |
+| `CopLogicIdle.damage_clbk` | 61L | Damage reaction / relocation. **Done** — keep LIES + the staged `data.t = t` fresh-time inherit. |
 | `TaserLogicAttack._upd_enemy_detection` | 75L | Taser target selection. **Done** — re-verified 2026-11-01 (`38b8582`): restyle-only vanilla delta, keep LIES (`port-decisions.md` §6); behaviour smoke still open. |
 | `TaserLogicAttack._cancel_tase_attempt` | 12L | Taser cancel; LIES uses `tasing_action` vs vanilla `tasing`. **Done** — claim verified present (`38b8582`, §7). |
 | `TaserLogicAttack._chk_play_charge_weapon_sound` | 7L | Balance timings. **Done** — merge verified present (`38b8582`, §8). |
 | `TankCopLogicAttack.update` | 106L | Dozer logic. **Inert fallback** — every dozer variant is remapped to `LIESBossLogicAttack` (`lua/copextensions/copbrain.lua:3-10`); no port, latent latch documented (`38b8582`, §9). |
-| `ShieldLogicAttack.queued_update` | 117L | Shield logic. |
-| `CarryData._chk_register_steal_SO` | 128L | Carry/steal objective registration. |
+| `ShieldLogicAttack.queued_update` | 117L | Shield logic. **Done** — merged the 248.2 `set_pos_rsrv`/`add_pos_rsrv` reservation split; LIES 70 radius and movement gates kept. |
+| `CarryData._chk_register_steal_SO` | 128L | Carry/steal objective registration. **Done** — merged the 248.2 head guards + `_add_body_activation_clbk()`; LIES `sabotage`/`sabo_voiceline` markers kept. |
 
 Policy: port one function at a time; preserve LIES intent; use the dossier's `246.1 -> LIES` and `246.1 -> 248.2` diffs; run gates + `cavecrew-reviewer`; test in game before shipping default-on.
 

@@ -1,0 +1,186 @@
+[
+  {
+    "function": "NavigationManager.find_segment_doors",
+    "file": "lua/managers/navigationmanager.lua",
+    "verdict": "done",
+    "reference": "a9bfba0",
+    "date": "2026-11-01",
+    "note": "superset + guards; 2-arg Vector3 contract pinned by dev/test-harness/test/find_segment_doors.lua"
+  },
+  {
+    "function": "NavigationManager.register_cover_units",
+    "file": "lua/managers/navigationmanager.lua",
+    "verdict": "done",
+    "reference": "cbc4a29",
+    "date": "2026-11-01",
+    "note": "merged the get_script_data(nav_tracker, true) create flag on the legacy cover-unit branch"
+  },
+  {
+    "function": "NavigationManager._execute_coarce_search",
+    "file": "lua/managers/navigationmanager.lua",
+    "verdict": "done",
+    "reference": "cbc4a29",
+    "date": "2026-11-01",
+    "note": "merged the nav-link delay_time() gate; 248.2 loop restyle deliberately skipped"
+  },
+  {
+    "function": "NavigationManager._sort_nav_segs_after_pos",
+    "file": "lua/managers/navigationmanager.lua",
+    "verdict": "done",
+    "reference": "cbc4a29",
+    "date": "2026-11-01",
+    "note": "same nav-link delay_time() gate; 7-arg signature and two-term weight kept"
+  },
+  {
+    "function": "NavigationManager.add_obstacle",
+    "file": "lua/managers/navigationmanager.lua",
+    "verdict": "done",
+    "reference": "dev/reports/port-decisions.md",
+    "date": "2026-11-01",
+    "note": "already merged: 248.2 nil guard + destroy listener, LIES cache invalidation kept"
+  },
+  {
+    "function": "NavigationManager.set_nav_segment_state",
+    "file": "lua/managers/navigationmanager.lua",
+    "verdict": "done",
+    "reference": "dev/reports/port-decisions.md",
+    "date": "2026-11-01",
+    "note": "already merged: tostring(id) keys, LIES cache invalidation kept"
+  },
+  {
+    "function": "NavigationManager.remove_obstacle",
+    "file": "lua/managers/navigationmanager.lua",
+    "verdict": "keep",
+    "reference": "dev/reports/nav-v6-remaining-audit.md",
+    "date": "2026-11-01",
+    "note": "LIES id-based removal covers the 248.2 object-call parity line; not ported by decision"
+  },
+  {
+    "function": "NavigationManager._draw_covers",
+    "file": "lua/managers/navigationmanager.lua",
+    "verdict": "keep",
+    "reference": "dev/reports/nav-v6-remaining-audit.md",
+    "date": "2026-11-01",
+    "note": "dead code on both sides; call site is commented out"
+  },
+  {
+    "function": "CarryData._chk_register_steal_SO",
+    "file": "lua/props/carrydata.lua",
+    "verdict": "done",
+    "reference": "dev/reports/port-decisions.md",
+    "date": "2026-11-01",
+    "note": "merged 248.2 guard order + _add_body_activation_clbk; LIES sabotage/sabo_voiceline kept"
+  },
+  {
+    "function": "GroupAIStateBesiege._chk_group_use_flash_grenade",
+    "file": "lua/groupaistate/groupaistatebesiege.lua",
+    "verdict": "done",
+    "reference": "b4d5b61",
+    "date": "2026-11-01",
+    "note": "vanilla hunk already merged; tracker liveness guard added; dead detonate_pos branch parked"
+  },
+  {
+    "function": "GroupAIStateBesiege._chk_group_use_smoke_grenade",
+    "file": "lua/groupaistate/groupaistatebesiege.lua",
+    "verdict": "done",
+    "reference": "b4d5b61",
+    "date": "2026-11-01",
+    "note": "same 247 nav-link hunk already merged; same tracker liveness guard added"
+  },
+  {
+    "function": "GroupAIStateBesiege._queue_police_upd_task",
+    "file": "lua/groupaistate/groupaistatebesiege.lua",
+    "verdict": "done",
+    "reference": "ab03d52",
+    "date": "2026-11-01",
+    "note": "248.2 timestamp scheduler + LIES _nr_important_cops; re-verified against e3a8b616"
+  },
+  {
+    "function": "GroupAIStateBesiege._upd_police_activity",
+    "file": "lua/groupaistate/groupaistatebesiege.lua",
+    "verdict": "done",
+    "reference": "703c9af",
+    "date": "2026-11-01",
+    "note": "248.2 body; LIES keeps _last_upd_t + _update_criminal_reveal"
+  },
+  {
+    "function": "CopLogicBase._upd_attention_obj_detection",
+    "file": "lua/coplogics/coplogicbase.lua",
+    "verdict": "done",
+    "reference": "c409ba4",
+    "date": "2026-11-01",
+    "note": "V8.80: LIES rewrite kept, merged only the 248.2 near-visible probe height"
+  },
+  {
+    "function": "CopLogicIdle.damage_clbk",
+    "file": "lua/coplogics/coplogicidle.lua",
+    "verdict": "done",
+    "reference": "dev/reports/port-decisions.md",
+    "date": "2026-11-01",
+    "note": "keep LIES + staged data.t = t fresh-time inherit before identify_attention_obj_instant"
+  },
+  {
+    "function": "CopLogicAttack._upd_aim",
+    "file": "lua/coplogics/coplogicattack.lua",
+    "verdict": "done",
+    "reference": "bbb30fa",
+    "date": "2026-11-01",
+    "note": "248.2 body + author-behaviour restores; plus V8.77/V8.78/V8.79 restores (door watch)"
+  },
+  {
+    "function": "CopLogicAttack.action_complete_clbk",
+    "file": "lua/coplogics/coplogicattack.lua",
+    "verdict": "done",
+    "reference": "f0370d4",
+    "date": "2026-11-01",
+    "note": "math.rand dodge timeout merged; only 246.1->248.2 delta, re-verified"
+  },
+  {
+    "function": "CopLogicAttack.is_available_for_assignment",
+    "file": "lua/coplogics/coplogicattack.lua",
+    "verdict": "done",
+    "reference": "dev/reports/port-decisions.md",
+    "date": "2026-11-01",
+    "note": "248.2 data.is_suppressed gate restored; LIES 3 s lockout and sabotage gate kept"
+  },
+  {
+    "function": "TankCopLogicAttack.update",
+    "file": "lua/coplogics/specials/tankcoplogicattack.lua",
+    "verdict": "keep",
+    "reference": "dev/reports/tank-taser-reverify.md",
+    "date": "2026-11-01",
+    "note": "inert under the dozer remap in lua/copextensions/copbrain.lua:3-10; latent old_action_advancing latch documented"
+  },
+  {
+    "function": "ShieldLogicAttack.queued_update",
+    "file": "lua/coplogics/specials/shieldlogicattack.lua",
+    "verdict": "done",
+    "reference": "dev/reports/port-decisions.md",
+    "date": "2026-11-01",
+    "note": "248.2 set_pos_rsrv/add_pos_rsrv reservation split merged; LIES 70 radius and movement gates kept"
+  },
+  {
+    "function": "TaserLogicAttack._cancel_tase_attempt",
+    "file": "lua/coplogics/specials/taserlogicattack.lua",
+    "verdict": "keep",
+    "reference": "dev/reports/tank-taser-reverify.md",
+    "date": "2026-11-01",
+    "note": "handle gate and tasing nil'd first; LIES intent, vanilla delta restyle-only"
+  },
+  {
+    "function": "TaserLogicAttack._chk_play_charge_weapon_sound",
+    "file": "lua/coplogics/specials/taserlogicattack.lua",
+    "verdict": "done",
+    "reference": "dev/reports/port-decisions.md",
+    "date": "2026-11-01",
+    "note": "300-unit guard restored; LIES distance-scaled cooldown and 3000 range kept"
+  },
+  {
+    "function": "TaserLogicAttack._upd_enemy_detection",
+    "file": "lua/coplogics/specials/taserlogicattack.lua",
+    "verdict": "keep",
+    "reference": "dev/reports/tank-taser-reverify.md",
+    "date": "2026-11-01",
+    "note": "LIES delay contract and dropped wind-up lock stand; vanilla delta restyle-only"
+  }
+]

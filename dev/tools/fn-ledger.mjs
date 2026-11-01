@@ -401,12 +401,62 @@ const ORDER = [
   'UNCLASSIFIED_PARSE_ERROR'
 ];
 
+// Decisions live outside the classification: the status column never changes
+// once a file stops matching vanilla, so completion is recorded in
+// dev/port-decisions.json and only rendered here.
+const DECISION_VERDICTS = ['done', 'merge', 'keep', 'retire', 'parked'];
+
+const DECISION_REQUIRED_CATEGORIES = ['LIES_EDIT_VANILLA_CHANGED', 'UNCLASSIFIED_PARSE_ERROR'];
+
 function statusRank(category) {
   const index = ORDER.indexOf(category);
   return index === -1 ? ORDER.length : index;
 }
 
-export function renderMarkdown({ oldRev, newRev, generated, files }) {
+export function decisionKey(file, name) {
+  return `${file}::${name}`;
+}
+
+export function loadDecisions(file) {
+  const map = new Map();
+  if (!file || !fs.existsSync(file)) return map;
+  const raw = fs.readFileSync(file, 'utf8');
+  const entries = JSON.parse(raw);
+  if (!Array.isArray(entries)) throw new Error(`${file}: expected a JSON array of decision records`);
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') continue;
+    map.set(decisionKey(entry.file, entry.function), entry);
+  }
+  return map;
+}
+
+function decisionLabel(entry) {
+  if (!entry) return '—';
+  return entry.reference ? `${entry.verdict} (${entry.reference})` : entry.verdict;
+}
+
+export function summarizeDecisions({ files, decisions }) {
+  const map = decisions instanceof Map ? decisions : new Map();
+  const counts = {};
+  for (const verdict of DECISION_VERDICTS) counts[verdict] = 0;
+  let undecided = 0;
+
+  for (const file of files) {
+    for (const row of file.rows || []) {
+      const entry = map.get(decisionKey(file.file, row.name));
+      if (entry) {
+        if (entry.verdict in counts) counts[entry.verdict] += 1;
+        continue;
+      }
+      if (DECISION_REQUIRED_CATEGORIES.includes(row.category)) undecided += 1;
+    }
+  }
+
+  return { counts, undecided };
+}
+
+export function renderMarkdown({ oldRev, newRev, generated, files, decisions }) {
+  const decisionMap = decisions instanceof Map ? decisions : new Map();
   const overall = {};
   for (const file of files) {
     for (const [key, value] of Object.entries(file.totals || {})) {
@@ -420,7 +470,9 @@ export function renderMarkdown({ oldRev, newRev, generated, files }) {
   lines.push(`Generated: ${generated}`);
   lines.push(`Old baseline: \`${oldRev}\`  Target: \`${newRev}\``);
   lines.push('');
-  lines.push('Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.');
+  lines.push('Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.');
+  lines.push('');
+  lines.push('Decision is the authority: `dev/port-decisions.json`, keyed by file + function. It is the only place a port is recorded as done, kept, merged, retired or parked, so a `PORT` row cannot silently reopen once its intent has landed. `dev/tools/test/port-backlog.test.mjs` fails the gates when a `PORT`/`BLOCKED` row has no decision.');
   lines.push('');
   lines.push('Scope: top-level function definitions only. Nested helpers are folded into their parent function body and are ported with it.');
   lines.push('');
@@ -431,6 +483,15 @@ export function renderMarkdown({ oldRev, newRev, generated, files }) {
   for (const category of ORDER) {
     if (overall[category]) lines.push(`| ${category} | ${overall[category]} |`);
   }
+  lines.push('');
+
+  const summary = summarizeDecisions({ files, decisions: decisionMap });
+  lines.push('## By decision');
+  lines.push('');
+  lines.push('| verdict | count |');
+  lines.push('|---|---:|');
+  for (const verdict of DECISION_VERDICTS) lines.push(`| ${verdict} | ${summary.counts[verdict]} |`);
+  lines.push(`| undecided | ${summary.undecided} |`);
   lines.push('');
 
   for (const file of files) {
@@ -448,15 +509,16 @@ export function renderMarkdown({ oldRev, newRev, generated, files }) {
       lines.push('');
       continue;
     }
-    lines.push('| done | status | function | mod L | old L | new L | note |');
-    lines.push('|---:|---|---|---:|---:|---:|---|');
+    lines.push('| done | status | decision | function | mod L | old L | new L | note |');
+    lines.push('|---:|---|---|---|---:|---:|---:|---|');
     const sorted = [...file.rows].sort((a, b) => {
       const rank = statusRank(a.category) - statusRank(b.category);
       return rank !== 0 ? rank : a.name.localeCompare(b.name);
     });
     for (const row of sorted) {
       const status = STATUS[row.category] || row.category;
-      lines.push(`| [ ] | ${status} | \`${row.name}\` | ${row.modLines} | ${row.oldLines} | ${row.newLines} | ${row.note || ''} |`);
+      const decision = decisionLabel(decisionMap.get(decisionKey(file.file, row.name)));
+      lines.push(`| [ ] | ${status} | ${decision} | \`${row.name}\` | ${row.modLines} | ${row.oldLines} | ${row.newLines} | ${row.note || ''} |`);
     }
     lines.push('');
     if (file.errors && file.errors.length) {
@@ -480,6 +542,7 @@ function parseArgs(argv) {
     new: 'e3a8b616',
     out: '',
     json: '',
+    decisions: '',
     only: '',
     verbose: false
   };
@@ -491,10 +554,11 @@ function parseArgs(argv) {
     else if (arg === '--new') args.new = argv[++i];
     else if (arg === '--out') args.out = argv[++i];
     else if (arg === '--json') args.json = argv[++i];
+    else if (arg === '--decisions') args.decisions = argv[++i];
     else if (arg === '--only') args.only = argv[++i];
     else if (arg === '--verbose') args.verbose = true;
     else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node dev/tools/fn-ledger.mjs [--mod DIR] [--clone DIR] [--old REV] [--new REV] [--out FILE] [--json FILE] [--only SUBSTR]');
+      console.log('Usage: node dev/tools/fn-ledger.mjs [--mod DIR] [--clone DIR] [--old REV] [--new REV] [--out FILE] [--json FILE] [--decisions FILE] [--only SUBSTR]');
       process.exit(0);
     } else {
       throw new Error(`Unknown argument: ${arg}`);
@@ -585,11 +649,17 @@ function main() {
     files.push({ file: rel, hook: '', rows: [], errors: [], totals: {}, unhooked: true });
   }
 
+  const decisionsFile = args.decisions
+    ? path.resolve(args.decisions)
+    : path.join(modDir, 'dev', 'port-decisions.json');
+  const decisions = loadDecisions(decisionsFile);
+
   const markdown = renderMarkdown({
     oldRev: args.old,
     newRev: args.new,
     generated: new Date().toISOString(),
-    files
+    files,
+    decisions
   });
   const out = args.out ? path.resolve(args.out) : '';
   const jsonOut = args.json ? path.resolve(args.json) : '';
@@ -611,6 +681,8 @@ function main() {
   }
   console.log(`files=${files.length} functions=${totalRows} errors=${totalErrors} unhooked=${unhooked}`);
   console.log(Object.entries(totals).map(([k, v]) => `${k}=${v}`).join(' '));
+  const decisionSummary = summarizeDecisions({ files, decisions });
+  console.log(`decisions: ${Object.entries(decisionSummary.counts).map(([k, v]) => `${k}=${v}`).join(' ')} undecided=${decisionSummary.undecided}`);
   if (out) console.log(`wrote ${out}`);
   if (jsonOut) console.log(`wrote ${jsonOut}`);
 }
