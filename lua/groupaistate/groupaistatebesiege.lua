@@ -3931,7 +3931,7 @@ function GroupAIStateBesiege:_chk_group_use_smoke_grenade(group, task_data, deto
 				
 				--reworked this entire mess to be over-designed as fuck
 				if u_data.tactics_map and u_data.tactics_map.smoke_grenade and objective and objective.grp_objective == group.objective then
-					if not u_data.unit:movement():chk_action_forbidden("action") and u_data.unit:movement()._anim_global ~= "shield" and mvec3_dis(u_data.m_pos, target_area.pos) < 4000000 then
+					if not u_data.unit:movement():chk_action_forbidden("action") and u_data.unit:movement()._anim_global ~= "shield" and mvec3_dis(u_data.m_pos, target_area.pos) < 4000000 and u_data.tracker and alive(u_data.tracker) then
 						local m_nav_seg_id = u_data.tracker:nav_segment()
 						local my_fwd = u_data.unit:movement():m_fwd()
 						local nav_seg_neighbours = all_nav_segs[m_nav_seg_id].neighbours
@@ -4096,7 +4096,7 @@ function GroupAIStateBesiege:_chk_group_use_flash_grenade(group, task_data, deto
 				
 				--reworked this entire mess to be over-designed as fuck
 				if u_data.tactics_map and u_data.tactics_map.flash_grenade and objective and objective.grp_objective == group.objective then
-					if not u_data.unit:movement():chk_action_forbidden("action") and u_data.unit:movement()._anim_global ~= "shield" and mvec3_dis(u_data.m_pos, target_area.pos) < 4000000 then
+					if not u_data.unit:movement():chk_action_forbidden("action") and u_data.unit:movement()._anim_global ~= "shield" and mvec3_dis(u_data.m_pos, target_area.pos) < 4000000 and u_data.tracker and alive(u_data.tracker) then
 						local m_nav_seg_id = u_data.tracker:nav_segment()
 						local my_fwd = u_data.unit:movement():m_fwd()
 						local nav_seg_neighbours = all_nav_segs[m_nav_seg_id].neighbours
