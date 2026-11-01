@@ -32,66 +32,161 @@ local t_ins = table.insert
 NavigationManager.has_registered_cover_units_for_LIES = nil
 NavigationManager._LIES_navlink_elements = {}
 
+-- Counter shim for the [LIES-WATCH] digest. find_segment_doors runs per cover
+-- regeneration pass, so every early exit is counted: a door list that silently
+-- shrinks (dead/obstructed doors, elements without a position, tracker misses)
+-- is otherwise invisible from the digest.
+local function lies_count(kind)
+	if LIES and LIES.Count then
+		LIES:Count(kind)
+	end
+end
+
 function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)
+	lies_count(center_only and "fsd_call_center" or "fsd_call_2arg")
+
 	local all_nav_segs = self._nav_segments
 	local from_seg = all_nav_segs[from_seg_id]
 	local found_doors = {}
 
 	if not from_seg then
+		lies_count("fsd_no_from_seg")
+
 		return found_doors
 	end
 
-	for neighbour_seg_id, door_list in pairs(from_seg.neighbours) do
+	for neighbour_seg_id, door_list in pairs(from_seg.neighbours or {}) do
 		local neighbour_seg = all_nav_segs[neighbour_seg_id]
 
-		if neighbour_seg and not neighbour_seg.disabled and (not approve_clbk or approve_clbk(neighbour_seg_id)) then
-			if center_only then
-				local door_central = Vector3()
-				local number_of_doors = 0
+		if not neighbour_seg then
+			lies_count("fsd_neighbour_missing")
+		elseif neighbour_seg.disabled then
+			lies_count("fsd_disabled")
+		elseif approve_clbk and not approve_clbk(neighbour_seg_id) then
+			-- Rejected by the caller's access filter; same as the old short-circuit.
+		elseif center_only then
+			local door_central = Vector3()
+			local number_of_doors = 0
 
-				for _, door in ipairs(door_list) do
-					if door.x then
-						mvector3.add(door_central, door)
-						number_of_doors = number_of_doors + 1
-					elseif alive(door) and not door:is_obstructed() then
-						local nl_element = door:script_data().element
-						local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true)
+			for _, door in ipairs(door_list) do
+				if door.x then
+					lies_count("fsd_raw")
+					mvector3.add(door_central, door)
+					number_of_doors = number_of_doors + 1
+				elseif not alive(door) then
+					lies_count("fsd_door_dead")
+				elseif door:is_obstructed() then
+					lies_count("fsd_door_obstructed")
+				else
+					local script_data = door:script_data()
+					local nl_element = script_data and script_data.element
 
-						if nl_tracker:nav_segment() == from_seg_id then
-							table.insert(found_doors, {
-								center = nl_element:value("position"),
-								end_pos = nl_element:nav_link_end_pos()
-							})
+					if not nl_element then
+						lies_count("fsd_nil_element")
+					else
+						local door_pos = nl_element:value("position")
+
+						if not door_pos then
+							lies_count("fsd_nil_position")
+						else
+							-- A dead nav-link door can still hand out an element;
+							-- create_nav_tracker returns nil when the point is off
+							-- the nav mesh, and the old code indexed that nil.
+							local nl_tracker = self._quad_field:create_nav_tracker(door_pos, true)
+
+							if not nl_tracker then
+								lies_count("fsd_nil_tracker")
+							else
+								lies_count("fsd_tracker_created")
+
+								if nl_tracker:nav_segment() == from_seg_id then
+									lies_count("fsd_navlink_seg_ok")
+
+									local end_pos = nl_element:nav_link_end_pos()
+									local door_data = {
+										center = door_pos
+									}
+
+									if end_pos then
+										door_data.end_pos = end_pos
+									else
+										lies_count("fsd_nil_end_pos")
+									end
+
+									table.insert(found_doors, door_data)
+								else
+									lies_count("fsd_navlink_seg_mismatch")
+								end
+
+								self:destroy_nav_tracker(nl_tracker)
+								lies_count("fsd_tracker_destroyed")
+							end
 						end
-
-						self:destroy_nav_tracker(nl_tracker)
 					end
 				end
+			end
 
-				if number_of_doors > 0 then
-					mvector3.divide(door_central, number_of_doors)
+			if number_of_doors > 0 then
+				mvector3.divide(door_central, number_of_doors)
 
-					table.insert(found_doors, {
-						center = door_central
-					})
-				end
-			else
-				for _, door in ipairs(door_list) do
-					if door.x then
-						table.insert(found_doors, door)
-					elseif alive(door) and not door:is_obstructed() then
-						local nl_element = door:script_data().element
-						local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true)
+				table.insert(found_doors, {
+					center = door_central
+				})
+			end
+		else
+			for _, door in ipairs(door_list) do
+				if door.x then
+					lies_count("fsd_raw")
+					table.insert(found_doors, door)
+				elseif not alive(door) then
+					lies_count("fsd_door_dead")
+				elseif door:is_obstructed() then
+					lies_count("fsd_door_obstructed")
+				else
+					local script_data = door:script_data()
+					local nl_element = script_data and script_data.element
 
-						if nl_tracker:nav_segment() == from_seg_id then
-							-- Default callers (vanilla 248.2 included) expect raw
-							-- positions; the {center, end_pos} table is only for
-							-- center_only callers. Use the far end like the old
-							-- table branch did for _upd_aim door watching.
-							table.insert(found_doors, nl_element:nav_link_end_pos())
+					if not nl_element then
+						lies_count("fsd_nil_element")
+					else
+						local door_pos = nl_element:value("position")
+
+						if not door_pos then
+							lies_count("fsd_nil_position")
+						else
+							local nl_tracker = self._quad_field:create_nav_tracker(door_pos, true)
+
+							if not nl_tracker then
+								lies_count("fsd_nil_tracker")
+							else
+								lies_count("fsd_tracker_created")
+
+								if nl_tracker:nav_segment() == from_seg_id then
+									-- Default callers (vanilla 248.2 included) expect raw
+									-- positions; the {center, end_pos} table is only for
+									-- center_only callers. Use the far end like the old
+									-- table branch did for _upd_aim door watching.
+									lies_count("fsd_navlink_seg_ok")
+
+									local end_pos = nl_element:nav_link_end_pos()
+
+									if not end_pos then
+										lies_count("fsd_nil_end_pos")
+									elseif end_pos.x then
+										table.insert(found_doors, end_pos)
+									else
+										-- Not a Vector3: a caller would hand this to
+										-- mvec3_set/distance and crash or read garbage.
+										lies_count("fsd_bad_shape")
+									end
+								else
+									lies_count("fsd_navlink_seg_mismatch")
+								end
+
+								self:destroy_nav_tracker(nl_tracker)
+								lies_count("fsd_tracker_destroyed")
+							end
 						end
-
-						self:destroy_nav_tracker(nl_tracker)
 					end
 				end
 			end

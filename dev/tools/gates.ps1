@@ -39,11 +39,20 @@ $nodeOk = $LASTEXITCODE -eq 0
 $nodeSummary = (($nodeOut -split "`n") | Where-Object { $_.Trim() } | Select-Object -Last 6) -join "`n"
 Add-Section 'Node tool tests' $nodeSummary $nodeOk
 
-# Lua parser test
-$luaTest = Join-Path $RepoRoot 'dev\test-harness\test\test_commands.lua'
-$luaOut = & $Luajit $luaTest 2>&1 | Out-String
-$luaOk = $LASTEXITCODE -eq 0
-Add-Section 'Test-harness parser' $luaOut.Trim() $luaOk
+# Lua contract tests: every *.lua under dev\test-harness\test
+$testDir = Join-Path $RepoRoot 'dev\test-harness\test'
+$luaTests = @(Get-ChildItem $testDir -Filter '*.lua' | Sort-Object Name)
+$luaBody = @()
+$luaOk = $luaTests.Count -gt 0
+if (-not $luaOk) { $luaBody += 'No *.lua tests found in dev\test-harness\test' }
+foreach ($test in $luaTests) {
+    $out = & $Luajit $test.FullName 2>&1 | Out-String
+    $fileOk = $LASTEXITCODE -eq 0
+    if (-not $fileOk) { $luaOk = $false }
+    $luaBody += (($(if ($fileOk) { 'PASS' } else { 'FAIL' })) + ' ' + $test.Name)
+    if ($out.Trim()) { $luaBody += ('  ' + $out.Trim()) }
+}
+Add-Section 'Test-harness Lua tests' ($luaBody -join "`n") $luaOk
 
 # LuaJIT compile all runtime Lua
 $luaFiles = @(Get-ChildItem $RepoRoot -Recurse -Filter '*.lua' | Where-Object { $_.FullName -notmatch '\\dev\\' -and $_.FullName -notmatch '\\dist\\' })
