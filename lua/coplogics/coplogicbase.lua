@@ -1000,6 +1000,13 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 		end
 	end
 
+	-- Vanilla 248.2 `_nearly_visible_chk` declares this limit inside the helper and
+	-- gates on `MAX_DISTANCE > attention_info.verified_dis`. LIES gates at the three
+	-- call sites instead, on `attention_info.dis` (the value each site has just
+	-- written into `verified_dis`), so the constant is hoisted to this scope to stay
+	-- the single source for both that gate and the distance-scaled probe height.
+	local MAX_DISTANCE = 2000
+
 	local function _nearly_visible_chk(attention_info, detect_pos)
 		local near_pos = tmp_vec1
 
@@ -1026,8 +1033,20 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 				near_vis_ray = data.unit:raycast("ray", my_pos, near_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report")
 				
 				if near_vis_ray then
+					-- Vanilla 248.2 (`_nearly_visible_chk`) probes 100 units above the last
+					-- known position at contact range and fades to 10 by `MAX_DISTANCE`.
+					-- The vanilla line is
+					-- `math.lerp(100, 10, math.max(attention_info.verified_dis / MAX_DISTANCE))`;
+					-- `math.max` with a single argument is the identity, and the
+					-- `MAX_DISTANCE` gate already bounds the ratio below 1, so
+					-- `math.clamp(ratio, 0, 1)` is behaviour-identical inside the gate.
+					local height_over_target = math.lerp(100, 10, math.clamp(attention_info.verified_dis / MAX_DISTANCE, 0, 1))
+
+					LIES:Count("near_vis_probe")
+					LIES:Gauge("near_vis_h", height_over_target)
+
 					mvec3_set(near_pos, detect_pos)
-					mvector3.add(near_pos, math.UP * 30)
+					mvector3.add(near_pos, math.UP * height_over_target)
 					
 					near_vis_ray = data.unit:raycast("ray", my_pos, near_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report")
 				end
@@ -1352,7 +1371,7 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 							attention_info.verified_m_pos = mvector3.copy(attention_info.criminal_record.pos)
 							attention_info.verified_dis = dis
 
-							if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and attention_info.dis < 2000 then
+							if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and MAX_DISTANCE > attention_info.dis then
 								_nearly_visible_chk(attention_info, attention_pos)
 							end
 						elseif not is_detection_persistent and mvector3.distance(attention_info.m_pos, attention_info.criminal_record.pos) > 700 then
@@ -1364,7 +1383,7 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 							attention_info.verified_m_pos = mvector3.copy(attention_info.criminal_record.pos)
 							attention_info.verified_dis = dis
 
-							if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and attention_info.dis < 2000 then
+							if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and MAX_DISTANCE > attention_info.dis then
 								_nearly_visible_chk(attention_info, attention_pos)
 							end
 						end
@@ -1374,7 +1393,7 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 						attention_info.verified_m_pos = mvector3.copy(attention_info.m_pos)
 						attention_info.verified_dis = dis
 						
-						if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and attention_info.dis < 2000 then
+						if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and MAX_DISTANCE > attention_info.dis then
 							_nearly_visible_chk(attention_info, attention_pos)
 						end
 					elseif attention_info.verified_m_pos and mvector3.distance(attention_info.m_pos, attention_info.verified_m_pos) > 700 then

@@ -525,6 +525,10 @@ if RequiredScript == "lib/managers/menumanager" then
 			-- returned without an outcome.
 			dw_gap = (d.dw_call or 0) - ((d.dw_gate_off or 0) + (d.dw_stale_bail or 0) + (d.dw_outer_gate_skip or 0) + (d.dw_no_my_tracker or 0) + (d.dw_hit or 0) + (d.dw_none or 0)),
 
+			-- near-visible probe: how often the vertical fallback ran, and its tallest probe
+			near_vis_probe = d.near_vis_probe or 0,
+			near_vis_h_max = math.floor((self.watch_gauges.near_vis_h or 0) + 0.5),
+
 			-- find_segment_doors: why the door list shrank, and tracker balance
 			fsd_call_2arg = d.fsd_call_2arg or 0,
 			fsd_call_center = d.fsd_call_center or 0,
