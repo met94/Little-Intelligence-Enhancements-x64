@@ -80,24 +80,28 @@ Order inside the helper, and why:
    outcome: `dw_no_my_tracker`, return `nil`, no vanilla call.
 5. Author's outer gate (target not `lost_track`, or same segment) →
    `dw_outer_gate_skip`, then vanilla.
-6. `expected_pos_path` pre-step → `dw_path_prestep`; a returned position is
-   `src=expected`.
-7. Cadence block, entered when the 0.2 s / 1.5 s window is open:
+6. Cadence block, entered when the 0.2 s / 1.5 s window is open:
    a. cached re-test — a blocked `ai_vision` ray clears the cache
       (`dw_cached_unsighted`), a clear ray keeps it;
-   b. probe when no position is held: height gate, `find_segment_doors(enemy_seg)`,
-      per-door ray at `door.z + 140` (`dw_ray`), first visible → `dw_raw_hit` +
-      `door_raw`, `src=raw`;
-   c. cross-segment fallback to `_get_expected_pos` when neither tracker reports
+   b. `expected_pos_path` pre-step, only when the re-test left no position
+      (`dw_path_prestep`, and `dw_path_prestep_hit` plus `src=expected` when it
+      returns one). It sits inside the window because it can reach an engine
+      coarse search, `find_segment_doors` and one nav tracker per nav-link door;
+   c. probe when still no position is held: height gate,
+      `find_segment_doors(enemy_seg)`, per-door ray at `door.z + 140` (`dw_ray`),
+      first visible → `dw_raw_hit` + `door_raw`, `src=raw`;
+   d. cross-segment fallback to `_get_expected_pos` when neither tracker reports
       `obstructed()` → `dw_expected_pos_hit`, `src=expected`;
-   d. `my_data.expected_pos_last_check_t = data.t`, which re-arms the window.
+   e. `my_data.expected_pos_last_check_t = data.t`, which re-arms the window.
    With the window closed the arm counts `dw_cadence_skip` (+
-   `dw_advancing_skip` while running) and `dw_cached_reuse` when a saved position
-   is reused as-is.
-8. Timing: `dw_us`/`dw_us_max` are sampled once per armed call, after the
+   `dw_advancing_skip` while running, which is implied by the cadence skip at
+   this call site) and `dw_cached_reuse` when the saved position is reused as-is.
+   The pre-step cannot run there, so a window-closed `dw_cached_reuse` is always
+   the cache.
+7. Timing: `dw_us`/`dw_us_max` are sampled once per armed call, after the
    cadence block, so one sample prices the pre-step, the re-test ray and the
    door probe together.
-9. Outcome: `dw_hit` (position found, cached or derived) or `dw_none` plus the
+8. Outcome: `dw_hit` (position found, cached or derived) or `dw_none` plus the
    vanilla call and `dw_vanilla_call`.
 
 The six outcomes are disjoint by construction, so `menumanager.lua` can compute
@@ -131,10 +135,12 @@ per-call decision instead of a code-branch substitution. Recorded in
 3. **2-arg `find_segment_doors`.** The helper calls
    `nav:find_segment_doors(enemy_seg)` with no `approve_clbk` and no
    `center_only`, so nav-link doors arrive as raw `Vector3`
-   `nav_link_end_pos()` values (AI-02 shape) and the `door.x ~= nil` test in the
-   probe accepts them (a nil test, not truthiness, in both this file and
-   `find_segment_doors`). The `center_only` table shape stays for the vanilla and
-   phalanx callers that still ask for it.
+   `nav_link_end_pos()` values (AI-02 shape), and the door loop checks
+   `door.x ~= nil` before `door:with_z(...)`. That nil test is explicit intent,
+   **not** a behaviour fix: Lua has no falsy `0`, so `if door.x` accepts and
+   rejects exactly the same doors. The `center_only` table shape stays for the
+   vanilla and phalanx callers that still ask for it. The behaviour change in
+   `a9bfba0` is the `fsd_bad_shape` rejection of a non-`Vector3` end position.
 4. **Tracker checks before the gate.** Two safety terms the pre-port body did not
    need (it ran only inside the logic update): the enemy tracker (already in
    `189a053`) and now the cop's own tracker, which vanilla
@@ -154,10 +160,33 @@ per-call decision instead of a code-branch substitution. Recorded in
    as the probe, then stamp `expected_pos_last_check_t`) and drops the
    `advancing` term: a running cop now re-tests on the next window instead of
    never.
+6. **The armed-path pre-step is cadence-gated.** At `e389d5e`/`189a053` the
+   pre-step ran on every armed call — before the cadence block — and doing
+   `_get_expected_pos` means `find_segment_doors`, one nav tracker per nav-link
+   door and per-door rays. It now sits inside the window, after the cached
+   re-test, and only when that re-test left no position. Two consequences are
+   part of the design: the pre-step cannot discard a held position with a nil
+   result (it only runs when there is nothing to discard), and
+   `dw_path_prestep_hit` counts the positions it does produce. Cost per cop drops
+   from per-frame to at most once per 0.2 s / 1.5 s window.
+7. **`dw_path_prestep_hit` exists because the attempt counter cannot prove a
+   position.** `dw_path_prestep` increments before `_get_expected_pos` runs, so
+   it stays INFO in the report; the hit counter is what the `positions` claim
+   reads. Without it, a healthy armed run whose watch positions all came from
+   the pre-step would have FAILED the report.
+8. **`_get_expected_pos` drops a dead armed path.** The door retry read
+   `if not #found_doors == 0 then`, which Lua parses as
+   `(not #found_doors) == 0` — always false — so an empty door list after the
+   retry never cleared `my_data.expected_pos_path` and the same dead path was
+   re-walked on every cadence window. It now reads `if #found_doors == 0 then`
+   (drop the path, return). With the pre-step on the cadence path this is what
+   makes the new per-window cost bounded instead of a repeated search for a path
+   that can never yield a door.
 
 Everything else — the 0.2/1.5 s window, the `+140` door offset, the
-`expected_pos_path` pre-step, the obstructed-tracker condition on the fallback,
-the outer gate `(time_since_verification and not focus_enemy.lost_track) or
+`expected_pos_path` pre-step body (its placement is deviation 6), the
+obstructed-tracker condition on the fallback, the outer gate
+`(time_since_verification and not focus_enemy.lost_track) or
 my_seg == enemy_seg` (`bbb30fa^:1099`, verbatim) — is the pre-port expression.
 
 ## 5. Claim → evidence
@@ -171,7 +200,7 @@ it. The report tool turns this table into PASS/FAIL
 | the mod loaded | `Setting up mod 'LIES'` | not installed, or the loader aborted |
 | the right build ran | `[LIES-WATCH] evt=header version=…`, `[LIES-TRACE] v=…` | the log is from another build; counters cannot be compared |
 | the feature was armed | header `door_watch=true highperformance=false` (the reader normalises `true`/`on`/`1` and `false`/`off`/`0`) | the run proved nothing about the feature, and the tool returns INCOMPLETE |
-| the probe produced a position | digest `dw_raw_hit + dw_expected_pos_hit > 0`; `[LIES-WATCH] evt=door_watch_first src=… seg=…`; `[LIES-TRACE] phase=door_watch src=raw\|expected` | no run reached the door branch: bad map, no cross-segment loss of sight, or a regression. `dw_path_prestep` does **not** count here: it increments before `_get_expected_pos`, so it proves an attempt, not a position |
+| the probe produced a position | digest `dw_raw_hit + dw_expected_pos_hit + dw_path_prestep_hit > 0`; `[LIES-WATCH] evt=door_watch_first src=… seg=…` | no run reached the door branch: bad map, no cross-segment loss of sight, or a regression. `dw_path_prestep` does **not** count here: it increments before `_get_expected_pos`, so it proves an attempt, not a position. `[LIES-TRACE] phase=door_watch src=…` is supporting evidence (it names which branch ran for which unit) and never an input to this claim — a run can pass with the trace off |
 | the gate is honest | with `highperformance=true` or `door_watch=false`: `dw_gate_off == dw_call` and every sub-event 0 | the feature ran while disabled |
 | outcome accounting | `dw_gap` summed over digests == 0 | a call returned without an outcome: a `return` path lost its counter |
 | tracker safety | `dw_stale_bail` and `dw_no_my_tracker` (informational) plus 0 FATAL / 0 LIES Lua errors | a freed or nil tracker reached engine code |
@@ -189,9 +218,14 @@ Watch digest fields that back the table, by group:
   denominator and the derived gap.
 - `dw_cadence_skip`, `dw_advancing_skip`, `dw_cached_reuse`,
   `dw_cached_unsighted`, `dw_height_skip`, `dw_seg_same`, `dw_path_prestep`,
-  `dw_raw_hit`, `dw_expected_pos_hit`, `dw_vanilla_call`, `dw_path_kick`,
-  `dw_ray` — sub-events; they explain the outcome, they never replace it.
-  `dw_cached_reuse` is the window-closed arm: a saved position reused as-is.
+  `dw_path_prestep_hit`, `dw_raw_hit`, `dw_expected_pos_hit`,
+  `dw_vanilla_call`, `dw_path_kick`, `dw_ray` — sub-events; they explain the
+  outcome, they never replace it. `dw_cached_reuse` is the window-closed arm: a
+  saved position reused as-is (the pre-step cannot run there).
+  `dw_advancing_skip` is implied by `dw_cadence_skip` at the only call site.
+  `dw_raw_hit`, `dw_expected_pos_hit` and `dw_path_prestep_hit` are the three
+  position counters the `positions` claim sums; `dw_path_prestep` alone is the
+  attempt.
 - `dw_us`, `dw_us_max` — timing (average of per-window averages, high-water
   max).
 - `fsd_call_2arg`, `fsd_call_center`, `fsd_no_from_seg`,
@@ -229,9 +263,10 @@ doorways and nav-links (Bank Heist: Gold or similar), loud, 8–10 minutes:
    animated nav-link door (vault/laser-cage style).
 
 A cached position that stays visible is not counted anywhere: `dw_cached_reuse`
-counts only the window-closed arm, and `dw_cached_unsighted` only fires when the
-re-test ray is blocked. So the log proves the re-test via `dw_cached_unsighted`
-(or not at all); there is no "visible re-test" counter to look for.
+counts only the window-closed arm (a saved position reused as-is), and
+`dw_cached_unsighted` only fires when the re-test ray is blocked. So the log
+proves the re-test via `dw_cached_unsighted` (or not at all); there is no
+"visible re-test" counter to look for.
 
 Run B — gate. Same map, High Performance Mode **on**. Every `dw_call` must land
 in `dw_gate_off`; the report expects `gate respected` PASS and the overall
@@ -257,21 +292,23 @@ markdown/JSON are the artifacts to attach to the next session.
 ## 7. Open questions
 
 1. **Frequency and cost of the armed-path pre-step.** `dw_path_prestep` counts
-   calls where `my_data.expected_pos_path` was already set, and
-   `CopLogicAttack._get_expected_pos` on that path can reach an engine coarse
-   search. `dw_us`/`dw_us_max` price it but cannot separate it from
-   `find_segment_doors`; `dw_path_prestep / dw_call` per window is the number to
-   watch on a populated map. Not measured in game. The counter is INFO in the
-   report for this reason: it is an attempt, not a produced position.
-2. **`dw_cached_reuse` is now a reuse count.** It fires only in the window-closed
-   arm, i.e. exactly "the 0.2/1.5 s window had not elapsed and a saved position
-   was reused as-is". It no longer fires on probe frames (those have no saved
-   position by definition) or on pre-step frames that still ran the re-test. The
-   earlier worry that it conflated "advancing with a saved position" and "no
-   saved position" was a symptom of the dead re-test, not of the counter shape:
-   with the re-test on the cadence there is nothing left to split. Re-open only
-   if a real log shows `dw_cached_reuse` dominating `dw_call` without
-   `dw_hit`/`dw_none` moving.
+   cadence windows (not frames) in which `my_data.expected_pos_path` was already
+   set and no saved position was held, and `CopLogicAttack._get_expected_pos` on
+   that path can reach an engine coarse search. `dw_us`/`dw_us_max` price it but
+   cannot separate it from `find_segment_doors`; `dw_path_prestep / dw_call` per
+   window is the number to watch on a populated map, together with
+   `dw_path_prestep_hit / dw_path_prestep` (how often the read actually yields a
+   position). Not measured in game. `dw_path_prestep` is INFO in the report for
+   this reason: it is an attempt, not a produced position.
+2. **`dw_cached_reuse` is a reuse count.** It fires only in the window-closed
+   arm, i.e. exactly "the 0.2/1.5 s window had not elapsed and the saved position
+   was reused as-is" — after deviation 6 the pre-step cannot produce a position
+   there, so no other case can reach it. It no longer fires on probe frames
+   (those have no saved position by definition). The earlier worry that it
+   conflated "advancing with a saved position" and "no saved position" was a
+   symptom of the dead re-test, not of the counter shape. Re-open only if a real
+   log shows `dw_cached_reuse` dominating `dw_call` without `dw_hit`/`dw_none`
+   moving.
 3. **Does vanilla's same-segment `+140` actually look through a doorway?** The
    restore deliberately delegates that case; only a log with
    `dw_seg_same > 0` and no `dw_raw_hit` on those units can tell whether the
@@ -289,9 +326,11 @@ markdown/JSON are the artifacts to attach to the next session.
    the LIES door list contains doors vanilla would skip; if the ratio is
    ~0 the restore's extra value is only the cross-segment watch position.
 6. **Per-door tracker churn.** `find_segment_doors` creates and destroys one
-   nav tracker per nav-link door per call (`fsd_tracker_created`). Accepted by
-   the author in a ~1.5 s cadence path; precomputing door segments per nav
-   build is the obvious optimisation if `--ab` shows real cost.
+   nav tracker per nav-link door per call (`fsd_tracker_created`). The probe and
+   the pre-step that reach it now run only inside the 0.2 s / 1.5 s cadence
+   window (and the pre-step only when nothing is saved), so the churn is bounded
+   by the window rather than by the frame rate; precomputing door segments per
+   nav build is the obvious optimisation if `--ab` shows real cost.
 
 ## 8. Player POV
 
@@ -305,11 +344,13 @@ changes on a map without nav-link doors.
 
 **Decision.** Restore ledger blocks #1/#2/#4 as a LIES layer around the vanilla
 `_get_expected_attention_position`, gated by `door_watch and not
-highperformance`, with the five deviations in §4 (cadence re-test without the
+highperformance`, with the eight deviations in §4 (cadence re-test without the
 `advancing` term, same-segment delegation, 2-arg `find_segment_doors`, two
-tracker guards before the gate, six outcomes). Retire block #3 (lateral sight
-search) and record it as deferred under this umbrella. The tracker liveness
-gates stay ahead of everything, so the crash fix from V8.75 is not reopened.
+tracker guards before the gate, six outcomes, cadence-gated pre-step,
+`dw_path_prestep_hit`, the `_get_expected_pos` dead-branch fix). Retire block #3
+(lateral sight search) and record it as deferred under this umbrella. The
+tracker liveness gates stay ahead of everything, so the crash fix from V8.75 is
+not reopened.
 
 **Artifacts.**
 
@@ -324,10 +365,15 @@ gates stay ahead of everything, so the crash fix from V8.75 is not reopened.
   `dev/tools/test/door-watch-report.test.mjs`, this report, ledger/status/
   decisions/smoke-check/menu docs, release metadata.
 - Follow-up in the same unreleased V8.79 (the commit that carries this text):
-  cadence made real, `dw_no_my_tracker`, timing sampled once, nil shape tests,
-  in-code `V8.79_x64` pinned by `compat.test.mjs`, report tool header
-  normalisation + disarmed-run INCOMPLETE + `dw_path_prestep` demoted to INFO +
-  `--ab` control-unusable branch + exit code 3.
+  cadence made real, `dw_no_my_tracker`, timing sampled once, explicit nil shape
+  tests (intent, not a behaviour change), in-code `V8.79_x64` pinned by
+  `compat.test.mjs`, report tool header normalisation + disarmed-run INCOMPLETE +
+  `dw_path_prestep` demoted to INFO + `--ab` control-unusable branch + exit code
+  3.
+- Second follow-up (the same unreleased V8.79): cadence-gated pre-step,
+  `dw_path_prestep_hit` as a position counter, `_get_expected_pos` dead-branch
+  fix, report CLI flag values as usage errors and a narrowed read-only `try`,
+  UTF-8 gates report.
 - Tests: `dev/tools/test/door-watch.test.mjs` (source pins),
   `dev/test-harness/test/find_segment_doors.lua` (tracker balance, raw
   `Vector3` contract, nav-link segment filter),

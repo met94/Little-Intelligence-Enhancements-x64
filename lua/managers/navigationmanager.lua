@@ -69,6 +69,10 @@ function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_
 			local number_of_doors = 0
 
 			for _, door in ipairs(door_list) do
+				-- Nil test for explicit intent only, not a behaviour change:
+				-- Lua has no falsy `0`, so `if door.x` accepts the same values.
+				-- The test documents the two shapes a door list can hold (a raw
+				-- `Vector3` has `.x`, a unit door does not).
 				if door.x ~= nil then
 					lies_count("fsd_raw")
 					mvector3.add(door_central, door)

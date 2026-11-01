@@ -53,6 +53,8 @@ const helper = () => sliceFunction(attackSource(), 'local function lies_upd_expe
 
 const aimBody = () => sliceFunction(attackSource(), 'function CopLogicAttack._upd_aim(data, my_data)');
 
+const expectedPosBody = () => sliceFunction(attackSource(), 'function CopLogicAttack._get_expected_pos(data, my_data)');
+
 test('the helper is a local declared before CopLogicAttack.enter', () => {
   const text = attackSource();
   const helperAt = text.indexOf('local function lies_upd_expected_pos(data, my_data, time_since_verification)');
@@ -180,17 +182,64 @@ test('the probe is reachable: cadence only, never advancing', () => {
   assert.ok(cachedReuseAt > probeEnd, 'the cached-reuse counter sits in the else arm, after the cadence block');
 });
 
-test('the path pre-step runs before the sight test, like the pre-port body', () => {
+test('the path pre-step runs inside the cadence window, only with nothing saved', () => {
   const body = helper();
+  const cadenceAt = body.indexOf('if test_for_sight then');
+  const retestAt = body.indexOf('if expected_pos then', cadenceAt);
+  const prestepAt = body.indexOf('LIES:Count("dw_path_prestep")');
+  const stampAt = body.indexOf('my_data.expected_pos_last_check_t = data.t', cadenceAt);
+  const skipAt = body.indexOf('LIES:Count("dw_cadence_skip")');
 
-  assert.match(body, /local expected_path = my_data\.expected_pos_path/);
-  assert.match(body, /if expected_path then\s*LIES:Count\("dw_path_prestep"\)\s*expected_pos = CopLogicAttack\._get_expected_pos\(data, my_data\)\s*if expected_pos then\s*src = "expected"\s*end\s*elseif my_data\.expected_pos then\s*expected_pos = my_data\.expected_pos\s*end/);
+  assert.ok(cadenceAt !== -1 && stampAt !== -1 && skipAt !== -1, 'the cadence block is missing');
+  // Inside the window, not before it: the pre-step does an engine coarse search
+  // and per-door trackers, so it must not run on every armed frame.
+  assert.ok(prestepAt > cadenceAt, 'the pre-step must sit inside the cadence block');
+  assert.ok(prestepAt < stampAt, 'the pre-step must sit inside the window-open arm');
+  assert.ok(prestepAt < skipAt, 'the pre-step must not run in the window-closed arm');
+  // After the cached re-test, and only when the re-test left nothing behind:
+  // a nil pre-step result must never discard a held position.
+  assert.ok(retestAt < prestepAt, 'the cached re-test comes first');
+  const prestepGuardAt = body.indexOf('if my_data.expected_pos_path then');
+  assert.ok(prestepGuardAt > retestAt && prestepGuardAt < prestepAt, 'the pre-step is guarded by an armed path');
+  assert.match(
+    body.slice(prestepGuardAt, prestepAt + 400),
+    /if my_data\.expected_pos_path then\s*LIES:Count\("dw_path_prestep"\)\s*local pre = CopLogicAttack\._get_expected_pos\(data, my_data\)\s*if pre then\s*expected_pos = pre\s*src = "expected"\s*LIES:Count\("dw_path_prestep_hit"\)\s*end\s*end/
+  );
+  // Nested under `if not expected_pos then` after the re-test, and guarded again
+  // before the door probe so a pre-step hit skips the engine work.
+  const outerGuardAt = body.indexOf('if not expected_pos then', retestAt);
+  assert.ok(outerGuardAt !== -1 && outerGuardAt < prestepAt, 'the pre-step hangs off `if not expected_pos then`');
+  assert.ok(body.indexOf('if not expected_pos then', prestepAt) > prestepAt, 'the door probe is guarded again after the pre-step');
+  // Exactly one pre-step attempt per call at most: no `_get_expected_pos` call
+  // before the guard.
+  assert.doesNotMatch(body.slice(cadenceAt, prestepAt), /_get_expected_pos\(/, 'no pre-step call before the guard');
+});
 
-  // Order: pre-step, then the cached re-test, then the probe.
-  const prestepAt = body.indexOf('dw_path_prestep');
-  const retestAt = body.indexOf('dw_cached_unsighted');
-  const probeAt = body.indexOf('if not expected_pos then');
-  assert.ok(prestepAt < retestAt && retestAt < probeAt, 'pre-step, cached re-test, probe');
+test('dw_cached_reuse only counts a saved position on a closed window', () => {
+  const body = helper();
+  const skipAt = body.indexOf('LIES:Count("dw_cadence_skip")');
+  const reuse = body.indexOf('if expected_pos and cached == 1 then', skipAt);
+
+  assert.notEqual(skipAt, -1, 'dw_cadence_skip is missing');
+  assert.notEqual(reuse, -1, 'dw_cached_reuse must be gated on `cached == 1`');
+  assert.match(body, /local cached = expected_pos and 1 or 0/);
+  // The counter is in the window-closed arm only.
+  assert.ok(reuse > skipAt, 'dw_cached_reuse belongs to the window-closed arm');
+  assert.doesNotMatch(body.slice(0, skipAt), /LIES:Count\("dw_cached_reuse"\)/, 'no reuse count inside the cadence window');
+});
+
+test('_get_expected_pos drops the armed path when the door retry finds nothing', () => {
+  const body = expectedPosBody();
+
+  // The original guard read `if not #found_doors == 0 then`, which Lua parses as
+  // `(not #found_doors) == 0` — always false — so an empty door list after the
+  // retry never cleared `expected_pos_path` and the dead path was re-walked on
+  // every cadence window.
+  assert.doesNotMatch(body, /not\s+#found_doors\s*==\s*0/, 'the dead `not #found_doors == 0` guard must stay gone');
+  assert.match(
+    body,
+    /if #found_doors == 0 then\s*if to_nav_seg ~= enemy_seg then\s*found_doors = managers\.navigation:find_segment_doors\(from_nav_seg, callback\(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", enemy_seg\), true\)\s*end\s*if #found_doors == 0 then\s*my_data\.expected_pos_path = nil\s*return\s*end\s*end/
+  );
 });
 
 test('the height gate is tracker-free and no nav segment table is read', () => {
@@ -224,7 +273,7 @@ test('the door probe counts its rays and its hit, and the armed path is timed on
   assert.match(body, /LIES:Gauge\("dw_us_max", elapsed_us\)/);
   // The clock starts before the pre-step and the engine call, so both are priced.
   const t0At = body.indexOf('local t0 = os.clock()');
-  assert.ok(t0At < body.indexOf('local expected_path = my_data.expected_pos_path'), 't0 must precede the pre-step');
+  assert.ok(t0At < body.indexOf('LIES:Count("dw_path_prestep")'), 't0 must precede the pre-step');
   assert.ok(t0At < body.indexOf('find_segment_doors'), 't0 must precede the engine call');
   assert.ok(t0At < body.indexOf('local elapsed_us = (os.clock() - t0)'));
   // One sample per armed call, read after the cadence block, so a frame that
@@ -252,6 +301,7 @@ test('the six outcome counters and every sub-event are present', () => {
     'dw_height_skip',
     'dw_seg_same',
     'dw_path_prestep',
+    'dw_path_prestep_hit',
     'dw_raw_hit',
     'dw_expected_pos_hit',
     'dw_vanilla_call',
@@ -312,6 +362,7 @@ test('the digest reports the door watch, the door list and the reaction hold', (
     'dw_height_skip',
     'dw_seg_same',
     'dw_path_prestep',
+    'dw_path_prestep_hit',
     'dw_raw_hit',
     'dw_expected_pos_hit',
     'dw_vanilla_call',

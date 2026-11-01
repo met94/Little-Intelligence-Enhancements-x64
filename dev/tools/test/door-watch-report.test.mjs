@@ -9,14 +9,19 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import {
+  VALUE_FLAGS,
   analyzeLog,
   aggregateDigests,
+  parseArgs,
   parseLog,
   renderReport
 } from '../door-watch-report.mjs';
 
 const VERSION = 'V8.79_x64';
+const CLI = fileURLToPath(new URL('../door-watch-report.mjs', import.meta.url));
 
 function watch(event, fields = {}) {
   const parts = Object.entries(fields)
@@ -254,16 +259,78 @@ test('dw_path_prestep alone does not prove a position', () => {
   const log = [
     SETUP,
     header(),
-    digest({ dw_path_prestep: 7, dw_raw_hit: 0, dw_expected_pos_hit: 0 })
+    digest({ dw_path_prestep: 7, dw_path_prestep_hit: 0, dw_raw_hit: 0, dw_expected_pos_hit: 0 })
   ].join('\n');
   const report = analyzeLog(log, { file: 'prestep_log.txt', modVersion: VERSION });
 
   assert.equal(claimOf(report, 'positions').result, 'FAIL');
-  assert.match(claimOf(report, 'positions').evidence, /dw_raw_hit=0 dw_expected_pos_hit=0 \(sum 0\)/);
+  assert.match(claimOf(report, 'positions').evidence, /dw_raw_hit=0 dw_expected_pos_hit=0 dw_path_prestep_hit=0 \(sum 0\)/);
   // The pre-step is reported, but only as INFO.
   assert.equal(claimOf(report, 'prestep').result, 'INFO');
   assert.match(claimOf(report, 'prestep').evidence, /dw_path_prestep=7/);
   assert.equal(report.verdict, 'FAIL');
+});
+
+test('a pre-step-only run still passes the positions claim', () => {
+  // The pre-step is the armed-path branch: a healthy run whose positions all
+  // come from it must PASS, so `dw_path_prestep_hit` is a position counter.
+  const log = [
+    SETUP,
+    header(),
+    digest({
+      dw_call: 10,
+      dw_hit: 5,
+      dw_none: 5,
+      dw_gap: 0,
+      dw_cadence_skip: 4,
+      dw_cached_reuse: 2,
+      dw_path_prestep: 5,
+      dw_path_prestep_hit: 5,
+      dw_raw_hit: 0,
+      dw_expected_pos_hit: 0,
+      dw_ray: 0
+    })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'prestep_hit_log.txt', modVersion: VERSION });
+
+  assert.equal(claimOf(report, 'positions').result, 'PASS');
+  assert.match(claimOf(report, 'positions').evidence, /dw_path_prestep_hit=5 \(sum 5\)/);
+  // Both halves of the pre-step are surfaced: attempts and hits.
+  assert.match(claimOf(report, 'prestep').evidence, /dw_path_prestep=5 dw_path_prestep_hit=5/);
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('parseArgs rejects a flag with no value instead of passing undefined on', () => {
+  for (const flag of ['--ab', '--out', '--json', '--mod']) {
+    assert.throws(() => parseArgs(['log.txt', flag]), /requires a value/, `${flag} at the end must be a usage error`);
+    // A following flag is not a value: `--out --json x` would otherwise write a
+    // file literally named "--json".
+    assert.throws(() => parseArgs([flag, '--out', 'x']), /requires a value/, `${flag} followed by a flag must be a usage error`);
+    assert.throws(() => parseArgs([flag, '']), /requires a value/, `${flag} with an empty value must be a usage error`);
+  }
+
+  assert.throws(() => parseArgs(['--nope']), /unknown argument/);
+});
+
+test('parseArgs collects logs and flag values', () => {
+  const args = parseArgs(['a.txt', 'b.txt', '--ab', 'control.txt', '--out', 'r.md', '--json', 'r.json', '--mod', 'm']);
+
+  assert.deepEqual(args.logs, ['a.txt', 'b.txt']);
+  assert.equal(args.ab, 'control.txt');
+  assert.equal(args.out, 'r.md');
+  assert.equal(args.json, 'r.json');
+  assert.equal(args.mod, 'm');
+  assert.equal(args.help, false);
+  // Every value flag is declared once, in the exported table.
+  assert.deepEqual([...VALUE_FLAGS.keys()].sort(), ['--ab', '--json', '--mod', '--out']);
+});
+
+test('a missing flag value exits 3 through the CLI', () => {
+  const result = spawnSync(process.execPath, [CLI, 'log.txt', '--out'], { encoding: 'utf8' });
+
+  assert.equal(result.status, 3);
+  assert.match(result.stderr, /--out requires a value/);
+  assert.match(result.stderr, /Usage:/);
 });
 
 test('a non-zero dw_gap fails outcome accounting and prints the windows', () => {

@@ -513,6 +513,7 @@ if RequiredScript == "lib/managers/menumanager" then
 			dw_height_skip = d.dw_height_skip or 0,
 			dw_seg_same = d.dw_seg_same or 0,
 			dw_path_prestep = d.dw_path_prestep or 0,
+			dw_path_prestep_hit = d.dw_path_prestep_hit or 0,
 			dw_raw_hit = d.dw_raw_hit or 0,
 			dw_expected_pos_hit = d.dw_expected_pos_hit or 0,
 			dw_vanilla_call = d.dw_vanilla_call or 0,

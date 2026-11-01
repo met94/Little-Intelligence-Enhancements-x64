@@ -177,10 +177,11 @@ How to verify it from a log (needs `"watch_log": true`, see the next section):
 | `dw_raw_hit` / `dw_ray` | Door position raycast that hit / door raycasts attempted |
 | `dw_expected_pos_hit` | The fallback nav-graph position was used |
 | `dw_path_prestep` | A coarse path was already armed and read for a watch position (an attempt: counted before `_get_expected_pos`, so it does not prove a position) |
-| `dw_cached_reuse` | The 0.2/1.5 s window had not elapsed, so a saved position was reused as-is (no re-test, no probe on that call) |
+| `dw_path_prestep_hit` | That pre-step actually produced a watch position; only runs inside the 0.2/1.5 s window, and only when no saved position is held |
+| `dw_cached_reuse` | The 0.2/1.5 s window had not elapsed, so the saved position was reused as-is (no re-test, no probe on that call) |
 | `dw_height_skip` | The height gate rejected the enemy segment (target far below) |
 | `dw_seg_same` | Same nav segment, so vanilla handles it (`m_pos + 140`) |
-| `dw_cadence_skip` / `dw_advancing_skip` | The 0.2/1.5 s window had not elapsed / …and the cop was running |
+| `dw_cadence_skip` / `dw_advancing_skip` | The 0.2/1.5 s window had not elapsed / the helper was also reached while running. The second is implied by the first at the only call site (it is reached only while running), so it never adds information on its own |
 | `dw_us`, `dw_us_max` | Average and worst time of the armed path (pre-step, re-test and door probe) in microseconds |
 
 `[LIES-WATCH] evt=door_watch_first` and `[LIES-TRACE] … phase=door_watch`
@@ -214,9 +215,9 @@ Same channel shape as Iter's, so one reader handles both mods:
     `dw_gate_off`, `dw_stale_bail`, `dw_outer_gate_skip`, `dw_no_my_tracker`,
     `dw_hit`, `dw_none`), the derived `dw_gap` (must be 0), the branch
     sub-events (`dw_raw_hit`, `dw_expected_pos_hit`, `dw_path_prestep`,
-    `dw_cached_reuse`, `dw_cadence_skip`, `dw_advancing_skip`,
-    `dw_height_skip`, `dw_seg_same`, `dw_vanilla_call`, `dw_path_kick`,
-    `dw_ray`) and the timing (`dw_us`, `dw_us_max`).
+    `dw_path_prestep_hit`, `dw_cached_reuse`, `dw_cadence_skip`,
+    `dw_advancing_skip`, `dw_height_skip`, `dw_seg_same`, `dw_vanilla_call`,
+    `dw_path_kick`, `dw_ray`) and the timing (`dw_us`, `dw_us_max`).
   - `fsd_*` — `find_segment_doors`: why the door list shrank
     (`fsd_door_dead`, `fsd_door_obstructed`, `fsd_nil_element`,
     `fsd_nil_position`, `fsd_nil_tracker`, `fsd_nil_end_pos`), which nav-link

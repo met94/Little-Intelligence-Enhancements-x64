@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T11:33:42.053Z
+Generated: 2026-11-01T11:44:30.641Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -52,7 +52,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.Trace` | 81 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchDigest` | 127 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchDigest` | 128 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchReset` | 17 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchTick` | 104 | 0 | 0 |  |
@@ -121,7 +121,7 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `NavigationManager._execute_coarce_search` | 110 | 103 | 95 |  |
 | [ ] | **PORT** | `NavigationManager._sort_nav_segs_after_pos` | 51 | 89 | 47 |  |
 | [ ] | **PORT** | `NavigationManager.add_obstacle` | 57 | 20 | 25 |  |
-| [ ] | **PORT** | `NavigationManager.find_segment_doors` | 157 | 18 | 17 |  |
+| [ ] | **PORT** | `NavigationManager.find_segment_doors` | 161 | 18 | 17 |  |
 | [ ] | **PORT** | `NavigationManager.register_cover_units` | 132 | 80 | 75 |  |
 | [ ] | **PORT** | `NavigationManager.remove_obstacle` | 46 | 15 | 46 |  |
 | [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 93 | 36 | 38 |  |
@@ -620,14 +620,14 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopLogicAttack._confirm_retreat_position_visless` | 14 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._find_charge_pos` | 38 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._find_friend_pos` | 89 | 0 | 0 |  |
-| [ ] | audit | `CopLogicAttack._get_expected_pos` | 147 | 0 | 0 |  |
+| [ ] | audit | `CopLogicAttack._get_expected_pos` | 153 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._move_back_into_field_position` | 27 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._pathing_complete_clbk` | 21 | 0 | 0 |  |
 | [ ] | audit | `lies_aim_window` | 5 | 0 | 0 |  |
 | [ ] | audit | `lies_door_watch_first` | 23 | 0 | 0 |  |
 | [ ] | audit | `lies_enemy_tracker` | 22 | 0 | 0 |  |
 | [ ] | audit | `lies_trace_window` | 5 | 0 | 0 |  |
-| [ ] | audit | `lies_upd_expected_pos` | 217 | 0 | 0 |  |
+| [ ] | audit | `lies_upd_expected_pos` | 225 | 0 | 0 |  |
 | [ ] | keep | `CopLogicAttack._can_move` | 3 | 3 | 3 |  |
 | [ ] | keep | `CopLogicAttack._cancel_cover_pathing` | 9 | 16 | 16 |  |
 | [ ] | keep | `CopLogicAttack._chk_covered` | 20 | 23 | 23 |  |

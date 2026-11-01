@@ -102,17 +102,25 @@ end
 -- term was unreachable and the watch position was never refreshed or cleared);
 -- on the same nav segment the coarse-search fallback is skipped (see the
 -- `dw_seg_same` note below), and vanilla owns that case; the cop's own tracker
--- is nil-guarded; and there are six outcome counters instead of five, because
--- `dw_no_my_tracker` is its own exit.
+-- is nil-guarded; the armed-path pre-step is cadence-gated (inside the 0.2/1.5 s
+-- window and only when no saved position is held, because it can reach a coarse
+-- search, `find_segment_doors` and one nav tracker per nav-link door); and there
+-- are six outcome counters instead of five, because `dw_no_my_tracker` is its
+-- own exit.
 --
 -- Outcome accounting: every call increments exactly one of `dw_gate_off`,
 -- `dw_stale_bail`, `dw_outer_gate_skip`, `dw_no_my_tracker`, `dw_hit`,
 -- `dw_none`. Everything else (`dw_cadence_skip`, `dw_path_prestep`,
--- `dw_raw_hit`, `dw_ray`, ...) is a sub-event. Order matters: both tracker
--- liveness checks run before the `door_watch`/`highperformance` gate, because
--- vanilla `_get_expected_attention_position` (`248.2:1508`) dereferences
--- `attention_obj.nav_tracker` unguarded. With the feature off, handing a freed
--- tracker to vanilla is exactly the crash this helper exists to prevent.
+-- `dw_path_prestep_hit`, `dw_raw_hit`, `dw_ray`, ...) is a sub-event. Order
+-- matters: the enemy tracker
+-- check runs before the `door_watch`/`highperformance` gate, because vanilla
+-- `_get_expected_attention_position` (`248.2:1508`) dereferences
+-- `attention_obj.nav_tracker` unguarded — with the feature off, handing it a
+-- freed tracker is exactly the crash this helper exists to prevent. The cop's
+-- own tracker is checked after the gate instead: it is only read by this helper
+-- below the gate, and the asymmetry is deliberate because vanilla dereferences
+-- that tracker unguarded as well (`248.2:1514`), so a nil there is an outcome
+-- of its own (`dw_no_my_tracker`) rather than something the gate can dodge.
 local function lies_upd_expected_pos(data, my_data, time_since_verification)
 	LIES:Count("dw_call")
 
@@ -175,23 +183,6 @@ local function lies_upd_expected_pos(data, my_data, time_since_verification)
 	-- re-test ray and `find_segment_doors` together.
 	local t0 = os.clock()
 
-	-- Author's pre-step (`bbb30fa^:1198-1204`): an armed coarse path is the best
-	-- watch position, and reading it here keeps `_get_expected_pos` from issuing
-	-- a new search.
-	local expected_path = my_data.expected_pos_path
-
-	if expected_path then
-		LIES:Count("dw_path_prestep")
-
-		expected_pos = CopLogicAttack._get_expected_pos(data, my_data)
-
-		if expected_pos then
-			src = "expected"
-		end
-	elseif my_data.expected_pos then
-		expected_pos = my_data.expected_pos
-	end
-
 	-- Cadence block. The author re-tested the cached position and probed for a
 	-- doorway only when the 0.2 s / 1.5 s window opened, then stamped
 	-- `expected_pos_last_check_t` so the next window starts from that frame. The
@@ -214,66 +205,88 @@ local function lies_upd_expected_pos(data, my_data, time_since_verification)
 		end
 
 		if not expected_pos then
-			if my_seg ~= enemy_seg then
-				head_pos = head_pos or data.m_pos:with_z(data.unit:movement():m_head_pos().z)
-				raycast_f = raycast_f or data.unit.raycast
+			-- Author's pre-step (`bbb30fa^:1198-1204`): an armed coarse path is
+			-- the best watch position, and reading it here keeps
+			-- `_get_expected_pos` from issuing a new search. It sits inside the
+			-- cadence window and only runs when nothing is saved, so a nil
+			-- result cannot discard a held position and the re-test above always
+			-- sees the cache.
+			if my_data.expected_pos_path then
+				LIES:Count("dw_path_prestep")
 
-				-- Tracker-free height gate: `focus_enemy.m_pos` is the last known
-				-- position, so no nav segment table and no engine pointer.
-				local enemy_z = focus_enemy.m_pos and focus_enemy.m_pos.z or data.m_pos.z
-				local try_watch_enemy_seg = data.m_pos.z >= enemy_z or math.abs(data.m_pos.z - enemy_z) < 250 or (focus_enemy.dis or 0) >= 2000
+				local pre = CopLogicAttack._get_expected_pos(data, my_data)
 
-				height = try_watch_enemy_seg and 1 or 0
+				if pre then
+					expected_pos = pre
+					src = "expected"
 
-				if try_watch_enemy_seg then
-					local nav = managers and managers.navigation
-					-- 2-arg form: raw Vector3 positions only, no segment filter.
-					local doors = nav and nav.find_segment_doors and nav:find_segment_doors(enemy_seg)
+					LIES:Count("dw_path_prestep_hit")
+				end
+			end
 
-					if doors then
-						for i = 1, #doors do
-							local door = doors[i]
+			if not expected_pos then
+				if my_seg ~= enemy_seg then
+					head_pos = head_pos or data.m_pos:with_z(data.unit:movement():m_head_pos().z)
+					raycast_f = raycast_f or data.unit.raycast
 
-							-- Nil test, not truthiness: a raw `Vector3` with
-							-- `x == 0` is still a door position, and a unit door
-							-- has no `.x` at all.
-							if door.x ~= nil then
-								local test_pos = door:with_z(door.z + 140)
+					-- Tracker-free height gate: `focus_enemy.m_pos` is the last known
+					-- position, so no nav segment table and no engine pointer.
+					local enemy_z = focus_enemy.m_pos and focus_enemy.m_pos.z or data.m_pos.z
+					local try_watch_enemy_seg = data.m_pos.z >= enemy_z or math.abs(data.m_pos.z - enemy_z) < 250 or (focus_enemy.dis or 0) >= 2000
 
-								LIES:Count("dw_ray")
+					height = try_watch_enemy_seg and 1 or 0
 
-								if not raycast_f(data.unit, "ray", head_pos, test_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report") then
-									LIES:Count("dw_raw_hit")
-									LIES:Count("door_raw")
+					if try_watch_enemy_seg then
+						local nav = managers and managers.navigation
+						-- 2-arg form: raw Vector3 positions only, no segment filter.
+						local doors = nav and nav.find_segment_doors and nav:find_segment_doors(enemy_seg)
 
-									expected_pos = test_pos
-									src = "raw"
+						if doors then
+							for i = 1, #doors do
+								local door = doors[i]
 
-									break
+								-- Nil test for explicit intent, not a behaviour change:
+								-- Lua has no falsy `0`, so `if door.x` accepts the
+								-- same values. It says which shape is expected — a
+								-- raw `Vector3` has `.x`, a unit door does not.
+								if door.x ~= nil then
+									local test_pos = door:with_z(door.z + 140)
+
+									LIES:Count("dw_ray")
+
+									if not raycast_f(data.unit, "ray", head_pos, test_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report") then
+										LIES:Count("dw_raw_hit")
+										LIES:Count("door_raw")
+
+										expected_pos = test_pos
+										src = "raw"
+
+										break
+									end
 								end
 							end
 						end
+					else
+						LIES:Count("dw_height_skip")
 					end
 				else
-					LIES:Count("dw_height_skip")
+					LIES:Count("dw_seg_same")
 				end
-			else
-				LIES:Count("dw_seg_same")
-			end
 
-			-- Same-segment delegates to vanilla: `_get_expected_pos` would run
-			-- `search_coarse` with from_seg == to_seg, which can never satisfy its
-			-- `i_to_seg ~= i_from_seg` check, so it burns a search and returns
-			-- nothing. Vanilla `_get_expected_attention_position` handles the
-			-- same-segment case with `m_pos + 140`.
-			if not expected_pos and my_seg ~= enemy_seg and not enemy_tracker:obstructed() and not my_tracker:obstructed() then
-				local fallback = CopLogicAttack._get_expected_pos(data, my_data)
+				-- Same-segment delegates to vanilla: `_get_expected_pos` would run
+				-- `search_coarse` with from_seg == to_seg, which can never satisfy its
+				-- `i_to_seg ~= i_from_seg` check, so it burns a search and returns
+				-- nothing. Vanilla `_get_expected_attention_position` handles the
+				-- same-segment case with `m_pos + 140`.
+				if not expected_pos and my_seg ~= enemy_seg and not enemy_tracker:obstructed() and not my_tracker:obstructed() then
+					local fallback = CopLogicAttack._get_expected_pos(data, my_data)
 
-				if fallback then
-					expected_pos = fallback
-					src = "expected"
+					if fallback then
+						expected_pos = fallback
+						src = "expected"
 
-					LIES:Count("dw_expected_pos_hit")
+						LIES:Count("dw_expected_pos_hit")
+					end
 				end
 			end
 		end
@@ -286,9 +299,12 @@ local function lies_upd_expected_pos(data, my_data, time_since_verification)
 			LIES:Count("dw_advancing_skip")
 		end
 
-		-- The window is closed and a saved position is being reused as-is: this
-		-- is the only arm that counts a reuse.
-		if expected_pos then
+		-- The window is closed, so the pre-step cannot have run: the only way
+		-- `expected_pos` is set here is the saved position read above
+		-- (`cached == 1`). Counting the reuse only in that case keeps the
+		-- counter honest — a pre-step-derived position on a closed window is
+		-- impossible by construction, not by luck.
+		if expected_pos and cached == 1 then
 			LIES:Count("dw_cached_reuse")
 		end
 	end
@@ -1627,7 +1643,13 @@ function CopLogicAttack._get_expected_pos(data, my_data)
 				found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", enemy_seg), true)
 			end
 			
-			if not #found_doors == 0 then
+			-- Still no doors after the retry: the armed path cannot be turned
+			-- into a watch position, so drop it and return. The original line
+			-- read `if not #found_doors == 0 then`, which Lua parses as
+			-- `(not #found_doors) == 0` — always false — so an empty door list
+			-- never cleared `expected_pos_path` and the dead path kept being
+			-- re-walked on every cadence window.
+			if #found_doors == 0 then
 				my_data.expected_pos_path = nil
 				
 				return

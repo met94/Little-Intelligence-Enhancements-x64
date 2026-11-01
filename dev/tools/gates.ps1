@@ -2,6 +2,13 @@
 # Run from the repo root or anywhere; writes dev/reports/static-gates.md.
 
 $ErrorActionPreference = 'Stop'
+# node and luajit write UTF-8. Windows PowerShell decodes native output with the
+# console code page (CP 437/850 here), which turns "ℹ pass 139" into
+# "Γä╣ pass 139" in the captured report, so pin both directions to UTF-8 before
+# any native command runs. No BOM: the captured text is re-encoded on write.
+$Utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::OutputEncoding = $Utf8
+$OutputEncoding = $Utf8
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $Workspace = (Resolve-Path (Join-Path $RepoRoot '..\..')).Path
 $Luajit = Join-Path $Workspace 'tools\luajit\luajit.exe'

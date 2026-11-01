@@ -44,15 +44,20 @@ const DW_SUBEVENTS = [
   'dw_height_skip',
   'dw_seg_same',
   'dw_path_prestep',
+  'dw_path_prestep_hit',
   'dw_raw_hit',
   'dw_expected_pos_hit',
   'dw_vanilla_call',
   'dw_path_kick',
   'dw_ray'
 ];
+// Every counter that proves a watch position was actually produced.
 // `dw_path_prestep` is deliberately NOT here: it increments before
-// `_get_expected_pos` runs, so it proves the attempt, not a produced position.
-const POSITION_COUNTERS = ['dw_raw_hit', 'dw_expected_pos_hit'];
+// `_get_expected_pos` runs, so it proves the attempt, not a position.
+// `dw_path_prestep_hit` is: it counts the pre-step returning a position inside
+// the cadence window, which is a position the run really produced.
+const POSITION_COUNTERS = ['dw_raw_hit', 'dw_expected_pos_hit', 'dw_path_prestep_hit'];
+
 const HARD_ALARMS = ['door_outcome_gap', 'door_contract_violation'];
 
 // Digest fields that are gauges/averages/settings rather than per-window
@@ -392,13 +397,17 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
     claim('positions', 'watch positions produced', 'INFO', `not applicable: door_watch=${doorWatch} highperformance=${highPerformance}`);
   }
 
-  // The pre-step is a separate INFO claim: it counts armed `expected_pos_path`
-  // frames, which is an attempt, not proof that a position came out.
+  // The pre-step is a separate INFO claim: `dw_path_prestep` counts armed
+  // `expected_pos_path` frames inside the cadence window (an attempt), while the
+  // position it sometimes produces is judged in `positions` through
+  // `dw_path_prestep_hit`.
   claim(
     'prestep',
     'door pre-step',
     'INFO',
-    `dw_path_prestep=${counter(counters, 'dw_path_prestep')}: frames with an armed coarse path, counted before _get_expected_pos runs, so it does not prove a position`
+    `dw_path_prestep=${counter(counters, 'dw_path_prestep')} ` +
+      `dw_path_prestep_hit=${counter(counters, 'dw_path_prestep_hit')}: cadence-window frames with an armed coarse path; ` +
+      `the attempt counter runs before _get_expected_pos, the hit counter proves a position came out`
   );
 
   // --- gate respected -----------------------------------------------------
@@ -689,20 +698,37 @@ export function renderReport(report) {
   return lines.join('\n');
 }
 
-function parseArgs(argv) {
-  const args = { logs: [], mod: path.resolve(HERE, '..', '..'), out: '', json: '', ab: '' };
+// Flags that take a value, mapped to the result key. Shared with the tests so
+// "missing value" is pinned in one place.
+export const VALUE_FLAGS = new Map([
+  ['--mod', 'mod'],
+  ['--out', 'out'],
+  ['--json', 'json'],
+  ['--ab', 'ab']
+]);
+
+// Pure: no process.exit, no console output, so the parser can be unit-tested.
+// A flag with no value (end of argv, or the next token is another `--flag`) is a
+// usage error instead of a silent `undefined` that would turn `--out` into a
+// write to the string "--json".
+export function parseArgs(argv) {
+  const args = { logs: [], mod: path.resolve(HERE, '..', '..'), out: '', json: '', ab: '', help: false };
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
+    const key = VALUE_FLAGS.get(arg);
 
-    if (arg === '--mod') args.mod = argv[++i];
-    else if (arg === '--out') args.out = argv[++i];
-    else if (arg === '--json') args.json = argv[++i];
-    else if (arg === '--ab') args.ab = argv[++i];
-    else if (arg === '--help' || arg === '-h') {
-      console.log(USAGE);
-      process.exit(0);
-    } else if (arg.startsWith('-')) throw new Error(`unknown argument: ${arg}`);
+    if (key) {
+      const value = argv[i + 1];
+
+      if (value === undefined || value === '' || (value.startsWith('-') && value !== '-')) {
+        throw new Error(`${arg} requires a value`);
+      }
+      args[key] = value;
+      i++;
+    } else if (arg === '--help' || arg === '-h') {
+      args.help = true;
+    } else if (arg.startsWith('-') && arg !== '-') throw new Error(`unknown argument: ${arg}`);
     else args.logs.push(arg);
   }
 
@@ -727,29 +753,41 @@ function main() {
     return;
   }
 
+  if (args.help) {
+    console.log(USAGE);
+    return;
+  }
+
   if (!args.logs.length) {
     usageError('at least one log file is required');
     return;
   }
 
+  // Only the reads are inside the try: an exception thrown by the analysis is
+  // a bug in this tool and must surface as one, not as "cannot read a log".
   const read = log => fs.readFileSync(path.resolve(log), 'utf8');
   const [first, ...rest] = args.logs;
-  let report;
+  let texts;
+  let modTxt;
+  let controlText = null;
 
   try {
-    const modTxt = readModTxt(path.resolve(args.mod));
-    report = analyzeLog(read(first), {
-      file: path.resolve(first),
-      otherFiles: rest.map(log => ({ file: path.resolve(log), text: read(log) })),
-      modVersion: modTxt ? modTxt.version || null : null,
-      modDir: path.resolve(args.mod),
-      controlText: args.ab ? read(args.ab) : null,
-      controlFile: args.ab ? path.resolve(args.ab) : ''
-    });
+    texts = [read(first), ...rest.map(read)];
+    modTxt = readModTxt(path.resolve(args.mod));
+    controlText = args.ab ? read(args.ab) : null;
   } catch (err) {
-    usageError(`cannot read a log: ${err.message}`);
+    usageError(`cannot read an input file: ${err.message}`);
     return;
   }
+
+  const report = analyzeLog(texts[0], {
+    file: path.resolve(first),
+    otherFiles: rest.map((log, index) => ({ file: path.resolve(log), text: texts[index + 1] })),
+    modVersion: modTxt ? modTxt.version || null : null,
+    modDir: path.resolve(args.mod),
+    controlText,
+    controlFile: args.ab ? path.resolve(args.ab) : ''
+  });
 
   const markdown = renderReport(report);
 

@@ -631,15 +631,26 @@ whether cops path in.
     fallback burned a search per cadence window and returned nothing;
   - the probe calls the 2-arg `find_segment_doors(enemy_seg)`, so nav-link
     doors arrive as raw `Vector3` `nav_link_end_pos()` (AI-02 shape) and the
-    `door.x ~= nil` test holds; `center_only` callers keep the table shape;
+    `door.x ~= nil` branch accepts them; that nil test is explicit intent, not a
+    behaviour change (Lua has no falsy `0`), the real rejection is
+    `fsd_bad_shape`; `center_only` callers keep the table shape;
   - the cadence re-test is not gated on `advancing`: the pre-port term
     (`bbb30fa^:1213`) is unreachable at the only call site, where the cop is
     running, so it froze the watch position forever — the re-test now runs on
     the 0.2/1.5 s window like the probe;
+  - the armed-path pre-step sits inside that window and only runs when the
+    re-test left no position: it can reach a coarse search,
+    `find_segment_doors` and one nav tracker per nav-link door, so it must not
+    run per frame, and a nil result must not discard a held position;
+    `dw_path_prestep_hit` counts the positions it does produce (the attempt
+    counter alone cannot back the report's `positions` claim);
+  - `_get_expected_pos` drops an armed path when the door retry still finds no
+    doors (the old `if not #found_doors == 0` was always false, so a dead path
+    was re-walked every window);
   - the cop's own tracker is nil-guarded (`dw_no_my_tracker`, a sixth outcome):
     vanilla `_get_expected_attention_position` would dereference it unguarded;
-  - `dw_cached_reuse` only counts the window-closed arm, i.e. "a saved position
-    is being reused", not "there is none".
+  - `dw_cached_reuse` only counts the window-closed arm, i.e. "cadence window
+    closed, saved position reused", never a pre-step result.
 - **Safety order:** the tracker liveness check runs before the feature gate,
   because vanilla `_get_expected_attention_position` dereferences
   `attention_obj.nav_tracker` unguarded (`248.2:1508/1516`); with the feature
