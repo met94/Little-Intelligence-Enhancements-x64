@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-11-01 (after the first in-game door-watch evidence).
+Last updated: 2026-11-01 (after the V8.80 near-visible probe merge).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -53,16 +53,17 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
 ## Open — core AI (needs in-game testing)
 
 Backlog order: door watching — **done (V8.79)**
-(`dev/reports/door-watch-port.md`); next is
-`CopLogicBase._upd_attention_obj_detection`.
+(`dev/reports/door-watch-port.md`); `CopLogicBase._upd_attention_obj_detection`
+— **done (V8.80)** (`dev/reports/port-decisions.md`, "Near-visible probe
+height"); next is `CopLogicAttack.action_complete_clbk`.
 
 Dossiers in `dev/reports/dossiers/`:
 
 | Function | Size | Why it matters |
 |---|---:|---|
-| `CopLogicBase._upd_attention_obj_detection` | 512L | Detection core; 248.2 changed fields/flow. **Next.** |
+| `CopLogicBase._upd_attention_obj_detection` | 531L | Detection core; 248.2 changed fields/flow. **Done** — kept the LIES rewrite, merged only the 248.2 near-visible probe height (V8.80, `c409ba4`; `dev/reports/port-decisions.md` "Near-visible probe height"). In-game feel not yet observed. |
 | `CopLogicAttack._upd_aim` | 560L | Aim/cover/fire; **done** — V8.75 port + V8.77/V8.78 restores, V8.79 door watch (`dev/reports/door-watch-port.md`). |
-| `CopLogicAttack.action_complete_clbk` | 101L | Action completion + state transitions. |
+| `CopLogicAttack.action_complete_clbk` | 101L | Action completion + state transitions. **Next** — 248.2 delta is `math.lerp(a,b,math.random())` → `math.rand(a,b)`; decision already `merge`. |
 | `CopLogicAttack.is_available_for_assignment` | 51L | Assignment gating. |
 | `CopLogicIdle.damage_clbk` | 61L | Damage reaction / relocation. |
 | `TaserLogicAttack._upd_enemy_detection` | 75L | Taser target selection. |
@@ -85,7 +86,7 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 - `TaserLogicAttack._chk_play_charge_weapon_sound`: restored the 300-unit vertical guard; LIES distance-scaled cooldown and 3000 range kept. Smoke 2026-10-24: 14 allowed, 7 cross-floor blocked.
 - `ShieldLogicAttack.queued_update`: adopted 248.2's reservation split (`set_pos_rsrv` success / `add_pos_rsrv` fallback), kept LIES 70 radius and movement gates. Smoke 2026-10-24: 53 set, 4 fallback, no leak.
 - `CarryData._chk_register_steal_SO`: adopted 248.2's guard order + `_add_body_activation_clbk()`, kept LIES `sabotage`/`sabo_voiceline`; fixed the nil drop-point fall-through so no broken drop objective is registered. Smoke 2026-10-24: 12 registered, 5 expected skips.
-- Keep LIES body (no edit): `CopLogicBase._upd_attention_obj_detection`, `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update`, `CopLogicIdle.damage_clbk`.
+- Keep LIES body (no edit): `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update`, `CopLogicIdle.damage_clbk`. `CopLogicBase._upd_attention_obj_detection` keeps the LIES body but now carries the 248.2 near-visible probe height (V8.80, `c409ba4`).
 - Merge pending: none from the current decisions doc.
 
 ## Group AI / data / periphery — audited

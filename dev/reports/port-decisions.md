@@ -30,7 +30,7 @@ Two facts that drive most decisions:
 
 | Function | LIES delta vs 246.1 | 248.2 delta vs 246.1 | Decision | Gate |
 |---|---|---|---|---|
-| `CopLogicBase._upd_attention_obj_detection` | full rewrite: instant acquire (weapons hot), quick-register, hhtacs ranges, whisper delay, blind-enemy purge, own `_nearly_visible_chk` | only `_nearly_visible_chk` (distance-scaled probe height) | **keep LIES** | smoke |
+| `CopLogicBase._upd_attention_obj_detection` | full rewrite: instant acquire (weapons hot), quick-register, hhtacs ranges, whisper delay, blind-enemy purge, own `_nearly_visible_chk` | only `_nearly_visible_chk` (distance-scaled probe height) | **keep LIES + merge 248.2 near-visible height (V8.80)** | smoke |
 | `CopLogicAttack._upd_aim` | full rewrite: nav-segment sight logic, wall-peek (`find_walls_across_pos`), cover-fire, aggro/reaction caps, no charge-by-default | **none functional** (`math.lerp(c,o,0)` → `c` is a no-op; dead `debug_pause_unit`/`same_z` removed) | **port 248.2 body + ledger blocks 5-9** (V8.75/V8.77; blocks 1-4 retired) | smoke |
 | `CopLogicAttack.action_complete_clbk` | adds `act`/`heal`/`healed`, cover+movement+aim re-run on completion, `in_cover[7]`, `charging`, `at_cover_shoot_pos` gated on `expired()` | `math.lerp(a,b,math.random())` → `math.rand(a,b)` | **merge** | smoke |
 | `CopLogicAttack.is_available_for_assignment` | sets `my_data.attitude`, honours `is_default`, path-fail window 6 → 3 s, sabotage gate; **drops `data.is_suppressed`** | reorders `is_suppressed` ahead of walk/path-fail | **merge** | smoke |
@@ -98,6 +98,12 @@ with weapons hot, then step out — the cop must react within the vanilla notice
 window, not instantly and not after several seconds.
 
 **Gate.** Smoke. No static gate can validate notice timing.
+
+**Update (V8.80, `c409ba4`):** the "do not graft the ramp" half of this verdict is
+superseded — see *Near-visible probe height* at the end of this file. The LIES
+rewrite of the pass stays; only the vertical fallback probe adopted the 248.2
+height scaling. The `last_verified_m_pos` consumer argument below is why the
+helper itself is still the LIES one, not vanilla's.
 
 ## 2. `CopLogicAttack._upd_aim`
 
@@ -658,3 +664,73 @@ whether cops path in.
 - **Gate:** smoke. `[LIES-WATCH] evt=digest` with `watch_log=true`, read by
   `node dev/tools/door-watch-report.mjs`; the claim -> counter table and the
   test-play procedure are in `dev/reports/door-watch-port.md`.
+
+---
+
+## Near-visible probe height (2026-11-01, V8.80)
+
+- **Function:** `CopLogicBase._upd_attention_obj_detection` in
+  `lua/coplogics/coplogicbase.lua` — the nested `_nearly_visible_chk` helper
+  (LIES body entry at `906`, helper at `1010`, three call sites at
+  `1374`/`1386`/`1396`).
+- **Decision:** keep the LIES rewrite of the detection pass; merge **only** the
+  248.2 vertical probe-height scaling inside `_nearly_visible_chk`. Released as
+  V8.80 (`c409ba4`, `feat/ai-suite-compat`).
+- **Evidence.** A function diff 246.1 → 248.2
+  (`tools\pd2fn.ps1 -From 246.1 -To 248.2 -Path lib/units/enemies/cop/logics/coplogicbase.lua
+  -Class CopLogicBase -Name _upd_attention_obj_detection`) shows exactly one
+  functional change in the whole function, and it is inside the vanilla helper:
+  the fixed `+100` probe above the last known position becomes
+  `math.lerp(100, 10, math.max(attention_info.verified_dis / MAX_DISTANCE))`
+  with `local MAX_DISTANCE = 2000` declared in the helper
+  (`248.2:482-491`). Everything else in the function — signatures, fields,
+  callbacks, the instant-identify helper, the `forced` argument — is unchanged.
+  That is why the earlier "keep LIES, do not graft the ramp" verdict in
+  section 1 is narrowed here rather than reversed: the rewrite stays, the one
+  changed expression is adopted.
+- **What is adopted.** The LIES vertical fallback probe (previously a fixed
+  `math.UP * 30`, fired fourth, after the exact-point and both ±30 lateral
+  probes) now rises by `height_over_target`. LIES's probe **order** (exact →
+  lateral + → lateral − → vertical), its **±30 lateral tolerance** (vanilla
+  uses 150, deliberately not adopted) and its `last_verified_pos` /
+  `last_verified_m_pos` / `last_verified_dis` / `last_expected` / `lost_track`
+  bookkeeping are unchanged.
+- **`MAX_DISTANCE` hoist.** Vanilla declares the constant inside the helper and
+  gates there on `verified_dis`; LIES gates at the three call sites instead, on
+  `attention_info.dis`. Each site has just written `verified_dis = dis`
+  immediately above the gate, so the two are the same value at that point —
+  but the constant is now needed by both the call-site gate and the helper
+  body, so it is hoisted to the function scope as the single source. All three
+  gates read `MAX_DISTANCE > attention_info.dis`; the bare `2000` literal is
+  gone (pinned by the test).
+- **`math.clamp` vs vanilla's `math.max`.** The vanilla line is
+  `math.lerp(100, 10, math.max(attention_info.verified_dis / MAX_DISTANCE))`.
+  `math.max` with a single argument is the identity, so the vanilla ratio is
+  unclamped above — it relies on the enclosing
+  `MAX_DISTANCE > verified_dis` gate to keep it below 1. LIES uses
+  `math.clamp(ratio, 0, 1)`, which is behaviour-identical *inside* the gate
+  (ratio ∈ [0, 1)) and additionally safe if a future caller ever probes without
+  the gate. The clamp bounds the height to [10, 100].
+- **Diagnostics.** `LIES:Count("near_vis_probe")` (how often the vertical
+  fallback ran, after both lateral probes) and `LIES:Gauge("near_vis_h",
+  height_over_target)` (tallest height seen in the window), digested as
+  `near_vis_probe` and `near_vis_h_max` (`menumanager.lua:529-530`, right after
+  the `dw_*` group). The pair is what makes the merge observable in a log:
+  `near_vis_h_max` ≈ 100 at contact range, ≈ 10 near 2000 units.
+- **Player-visible effect, stated honestly.** At contact range the peek probe
+  rises to ~100 units instead of 30, so a cop keeps a "nearly visible" read on
+  a target behind low cover more readily up close; by ~2000 units the probe has
+  faded to 10, so distant peeking is less likely to keep them watching. Nothing
+  else in detection changes — no new acquisition, no wider lateral search, no
+  different notice timing path. **Not yet observed in game.**
+- **Risk if wrong.** Detection is the most visible LIES feature. A too-tall
+  probe over-reads cover: cops keep the target flagged `nearly_visible=true`
+  and stay on it instead of dropping to search. A too-short probe makes them
+  lose a target behind chest-high cover at point-blank range. Scenario: crouch
+  behind a low wall ~3-5 m in front of a SWAT — it must keep watching the spot
+  while you crouch-walk behind it, and drop the read within a couple of seconds
+  of you breaking away. Repeat at ~40 m behind the same wall: the read should be
+  less sticky there than up close.
+- **Gate:** smoke (`near_vis_probe > 0` and a plausible `near_vis_h_max` in one
+  digest). Static coverage: `dev/tools/test/detection-near-visible.test.mjs`.
+

@@ -25,7 +25,7 @@ import {
   selectSessions
 } from '../door-watch-report.mjs';
 
-const VERSION = 'V8.79_x64';
+const VERSION = 'V8.80_x64';
 const CLI = fileURLToPath(new URL('../door-watch-report.mjs', import.meta.url));
 
 function watch(event, fields = {}) {
@@ -500,7 +500,12 @@ test('a version mismatch against mod.txt fails', () => {
   const report = analyzeLog(happyLog, { file: 'happy_log.txt', modVersion: 'V8.78_x64' });
 
   assert.equal(claimOf(report, 'version').result, 'FAIL');
-  assert.match(claimOf(report, 'version').evidence, /V8\.79_x64 vs mod\.txt V8\.78_x64/);
+  // Built from the fixture version so a release bump does not have to touch this
+  // assertion (the log version is what the tool reports back).
+  assert.ok(
+    claimOf(report, 'version').evidence.includes(`${VERSION} vs mod.txt V8.78_x64`),
+    claimOf(report, 'version').evidence
+  );
   assert.equal(report.verdict, 'FAIL');
 });
 

@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T13:19:34.802Z
+Generated: 2026-11-01T13:32:05.512Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -52,7 +52,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.Trace` | 81 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchDigest` | 128 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchDigest` | 132 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchReset` | 17 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchTick` | 104 | 0 | 0 |  |
@@ -492,7 +492,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CopLogicBase._upd_attention_obj_detection` | 512 | 355 | 359 |  |
+| [ ] | **PORT** | `CopLogicBase._upd_attention_obj_detection` | 531 | 355 | 359 |  |
 | [ ] | audit | `CopLogicBase.check_sabotage_objective_not_allowed` | 42 | 0 | 0 |  |
 | [ ] | audit | `CopLogicBase.on_attention_obj_verified` | 13 | 0 | 0 |  |
 | [ ] | audit | `CopLogicBase.pre_destroy` | 5 | 0 | 0 |  |

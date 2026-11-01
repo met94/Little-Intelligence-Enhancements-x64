@@ -150,6 +150,7 @@ Digest groups in `[LIES-WATCH] … evt=digest` (per-minute deltas):
 | cost | `dw_us`, `dw_us_max` | Average and high-water time of the armed path (`os.clock`, ~1 ms granularity — read as an average) |
 | `find_segment_doors` | `fsd_call_2arg`, `fsd_call_center`, `fsd_no_from_seg`, `fsd_neighbour_missing`, `fsd_disabled`, `fsd_raw`, `fsd_door_dead`, `fsd_door_obstructed`, `fsd_nil_element`, `fsd_nil_position`, `fsd_nil_tracker`, `fsd_nil_end_pos`, `fsd_navlink_seg_ok`, `fsd_navlink_seg_mismatch`, `fsd_tracker_created`, `fsd_tracker_destroyed`, `fsd_bad_shape` | Why the door list shrank, whether nav-link doors were included (`fsd_navlink_seg_ok`), and that the `Vector3` contract held (`fsd_bad_shape=0`). A map with no nav-link doors legitimately shows 0 |
 | reaction | `react_hold`, `react_allow`, `react_level` | The V8.78 `enemy_reaction_level` delay actually held (or did not) frames |
+| near-visible probe | `near_vis_probe`, `near_vis_h_max` | The V8.80 merge is live: the vertical fallback probe ran (`near_vis_probe` counts it, so it is 0 on a play with no covered targets) and `near_vis_h_max` is the tallest probe height seen in the window — ≈ 100 at contact range, tapering to ≈ 10 near 2000 units. A value stuck at 30 would be the pre-merge fixed probe; 0 with `near_vis_probe > 0` would be a broken gauge |
 
 Read a play with:
 
