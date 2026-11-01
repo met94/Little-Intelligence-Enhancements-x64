@@ -14,6 +14,110 @@ local m_rot_x = mrotation.x
 local m_rot_y = mrotation.y
 local m_rot_z = mrotation.z
 
+-- Every cop logic picks its exit state from a reaction table that assumes the
+-- unit's brain owns the whole cop logic set. Bots and civilians do not:
+-- `TeamAIBrain` has no "attack"/"arrest" and `CivilianBrain` has neither, so a
+-- cop logic running on one of them reached `CopBrain:set_logic` with a state
+-- name its `_logics` table does not contain and took the whole game down
+-- ("attempt to index local 'logic' (a nil value)").
+-- Report: 2026-10-31, heist `auc`, `CopLogicTravel.upd_advance` line 915.
+-- Owning brain is recorded by the alarm below; the dump does not carry it.
+local exit_original = CopLogicBase._exit
+local exit_fallback_names = {"idle", "inactive"}
+
+local function lies_logic_exists(brain, name)
+	local logics = brain and brain._logics
+
+	return (name and logics and logics[name]) and true or false
+end
+
+local function lies_game_time()
+	if not TimerManager then
+		return 0
+	end
+
+	local timer = TimerManager:game()
+
+	return timer and timer:time() or 0
+end
+
+local function lies_report_missing_exit(unit, brain, wanted, fallback)
+	if not (LIES and LIES.Alarm) or (LIES.watch_alarm_budget or 0) <= 0 then
+		return
+	end
+
+	local available = {}
+
+	for name in pairs(brain._logics or {}) do
+		available[#available + 1] = tostring(name)
+	end
+
+	table.sort(available)
+
+	local base = unit:base()
+
+	-- `lies_watch_fields` strips punctuation, so join with "." and keep the list
+	-- readable: logics=arrest.attack.idle.travel
+	LIES:Alarm(fallback and "exit_missing_logic" or "exit_no_fallback", {
+		tweak = base and base._tweak_table or "?",
+		wanted = wanted or "nil",
+		current = brain._current_logic_name or "?",
+		fallback = fallback or "none",
+		logics = table.concat(available, ".")
+	}, lies_game_time())
+end
+
+local function lies_pick_exit_fallback(brain)
+	for _, name in ipairs(exit_fallback_names) do
+		if lies_logic_exists(brain, name) then
+			return name
+		end
+	end
+end
+
+-- Landing point for every `CopLogicBase._exit` caller in the mod and in the
+-- game. Swapping the missing state for one the brain actually holds keeps the
+-- unit alive instead of crashing the session; the alarm names the offender so
+-- the caller can be fixed at its source.
+-- No `alive(unit)` gate on purpose: a dead or mid-destroy unit still updates its
+-- logic for a frame, and that delayed path is exactly where a foreign state can
+-- arrive. The guard only reads tables, so it is safe on those units too.
+function CopLogicBase._exit(unit, state_name, params)
+	local brain = unit and unit:brain() or nil
+
+	if brain and not lies_logic_exists(brain, state_name) then
+		local fallback = lies_pick_exit_fallback(brain)
+
+		lies_report_missing_exit(unit, brain, state_name, fallback)
+
+		if LIES and LIES.Trace then
+			LIES:Trace(unit, brain._logic_data, fallback and "exit_missing_logic" or "exit_no_fallback", "wanted=" .. tostring(state_name))
+		end
+
+		if not fallback then
+			-- Nothing safe to switch to (a brain with no logic table at all):
+			-- keep the unit where it is rather than crash. It stays frozen in its
+			-- current logic and the alarm above is the only trace.
+			return
+		end
+
+		state_name = fallback
+	end
+
+	if brain and LIES and LIES.Event then
+		local logic_data = brain._logic_data
+		local objective = logic_data and logic_data.objective
+
+		LIES:Event("exit", unit, logic_data, {
+			req = tostring(state_name),
+			obj = tostring(objective and objective.type or "nil"),
+			internal = tostring(logic_data and logic_data.internal_data and "y" or "n")
+		})
+	end
+
+	return exit_original(unit, state_name, params)
+end
+
 function CopLogicBase._can_arrest(data)
 	if not data.tactics or not data.tactics.tackle then
 		return not data.char_tweak.no_arrest and (not data.objective or not data.objective.no_arrest or data.objective.grp_objective and data.objective.grp_objective.no_arrest)
@@ -896,6 +1000,13 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 		end
 	end
 
+	-- Vanilla 248.2 `_nearly_visible_chk` declares this limit inside the helper and
+	-- gates on `MAX_DISTANCE > attention_info.verified_dis`. LIES gates at the three
+	-- call sites instead, on `attention_info.dis` (the value each site has just
+	-- written into `verified_dis`), so the constant is hoisted to this scope to stay
+	-- the single source for both that gate and the distance-scaled probe height.
+	local MAX_DISTANCE = 2000
+
 	local function _nearly_visible_chk(attention_info, detect_pos)
 		local near_pos = tmp_vec1
 
@@ -922,8 +1033,20 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 				near_vis_ray = data.unit:raycast("ray", my_pos, near_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report")
 				
 				if near_vis_ray then
+					-- Vanilla 248.2 (`_nearly_visible_chk`) probes 100 units above the last
+					-- known position at contact range and fades to 10 by `MAX_DISTANCE`.
+					-- The vanilla line is
+					-- `math.lerp(100, 10, math.max(attention_info.verified_dis / MAX_DISTANCE))`;
+					-- `math.max` with a single argument is the identity, and the
+					-- `MAX_DISTANCE` gate already bounds the ratio below 1, so
+					-- `math.clamp(ratio, 0, 1)` is behaviour-identical inside the gate.
+					local height_over_target = math.lerp(100, 10, math.clamp(attention_info.verified_dis / MAX_DISTANCE, 0, 1))
+
+					LIES:Count("near_vis_probe")
+					LIES:Gauge("near_vis_h", height_over_target)
+
 					mvec3_set(near_pos, detect_pos)
-					mvector3.add(near_pos, math.UP * 30)
+					mvector3.add(near_pos, math.UP * height_over_target)
 					
 					near_vis_ray = data.unit:raycast("ray", my_pos, near_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report")
 				end
@@ -1248,7 +1371,7 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 							attention_info.verified_m_pos = mvector3.copy(attention_info.criminal_record.pos)
 							attention_info.verified_dis = dis
 
-							if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and attention_info.dis < 2000 then
+							if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and MAX_DISTANCE > attention_info.dis then
 								_nearly_visible_chk(attention_info, attention_pos)
 							end
 						elseif not is_detection_persistent and mvector3.distance(attention_info.m_pos, attention_info.criminal_record.pos) > 700 then
@@ -1260,7 +1383,7 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 							attention_info.verified_m_pos = mvector3.copy(attention_info.criminal_record.pos)
 							attention_info.verified_dis = dis
 
-							if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and attention_info.dis < 2000 then
+							if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and MAX_DISTANCE > attention_info.dis then
 								_nearly_visible_chk(attention_info, attention_pos)
 							end
 						end
@@ -1270,7 +1393,7 @@ function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_react
 						attention_info.verified_m_pos = mvector3.copy(attention_info.m_pos)
 						attention_info.verified_dis = dis
 						
-						if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and attention_info.dis < 2000 then
+						if not attention_info.lost_track and data.logic._chk_nearly_visible_chk_needed(data, attention_info, u_key) and MAX_DISTANCE > attention_info.dis then
 							_nearly_visible_chk(attention_info, attention_pos)
 						end
 					elseif attention_info.verified_m_pos and mvector3.distance(attention_info.m_pos, attention_info.verified_m_pos) > 700 then

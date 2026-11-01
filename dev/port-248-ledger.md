@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-10-24T08:46:35.252Z
+Generated: 2026-11-01T16:52:14.632Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -11,32 +11,51 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 
 | category | count |
 |---|---:|
-| LIES_EDIT_VANILLA_CHANGED | 24 |
+| LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 190 |
+| MOD_ONLY | 218 |
 | VANISHED_IN_NEW | 1 |
-| SAME_AS_OLD_VANILLA | 2 |
+| SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 288 |
+| LIES_EDIT_CLEAN | 290 |
+| SAME_AS_NEW_VANILLA | 1 |
 
 ## menumanager.lua
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
+| [ ] | audit | `lies_alarm_ratio` | 11 | 0 | 0 |  |
+| [ ] | audit | `lies_delta` | 3 | 0 | 0 |  |
+| [ ] | audit | `lies_level_id` | 11 | 0 | 0 |  |
+| [ ] | audit | `lies_watch_fields` | 17 | 0 | 0 |  |
+| [ ] | audit | `LIES._avg_sum` | 9 | 0 | 0 |  |
+| [ ] | audit | `LIES._cache_hit_histogram` | 26 | 0 | 0 |  |
+| [ ] | audit | `LIES._count_cache_keys` | 25 | 0 | 0 |  |
 | [ ] | audit | `LIES._optimize_path` | 37 | 0 | 0 |  |
 | [ ] | audit | `LIES._path_is_straight_line` | 25 | 0 | 0 |  |
+| [ ] | audit | `LIES.Alarm` | 22 | 0 | 0 |  |
 | [ ] | audit | `LIES.check_for_updates` | 5 | 0 | 0 |  |
+| [ ] | audit | `LIES.Count` | 3 | 0 | 0 |  |
+| [ ] | audit | `LIES.Event` | 49 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_away_from_pos` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_from_threat` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_in_cone_from_threat_pos_1` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_in_nav_seg_3` | 5 | 0 | 0 |  |
 | [ ] | audit | `LIES.find_cover_near_pos_1` | 5 | 0 | 0 |  |
+| [ ] | audit | `LIES.Gauge` | 11 | 0 | 0 |  |
 | [ ] | audit | `LIES.Load` | 11 | 0 | 0 |  |
-| [ ] | audit | `LIES.LogCheck` | 5 | 0 | 0 |  |
+| [ ] | audit | `LIES.LogCheck` | 11 | 0 | 0 |  |
 | [ ] | audit | `LIES.Save` | 8 | 0 | 0 |  |
 | [ ] | audit | `LIES.set_update_data` | 19 | 0 | 0 |  |
+| [ ] | audit | `LIES.Sum` | 17 | 0 | 0 |  |
 | [ ] | audit | `LIES.tprint` | 38 | 0 | 0 |  |
+| [ ] | audit | `LIES.Trace` | 81 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
+| [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchDigest` | 132 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchReset` | 17 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchTick` | 104 | 0 | 0 |  |
 
 ## menunodegui.lua
 
@@ -99,21 +118,22 @@ No function definitions (hook/overlay file).
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
 | [ ] | **PORT** | `NavigationManager._draw_covers` | 34 | 27 | 38 |  |
-| [ ] | **PORT** | `NavigationManager._execute_coarce_search` | 110 | 103 | 95 |  |
-| [ ] | **PORT** | `NavigationManager._sort_nav_segs_after_pos` | 51 | 89 | 47 |  |
+| [ ] | **PORT** | `NavigationManager._execute_coarce_search` | 112 | 103 | 95 |  |
+| [ ] | **PORT** | `NavigationManager._sort_nav_segs_after_pos` | 53 | 89 | 47 |  |
 | [ ] | **PORT** | `NavigationManager.add_obstacle` | 57 | 20 | 25 |  |
-| [ ] | **PORT** | `NavigationManager.find_segment_doors` | 68 | 18 | 17 |  |
-| [ ] | **PORT** | `NavigationManager.register_cover_units` | 132 | 80 | 75 |  |
+| [ ] | **PORT** | `NavigationManager.find_segment_doors` | 161 | 18 | 17 |  |
+| [ ] | **PORT** | `NavigationManager.register_cover_units` | 133 | 80 | 75 |  |
 | [ ] | **PORT** | `NavigationManager.remove_obstacle` | 46 | 15 | 46 |  |
 | [ ] | **PORT** | `NavigationManager.set_nav_segment_state` | 93 | 36 | 38 |  |
-| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._clear:LIES_nav_gen_abort_clear` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._clear:LIES_nav_gen_abort_clear` | 12 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:NavigationManager._unregister_cover_units:LIES_nav_gen_abort_unregister` | 3 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager.update:lies_cover` | 8 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:NavigationManager.update:lies_cover` | 12 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `_lies_cover_grid_add` | 12 | 0 | 0 |  |
 | [ ] | audit | `_lies_cover_mode` | 9 | 0 | 0 |  |
 | [ ] | audit | `_lies_cover_too_close` | 22 | 0 | 0 |  |
 | [ ] | audit | `_lies_grid_key` | 3 | 0 | 0 |  |
 | [ ] | audit | `convert_bastards` | 7 | 0 | 0 |  |
+| [ ] | audit | `lies_count` | 5 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._add_LIES_cached_path` | 7 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._change_funcs` | 21 | 0 | 0 |  |
 | [ ] | audit | `NavigationManager._check_LIES_invalidated_navlink_cached_paths` | 25 | 0 | 0 |  |
@@ -145,7 +165,7 @@ No function definitions (hook/overlay file).
 | [ ] | drop/rewrite | `NavigationManager.get_nav_segments_in_direction` | 24 | 55 | 0 | function exists in 246.1 but not in 248.2; drop or re-home |
 | [ ] | keep | `NavigationManager.draw_path` | 59 | 36 | 36 |  |
 | [ ] | keep | `NavigationManager.register_anim_nav_link` | 51 | 45 | 45 |  |
-| [ ] | keep | `NavigationManager.search_pos_to_pos` | 85 | 7 | 7 |  |
+| [ ] | keep | `NavigationManager.search_pos_to_pos` | 122 | 7 | 7 |  |
 
 ## lua/characters/characterattentionobject.lua
 
@@ -230,13 +250,13 @@ No function definitions (hook/overlay file).
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
 | [ ] | audit (hook) | `Hooks.PostHook:ElementSpawnEnemyGroup._finalize_values:lies_finalize_values` | 51 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
-| [ ] | keep | `ElementSpawnEnemyGroup.on_executed` | 43 | 35 | 35 |  |
+| [ ] | delete | `ElementSpawnEnemyGroup.on_executed` | 45 | 35 | 35 | stale 246.1 copy; delete unless intentionally kept |
 
 ## lua/managers/mapelements/elementspecialobjective.lua
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | audit (hook) | `Hooks.PostHook:ElementSpecialObjective._finalize_values:lies_send_navlink_element` | 85 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
+| [ ] | audit (hook) | `Hooks.PostHook:ElementSpecialObjective._finalize_values:lies_send_navlink_element` | 110 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | keep | `ElementSpecialObjective.clbk_verify_administration` | 65 | 20 | 20 |  |
 | [ ] | keep | `ElementSpecialObjective.nav_link_delay` | 9 | 3 | 3 |  |
 
@@ -292,14 +312,13 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | `GroupAIStateBesiege._chk_group_use_flash_grenade` | 145 | 45 | 45 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._chk_group_use_smoke_grenade` | 179 | 47 | 47 |  |
 | [ ] | **PORT** | `GroupAIStateBesiege._queue_police_upd_task` | 17 | 7 | 13 |  |
-| [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 48 | 28 | 22 |  |
-| [ ] | **PORT** | `GroupAIStateBesiege.force_end_assault_phase` | 18 | 18 | 20 |  |
+| [ ] | **PORT** | `GroupAIStateBesiege._upd_police_activity` | 38 | 28 | 22 |  |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBase.sync_event:lies_check_phalanx_sync` | 5 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege._upd_assault_task:lies_retire` | 101 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.init:lies_spawngroups` | 132 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit (hook) | `Hooks.PostHook:GroupAIStateBesiege.update:lies_check_phalanx_binding` | 13 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_assault` | 44 | 0 | 0 |  |
-| [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 44 | 0 | 0 |  |
+| [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_recon` | 59 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._assign_enemy_group_to_reenforce` | 46 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._check_phalanx_damage_reduction_increase_LIES` | 126 | 0 | 0 |  |
 | [ ] | audit | `GroupAIStateBesiege._check_spawn_phalanx_LIES` | 53 | 0 | 0 |  |
@@ -333,7 +352,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `GroupAIStateBesiege._assign_assault_groups_to_retire` | 49 | 31 | 31 |  |
 | [ ] | keep | `GroupAIStateBesiege._assign_enemy_groups_to_assault` | 40 | 33 | 33 |  |
 | [ ] | keep | `GroupAIStateBesiege._assign_enemy_groups_to_recon` | 45 | 38 | 38 |  |
-| [ ] | keep | `GroupAIStateBesiege._assign_group_to_retire` | 100 | 51 | 51 |  |
+| [ ] | keep | `GroupAIStateBesiege._assign_group_to_retire` | 114 | 51 | 51 |  |
 | [ ] | keep | `GroupAIStateBesiege._choose_best_group` | 28 | 29 | 29 |  |
 | [ ] | keep | `GroupAIStateBesiege._create_objective_from_group_objective` | 88 | 77 | 77 |  |
 | [ ] | keep | `GroupAIStateBesiege._determine_group_leader` | 15 | 13 | 13 |  |
@@ -358,6 +377,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `GroupAIStateBesiege.on_objective_complete` | 130 | 88 | 88 |  |
 | [ ] | keep | `GroupAIStateBesiege.remove_from_surrendered` | 12 | 18 | 18 |  |
 | [ ] | keep | `make_dis_id` | 6 | 5 | 5 |  |
+| [ ] | keep (new) | `GroupAIStateBesiege.force_end_assault_phase` | 20 | 18 | 20 | matches 248.2 vanilla; no override needed |
 
 ## lua/copextensions/copdamage.lua
 
@@ -401,7 +421,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit (hook) | `Hooks.PostHook:CopBrain.set_spawn_entry:lies_accessentry` | 15 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 | [ ] | audit | `CopBrain._do_hhtacs_damage_modifiers` | 152 | 0 | 0 |  |
 | [ ] | audit | `CopBrain._on_player_slow_pos_rsrv_upd` | 9 | 0 | 0 |  |
-| [ ] | audit | `CopBrain.check_upd_aim` | 39 | 0 | 0 |  |
+| [ ] | audit | `CopBrain.check_upd_aim` | 53 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.clbk_group_member_attention_verified` | 11 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.get_movement_delay` | 15 | 0 | 0 |  |
 | [ ] | audit | `CopBrain.is_criminal` | 5 | 0 | 0 |  |
@@ -415,17 +435,18 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopBrain._chk_use_cover_grenade` | 25 | 40 | 40 |  |
 | [ ] | keep | `CopBrain.action_complete_clbk` | 23 | 3 | 3 |  |
 | [ ] | keep | `CopBrain.add_pos_rsrv` | 23 | 19 | 19 |  |
-| [ ] | keep | `CopBrain.clbk_pathing_results` | 54 | 41 | 41 |  |
+| [ ] | keep | `CopBrain.clbk_pathing_results` | 56 | 41 | 41 |  |
 | [ ] | keep | `CopBrain.on_suppressed` | 11 | 13 | 13 |  |
 | [ ] | keep | `CopBrain.on_team_set` | 10 | 5 | 5 |  |
 | [ ] | keep | `CopBrain.post_init` | 58 | 46 | 46 |  |
-| [ ] | keep | `CopBrain.search_for_path` | 23 | 18 | 18 |  |
-| [ ] | keep | `CopBrain.search_for_path_from_pos` | 22 | 18 | 18 |  |
-| [ ] | keep | `CopBrain.search_for_path_to_cover` | 27 | 16 | 16 |  |
-| [ ] | keep | `CopBrain.set_objective` | 141 | 13 | 13 |  |
+| [ ] | keep | `CopBrain.search_for_path` | 25 | 18 | 18 |  |
+| [ ] | keep | `CopBrain.search_for_path_from_pos` | 25 | 18 | 18 |  |
+| [ ] | keep | `CopBrain.search_for_path_to_cover` | 32 | 16 | 16 |  |
+| [ ] | keep | `CopBrain.set_logic` | 15 | 16 | 16 |  |
+| [ ] | keep | `CopBrain.set_objective` | 152 | 13 | 13 |  |
 | [ ] | keep | `CopBrain.set_pos_rsrv` | 23 | 19 | 19 |  |
 | [ ] | keep | `CopBrain.set_spawn_ai` | 37 | 17 | 17 |  |
-| [ ] | keep | `CopBrain.update` | 31 | 12 | 12 |  |
+| [ ] | keep | `CopBrain.update` | 38 | 12 | 12 |  |
 
 ## lua/copextensions/copsound.lua
 
@@ -452,7 +473,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopActionWalk.enforce_gravity_on_simple_path` | 28 | 0 | 0 |  |
 | [ ] | keep | `CopActionWalk._apply_padding_to_simplified_path` | 52 | 50 | 50 |  |
 | [ ] | keep | `CopActionWalk._calculate_simplified_path` | 53 | 33 | 33 |  |
-| [ ] | keep | `CopActionWalk._init` | 168 | 160 | 160 |  |
+| [ ] | keep | `CopActionWalk._init` | 171 | 160 | 160 |  |
 | [ ] | keep | `CopActionWalk.on_attention` | 27 | 21 | 21 |  |
 
 ## lua/coplogics/coplogicintimidated.lua
@@ -471,15 +492,20 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CopLogicBase._upd_attention_obj_detection` | 512 | 355 | 359 |  |
+| [ ] | **PORT** | `CopLogicBase._upd_attention_obj_detection` | 531 | 355 | 359 |  |
 | [ ] | audit | `CopLogicBase.check_sabotage_objective_not_allowed` | 42 | 0 | 0 |  |
 | [ ] | audit | `CopLogicBase.on_attention_obj_verified` | 13 | 0 | 0 |  |
 | [ ] | audit | `CopLogicBase.pre_destroy` | 5 | 0 | 0 |  |
 | [ ] | audit | `CopLogicBase.upd_falloff_sim` | 94 | 0 | 0 |  |
+| [ ] | audit | `lies_game_time` | 9 | 0 | 0 |  |
+| [ ] | audit | `lies_logic_exists` | 5 | 0 | 0 |  |
+| [ ] | audit | `lies_pick_exit_fallback` | 7 | 0 | 0 |  |
+| [ ] | audit | `lies_report_missing_exit` | 25 | 0 | 0 |  |
 | [ ] | keep | `CopLogicBase._can_arrest` | 7 | 3 | 3 |  |
 | [ ] | keep | `CopLogicBase._chk_call_the_police` | 15 | 17 | 17 |  |
 | [ ] | keep | `CopLogicBase._create_detected_attention_object_data` | 75 | 74 | 74 |  |
 | [ ] | keep | `CopLogicBase._evaluate_reason_to_surrender` | 171 | 186 | 186 |  |
+| [ ] | keep | `CopLogicBase._exit` | 35 | 3 | 3 |  |
 | [ ] | keep | `CopLogicBase._get_logic_state_from_reaction` | 35 | 23 | 23 |  |
 | [ ] | keep | `CopLogicBase._report_detections` | 9 | 9 | 9 |  |
 | [ ] | keep | `CopLogicBase._set_attention_obj` | 91 | 67 | 67 |  |
@@ -531,7 +557,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopLogicTravel.get_pathing_prio` | 50 | 14 | 14 |  |
 | [ ] | keep | `CopLogicTravel.is_available_for_assignment` | 13 | 19 | 19 |  |
 | [ ] | keep | `CopLogicTravel.queue_update` | 9 | 5 | 5 |  |
-| [ ] | keep | `CopLogicTravel.upd_advance` | 208 | 71 | 71 |  |
+| [ ] | keep | `CopLogicTravel.upd_advance` | 219 | 71 | 71 |  |
 
 ## lua/coplogics/coplogicidle.lua
 
@@ -559,7 +585,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopLogicIdle._upd_stance_and_pose` | 58 | 61 | 61 |  |
 | [ ] | keep | `CopLogicIdle._upd_stop_old_action` | 35 | 35 | 35 |  |
 | [ ] | keep | `CopLogicIdle.action_complete_clbk` | 48 | 33 | 33 |  |
-| [ ] | keep | `CopLogicIdle.clbk_action_timeout` | 23 | 21 | 21 |  |
+| [ ] | keep | `CopLogicIdle.clbk_action_timeout` | 24 | 21 | 21 |  |
 | [ ] | keep | `CopLogicIdle.enter` | 114 | 107 | 107 |  |
 | [ ] | keep | `CopLogicIdle.is_available_for_assignment` | 35 | 27 | 27 |  |
 | [ ] | keep | `CopLogicIdle.on_alert` | 72 | 56 | 56 |  |
@@ -585,7 +611,7 @@ No function definitions (hook/overlay file).
 
 | done | status | function | mod L | old L | new L | note |
 |---:|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 572 | 195 | 192 |  |
+| [ ] | **PORT** | `CopLogicAttack._upd_aim` | 392 | 195 | 192 |  |
 | [ ] | **PORT** | `CopLogicAttack.action_complete_clbk` | 101 | 47 | 47 |  |
 | [ ] | **PORT** | `CopLogicAttack.is_available_for_assignment` | 60 | 43 | 43 |  |
 | [ ] | audit | `CopLogicAttack._check_needs_reload` | 48 | 0 | 0 |  |
@@ -594,29 +620,35 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopLogicAttack._confirm_retreat_position_visless` | 14 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._find_charge_pos` | 38 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._find_friend_pos` | 89 | 0 | 0 |  |
-| [ ] | audit | `CopLogicAttack._get_expected_pos` | 138 | 0 | 0 |  |
+| [ ] | audit | `CopLogicAttack._get_expected_pos` | 153 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._move_back_into_field_position` | 27 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._pathing_complete_clbk` | 21 | 0 | 0 |  |
+| [ ] | audit | `lies_aim_window` | 5 | 0 | 0 |  |
+| [ ] | audit | `lies_door_watch_first` | 23 | 0 | 0 |  |
+| [ ] | audit | `lies_enemy_tracker` | 22 | 0 | 0 |  |
+| [ ] | audit | `lies_trace_window` | 5 | 0 | 0 |  |
+| [ ] | audit | `lies_upd_expected_pos` | 225 | 0 | 0 |  |
 | [ ] | keep | `CopLogicAttack._can_move` | 3 | 3 | 3 |  |
+| [ ] | keep | `CopLogicAttack._cancel_cover_pathing` | 9 | 16 | 16 |  |
 | [ ] | keep | `CopLogicAttack._chk_covered` | 20 | 23 | 23 |  |
 | [ ] | keep | `CopLogicAttack._chk_exit_attack_logic` | 39 | 19 | 19 |  |
 | [ ] | keep | `CopLogicAttack._chk_request_action_turn_to_enemy` | 21 | 19 | 19 |  |
-| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover` | 72 | 32 | 32 |  |
-| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover_shoot_pos` | 26 | 23 | 23 |  |
-| [ ] | keep | `CopLogicAttack._chk_start_action_move_back` | 77 | 32 | 32 |  |
-| [ ] | keep | `CopLogicAttack._chk_start_action_move_out_of_the_way` | 59 | 21 | 21 |  |
+| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover` | 87 | 32 | 32 |  |
+| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover_shoot_pos` | 28 | 23 | 23 |  |
+| [ ] | keep | `CopLogicAttack._chk_start_action_move_back` | 78 | 32 | 32 |  |
+| [ ] | keep | `CopLogicAttack._chk_start_action_move_out_of_the_way` | 61 | 21 | 21 |  |
 | [ ] | keep | `CopLogicAttack._chk_wants_to_take_cover` | 49 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack._correct_path_start_pos` | 16 | 8 | 8 |  |
 | [ ] | keep | `CopLogicAttack._find_flank_pos` | 38 | 86 | 86 |  |
 | [ ] | keep | `CopLogicAttack._find_retreat_position` | 122 | 72 | 72 |  |
 | [ ] | keep | `CopLogicAttack._get_cover_offset_pos` | 41 | 33 | 33 |  |
-| [ ] | keep | `CopLogicAttack._peek_for_pos_sideways` | 53 | 54 | 54 |  |
-| [ ] | keep | `CopLogicAttack._process_pathing_results` | 65 | 48 | 48 |  |
-| [ ] | keep | `CopLogicAttack._upd_combat_movement` | 307 | 150 | 150 |  |
+| [ ] | keep | `CopLogicAttack._peek_for_pos_sideways` | 55 | 54 | 54 |  |
+| [ ] | keep | `CopLogicAttack._process_pathing_results` | 75 | 48 | 48 |  |
+| [ ] | keep | `CopLogicAttack._upd_combat_movement` | 364 | 150 | 150 |  |
 | [ ] | keep | `CopLogicAttack._upd_enemy_detection` | 48 | 49 | 49 |  |
-| [ ] | keep | `CopLogicAttack._upd_pose` | 38 | 15 | 15 |  |
+| [ ] | keep | `CopLogicAttack._upd_pose` | 26 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack._upd_stop_old_action` | 24 | 15 | 15 |  |
-| [ ] | keep | `CopLogicAttack._update_cover` | 262 | 149 | 149 |  |
+| [ ] | keep | `CopLogicAttack._update_cover` | 264 | 149 | 149 |  |
 | [ ] | keep | `CopLogicAttack._verify_cover` | 15 | 15 | 15 |  |
 | [ ] | keep | `CopLogicAttack.action_taken` | 3 | 3 | 3 |  |
 | [ ] | keep | `CopLogicAttack.aim_allow_fire` | 37 | 19 | 19 |  |
@@ -699,8 +731,8 @@ No function definitions (hook/overlay file).
 |---:|---|---|---:|---:|---:|---|
 | [ ] | audit | `SpoocLogicAttack._chk_play_charge_spooc_sound` | 7 | 0 | 0 |  |
 | [ ] | audit | `SpoocLogicAttack._chk_wants_to_take_cover` | 49 | 0 | 0 |  |
-| [ ] | audit | `SpoocLogicAttack.update` | 104 | 0 | 0 |  |
-| [ ] | keep | `SpoocLogicAttack._upd_spooc_attack` | 53 | 45 | 45 |  |
+| [ ] | audit | `SpoocLogicAttack.update` | 115 | 0 | 0 |  |
+| [ ] | keep | `SpoocLogicAttack._upd_spooc_attack` | 71 | 45 | 45 |  |
 | [ ] | keep | `SpoocLogicAttack.action_complete_clbk` | 91 | 49 | 49 |  |
 | [ ] | keep | `SpoocLogicAttack.enter` | 51 | 55 | 55 |  |
 

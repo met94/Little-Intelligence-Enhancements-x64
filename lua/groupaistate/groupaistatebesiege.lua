@@ -590,52 +590,42 @@ function GroupAIStateBesiege:_unregister_escort(key)
 end
 
 function GroupAIStateBesiege:_upd_police_activity()
-	if self._police_activity_blocked then
+	if not self._ai_enabled or self._police_activity_blocked then
 		return
 	end
-	
+
+	-- LIES-only: read only by the _upd_assault_task posthook
+	-- (self._t - self._last_upd_t), which ages _task_data.assault.old_target_pos_t.
 	if not self._last_upd_t then
 		self._last_upd_t = self._t
 	end
 
-	if self._ai_enabled then
-		self:_upd_SO()
-		self:_upd_grp_SO()
-		self:_check_spawn_phalanx()
-		self:_check_phalanx_group_has_spawned()
-		self:_check_phalanx_damage_reduction_increase()
+	self:_upd_SO()
+	self:_upd_grp_SO()
+	self:_check_spawn_phalanx()
+	self:_check_phalanx_group_has_spawned()
+	self:_check_phalanx_damage_reduction_increase()
 
-		if self._enemy_weapons_hot then
-			
-			--in vanilla, if a group gets partially spawned in one update,
-			--the next update might result in groupai not adding a new group to spawn 
-			--until after that update because the group spawning gets updated late
-			--kind of a picky thing to get hung up on but it kinda bothers me so i fixed it here
-			local updated_group_spawning = nil
-			
-			if next(self._spawning_groups) then
-				self:_upd_group_spawning()
-				
-				updated_group_spawning = true
-			end
-			
-			self:_claculate_drama_value()
-			self:_update_criminal_reveal()
-			self:_upd_regroup_task()
-			self:_upd_reenforce_tasks()
-			self:_upd_recon_tasks()
-			self:_upd_assault_task()
-			self:_begin_new_tasks()
-			
-			if not updated_group_spawning then
-				self:_upd_group_spawning()
-			end
-			
-			self:_upd_groups()
-		end
-		
-		self._last_upd_t = self._t
+	if self._enemy_weapons_hot then
+		self:_claculate_drama_value()
+		-- LIES-only: vanilla has no security-camera criminal reveal pass.
+		self:_update_criminal_reveal()
+		self:_upd_regroup_task()
+		self:_upd_reenforce_tasks()
+		self:_upd_recon_tasks()
+		self:_upd_assault_task()
+		self:_begin_new_tasks()
+
+		-- The old LIES body ran exactly one spawn pass per hot tick: early (before _claculate_drama_value) only
+		-- when next(self._spawning_groups) was set, otherwise here at vanilla's position. This change relocates
+		-- that single call, so with a pending queue group dispatch and the _upd_group posthook now run after
+		-- _claculate_drama_value/_upd_assault_task/_begin_new_tasks, up to one _POLICE_ACTIVITY_DELAY_FAST (0.4 s) later.
+		self:_upd_group_spawning()
+
+		self:_upd_groups()
 	end
+
+	self._last_upd_t = self._t
 end
 
 function GroupAIStateBesiege:_update_criminal_reveal()
@@ -1207,6 +1197,8 @@ function GroupAIStateBesiege:force_end_assault_phase(force_regroup)
 	local task_data = self._task_data.assault
 
 	if task_data.active then
+		cat_print("groupai", "[GroupAI] GroupAIStateBesiege:force_end_assault_phase - Forcing current assault to end.", force_regroup and "Forcing regroup." or "")
+
 		task_data.phase = "fade"
 		task_data.force_end = true
 
@@ -1372,6 +1364,20 @@ function GroupAIStateBesiege:_voice_movedin_civs(group)
 end
 
 function GroupAIStateBesiege:_assign_group_to_retire(group)
+	if LIES and LIES.Event then
+		local unit_count = 0
+
+		for _ in pairs(group.units or {}) do
+			unit_count = unit_count + 1
+		end
+
+		LIES:Event("group_retire", nil, nil, {
+			group = tostring(group.id or "?"),
+			units = tostring(unit_count),
+			area = tostring(group.objective and group.objective.area and group.objective.area.id or "?")
+		})
+	end
+
 	local group_leader_u_key, group_leader_u_data = self._determine_group_leader(group.units)
 	
 	if not group_leader_u_data or not alive(group_leader_u_data.unit) then
@@ -1813,6 +1819,21 @@ function GroupAIStateBesiege:_assign_enemy_group_to_assault(group)
 end
 
 function GroupAIStateBesiege:_assign_enemy_group_to_recon(group)
+	if LIES and LIES.Event and group.objective and group.objective.type == "recon_area" then
+		local unit_count = 0
+
+		for _ in pairs(group.units or {}) do
+			unit_count = unit_count + 1
+		end
+
+		LIES:Event("group_recon", nil, nil, {
+			group = tostring(group.id or "?"),
+			units = tostring(unit_count),
+			phase = tostring(group.objective.phase or "?"),
+			moving_out = tostring(group.objective.moving_out or false)
+		})
+	end
+
 	if group.has_spawned and group.objective.type == "recon_area" then
 		if group.objective.moving_out then
 			local done_moving = nil
@@ -3910,7 +3931,7 @@ function GroupAIStateBesiege:_chk_group_use_smoke_grenade(group, task_data, deto
 				
 				--reworked this entire mess to be over-designed as fuck
 				if u_data.tactics_map and u_data.tactics_map.smoke_grenade and objective and objective.grp_objective == group.objective then
-					if not u_data.unit:movement():chk_action_forbidden("action") and u_data.unit:movement()._anim_global ~= "shield" and mvec3_dis(u_data.m_pos, target_area.pos) < 4000000 then
+					if not u_data.unit:movement():chk_action_forbidden("action") and u_data.unit:movement()._anim_global ~= "shield" and mvec3_dis(u_data.m_pos, target_area.pos) < 4000000 and u_data.tracker and alive(u_data.tracker) then
 						local m_nav_seg_id = u_data.tracker:nav_segment()
 						local my_fwd = u_data.unit:movement():m_fwd()
 						local nav_seg_neighbours = all_nav_segs[m_nav_seg_id].neighbours
@@ -4075,7 +4096,7 @@ function GroupAIStateBesiege:_chk_group_use_flash_grenade(group, task_data, deto
 				
 				--reworked this entire mess to be over-designed as fuck
 				if u_data.tactics_map and u_data.tactics_map.flash_grenade and objective and objective.grp_objective == group.objective then
-					if not u_data.unit:movement():chk_action_forbidden("action") and u_data.unit:movement()._anim_global ~= "shield" and mvec3_dis(u_data.m_pos, target_area.pos) < 4000000 then
+					if not u_data.unit:movement():chk_action_forbidden("action") and u_data.unit:movement()._anim_global ~= "shield" and mvec3_dis(u_data.m_pos, target_area.pos) < 4000000 and u_data.tracker and alive(u_data.tracker) then
 						local m_nav_seg_id = u_data.tracker:nav_segment()
 						local my_fwd = u_data.unit:movement():m_fwd()
 						local nav_seg_neighbours = all_nav_segs[m_nav_seg_id].neighbours

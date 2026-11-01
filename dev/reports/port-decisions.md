@@ -30,15 +30,15 @@ Two facts that drive most decisions:
 
 | Function | LIES delta vs 246.1 | 248.2 delta vs 246.1 | Decision | Gate |
 |---|---|---|---|---|
-| `CopLogicBase._upd_attention_obj_detection` | full rewrite: instant acquire (weapons hot), quick-register, hhtacs ranges, whisper delay, blind-enemy purge, own `_nearly_visible_chk` | only `_nearly_visible_chk` (distance-scaled probe height) | **keep LIES** | smoke |
-| `CopLogicAttack._upd_aim` | full rewrite: nav-segment sight logic, wall-peek (`find_walls_across_pos`), cover-fire, aggro/reaction caps, no charge-by-default | **none functional** (`math.lerp(c,o,0)` → `c` is a no-op; dead `debug_pause_unit`/`same_z` removed) | **keep LIES** | smoke |
-| `CopLogicAttack.action_complete_clbk` | adds `act`/`heal`/`healed`, cover+movement+aim re-run on completion, `in_cover[7]`, `charging`, `at_cover_shoot_pos` gated on `expired()` | `math.lerp(a,b,math.random())` → `math.rand(a,b)` | **merge** | smoke |
+| `CopLogicBase._upd_attention_obj_detection` | full rewrite: instant acquire (weapons hot), quick-register, hhtacs ranges, whisper delay, blind-enemy purge, own `_nearly_visible_chk` | only `_nearly_visible_chk` (distance-scaled probe height) | **keep LIES + merge 248.2 near-visible height (V8.80)** | smoke |
+| `CopLogicAttack._upd_aim` | full rewrite: nav-segment sight logic, wall-peek (`find_walls_across_pos`), cover-fire, aggro/reaction caps, no charge-by-default | **none functional** (`math.lerp(c,o,0)` → `c` is a no-op; dead `debug_pause_unit`/`same_z` removed) | **port 248.2 body + ledger blocks 5-9** (V8.75/V8.77; blocks 1-4 retired) | smoke |
+| `CopLogicAttack.action_complete_clbk` | adds `act`/`heal`/`healed`, cover+movement+aim re-run on completion, `in_cover[7]`, `charging`, `at_cover_shoot_pos` gated on `expired()` | `math.lerp(a,b,math.random())` → `math.rand(a,b)` | **merge — applied `f0370d4`, verified complete 2026-11-01** | smoke |
 | `CopLogicAttack.is_available_for_assignment` | sets `my_data.attitude`, honours `is_default`, path-fail window 6 → 3 s, sabotage gate; **drops `data.is_suppressed`** | reorders `is_suppressed` ahead of walk/path-fail | **merge** | smoke |
 | `CopLogicIdle.damage_clbk` | no forced verify/`verified_pos`; `identify_attention_obj_instant` instead of create+patch; `data.group` guard around `criminal_spotted` | create-time `data.t` → fresh `t` | **keep LIES** (+1-line fresh-time inherit) | static |
 | `TaserLogicAttack._upd_enemy_detection` | returns `delay`, drops the wind-up focus lock | local declaration order only | **keep LIES** | smoke |
-| `TaserLogicAttack._cancel_tase_attempt` | splits handle (`tasing_action`) from data (`tasing`); nils `tasing` first | inline action table only | **keep LIES** | static |
-| `TaserLogicAttack._chk_play_charge_weapon_sound` | distance-scaled 15–30 s cooldown, 3000 range, **z-check dropped** | cooldown 30 → 3 s, range `2000` → `tase_distance * 2` | **merge** (keep LIES scaling, restore z-check) | static/ear |
-| `TankCopLogicAttack.update` | `old_action_advancing`, per-frame `attitude`, `next_mov_time` gate, walk/run chase choice | `within_z_distance` refactor, inline action table, `unit:movement()` | **keep LIES** | static |
+| `TaserLogicAttack._cancel_tase_attempt` | splits handle (`tasing_action`) from data (`tasing`); nils `tasing` first | inline action table only | **keep LIES** — verified present 2026-11-01 (`38b8582`) | static |
+| `TaserLogicAttack._chk_play_charge_weapon_sound` | distance-scaled 15–30 s cooldown, 3000 range, **z-check dropped** | cooldown 30 → 3 s, range `2000` → `tase_distance * 2` | **merge — applied, verified present 2026-11-01** (`38b8582`; 300 guard `:446`, lerp `:441`, 3000 range) | static/ear |
+| `TankCopLogicAttack.update` | `old_action_advancing`, per-frame `attitude`, `next_mov_time` gate, walk/run chase choice | restyle only (`within_z_distance`, inline action table, `unit:movement()`) | **keep LIES — inert fallback**: every dozer variant is remapped to `LIESBossLogicAttack` (`lua/copextensions/copbrain.lua:3-10`); latent `old_action_advancing` latch documented, not fixed (§9) | static |
 | `ShieldLogicAttack.queued_update` | movement gates (`next_mov_time`, charging, `follow_unit`), `_chk_wants_to_take_cover`, 2500 sq threshold, `old_action_advancing` | reservation plumbing: `brain:add_pos_rsrv` + `set_pos_rsrv` only on success | **merge** | smoke |
 | `CarryData._chk_register_steal_SO` | `sabotage = true` / `sabo_voiceline` markers on pickup+drop objectives | `_add_body_activation_clbk()` helper, server/`_AI_carry` hoisted into first guard | **merge** | smoke-lite |
 | `NavigationManager.add_obstacle` | invalidates cached LIES paths that intersect the new obstacle | nil-object guard, destroy listener, field reorder | **merge** | smoke |
@@ -76,9 +76,14 @@ with the same signatures.
 **Decision: keep LIES.** Do not graft 248.2's height ramp onto the LIES probe:
 LIES already dropped the fixed +100 and is stricter at range through its
 three-probe shape. More importantly, `last_verified_m_pos` is produced *here*
-and consumed by `CopLogicAttack._upd_aim` (`find_walls_across_pos` branch,
-`enemy_m_pos`); pulling a vanilla `_nearly_visible_chk` back in silently
-returns nil `last_verified_m_pos` to aim.
+and read by `LIESBossLogicAttack._chk_use_throwable` (`bosslogicattack.lua:839/856`,
+no fallback) — that is the exposed consumer. `ShieldLogicAttack`
+(`shieldlogicattack.lua:90`) uses `enemy_data.last_verified_m_pos or enemy_data.m_pos`,
+so it degrades to the current position rather than nil. The aim body itself stopped
+reading it in V8.75 when the `find_walls_across_pos` branch was retired
+(`dev/reports/aim-port-behaviour-ledger.md` block 3), but a vanilla
+`_nearly_visible_chk` would still silently return nil `last_verified_m_pos` to the
+boss callers.
 
 **Merge points (only if the team later wants the ramp).** Inside the LIES
 `_nearly_visible_chk`, the `mvector3.add(near_pos, math.UP * 30)` probe is the
@@ -94,13 +99,21 @@ window, not instantly and not after several seconds.
 
 **Gate.** Smoke. No static gate can validate notice timing.
 
+**Update (V8.80, `c409ba4`):** the "do not graft the ramp" half of this verdict is
+superseded — see *Near-visible probe height* at the end of this file. The LIES
+rewrite of the pass stays; only the vertical fallback probe adopted the 248.2
+height scaling. The `last_verified_m_pos` consumer argument below is why the
+helper itself is still the LIES one, not vanilla's.
+
 ## 2. `CopLogicAttack._upd_aim`
 
-Mod: `lua/coplogics/coplogicattack.lua` (~753). Depends on
-`_get_expected_pos` (~1314), `chk_should_turn` (~695), `aim_allow_fire`
-(~1627), `_chk_enrage` (~1529).
+Mod: `lua/coplogics/coplogicattack.lua` (V8.77 body spans `~870-1200`). Depends on
+the vanilla `_get_expected_attention_position`, `chk_should_turn`,
+`aim_allow_fire`, `_chk_enrage`, `LIESBossLogicAttack._chk_use_throwable`,
+`CopBrain:request_switch_to_safe_weapon` / `request_switch_to_normal_weapon`
+and `CopLogicAttack._cancel_charge` (vanilla).
 
-**LIES intent.** Near-total rewrite of aiming: works off
+**LIES intent (pre-port).** Near-total rewrite of aiming: works off
 `last_verified_pos` / `last_verified_m_pos`, adds nav-segment equality and
 door/segment watching when the enemy is out of sight, wall-peek search via
 `managers.navigation:find_walls_across_pos` + `pad_out_position`, cover-fire
@@ -116,20 +129,50 @@ per-attack reaction cap via `enemy_reaction_level`, and throwable use through
 `debug_pause_unit(... "doesn't have data.internal_data.weapon_range")`, and
 removal of the unused `same_z` local. LIES does not use any of those branches.
 
-**Decision: keep LIES.** Note the LIES local fallback `weapon_range`
-(`w_td`/`char_tweak.weapon[usage].range`, 2000/5000/1000 backup) is belt-and-
-braces: `CopLogicAttack.update` already assigns `my_data.weapon_range` with a
-fallback in this worktree, so no change is needed for 248.2.
+**Decision: port to the 248.2 body, then re-add the ledger blocks.**
+V8.75 (`bbb30fa`) replaced the body with vanilla because the LIES body aimed
+through the enemy's cached navigation tracker and that is the 2026-10-31 access
+violation (`dev/reports/aim-stale-nav-tracker-crash.md`); the per-block verdicts
+are in `dev/reports/aim-port-behaviour-ledger.md`. V8.77 restored the blocks
+that ledger marks RE-ADD:
+
+- script-free and back in the body: charge abort + `tankboss` table (block 5),
+  turn-to-shoot concessions (block 6), hostage safe-weapon pair (block 7),
+  `_chk_enrage` / `_chk_use_throwable` (block 8), reload callout (block 9);
+- V8.78 restored block 10 in corrected form: `level < 3 and not
+  data.unit:in_slot(16) and not data.is_converted and not (data.team and
+  data.team.id == "criminal1") and not (data.tactics and
+  data.tactics.provide_coverfire_LIES)`, `2 / level` with the level computed and
+  clamped before the gate, and a private `focus_enemy.lies_react_t` timer. The
+  7.84 clause `and not data.team.id == "criminal1"` is
+  `(not data.team.id) == "criminal1"`, i.e. constant `false`, so the block is a
+  re-derivation rather than a re-copy and needs in-game verification at each
+  menu value. Coverfire is exempt because the hold would otherwise silence the
+  suppression fire block 7 exists for;
+- the watch position comes from `_get_expected_attention_position`, so nothing
+  in `_upd_aim` reads `nav_tracker`, `_nav_segments`, `find_segment_doors` or
+  `find_walls_across_pos`;
+- retired on purpose, do not re-add without a new decision: blocks 1-4 (tracker
+  and its derivatives), block 11 (0.5 s shoot-stop hold, written against the old
+  action-handle `my_data.shooting`) and block 12 (weapon-range self-heal; the
+  caller already guarantees the field).
+
+The LIES local fallback `weapon_range` (`w_td`/`char_tweak.weapon[usage].range`,
+2000/5000/1000 backup) stays retired: `CopBrain:check_upd_aim` returns early
+without `internal_data.weapon_range` (`copbrain.lua:248-250`) and
+`CopLogicAttack.enter` sets it for the attack family.
 
 **Risk if wrong.** Aim is the highest-blast-radius function in the mod. A
 mis-merge yields cops that never fire, fire while strafing, or stare at walls.
 Scenario: 3–4 SWAT at 10–25 m, player strafing between two cover pieces — cops
 must track, shoot, stop firing when the player breaks LOS behind cover, and
-re-acquire on peek. Also check a dozer (charge path) and a shield (cover path)
-since they share this function.
+re-acquire on peek. Also check a dozer (charge path, and now enrage) and a
+shield (cover path) since they share this function.
 
 **Gate.** Smoke, minimal 2–3 min loud run with `enemy_aggro_level` at default
-and at 4.
+and at 4, once with `hhtacs` on and once with a dozer in the wave. Static gates:
+`dev/tools/test/aim-behaviour-ledger.test.mjs` and
+`dev/tools/test/aim-tracker-guard.test.mjs`.
 
 ## 3. `CopLogicAttack.action_complete_clbk`
 
@@ -150,6 +193,12 @@ timeout[2])` replaces `math.lerp(timeout[1], timeout[2], math.random())`.
 function changed, and `healed` is still unhandled by vanilla.
 
 **Decision: merge.** Keep the whole LIES body; change one expression.
+
+**Applied `f0370d4`; verified complete 2026-11-01.** Re-ran `tools/pd2fn.ps1
+-From 246.1 -To 248.2 -Path lib/units/enemies/cop/logics/coplogicattack.lua
+-Class CopLogicAttack -Name action_complete_clbk`: one hunk, the `math.rand`
+line, and the LIES body carries it (`lua/coplogics/coplogicattack.lua:2547`).
+No other 248.2-only construct in the function.
 
 **Merge point.** In the `action_type == "dodge"` branch, replace the LIES
 `math.lerp(timeout[1], timeout[2], math.random())` with
@@ -322,29 +371,86 @@ charge whine should leak through the ceiling.
 
 **Gate.** Static (verifiable by ear in any smoke run).
 
-## 9. `TankCopLogicAttack.update`
+## 9. `TankCopLogicAttack.update` — inert fallback (do not port)
 
 Mod: `lua/coplogics/specials/tankcoplogicattack.lua` (~39).
 
-**LIES intent.** `old_action_advancing` treated like `has_old_action` (retry
-after `_upd_stop_old_action`), per-frame
+**Status: inert fallback** (re-verified 2026-11-01 at `38b8582`;
+`dev/reports/tank-taser-reverify.md`). The body is correct for 248.2, but in a
+LIES profile it never runs. `lua/copextensions/copbrain.lua:3-10` rebinds
+`CopBrain._logic_variants.triad_boss.attack = LIESBossLogicAttack` (`:3`) and
+then points every dozer tweak table at that entry — `tank` (`:6`),
+`tank_medic` (`:7`), `tank_mini` (`:8`), `tank_hw` (`:9`), `piggydozer`
+(`:10`) — before any unit spawns, and `CopBrain:post_init` resolves `_logics`
+from that same table (248.2 `copbrain.lua:126`, `:156`). Vanilla's
+`logic_variants.tank.attack = TankCopLogicAttack` (248.2 `:109`) is therefore
+**orphaned**: no other file in the mod references `TankCopLogicAttack` (5 grep
+hits, all inside its own file), and dozers run `LIESBossLogicAttack`
+(`lua/coplogics/boss/bosslogicattack.lua:166-241`). No port work should be
+spent here, and the cosmetic `within_z_distance` rebase buys nothing while the
+body is dead.
+
+**LIES intent (kept as written, for the fallback).** `old_action_advancing`
+treated like `has_old_action` (retry after `_upd_stop_old_action`), per-frame
 `my_data.attitude = data.objective.attitude or "engage"`, `next_mov_time`
 movement gate owned by the LIES `CopBrain:get_movement_delay` /
 `request_stillness` machinery, and the walk/run decision
 (`walk and "walk" or "run"`) instead of always `"run"`.
 
-**248.2 delta.** `z_dist` → `within_z_distance` (same value),
-`data.unit:movement()` → `unit:movement()` (same unit), inline
-`action_request({...})`. No new fields or callbacks, no behaviour change.
+**248.2 delta.** Restyle only: `z_dist` → `within_z_distance` (same
+predicate, hoisted), `data.unit:movement()` → `unit:movement()` (same unit,
+`unit = data.unit`), inline `action_request({...})`. No new fields or
+callbacks, no behaviour change.
 
-**Decision: keep LIES.** Optional cosmetic rebase (adopt `within_z_distance`
-naming) so future 248.3 diffs stay small; behaviour must not change.
+**Decision: keep LIES** — as an inert fallback. Not a port, not a rebase, not
+a deletion: the file costs nothing and is the body that would come back if the
+remap were ever reverted.
 
-**Risk if wrong.** Dozer either stops chasing (`next_mov_time` gate never
-satisfied) or charges non-stop (gate lost). Scenario: aggro a dozer at 30 m,
-break LOS around a corner; it must keep closing, and must not freeze.
+**Known risk — latent latch, documented not fixed.** `old_action_advancing` is
+a LIES-only field, set by `CopLogicIdle._chk_has_old_action`
+(`lua/coplogics/coplogicidle.lua:131-140`) and cleared in the
+`action_complete_clbk` of every other attack-family logic that gates on it
+(`coplogicattack.lua:2467`, `taserlogicattack.lua:343`,
+`shieldlogicattack.lua:564`, `spooclogicattack.lua:226`,
+`bosslogicattack.lua:704`, `coplogictravel.lua:1594`,
+`coplogicidle.lua:1942`, `teamailogicassault.lua:417`,
+`teamailogicidle.lua:442`, `coplogicsniper.lua:176`,
+`coplogicarrest.lua:468`). The tank has **no clear**: `enter` calls
+`CopLogicIdle._chk_has_old_action` (`:22`), its
+`action_complete_clbk` (`:222-239`) clears `advancing` (`:227`) but not
+`old_action_advancing`, and `CopLogicAttack._upd_stop_old_action` cannot
+interrupt an in-progress walk (it requests idle only when
+`chk_action_forbidden("walk")` is false, which it is not while the walk action
+still owns body part 2). So if the body were ever reachable, the `update` gate
+at `:44-48` could latch: `update` would `return` every frame after the current
+walk ends, and the dozer would stop starting chase walks (it would still shoot —
+aim/fire run from `CopBrain:check_upd_aim`).
 
-**Gate.** Static. (Dozer behaviour is covered by any loud smoke.)
+- Condition that makes it live: the remap in `copbrain.lua:3-10` removed or
+  reverted, or `CopBrain._logic_variants` otherwise re-exposed with vanilla's
+  `tank.attack` — any change that lets `TankCopLogicAttack` be reached.
+- Why it is not a live bug today: the body is never entered (§ above), and the
+  body that does run — `LIESBossLogicAttack` — clears the field in its own
+  `action_complete_clbk` (`bosslogicattack.lua:704`) while re-arming it
+  deliberately when it cannot stop the current walk (`:762-765`).
+- If that condition ever happens: the two-line `action_complete_clbk` clear on
+  `"walk"` (same shape as `bosslogicattack.lua:704`) must ship **with** the
+  remap change. It is dead code while the remap stands, so it is not added
+  now.
+
+**Also verified present in this pass** (the two rows previously recorded as
+applied, re-read against the current bodies):
+
+- `TaserLogicAttack._cancel_tase_attempt` (§7) — `tasing` nil'd first, body-part-3
+  idle gated on the `tasing_action` handle (`lua/coplogics/specials/taserlogicattack.lua:487-498`).
+- `TaserLogicAttack._chk_play_charge_weapon_sound` (§8) — the recorded merge is
+  in the body: 300-unit vertical guard present (`:446`), distance-scaled
+  cooldown `math.lerp(15, 30, focus_enemy.verified_dis / 3000)` (`:441`),
+  3000 range (`:441`). 248.2's 3 s cadence and `tase_distance * 2` range
+  deliberately not taken.
+
+**Gate.** Static. (Dozer behaviour is covered by any loud smoke — and today it
+is the boss logic that produces it, not this file.)
 
 ## 10. `ShieldLogicAttack.queued_update`
 
@@ -520,14 +626,17 @@ whether cops path in.
 1. `set_nav_segment_state` — string ids; log-scan for `nonexistent nav_segment`.
 2. `add_obstacle` — nil guard + destroy listener, keep cache invalidation.
 3. `is_available_for_assignment` — restore suppression gate in 248.2 order.
-4. `action_complete_clbk` — `math.rand` only.
+4. `action_complete_clbk` — `math.rand` only (done: `f0370d4`).
 5. `ShieldLogicAttack.queued_update` — 248.2 reservation block.
 6. `CarryData._chk_register_steal_SO` — 248.2 head guards + helper, keep
    sabotage markers.
 7. `_chk_play_charge_weapon_sound` — restore vertical guard.
 8. `CopLogicIdle.damage_clbk` — optional `data.t = t` before instant identify.
-9. Keep as-is (no edit): `_upd_attention_obj_detection`, `_upd_aim`,
-   `_upd_enemy_detection`, `_cancel_tase_attempt`, `TankCopLogicAttack.update`.
+9. Keep as-is (no edit): `_upd_attention_obj_detection`,
+   `_upd_enemy_detection`, `_cancel_tase_attempt`, `TankCopLogicAttack.update`
+   (inert fallback — remapped away by LIES, see §9).
+   `_upd_aim` is no longer on this list: it was ported in V8.75 and had ledger
+   blocks 5-9 re-added in V8.77 (see section 2).
 
 ## Notes for the reviewer
 
@@ -563,3 +672,298 @@ whether cops path in.
 - **Recon truncation:** keep the 248.2 `#coarse_path - forwardmost_i_nav_point`
   loop form, including its one-extra removal. Parity-safe; re-target node is
   the one behind the forwardmost point.
+
+---
+
+## Door watching (2026-11-01, V8.79)
+
+- **Function:** `CopLogicAttack._upd_aim` (LIES restored body) via the local
+  helper `lies_upd_expected_pos` in `lua/coplogics/coplogicattack.lua`;
+  `NavigationManager.find_segment_doors` in its 2-arg (default) contract.
+- **Decision:** restore ledger blocks #1/#2/#4 as a LIES layer *over* the
+  vanilla `_get_expected_attention_position`, gated by
+  `door_watch and not highperformance`, instead of overriding the vanilla
+  method. Review finding: the game's
+  `lib/units/enemies/boss/logics/bosslogicattack.lua:694` calls
+  `CopLogicAttack._get_expected_attention_position` directly (LIES'
+  `lua/coplogics/boss/bosslogicattack.lua` delegates to `_upd_aim` at `245`
+  and `935`, and its own reaction-delay copy sits at `bosslogicattack.lua:451-466`
+  in that same LIES file), so a method override would either miss the
+  boss path or need a second override; keeping the watch as a call target
+  inside the shared body reaches every caller (attack family, team-AI assault,
+  bosses) with one gate.
+- **Deviations, all deliberate:**
+  - the height gate reads `focus_enemy.m_pos.z` (fallback `data.m_pos.z`)
+    instead of `managers.navigation._nav_segments[seg].pos` — that table is
+    private, string-keyed at 248.2, and the value was tracker-derived;
+  - the same-segment case delegates to vanilla (`dw_seg_same`): a self-to-self
+    `search_coarse` can never satisfy `i_to_seg ~= i_from_seg`, so the pre-port
+    fallback burned a search per cadence window and returned nothing;
+  - the probe calls the 2-arg `find_segment_doors(enemy_seg)`, so nav-link
+    doors arrive as raw `Vector3` `nav_link_end_pos()` (AI-02 shape) and the
+    `door.x ~= nil` branch accepts them; that nil test is explicit intent, not a
+    behaviour change (Lua has no falsy `0`), the real rejection is
+    `fsd_bad_shape`; `center_only` callers keep the table shape;
+  - the cadence re-test is not gated on `advancing`: the pre-port term
+    (`bbb30fa^:1213`) is unreachable at the only call site, where the cop is
+    running, so it froze the watch position forever — the re-test now runs on
+    the 0.2/1.5 s window like the probe;
+  - the armed-path pre-step sits inside that window and only runs when the
+    re-test left no position: it can reach a coarse search,
+    `find_segment_doors` and one nav tracker per nav-link door, so it must not
+    run per frame, and a nil result must not discard a held position;
+    `dw_path_prestep_hit` counts the positions it does produce (the attempt
+    counter alone cannot back the report's `positions` claim);
+  - `_get_expected_pos` drops an armed path when the door retry still finds no
+    doors (the old `if not #found_doors == 0` was always false, so a dead path
+    was re-walked every window);
+  - the cop's own tracker is nil-guarded (`dw_no_my_tracker`, a sixth outcome):
+    vanilla `_get_expected_attention_position` would dereference it unguarded;
+  - `dw_cached_reuse` only counts the window-closed arm, i.e. "cadence window
+    closed, saved position reused", never a pre-step result.
+- **Safety order:** the tracker liveness check runs before the feature gate,
+  because vanilla `_get_expected_attention_position` dereferences
+  `attention_obj.nav_tracker` unguarded (`248.2:1508/1516`); with the feature
+  off, handing it a freed tracker re-opens the V8.68/V8.75 crash class.
+- **Gate:** smoke. `[LIES-WATCH] evt=digest` with `watch_log=true`, read by
+  `node dev/tools/door-watch-report.mjs`; the claim -> counter table and the
+  test-play procedure are in `dev/reports/door-watch-port.md`.
+
+---
+
+## Near-visible probe height (2026-11-01, V8.80)
+
+- **Function:** `CopLogicBase._upd_attention_obj_detection` in
+  `lua/coplogics/coplogicbase.lua` — the nested `_nearly_visible_chk` helper
+  (LIES body entry at `906`, helper at `1010`, three call sites at
+  `1374`/`1386`/`1396`).
+- **Decision:** keep the LIES rewrite of the detection pass; merge **only** the
+  248.2 vertical probe-height scaling inside `_nearly_visible_chk`. Released as
+  V8.80 (`c409ba4`, `feat/ai-suite-compat`).
+- **Evidence.** A function diff 246.1 → 248.2
+  (`tools\pd2fn.ps1 -From 246.1 -To 248.2 -Path lib/units/enemies/cop/logics/coplogicbase.lua
+  -Class CopLogicBase -Name _upd_attention_obj_detection`) shows exactly one
+  functional change in the whole function, and it is inside the vanilla helper:
+  the fixed `+100` probe above the last known position becomes
+  `math.lerp(100, 10, math.max(attention_info.verified_dis / MAX_DISTANCE))`
+  with `local MAX_DISTANCE = 2000` declared in the helper
+  (`248.2:482-491`). Everything else in the function — signatures, fields,
+  callbacks, the instant-identify helper, the `forced` argument — is unchanged.
+  That is why the earlier "keep LIES, do not graft the ramp" verdict in
+  section 1 is narrowed here rather than reversed: the rewrite stays, the one
+  changed expression is adopted.
+- **What is adopted.** The LIES vertical fallback probe (previously a fixed
+  `math.UP * 30`, fired fourth, after the exact-point and both ±30 lateral
+  probes) now rises by `height_over_target`. LIES's probe **order** (exact →
+  lateral + → lateral − → vertical) and its **±30 lateral tolerance** (vanilla
+  uses 150, deliberately not adopted) are unchanged, and so is its
+  `last_verified_pos` / `last_verified_m_pos` / `last_verified_dis` /
+  `last_expected` / `lost_track` bookkeeping **code** — but not the values it
+  stores. When only the vertical ray clears, `last_verified_pos` is set to the
+  elevated `near_pos`, so it now sits up to ~70 units higher at contact range
+  (100 instead of 30), fading to the old height by ~2000 units. That field is
+  read as an aim/look point (`lua/coplogics/coplogicattack.lua` `aim_pos` /
+  `look_pos`), so smoke should watch for shots and aim passing over the head of
+  a player who peeks from behind low cover at close range.
+- **`MAX_DISTANCE` hoist.** Vanilla declares the constant inside the helper and
+  gates there on `verified_dis`; LIES gates at the three call sites instead, on
+  `attention_info.dis`. Each site has just written `verified_dis = dis`
+  immediately above the gate, so the two are the same value at that point —
+  but the constant is now needed by both the call-site gate and the helper
+  body, so it is hoisted to the function scope as the single source. All three
+  gates read `MAX_DISTANCE > attention_info.dis`; the bare `2000` literal is
+  gone (pinned by the test).
+- **`math.clamp` vs vanilla's `math.max`.** The vanilla line is
+  `math.lerp(100, 10, math.max(attention_info.verified_dis / MAX_DISTANCE))`.
+  `math.max` with a single argument is the identity, so the vanilla ratio is
+  unclamped above — it relies on the enclosing
+  `MAX_DISTANCE > verified_dis` gate to keep it below 1. LIES uses
+  `math.clamp(ratio, 0, 1)`, which is behaviour-identical *inside* the gate
+  (ratio ∈ [0, 1)) and additionally safe if a future caller ever probes without
+  the gate. The clamp bounds the height to [10, 100].
+- **Diagnostics.** `LIES:Count("near_vis_probe")` (how often the vertical
+  fallback ran, after both lateral probes) and `LIES:Gauge("near_vis_h",
+  height_over_target)` (tallest height seen in the window), digested as
+  `near_vis_probe` and `near_vis_h_max` (`menumanager.lua:529-530`, right after
+  the `dw_*` group). `LIES:Gauge` keeps only the window **maximum**, so the pair
+  proves two things and not a third: the probe fired (`near_vis_probe` counts
+  it), and the height really is the merged one at its worst case
+  (`near_vis_h_max` ≈ 100, not the pre-merge 30). The taper itself is **not**
+  observable in the digest: a single contact-range probe pins the gauge near 100
+  for the whole window, so ≈ 10 near 2000 units can only be seen on a play whose
+  covered targets were all far away.
+- **Player-visible effect, stated honestly.** At contact range the peek probe
+  rises to ~100 units instead of 30, so a cop keeps a "nearly visible" read on
+  a target behind low cover more readily up close; by ~2000 units the probe has
+  faded to 10, so distant peeking is less likely to keep them watching. Nothing
+  else in detection changes — no new acquisition, no wider lateral search, no
+  different notice timing path — but the elevated probe does move the derived
+  value: `last_verified_pos` (and the `last_verified_m_pos` /
+  `last_verified_dis` computed from it) is up to ~70 units higher at contact
+  range when the vertical ray is the one that cleared, and that position feeds
+  the aim/look points. **Not yet observed in game.**
+- **Risk if wrong.** Detection is the most visible LIES feature. A too-tall
+  probe over-reads cover: cops keep the target flagged `nearly_visible=true`
+  and stay on it instead of dropping to search. A too-short probe makes them
+  lose a target behind chest-high cover at point-blank range. Scenario: crouch
+  behind a low wall ~3-5 m in front of a SWAT — it must keep watching the spot
+  while you crouch-walk behind it, and drop the read within a couple of seconds
+  of you breaking away. Repeat at ~40 m behind the same wall: the read should be
+  less sticky there than up close.
+- **Gate:** smoke (`near_vis_probe > 0` and `near_vis_h_max` ≈ 100 rather than
+  the pre-merge 30 in one digest). Note what the gauge cannot do: it holds the
+  window maximum, so one contact-range probe pins it near 100 and the taper is
+  not visible in the digest — the claim is "the merge is live and tall at worst
+  case", not "the fade works". Static coverage:
+  `dev/tools/test/detection-near-visible.test.mjs`.
+
+---
+
+## Nav-v6 audit outcome (2026-11-01, V8.81)
+
+- **Functions:** the five open rows of the `NavigationManager` nav-v6 block in
+  `lua/managers/navigationmanager.lua` — `register_cover_units`,
+  `_execute_coarce_search`, `_sort_nav_segs_after_pos`, `remove_obstacle`,
+  `_draw_covers` — plus a re-verify of the two rows this file calls done
+  (`add_obstacle` §12, `set_nav_segment_state` §13).
+- **Evidence.** `dev/reports/nav-v6-remaining-audit.md` (2026-11-01), built with
+  `tools\pd2fn.ps1 -From 246.1 -To 248.2
+  -Path lib/managers/navigationmanager.lua -Class NavigationManager -Name <fn>`
+  and `git show a3180fc:lib/managers/navigationmanager.lua`, cross-checked
+  against `mods/base/base.lua`, `mods/base/req/BLTMod.lua` and
+  `mods/Iter/lua/navigationmanager.lua`.
+- **Audit first, Lua second.** The backlog row list was stale, so porting on its
+  word would have cost a regression plus a dead-code rewrite. Four of the seven
+  rows were closed without editing Lua:
+  - `add_obstacle` — **already merged** (nil-object guard, `unit_data()`
+    destroy listener, `id` stored in the entry). LIES additionally keeps the
+    246.1 duplicate-add `self._debug` guard, which 248.2 deleted; that is the
+    safer side and the only `self._debug` read left in the file.
+  - `set_nav_segment_state` — **already merged**: all eight `tostring(id)` /
+    `unique_id` constructs are present, so the v6 string segment keys are
+    handled; LIES adds the two `_cached_paths` invalidations and a `log()` line
+    before the `debug_pause`.
+  - `remove_obstacle` — **keep LIES**. Three of 248.2's four pieces are present
+    (nil guard, destroy-listener removal, index-based `temp_array` rebuild) and
+    LIES *adds* `self._quad_field:remove_obstacle(obs_data.id)` for a dead unit,
+    where 248.2 merely drops the list entry and leaks the engine blocker. The
+    one absent line, `self._quad_field:remove_obstacle(obstacle_obj)`
+    (248.2:2030), only covers "an obstacle exists in the quad field with no
+    `_obstacles` entry" — no caller can produce that state, `add_obstacle` always
+    stores the id it got back, and `on_simulation_ended` (248.2:1722-1752)
+    sweeps the remaining ids between heists.
+  - `_draw_covers` — **keep LIES**, and it is dead code on both sides: 248.2
+    reaches it only from `_debug_draw_options.covers` (`248.2:159-161`), LIES
+    comments its own call out (`:1251`). Porting 248.2's body would drag in
+    `temp_rot1` and `mrot_set_look_at`, which LIES' chunk does not declare — a
+    freevars hit for zero gameplay value.
+- **Three gaps merged** (`cbc4a29`, released V8.81):
+  1. `register_cover_units` — the legacy cover-unit branch now passes the create
+     flag, `self._quad_field:get_script_data(nav_tracker, true)` (`:552`).
+     248.2:849 added it to match the sibling `cover_data` call site
+     (`246.1@a3180fc:1389` already passed it); `246.1@a3180fc:1433` did not. Line
+     numbers here name the commit they were read from — the 246.1 restyle pivot
+     `a3180fc`; the manifest baseline `b36f5fbb` carries identical bodies.
+     Without it the following `location_script_data.covers` write is an
+     index-nil error that aborts cover registration for the map. Reachable only
+     when `managers.worlddefinition:get_cover_data()` returns nil.
+  2. `_execute_coarce_search` — restored the nav-link availability gate:
+     `local t = TimerManager:game():time()` hoisted (`:2296`) and
+     `t > i_door:delay_time()` ahead of `check_access` (`:2325`). The construct
+     exists in **both** baselines (246.1@a3180fc:1829, 248.2:1257), so this is a
+     LIES drop relative to 246.1, not a 248.2 fix.
+  3. `_sort_nav_segs_after_pos` — the same gate, same hoist (`:2409`),
+     `alive(door) and not door:is_obstructed() and t > door:delay_time() and
+     door:check_access(...)` (`:2422`); 246.1@a3180fc:1952 and 248.2:1368.
+  Not ported in the same pass, deliberately: the 248.2 `for i = 1, 500` loop
+  restyle (equivalent — `i == 500` is checked before the increment — plus two
+  hoists the gate did not need) and the `check_segment` closure in the sort
+  (pure restructure that would displace LIES' extra `from_pos` parameter and
+  two-term weight, and touch the caller).
+- **Deliberate LIES shapes this decision protects**, pinned by
+  `dev/tools/test/nav-gates.test.mjs` so a later 248.2 restyle cannot silently
+  drop them: the 7-argument `_sort_nav_segs_after_pos` signature, its two-term
+  `mvec3_dis(from_pos, door_pos) + mvec3_dis(door_pos, to_pos)` weight, the
+  4-tuple path with its `nav_link`, `not is_obstructed()` in the coarse-search
+  entry test (AI-06), dead-link skipping instead of `debug_pause`, and the
+  246.1 `while true` / `i == 500` loop with the per-iteration
+  `self._nav_segments` lookup.
+- **Iter-override caveat.** Iter replaces `_execute_coarce_search` **wholesale**
+  when its `nav_search` setting is on
+  (`NavigationManager._execute_coarce_search = NavigationManager.itr_execute_coarce_search`,
+  `mods/Iter/lua/navigationmanager.lua:2147` on Iter's `feat/ai-suite-compat`
+  branch, 200.21; default `true` at `lua/corecode.lua:17`). That function is the
+  only caller of `_sort_nav_segs_after_pos`
+  (`lua/managers/navigationmanager.lua:2371`), and Iter's replacement never calls
+  it, so under that profile — the default layout — **both** gap 2 and gap 3 are
+  dead: they are live only in a LIES-only profile or with Iter's nav search off.
+  Under Iter its own search runs instead, including its 200.20 FIFO cursor rework
+  (`f896b61`). Both gates are still correct standalone. Load order keeps the
+  interaction safe: LIES is priority 100, Iter 40, `mods/base/base.lua:236` sorts
+  descending, so LIES' bodies are installed first and Iter's wrappers/assignment
+  run over them (the opposite of NavFixes, priority 0, which loads last and breaks
+  LIES' 7-argument caller — `compatibility.md` §2.1).
+- **Risk if wrong.** Both gates add one userdata method call (`delay_time()`) in
+  the path-expansion hot loop, on the same object LIES already calls
+  `is_obstructed()` and `check_access()` on, so no new pointer class. The failure
+  mode of a too-strict gate is a cop refusing a usable link and stalling on a
+  reachable route; the failure mode of the code before this release is
+  committing to a link that is not ready. Scenario: fight through a door the AI
+  opens and re-opens — cops should walk through it, and should not stack at a
+  closed vault or ladder while it is still settling.
+- **Gate:** smoke. Not yet observed in game; the change is only visible on maps
+  with nav links that are still cooling down during a search, and only with
+  Iter's nav search off.
+
+## Group smoke/flash grenade audit outcome (2026-11-01, V8.82)
+
+Last two `PORT` rows of the group-AI set (`dev/port-248-ledger.md:312-313`):
+`GroupAIStateBesiege._chk_group_use_flash_grenade` (LIES 145 L / 246.1 45 L /
+248.2 45 L) and `_chk_group_use_smoke_grenade` (179 / 47 / 47). Audit with the
+complete vanilla hunk sets, the LIES-intent read and the crash-class table:
+`dev/reports/group-grenade-audit.md`. Release: `V8.82_x64`.
+
+- **Vanilla half already merged — no port.** Both functions changed in exactly
+  the same two ways in `5d84b4be` "247" (246.1 `b36f5fbb` → 248.2
+  `e3a8b616`): `local a, b = nil` → bare locals (restyle) and numeric
+  room-door id → `door.x` / nav-link unit. The door change is forced by the 247
+  nav rewrite (neighbour lists carry door positions,
+  `navigationmanager.lua:326-347` @ `e3a8b616`; `_room_doors` and
+  `_refresh_data_from_builder` are gone). LIES already tests `door.x` and
+  falls back to `nav_link_end_pos()`, and its residual numeric branch maps an
+  id to `test_pos = nil` ("skip that door") — dead-but-safe, since numbers no
+  longer occur. Net: the only functional hunk was already in the LIES bodies.
+- **Guards shipped** (`b4d5b61`). Both bodies read
+  `u_data.tracker:nav_segment()` unguarded (`:3935`, `:4100`) in a file
+  that guards the same field at `:3877`; a freed tracker at that read is the
+  V8.68 engine-AV shape (`dev/reports/aim-stale-nav-tracker-crash.md`), and the
+  two reads are reached from the group-AI update, not the movement update. Both
+  sites now fold `u_data.tracker and alive(u_data.tracker)` into the existing
+  per-unit condition (no new nesting, no other behaviour change, one extra
+  `alive()` per unit per check). Pinned by
+  `dev/tools/test/group-grenade-guards.test.mjs` (red against `e1f7d90`,
+  green after).
+- **Parked as a decision: the dead explicit-`detonate_pos` branch.** In both
+  functions the `else` arm tests `objective` as an undefined global —
+  `local objective = u_data.unit:brain():objective()` is declared only in the
+  `if not detonate_pos` arm — so no shooter is ever selected there and the
+  branch is dead. Inherited pre-port behaviour in every 8.x build
+  (`git show 997e95e`), and the outcome equals vanilla's (vanilla never throws
+  when a position is handed in either). Reviving it makes charge-specific
+  flashes/smokes land on a camping player's last known position — a real
+  difficulty increase on Death Wish+ with no test capacity here — so it stays
+  dead until an explicit decision. **Fix spec (one line per function):**
+  `local objective = u_data.unit:brain():objective()` inside the `else` loop
+  at `lua/groupaistate/groupaistatebesiege.lua:4022` (smoke) and `:4173`
+  (flash). The test pins the dead shape on purpose, so applying the fix turns
+  the suite red — the marker that the decision was taken.
+- **Inert, left alone.** The flash passes
+  `tweak_data.group_ai.smoke_grenade_lifetime` where vanilla gates on
+  `flash_grenade_lifetime` (`:4078`); `QuickFlashGrenade:activate(position)`
+  takes no duration (`quickflashgrenade.lua:112` @ `e3a8b616`), so the value
+  never reaches the blind window. Cosmetic mismatch, no edit.
+- **Ledger.** Rows 312-313 stay `PORT` until the dead-branch decision is
+  recorded — the ledger records the proposed action, not completion, so this
+  file and `port-status.md` are the "is it done" source. The vanilla half of
+  both rows is audited as already merged.
+

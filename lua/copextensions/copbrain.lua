@@ -14,10 +14,31 @@ CopBrain._logic_variants.hector_boss = CopBrain._logic_variants.triad_boss
 CopBrain._logic_variants.mobster_boss = CopBrain._logic_variants.triad_boss
 CopBrain._logic_variants.snowman_boss = CopBrain._logic_variants.triad_boss
 
+-- Lifecycle tracing: every logic switch with the objective that caused it.
+-- `set_logic` is the single choke point for transitions, so one wrapper covers
+-- travel/idle/attack/arrest/retire alike.
+local set_logic_original = CopBrain.set_logic
+
+function CopBrain:set_logic(name, enter_params)
+	if LIES and LIES.Event and self._logic_data then
+		local objective = self._logic_data.objective
+
+		LIES:Event("logic", self._unit, self._logic_data, {
+			from = tostring(self._current_logic_name or "-"),
+			to = tostring(name),
+			obj = tostring(objective and objective.type or "nil"),
+			obj_forced = tostring((objective and objective.forced) or false),
+			during = tostring(self._logic_data.updating or "no")
+		})
+	end
+
+	return set_logic_original(self, name, enter_params)
+end
+
 function CopBrain:post_init()
 	if LIES and LIES.LogCheck and not LIES._check_marshal_logged then
 		LIES._check_marshal_logged = true
-		LIES:LogCheck("marshal marksman attack=CopLogicAttack")
+		LIES:LogCheck("marshal marksman attack=CopLogicAttack", "marshal")
 	end
 
 	self._logics = CopBrain._logic_variants[self._unit:base()._tweak_table]
@@ -236,6 +257,20 @@ function CopBrain:check_upd_aim()
 	
 	if not needs_update then
 		self._aim_update_counter = self._aim_update_counter + 1
+		return
+	end
+
+	-- The aim body dereferences the enemy unit (`search_for_path_to_unit`, expected
+	-- attention position). LIES runs it from the movement update, outside the logic
+	-- update that refreshes `attention_obj`, so the entry can already point at a
+	-- dead unit.
+	local att = self._logic_data.attention_obj
+
+	if att and att.unit and not alive(att.unit) then
+		if LIES and LIES.Trace then
+			LIES:Trace(self._unit, self._logic_data, "movement_aim_stale")
+		end
+
 		return
 	end
 	
@@ -720,6 +755,17 @@ function CopBrain:on_suppressed(state)
 end
 
 function CopBrain:set_objective(new_objective, params)
+	if LIES and LIES.Event and self._logic_data then
+		local old_objective = self._logic_data.objective
+
+		LIES:Event("objective", self._unit, self._logic_data, {
+			old = tostring(old_objective and old_objective.type or "nil"),
+			new = tostring(new_objective and new_objective.type or "nil"),
+			forced = tostring((params and params.forced) or false),
+			follow = tostring(new_objective and new_objective.follow_unit and "y" or "n")
+		})
+	end
+
 	if self._logic_data and not self._logic_data.team then
 		self._spawn_ai = self._spawn_ai or {}
 		
@@ -896,6 +942,8 @@ function CopBrain:search_for_path(search_id, to_pos, prio, access_neg, nav_segs)
 	
 	self._logic_data.active_searches[search_id] = true
 
+	LIES:Count("lookup_path")
+
 	managers.navigation:search_pos_to_pos(params)
 
 	return true
@@ -919,16 +967,21 @@ function CopBrain:search_for_path_from_pos(search_id, from_pos, to_pos, prio, ac
 	}
 	
 	self._logic_data.active_searches[search_id] = true
+
+	LIES:Count("lookup_path")
+
 	managers.navigation:search_pos_to_pos(params)
 
 	return true
 end
 
 function CopBrain:search_for_path_to_cover(search_id, cover, offset_pos, access_neg)
-	if not prio then
-		prio = CopLogicTravel.get_pathing_prio(self._logic_data)
-		--log("Waaaah")
-	end
+	-- `prio` used to be an undeclared global here: the block was copied from
+	-- search_for_path / search_for_path_from_pos, where `prio` is a parameter.
+	-- get_pathing_prio never returns nil, so the first cover search of a Lua
+	-- session froze one cop's priority for every cop afterwards. Compute it per
+	-- call, from this cop's own logic data.
+	local prio = CopLogicTravel.get_pathing_prio(self._logic_data)
 
 	local params = {
 		tracker_from = self._unit:movement():nav_tracker(),
@@ -947,6 +1000,9 @@ function CopBrain:search_for_path_to_cover(search_id, cover, offset_pos, access_
 	end
 
 	self._logic_data.active_searches[search_id] = true
+
+	LIES:Count("lookup_cover")
+
 	managers.navigation:search_pos_to_pos(params)
 
 	return true
@@ -1295,7 +1351,9 @@ function CopBrain:clbk_pathing_results(search_id, path, do_not_cache)
 			end
 		end
 		
-		if not do_not_cache then
+		-- Also honour the lookup switch: with cache_lookup = false nothing reads the
+		-- cache, so storing into it would only cost memory.
+		if not do_not_cache and LIES.settings.cache_lookup ~= false then
 			local cached_path_info_params = {
 				start_pos = path[1],
 				end_pos = path[#path],
@@ -1350,7 +1408,14 @@ function CopBrain:update(unit, t, dt)
 		l_data.t = t
 		l_data.dt = true_dt
 
+		-- Re-entrancy marker: if something switches this unit's logic from inside
+		-- its own update (group objective churn), the logic event records
+		-- `during=<old logic>` and we can see the internal_data swap.
+		l_data.updating = self._current_logic_name or "?"
+
 		logic.update(l_data)
+
+		l_data.updating = nil
 	end
 end
 

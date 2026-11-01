@@ -32,66 +32,169 @@ local t_ins = table.insert
 NavigationManager.has_registered_cover_units_for_LIES = nil
 NavigationManager._LIES_navlink_elements = {}
 
+-- Counter shim for the [LIES-WATCH] digest. find_segment_doors runs per cover
+-- regeneration pass, so every early exit is counted: a door list that silently
+-- shrinks (dead/obstructed doors, elements without a position, tracker misses)
+-- is otherwise invisible from the digest.
+local function lies_count(kind)
+	if LIES and LIES.Count then
+		LIES:Count(kind)
+	end
+end
+
 function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_only)
+	lies_count(center_only and "fsd_call_center" or "fsd_call_2arg")
+
 	local all_nav_segs = self._nav_segments
 	local from_seg = all_nav_segs[from_seg_id]
 	local found_doors = {}
 
 	if not from_seg then
+		lies_count("fsd_no_from_seg")
+
 		return found_doors
 	end
 
-	for neighbour_seg_id, door_list in pairs(from_seg.neighbours) do
+	for neighbour_seg_id, door_list in pairs(from_seg.neighbours or {}) do
 		local neighbour_seg = all_nav_segs[neighbour_seg_id]
 
-		if neighbour_seg and not neighbour_seg.disabled and (not approve_clbk or approve_clbk(neighbour_seg_id)) then
-			if center_only then
-				local door_central = Vector3()
-				local number_of_doors = 0
+		if not neighbour_seg then
+			lies_count("fsd_neighbour_missing")
+		elseif neighbour_seg.disabled then
+			lies_count("fsd_disabled")
+		elseif approve_clbk and not approve_clbk(neighbour_seg_id) then
+			-- Rejected by the caller's access filter; same as the old short-circuit.
+		elseif center_only then
+			local door_central = Vector3()
+			local number_of_doors = 0
 
-				for _, door in ipairs(door_list) do
-					if door.x then
-						mvector3.add(door_central, door)
-						number_of_doors = number_of_doors + 1
-					elseif alive(door) and not door:is_obstructed() then
-						local nl_element = door:script_data().element
-						local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true)
+			for _, door in ipairs(door_list) do
+				-- Nil test for explicit intent only, not a behaviour change:
+				-- Lua has no falsy `0`, so `if door.x` accepts the same values.
+				-- The test documents the two shapes a door list can hold (a raw
+				-- `Vector3` has `.x`, a unit door does not).
+				if door.x ~= nil then
+					lies_count("fsd_raw")
+					mvector3.add(door_central, door)
+					number_of_doors = number_of_doors + 1
+				elseif not alive(door) then
+					lies_count("fsd_door_dead")
+				elseif door:is_obstructed() then
+					lies_count("fsd_door_obstructed")
+				else
+					local script_data = door:script_data()
+					local nl_element = script_data and script_data.element
 
-						if nl_tracker:nav_segment() == from_seg_id then
-							table.insert(found_doors, {
-								center = nl_element:value("position"),
-								end_pos = nl_element:nav_link_end_pos()
-							})
+					if not nl_element then
+						lies_count("fsd_nil_element")
+					else
+						local door_pos = nl_element:value("position")
+
+						if not door_pos then
+							lies_count("fsd_nil_position")
+						else
+							-- A dead nav-link door can still hand out an element;
+							-- create_nav_tracker returns nil when the point is off
+							-- the nav mesh, and the old code indexed that nil.
+							local nl_tracker = self._quad_field:create_nav_tracker(door_pos, true)
+
+							if not nl_tracker then
+								lies_count("fsd_nil_tracker")
+							else
+								lies_count("fsd_tracker_created")
+
+								if nl_tracker:nav_segment() == from_seg_id then
+									lies_count("fsd_navlink_seg_ok")
+
+									local end_pos = nl_element:nav_link_end_pos()
+									local door_data = {
+										center = door_pos
+									}
+
+									if not end_pos then
+										lies_count("fsd_nil_end_pos")
+									elseif end_pos.x ~= nil then
+										door_data.end_pos = end_pos
+									else
+										-- `_get_expected_pos` calls `door.end_pos:with_z(...)`,
+										-- so a non-Vector3 here would crash there.
+										lies_count("fsd_bad_shape")
+									end
+
+									table.insert(found_doors, door_data)
+								else
+									lies_count("fsd_navlink_seg_mismatch")
+								end
+
+								self:destroy_nav_tracker(nl_tracker)
+								lies_count("fsd_tracker_destroyed")
+							end
 						end
-
-						self:destroy_nav_tracker(nl_tracker)
 					end
 				end
+			end
 
-				if number_of_doors > 0 then
-					mvector3.divide(door_central, number_of_doors)
+			if number_of_doors > 0 then
+				mvector3.divide(door_central, number_of_doors)
 
-					table.insert(found_doors, {
-						center = door_central
-					})
-				end
-			else
-				for _, door in ipairs(door_list) do
-					if door.x then
-						table.insert(found_doors, door)
-					elseif alive(door) and not door:is_obstructed() then
-						local nl_element = door:script_data().element
-						local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value("position"), true)
+				table.insert(found_doors, {
+					center = door_central
+				})
+			end
+		else
+			for _, door in ipairs(door_list) do
+				if door.x ~= nil then
+					lies_count("fsd_raw")
+					table.insert(found_doors, door)
+				elseif not alive(door) then
+					lies_count("fsd_door_dead")
+				elseif door:is_obstructed() then
+					lies_count("fsd_door_obstructed")
+				else
+					local script_data = door:script_data()
+					local nl_element = script_data and script_data.element
 
-						if nl_tracker:nav_segment() == from_seg_id then
-							-- Default callers (vanilla 248.2 included) expect raw
-							-- positions; the {center, end_pos} table is only for
-							-- center_only callers. Use the far end like the old
-							-- table branch did for _upd_aim door watching.
-							table.insert(found_doors, nl_element:nav_link_end_pos())
+					if not nl_element then
+						lies_count("fsd_nil_element")
+					else
+						local door_pos = nl_element:value("position")
+
+						if not door_pos then
+							lies_count("fsd_nil_position")
+						else
+							local nl_tracker = self._quad_field:create_nav_tracker(door_pos, true)
+
+							if not nl_tracker then
+								lies_count("fsd_nil_tracker")
+							else
+								lies_count("fsd_tracker_created")
+
+								if nl_tracker:nav_segment() == from_seg_id then
+									-- Default callers (vanilla 248.2 included) expect raw
+									-- positions; the {center, end_pos} table is only for
+									-- center_only callers. Use the far end like the old
+									-- table branch did for _upd_aim door watching.
+									lies_count("fsd_navlink_seg_ok")
+
+									local end_pos = nl_element:nav_link_end_pos()
+
+									if not end_pos then
+										lies_count("fsd_nil_end_pos")
+									elseif end_pos.x ~= nil then
+										table.insert(found_doors, end_pos)
+									else
+										-- Not a Vector3: a caller would hand this to
+										-- mvec3_set/distance and crash or read garbage.
+										lies_count("fsd_bad_shape")
+									end
+								else
+									lies_count("fsd_navlink_seg_mismatch")
+								end
+
+								self:destroy_nav_tracker(nl_tracker)
+								lies_count("fsd_tracker_destroyed")
+							end
 						end
-
-						self:destroy_nav_tracker(nl_tracker)
 					end
 				end
 			end
@@ -445,7 +548,8 @@ function NavigationManager:register_cover_units()
 			}
 
 			t_ins(covers, cover)
-			local location_script_data = self._quad_field:get_script_data(nav_tracker)
+			-- vanilla 248.2:849 passes the create flag too: it creates the tracker's script-data extension when missing, so the `.covers` write below cannot index nil.
+			local location_script_data = self._quad_field:get_script_data(nav_tracker, true)
 
 			if not location_script_data.covers then
 				location_script_data.covers = {}
@@ -1140,6 +1244,10 @@ end
 Hooks:PostHook(NavigationManager, "update", "lies_cover", function(self, t, dt)
 	self:_update_LIES_cached_paths(t)
 
+	if LIES and LIES.WatchTick then
+		LIES:WatchTick(t)
+	end
+
 	--self:_draw_covers()
 	--self:_draw_anim_nav_links()
 	--self:_draw_coarse_graph()
@@ -1152,6 +1260,15 @@ end)
 
 Hooks:PostHook(NavigationManager, "_clear", "LIES_nav_gen_abort_clear", function(self)
 	self:_LIES_cover_gen_abort()
+
+	-- The path cache is per-heist data. Dropping it here also fixes the TTL
+	-- comparison, which used TimerManager:game():time() and therefore went
+	-- negative after a level restart, leaving entries that could never expire.
+	self._cached_paths = nil
+
+	if LIES and LIES.WatchReset then
+		LIES:WatchReset()
+	end
 end)
 
 function NavigationManager:_add_LIES_cached_path(cached_path_data)
@@ -1248,6 +1365,12 @@ function NavigationManager:search_pos_to_pos(params)
 	elseif params.pos_to then
 		end_pos = params.pos_to
 	end
+
+	-- How often the destination has no nav segment at all: that decides whether a
+	-- segment-keyed cache index would need a permanent fallback path.
+	if not self:get_nav_seg_from_pos(end_pos, true) then
+		LIES:Count("lookup_nil_seg")
+	end
 	
 	if LIES:_path_is_straight_line(start_pos, end_pos) then
 		local path = {
@@ -1257,18 +1380,30 @@ function NavigationManager:search_pos_to_pos(params)
 		
 		--managers.navigation:draw_path(path, nil, nil, 5)
 		local result_clbk = params.result_clbk
+
+		LIES:Count("search_sync_line")
+
 		result_clbk(path, true)
-		
+
 		return
-	elseif self._cached_paths and #self._cached_paths > 0 then
+	elseif self._cached_paths and #self._cached_paths > 0 and LIES.settings.cache_lookup ~= false then
 		local t = TimerManager:game():time()
-	
+		local scan_t0 = os.clock()
+
+		LIES:Gauge("cache_len", #self._cached_paths)
+		LIES:Sum("cache_scan_n", #self._cached_paths)
+
 		for i = 1, #self._cached_paths do
 			local cached_path_info = self._cached_paths[i]
-			
+
 			local inclusions = access_inclusions[cached_path_info.access_pos_str]
-			
-			if not cached_path_info.invalidated and LIES:_path_is_straight_line(start_pos, cached_path_info.start_pos) and LIES:_path_is_straight_line(end_pos, cached_path_info.end_pos) and (inclusions and inclusions[params.access_pos_str] == true or cached_path_info.access_pos_str == params.access_pos_str) then
+			local exact_access = cached_path_info.access_pos_str == params.access_pos_str
+			local via_inclusions = inclusions and inclusions[params.access_pos_str] == true
+
+			-- Cheap discriminators first: the two _path_is_straight_line calls
+			-- below each cost a native raycast, so reject on the access string
+			-- before paying for them. Same predicate, different order.
+			if not cached_path_info.invalidated and (exact_access or via_inclusions) and LIES:_path_is_straight_line(start_pos, cached_path_info.start_pos) and LIES:_path_is_straight_line(end_pos, cached_path_info.end_pos) then
 				local good_path = true
 				
 				for cached_path_i = 1, #cached_path_info.path do
@@ -1291,7 +1426,17 @@ function NavigationManager:search_pos_to_pos(params)
 
 				if good_path then
 					cached_path_info.last_useful_t = TimerManager:game():time()
-				
+
+					LIES:Count("search_sync_cache")
+					LIES:Count("cache_hit")
+					LIES:Sum("cache_scan_us", (os.clock() - scan_t0) * 1000000)
+
+					cached_path_info.hits = (cached_path_info.hits or 0) + 1
+
+					if via_inclusions and not exact_access then
+						LIES:Count("cache_hit_inclusions")
+					end
+
 					local result_path = {
 						start_pos
 					}
@@ -1311,9 +1456,18 @@ function NavigationManager:search_pos_to_pos(params)
 				end
 			end
 		end
+
+		LIES:Count("cache_miss")
+		LIES:Sum("cache_scan_us", (os.clock() - scan_t0) * 1000000)
 	end
 
+	LIES:Count("search_engine")
+
+	local engine_t0 = os.clock()
+
 	self._quad_field:detailed_search(params)
+
+	LIES:Sum("engine_us", (os.clock() - engine_t0) * 1000000)
 end
 
 function NavigationManager:draw_path(path, color_link, color_node, duration)
@@ -2138,6 +2292,8 @@ end
 
 function NavigationManager:_execute_coarce_search(search_data)
 	local search_id = search_data.id
+	-- vanilla 248.2:1257 gates nav links on one timestamp read per search.
+	local t = TimerManager:game():time()
 	local i = 0
 
 	while true do
@@ -2166,7 +2322,7 @@ function NavigationManager:_execute_coarce_search(search_data)
 					nav_link_element = nil
 
 					break
-				elseif i_door:check_access(search_data.access_pos, search_data.access_neg) and not i_door:is_obstructed() then
+				elseif t > i_door:delay_time() and i_door:check_access(search_data.access_pos, search_data.access_neg) and not i_door:is_obstructed() then
 					entry_found = true
 					nav_link_element = i_door
 				end
@@ -2249,6 +2405,8 @@ end
 
 function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)
 	local all_segs = self._nav_segments
+	-- vanilla 248.2:1368 gates nav links on one timestamp read per sort.
+	local t = TimerManager:game():time()
 	local seg = all_segs[i_seg]
 	local neighbours = seg.neighbours
 	from_pos = from_pos or seg.pos
@@ -2261,7 +2419,7 @@ function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ign
 
 				if door.x then
 					door_pos = door
-				elseif alive(door) and not door:is_obstructed() and door:check_access(access_pos, access_neg) then
+				elseif alive(door) and not door:is_obstructed() and t > door:delay_time() and door:check_access(access_pos, access_neg) then
 					door_pos = door:script_data().element:nav_link_end_pos()
 					nav_link = door
 				end

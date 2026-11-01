@@ -450,11 +450,11 @@ function TaserLogicAttack._chk_play_charge_weapon_sound(data, my_data, focus_ene
 
 			if not data._LIES_check_taser_charge_allowed then
 				data._LIES_check_taser_charge_allowed = true
-				LIES:LogCheck(string.format("taser charge allowed vertical=%.0f", vertical_dis))
+				LIES:LogCheck(string.format("taser charge allowed vertical=%.0f", vertical_dis), "taser_allowed")
 			end
 		elseif not data._LIES_check_taser_charge_blocked then
 			data._LIES_check_taser_charge_blocked = true
-			LIES:LogCheck(string.format("taser charge blocked vertical=%.0f", vertical_dis))
+			LIES:LogCheck(string.format("taser charge blocked vertical=%.0f", vertical_dis), "taser_blocked")
 		end
 	end
 end

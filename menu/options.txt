@@ -141,6 +141,14 @@
 		},
 		{
 			"type" : "toggle",
+			"id" : "lies_door_watch",
+			"title" : "menu_lies_door_watch_title",
+			"description" : "menu_lies_door_watch_desc",
+			"callback" : "callback_lies_door_watch",
+			"value" : "door_watch"
+		},
+		{
+			"type" : "toggle",
 			"id" : "lies_debug_log",
 			"title" : "menu_lies_debug_log_title",
 			"description" : "menu_lies_debug_log_desc",

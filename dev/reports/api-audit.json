@@ -937,7 +937,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 877,
+      "line": 923,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -945,7 +945,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 899,
+      "line": 947,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -953,7 +953,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 922,
+      "line": 973,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -961,7 +961,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 950,
+      "line": 1006,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -969,7 +969,7 @@
     },
     {
       "file": "lua/copextensions/copbrain.lua",
-      "line": 1373,
+      "line": 1438,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1009,7 +1009,15 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 117,
+      "line": 242,
+      "symbol": "find_segment_doors",
+      "severity": "review",
+      "reason": "Returns position vectors, not door tables",
+      "text": "local doors = nav and nav.find_segment_doors and nav:find_segment_doors(enemy_seg)"
+    },
+    {
+      "file": "lua/coplogics/coplogicattack.lua",
+      "line": 450,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1017,7 +1025,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 188,
+      "line": 521,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1025,23 +1033,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1116,
-      "symbol": "_nav_segments",
-      "severity": "review",
-      "reason": "Keyed by tostring(id); neighbours are door vectors",
-      "text": "local all_nav_segs = managers.navigation._nav_segments"
-    },
-    {
-      "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1123,
-      "symbol": "find_segment_doors",
-      "severity": "review",
-      "reason": "Returns position vectors, not door tables",
-      "text": "local doors = managers.navigation:find_segment_doors(enemy_nav_seg)"
-    },
-    {
-      "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1354,
+      "line": 1584,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1049,7 +1041,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1410,
+      "line": 1640,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1057,7 +1049,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1414,
+      "line": 1644,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1065,7 +1057,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 2883,
+      "line": 3139,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1073,7 +1065,7 @@
     },
     {
       "file": "lua/coplogics/coplogicbase.lua",
-      "line": 263,
+      "line": 367,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1081,7 +1073,7 @@
     },
     {
       "file": "lua/coplogics/coplogicbase.lua",
-      "line": 417,
+      "line": 521,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1089,7 +1081,7 @@
     },
     {
       "file": "lua/coplogics/coplogicbase.lua",
-      "line": 448,
+      "line": 552,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1129,7 +1121,7 @@
     },
     {
       "file": "lua/coplogics/coplogicidle.lua",
-      "line": 1924,
+      "line": 1925,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1225,7 +1217,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 1330,
+      "line": 1341,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1233,7 +1225,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 1393,
+      "line": 1404,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1241,7 +1233,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 2017,
+      "line": 2028,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1329,7 +1321,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 700,
+      "line": 690,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1337,7 +1329,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1019,
+      "line": 1009,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1345,7 +1337,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1189,
+      "line": 1179,
       "symbol": "_police_upd_task_queued",
       "severity": "review",
       "reason": "Boolean -> timestamp in 247",
@@ -1353,7 +1345,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1190,
+      "line": 1180,
       "symbol": "_police_upd_task_queued",
       "severity": "review",
       "reason": "Boolean -> timestamp in 247",
@@ -1361,7 +1353,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1203,
+      "line": 1193,
       "symbol": "_police_upd_task_queued",
       "severity": "review",
       "reason": "Boolean -> timestamp in 247",
@@ -1369,7 +1361,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1216,
+      "line": 1208,
       "symbol": "_police_upd_task_queued",
       "severity": "review",
       "reason": "Boolean -> timestamp in 247",
@@ -1377,7 +1369,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1217,
+      "line": 1209,
       "symbol": "_police_upd_task_queued",
       "severity": "review",
       "reason": "Boolean -> timestamp in 247",
@@ -1385,7 +1377,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1403,
+      "line": 1409,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1393,7 +1385,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 1438,
+      "line": 1444,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1401,7 +1393,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2419,
+      "line": 2440,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1409,7 +1401,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2463,
+      "line": 2484,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1417,7 +1409,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2517,
+      "line": 2538,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1425,7 +1417,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2573,
+      "line": 2594,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1433,7 +1425,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 2636,
+      "line": 2657,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1441,7 +1433,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3045,
+      "line": 3066,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1449,7 +1441,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3129,
+      "line": 3150,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1457,7 +1449,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3162,
+      "line": 3183,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1465,7 +1457,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3359,
+      "line": 3380,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1473,19 +1465,11 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3453,
+      "line": 3474,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
       "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
-    },
-    {
-      "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3457,
-      "symbol": "search_coarse",
-      "severity": "review",
-      "reason": "Start/end validation added at 247",
-      "text": "coarse_path = managers.navigation:search_coarse(search_params)"
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
@@ -1493,11 +1477,19 @@
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
+      "text": "coarse_path = managers.navigation:search_coarse(search_params)"
+    },
+    {
+      "file": "lua/groupaistate/groupaistatebesiege.lua",
+      "line": 3499,
+      "symbol": "search_coarse",
+      "severity": "review",
+      "reason": "Start/end validation added at 247",
       "text": "local coarse_path = managers.navigation:search_coarse(search_params)"
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3482,
+      "line": 3503,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1505,7 +1497,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3793,
+      "line": 3814,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1513,7 +1505,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 3904,
+      "line": 3925,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1521,7 +1513,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4069,
+      "line": 4090,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1529,7 +1521,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4310,
+      "line": 4331,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1537,7 +1529,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4338,
+      "line": 4359,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1545,7 +1537,7 @@
     },
     {
       "file": "lua/groupaistate/groupaistatebesiege.lua",
-      "line": 4401,
+      "line": 4422,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1553,7 +1545,7 @@
     },
     {
       "file": "lua/managers/mapelements/elementspecialobjective.lua",
-      "line": 373,
+      "line": 398,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1561,7 +1553,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 35,
+      "line": 45,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1569,7 +1561,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 36,
+      "line": 48,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1577,23 +1569,23 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 58,
+      "line": 99,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
-      "text": "local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value(\"position\"), true)"
+      "text": "local nl_tracker = self._quad_field:create_nav_tracker(door_pos, true)"
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 84,
+      "line": 165,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
-      "text": "local nl_tracker = self._quad_field:create_nav_tracker(nl_element:value(\"position\"), true)"
+      "text": "local nl_tracker = self._quad_field:create_nav_tracker(door_pos, true)"
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 106,
+      "line": 209,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1601,7 +1593,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 115,
+      "line": 218,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1609,7 +1601,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 135,
+      "line": 238,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1617,7 +1609,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 159,
+      "line": 262,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1625,7 +1617,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 165,
+      "line": 268,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1633,7 +1625,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 332,
+      "line": 435,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1641,7 +1633,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 366,
+      "line": 469,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1649,7 +1641,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 374,
+      "line": 477,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1657,7 +1649,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 384,
+      "line": 487,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1665,7 +1657,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 388,
+      "line": 491,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1673,7 +1665,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 404,
+      "line": 507,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1681,7 +1673,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 439,
+      "line": 542,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1689,15 +1681,15 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 448,
+      "line": 552,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
-      "text": "local location_script_data = self._quad_field:get_script_data(nav_tracker)"
+      "text": "local location_script_data = self._quad_field:get_script_data(nav_tracker, true)"
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 567,
+      "line": 671,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1705,7 +1697,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 576,
+      "line": 680,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1713,7 +1705,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 594,
+      "line": 698,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1721,7 +1713,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 668,
+      "line": 772,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1729,7 +1721,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 774,
+      "line": 878,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1737,7 +1729,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 864,
+      "line": 968,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1745,7 +1737,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 870,
+      "line": 974,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1753,7 +1745,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 882,
+      "line": 986,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1761,7 +1753,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 908,
+      "line": 1012,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1769,7 +1761,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1233,
+      "line": 1350,
       "symbol": "search_pos_to_pos",
       "severity": "review",
       "reason": "Delegates to _quad_field:detailed_search(params)",
@@ -1777,7 +1769,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1316,
+      "line": 1468,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1785,7 +1777,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1428,
+      "line": 1582,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1793,7 +1785,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1452,
+      "line": 1606,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1801,7 +1793,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1461,
+      "line": 1615,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1809,7 +1801,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1463,
+      "line": 1617,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1817,7 +1809,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1514,
+      "line": 1668,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1825,7 +1817,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1520,
+      "line": 1674,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1833,7 +1825,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1586,
+      "line": 1740,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1841,7 +1833,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1596,
+      "line": 1750,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1849,7 +1841,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1598,
+      "line": 1752,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1857,7 +1849,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1600,
+      "line": 1754,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1865,7 +1857,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1633,
+      "line": 1787,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1873,7 +1865,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1635,
+      "line": 1789,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1881,7 +1873,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1637,
+      "line": 1791,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1889,7 +1881,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1644,
+      "line": 1798,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1897,7 +1889,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1647,
+      "line": 1801,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1905,7 +1897,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1771,
+      "line": 1925,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1913,7 +1905,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1789,
+      "line": 1943,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1921,7 +1913,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1866,
+      "line": 2020,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1929,7 +1921,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1888,
+      "line": 2042,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1937,7 +1929,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1965,
+      "line": 2119,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1945,7 +1937,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 1990,
+      "line": 2144,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1953,7 +1945,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2029,
+      "line": 2183,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1961,7 +1953,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2033,
+      "line": 2187,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1969,7 +1961,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2084,
+      "line": 2238,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1977,7 +1969,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2090,
+      "line": 2244,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1985,7 +1977,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2157,
+      "line": 2313,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1993,7 +1985,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2220,
+      "line": 2376,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -2001,7 +1993,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2251,
+      "line": 2407,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -2009,7 +2001,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2303,
+      "line": 2461,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -2017,7 +2009,7 @@
     },
     {
       "file": "lua/managers/navigationmanager.lua",
-      "line": 2356,
+      "line": 2514,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",

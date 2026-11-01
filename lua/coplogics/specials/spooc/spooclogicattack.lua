@@ -51,6 +51,8 @@ function SpoocLogicAttack.enter(data, new_logic_name, enter_params)
 end
 
 function SpoocLogicAttack.update(data)
+	LIES:Trace(data.unit, data, "spooc")
+
 	local t = TimerManager:game():time()
 	data.t = t
 	local unit = data.unit
@@ -148,7 +150,16 @@ function SpoocLogicAttack.update(data)
 		CopLogicAttack._update_cover(data)
 		
 		if not data.next_mov_time or data.next_mov_time < data.t then
-			CopLogicAttack._upd_combat_movement(data)
+			-- Same guard the cop attack update applies before running movement:
+			-- a unit that cannot walk (mid spooc tackle, taser, stagger) must not
+			-- be given walk/cover actions.
+			if data.unit:movement():chk_action_forbidden("walk") then
+				LIES:Trace(data.unit, data, "spooc_no_walk")
+			else
+				LIES:Trace(data.unit, data, "spooc_combat", nil, 0.2)
+
+				CopLogicAttack._upd_combat_movement(data)
+			end
 		end
 	end
 
@@ -308,6 +319,16 @@ end
 function SpoocLogicAttack._upd_spooc_attack(data, my_data)
 	local focus_enemy = data.attention_obj
 
+	-- Everything below calls into the enemy's movement extension (`zipline_unit`,
+	-- `is_SPOOC_attack_allowed`, `AnimSpooc` sprint check). A dead or despawned
+	-- enemy has no live movement data, so bail out instead of reaching the engine
+	-- with it; the trace names the case if it happens.
+	if not (focus_enemy.unit and alive(focus_enemy.unit)) then
+		LIES:Trace(data.unit, data, "spooc_dead_enemy")
+
+		return
+	end
+
 	if focus_enemy.nav_tracker and focus_enemy.is_person and focus_enemy.criminal_record and not focus_enemy.criminal_record.status and not my_data.spooc_attack and AIAttentionObject.REACT_SHOOT <= focus_enemy.reaction and data.spooc_attack_timeout_t < data.t and focus_enemy.verified_dis < (my_data.want_to_take_cover and 1500 or 2500) and not data.unit:movement():chk_action_forbidden("walk") and not SpoocLogicAttack._is_last_standing_criminal(focus_enemy) and not focus_enemy.unit:movement():zipline_unit() and focus_enemy.unit:movement():is_SPOOC_attack_allowed() then
 		if focus_enemy.verified and ActionSpooc.chk_can_start_spooc_sprint(data.unit, focus_enemy.unit) and not data.unit:raycast("ray", data.unit:movement():m_head_pos(), focus_enemy.m_head_pos, "slot_mask", managers.slot:get_mask("bullet_impact_targets_no_criminals"), "ignore_unit", focus_enemy.unit, "report") then
 			if my_data.attention_unit ~= focus_enemy.u_key then
@@ -321,6 +342,14 @@ function SpoocLogicAttack._upd_spooc_attack(data, my_data)
 			end
 
 			local action = SpoocLogicAttack._chk_request_action_spooc_attack(data, my_data)
+
+			if action and LIES and LIES.Event then
+				LIES:Event("spooc_start", data.unit, data, {
+					dis = string.format("%.0f", focus_enemy.dis or -1),
+					reaction = tostring(focus_enemy.reaction),
+					cover = tostring(my_data.want_to_take_cover and "y" or "n")
+				})
+			end
 
 			if action then
 				my_data.spooc_attack = {

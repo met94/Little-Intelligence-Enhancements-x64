@@ -20,16 +20,35 @@ Method:
 
 Evidence commands are in the appendix.
 
+## 0. Phase 2 delta (2026-10-25, V8.58_x64)
+
+Phase 2 makes LIES carry the guards that Keepers/Monkeepers needed in their own
+overrides, so those overrides can be removed in Phase 3/4. It also restores the
+dead `Navlink Delays` setting.
+
+| Change | Where | Why |
+| --- | --- | --- |
+| Navlink Delays multiplier + 3 s cap applied at element finalization, nav-links only | `lua/managers/mapelements/elementspecialobjective.lua` (`lies_send_navlink_element` post-hook) | Dead code before: the menu wrote `LIES.settings.nav_link_interval` and nothing read it. The block is gated on `self:_is_nav_link()` so regular SOs keep their `so_descriptor.interval` polling cooldown. Finalization runs before `init` clones `_values` and before `on_executed` → `register_anim_nav_link`, so the capped-then-scaled value reaches both `nav_link_delay()` and Iter's `itr_interval` (Iter re-clamps per `so_action` and zeroes the engine value under `nav_streamline`) |
+| `kpr_done` guard in `clbk_action_timeout` | `lua/coplogics/coplogicidle.lua` | Keepers' own `clbk_action_timeout` skipped `objective_complete_clbk` for objectives it had already completed via `Keepers:on_completed_SO`; LIES must keep that once Phase 3 deletes Keepers' copy |
+| `action_expired` guard in `action_complete_clbk` | `lua/teamailogics/teamailogicidle.lua` | Exact guard from Monkeepers' override (`elseif not my_data.action_expired`); Phase 4 deletes Monkeepers' copy |
+| `self._nav_path` / `self._nav_path[1]` nil guards | `lua/copactions/copactionwalk.lua` (`_init`) | Vanilla had `not self._nav_path`; standalone LIES would index an empty path. The Fixes still owns `_init` in the full profile |
+
+Null/no-op by construction: `interval` must be `> 0` (the default is `-1`), the
+multiplier table is `{1, 0.5, 0.25, 0}` indexed by the menu's 1-based
+`item:value()`, and a `_LIES_nav_interval_scaled` flag prevents double scaling.
+`my_data.action_expired` is never set by team AI in 248.2, so that guard changes
+nothing at runtime today.
+
 ## 1. Matrix
 
 | Mod | Priority (loads) | Shared hook files | Same-function overlap | Who wins | Class | Test profile |
 | --- | --- | --- | --- | --- | --- | --- |
 | **NavFixes** | 0 (after LIES) | `lib/managers/navigationmanager` | `find_segment_doors` (LIES 3-arg vs NF 2-arg), `_sort_nav_segs_after_pos` (LIES 7-arg vs NF 6-arg) | NavFixes | **Hard conflict** — argument shift kills LIES coarse pathing + doorway cover/aim lookup (silent, no crash) | **do-not-run-together** |
-| **Keepers** | 0 (after LIES) | 19 files (cop*/teamai*/nav/menumanager) | 19 same-name fns; 17 wrap, **2 full replaces** (`CopLogicIdle.queued_update`, `clbk_action_timeout`) | Keepers on the 2 replaces; wraps compose | **Load-order-dependent** (LIES idle rewrite lost on 2 fns) | compatible |
-| **Monkeepers** | 100 (tie with LIES) | 6 files | `CopLogicBase.is_obstructed` (wrap), `CarryData:_chk_register_steal_SO` (wrap), `TeamAILogicIdle.action_complete_clbk` (**replace**) | **undefined** (equal priority) | **Unknown / order-dependent** | compatible **after pinning priority** |
-| **Useful Bots** (+ HopLib 499) | 0 (after LIES) | 18 files | 16 same-name fns; 12 wrap, **4 replaces** (`TeamAILogicBase._get_logic_state_from_reaction`, `TeamAILogicIdle._find_intimidateable_civilians`, `TeamAILogicIdle.intimidate_civilians`, `TeamAILogicAssault.mark_enemy`) | Useful Bots | **Load-order-dependent**, no ordering preserves both (implementation clash) | compatible; choose bot-AI owner |
-| **Iter Lite** | 40 (after LIES) | 4 files (`elementspecialobjective`, `drill`, `coreworlddefinition`, `menumanager`) | none (disjoint function sets) | n/a | **Additive/safe** | compatible |
-| **The Fixes** (`supermod.xml`) | -10 (last) | 14 files | `CopActionWalk:_init` (**replace**), `_perform_group_spawning`, `CopLogicAttack._upd_aim`, `aim_allow_fire` (wraps) | The Fixes | **Load-order-dependent** (LIES walk `_init` lost); guards otherwise compose | compatible, verify walk/cover feel |
+| **Keepers** | 0 (after LIES; Phase 3 target `10`) | 19 files (cop*/teamai*/nav/menumanager) | 19 same-name fns; 17 wrap, **2 full replaces** (`CopLogicIdle.queued_update`, `clbk_action_timeout`) | Keepers on the 2 replaces; wraps compose | **Load-order-dependent** (LIES idle rewrite lost on 2 fns) — Phase 2 gave LIES Keepers' `kpr_done` guard, Phase 3 removes the overrides | compatible |
+| **Monkeepers** | 100 → **99 (pinned)** | 6 files | `CopLogicBase.is_obstructed` (wrap), `CarryData:_chk_register_steal_SO` (wrap), `TeamAILogicIdle.action_complete_clbk` (**replace**) | LIES (99 loads after 100) | **Resolved by pinning to 99** — Phase 2 gave LIES Monkeepers' `action_expired` guard, Phase 4 removes the override | compatible **after pinning priority** |
+| **Useful Bots** (+ HopLib 499) | 0 (after LIES) | 18 files | 16 same-name fns; 12 wrap, **4 replaces** (`TeamAILogicBase._get_logic_state_from_reaction`, `TeamAILogicIdle._find_intimidateable_civilians`, `TeamAILogicIdle.intimidate_civilians`, `TeamAILogicAssault.mark_enemy`) | Useful Bots | **Load-order-dependent**, no ordering preserves both (implementation clash); LIES adds no new hooks here (Phase 2 gated guards only) | compatible; choose bot-AI owner |
+| **Iter** (full nav, 200.x, `nav_search` + `navlink_queue` on) | 40 (after LIES) | 20+ files incl. `navigationmanager`, `coplogictravel`, `copactionwalk`, `copbrain`, `coplogicidle`, `elementspecialobjective` | mostly `itr_original_*` capture-and-call wraps around LIES; `NavigationManager._execute_coarce_search` is a straight assignment when `nav_search` is on; `CopActionWalk._init` is wrapped and re-wrapped after The Fixes loads | Iter (nav owner), LIES bodies still run underneath | **Additive/safe** — Iter is the navigation owner (Option 1); LIES keeps its `_finalize_values` post-hook and `CopLogicTravel.chk_group_ready_to_move` (Iter does not define it) | compatible |
+| **The Fixes** (`supermod.xml`) | -10 (last) | 14 files | `CopActionWalk:_init` (**replace**), `_perform_group_spawning`, `CopLogicAttack._upd_aim`, `aim_allow_fire` (wraps) | The Fixes | **Load-order-dependent** (LIES walk `_init` lost); guards otherwise compose. Phase 2 restored LIES' standalone `_init` nil guard; The Fixes still owns the body in the full profile | compatible, verify walk/cover feel |
 | **Anticrash** | 500 (before LIES) | `lib/managers/menumanager` | none | n/a | **Additive/safe** | compatible |
 | **pd2-hoplib** | 499 (before LIES) | `groupaistatebase`, `charactertweakdata`, `copdamage` | none (HopLib adds pre/post-hooks + `CharacterTweakData:character_map`) | n/a | **Additive/safe** | compatible |
 | **JokerNoStagger** (LIES's Joker Tweaks Standalone) | 0 (after LIES) | `lib/units/enemies/cop/copbrain` | both post-hook `CopBrain:convert_to_criminal`; no definition clash | JNS runs after LIES | **Additive/safe** | compatible |
@@ -109,6 +128,12 @@ Effect: LIES' idle/bot-search rewrite is inert while Keepers is installed. No or
 fixes this (raising Keepers above 100 would drop Keepers' own idle logic instead). Keep
 Keepers as the owner of `CopLogicIdle`; treat LIES' version as superseded.
 
+**Phase 2 (V8.58_x64):** LIES' `CopLogicIdle.clbk_action_timeout` now carries Keepers'
+`kpr_done` guard (`... and not data.objective.kpr_done`), and Keepers' target priority is
+`10` so its wrappers keep composing on top of LIES. Phase 3 removes Keepers'
+`queued_update`/`clbk_action_timeout` overrides; the guard LIES adopted is what makes that
+removal behavior-neutral.
+
 ### 2.3 Monkeepers — undefined order (priority tie)
 
 Both `mod.txt` files declare `priority: 100`. The tie-break happens in SuperBLT's native
@@ -122,11 +147,18 @@ so the resulting order is not knowable from the files. Three functions actually 
 - `TeamAILogicIdle.action_complete_clbk` — Monkeepers **full replace** (48 lines, no orig)
   vs LIES 61 lines (near-vanilla 58). Whoever loads second wins outright.
 
-Recommendation: pin Monkeepers to **99** (loads after LIES, still before Keepers at 0).
+Recommendation: pin Monkeepers to **99** (loads after LIES, still before Keepers at its
+current default 0 and its Phase 3 target of 10).
 Result: LIES → Monkeepers → Keepers, both wrappers live, and only LIES' near-vanilla
 `action_complete_clbk` is dropped instead of Monkeepers' bag/objective logic.
 The reverse pin (101) would be worse: Monkeepers' `is_obstructed`/`carrydata` wrappers
 would be discarded.
+
+**Phase 2 (V8.58_x64):** LIES' `TeamAILogicIdle.action_complete_clbk` now uses
+`elseif not my_data.action_expired then`, the exact guard Monkeepers' override used
+(`mods\Monkeepers\lua\teamailogicidle.lua:46`). Monkeepers' target priority stays `99`.
+Phase 4 removes its override; `action_expired` is never set by team AI in 248.2, so the
+guard is behavior-neutral today and only preserves intent for the removal.
 
 ### 2.4 Useful Bots — load-order-dependent, needs an owner decision
 
@@ -168,13 +200,38 @@ composition, not a conflict. Symptom to watch if walk/pathing behaviour regresse
 units sliding or failing to align to nav links (`nav_point.element` methods come from The
 Fixes' file for that local class).
 
-### 2.6 Additive/safe set
+### 2.6 Iter (full nav) — the navigation owner
 
-- **Iter Lite (40)**: `ElementSpecialObjective:_finalize_values` + `Iter:get_navlink_vector`,
-  `Drill:clbk_investigate_SO_verification`/`on_investigate_SO_administered`/
-  `_unregister_investigate_SO`, `WorldDefinition:create`/`_create_statics_unit`,
-  `MenuCallbackHandler` additions. All disjoint from LIES' names; LIES' `Drill`/`WorldDefinition`
-  entries are post-hooks, which Iter's later definitions still chain through.
+Iter is the full-nav option, not Iter Lite: the workspace checkout is Iter 200.1
+(`priority: 40`) and its `mod.txt` hooks 20+ files including `navigationmanager`,
+`coplogictravel`, `copactionwalk`, `copbrain`, `coplogicidle` and
+`elementspecialobjective`. Named-function overlap with LIES is real (9 in
+`coplogictravel`, 4 in `navigationmanager`, plus `CopActionWalk._init`,
+`CopBrain.clbk_pathing_results`, `CopLogicIdle._perform_objective_action`).
+
+Composition: Iter's nav functions are almost all capture-and-call wraps
+(`local itr_original_* = Class.fn` then call it), so they sit outside LIES' overlay
+and both run. The exception is `NavigationManager._execute_coarce_search`, which Iter
+assigns outright when `Iter.settings.nav_search` is on. `CopActionWalk._init` is wrapped,
+and re-wrapped after The Fixes loads (`Iter_rewrap_copactionwalk_init` on
+`GameSetupUpdate`), so the winning `_init` stays inside Iter's path expansion. LIES
+functions Iter does not define — notably `CopLogicTravel.chk_group_ready_to_move` — remain
+LIES-only, which is why LIES squad push coordination still works with Iter full nav.
+
+**Phase 2 (V8.58_x64):** the Navlink Delays multiplier is applied at
+`ElementSpecialObjective:_finalize_values` to nav-link elements only (gated on
+`_is_nav_link()`; a regular SO keeps its vanilla polling interval), i.e. before
+`register_anim_nav_link` runs. Iter's wrapper then re-clamps the value: it
+min-caps `values.interval` per `so_action` (1-2 s, `navigationmanager.lua:216-236`),
+stores that as `values.itr_interval` (`:238`) and, with `nav_streamline`
+(default on), sets `values.interval = 0` (`:240-242`). The queue therefore runs
+on the capped `itr_interval` (`navigationmanager.lua:238,811,876,965`) while the
+engine delay is 0; the 0.5x/0.25x multipliers are partly swallowed by Iter's
+cap. A `0` interval makes Iter's `CopActionWalk:itr_reserve_navlink` return
+immediately (`copactionwalk.lua:187-190`).
+
+### 2.7 Additive/safe set
+
 - **Anticrash (500)**: `lib/managers/menumanager` only, 17 `Anticrash:*`/`MenuCallbackHandler:*`
   functions — none collide with LIES' `LIES:*` helper set. Loads *before* LIES, harmless.
 - **pd2-hoplib (499)**: `GroupAIStateBase.convert_hostage_to_criminal`/`_set_converted_police`
@@ -230,15 +287,16 @@ the same way.
 | Profile | Contents | Purpose |
 | --- | --- | --- |
 | **clean** | LIES only (+ base/BeardLib if required by load) | Reference behaviour, baseline logs |
-| **compatible** | LIES, Keepers, Keepers deps (GoonmodCustomWaypoints, NoDuplicatedBullets), Iter Lite, Anticrash, VanillaHUD Plus, Celer, JokerNoStagger | First "real" profile; all overlaps are wrap-compatible |
+| **compatible** | LIES, Keepers, Keepers deps (GoonmodCustomWaypoints, NoDuplicatedBullets), Iter (full nav), Anticrash, VanillaHUD Plus, Celer, JokerNoStagger | First "real" profile; all overlaps are wrap-compatible |
 | **with bot ownership** | compatible + Useful Bots + HopLib + Monkeepers (pin Monkeepers 99) | Accepts: UB owns bot intimidation/marking, Monkeepers owns AI idle completion; LIES bot-side tweaks inert |
 | **optional** | with bot ownership + The Fixes | Adds crash fixes; only cost is LIES' `CopActionWalk:_init` being replaced |
 | **do-not-run** | LIES + NavFixes (any order) | NavFixes' 2 shared overrides break LIES pathing/cover silently |
 
 Priority pins to make the set deterministic:
 
-- LIES `100` (unchanged), Monkeepers `99` (was `100`), Keepers `0`, Useful Bots `0`,
-  Iter Lite `40`, Anticrash `500`, HopLib `499`, The Fixes `-10` (supermod).
+- LIES `100` (unchanged), Monkeepers `99` (was `100`), Keepers `10` (Phase 3 target;
+  currently unset = `0`), Useful Bots `0`, Iter `40`, Anticrash `500`, HopLib `499`,
+  The Fixes `-10` (supermod).
 - Without the Monkeepers pin, LIES-vs-Monkeepers is undefined order on 3 functions.
 
 ## 5. Log / error signatures to watch

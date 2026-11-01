@@ -61,15 +61,17 @@ function ElementSpawnEnemyGroup:on_executed(instigator)
 		if self._group_data.spawn_type == "group" then
 			local spawn_group_data = managers.groupai:state():create_spawn_group(self._id, self, self._spawn_points)
 
-			local has_spawned_group = managers.groupai:state():force_spawn_group(spawn_group_data, self._values.preferred_spawn_groups)
-			
-			if has_spawned_group then
-				local spawn_task = managers.groupai:state()._spawning_groups[1]
-
-				if spawn_task then
-					managers.groupai:state():_perform_group_spawning(spawn_task, true)
-				end
-			end
+			-- Vanilla path only. Upstream LIES added an extra
+			-- `_perform_group_spawning(spawn_task, true)` here (7.1, b0207e5), but
+			-- it could never spawn the group created above: `_spawn_in_group` sets
+			-- every spawn point to `delay_t = self._t + math.rand(0.5)`, and
+			-- `_perform_group_spawning` skips points whose delay has not expired -
+			-- `force` only lifts `_MAX_SIMULTANEOUS_SPAWNS`. So the queued group
+			-- trickles in at the normal rate either way, and the extra call could
+			-- only force `_spawning_groups[1]`, the oldest queued group (the new
+			-- task is appended at the tail) - an unrelated one. Removed in V8.66;
+			-- see MENU_OPTIONS.md.
+			managers.groupai:state():force_spawn_group(spawn_group_data, self._values.preferred_spawn_groups)
 		elseif self._group_data.spawn_type == "group_guaranteed" then
 			local spawn_group_data = managers.groupai:state():create_spawn_group(self._id, self, self._spawn_points)
 

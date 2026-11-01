@@ -34,6 +34,7 @@ function CopActionWalk:_init()
 		end
 
 		local nav_path = {}
+		self._nav_path = self._nav_path or {}
 
 		for i, nav_point in ipairs(self._nav_path) do
 			if nav_point.x then
@@ -54,6 +55,8 @@ function CopActionWalk:_init()
 	else
 		local t_ins = table.insert
 		local new_nav_points = self._simplified_path
+		--standalone LIES guard; vanilla had "not self._nav_path" inline. The Fixes owns this body in the full profile.
+		self._nav_path = self._nav_path or {}
 
 		if new_nav_points then
 			for _, nav_point in ipairs(new_nav_points) do
@@ -61,7 +64,7 @@ function CopActionWalk:_init()
 			end
 		end
 
-		if not action_desc.interrupted or not self._nav_path[1].x then
+		if not action_desc.interrupted or not self._nav_path[1] or not self._nav_path[1].x then
 			t_ins(self._nav_path, 1, mvec3_cpy(common_data.pos))
 		else
 			self._nav_path[1] = mvec3_cpy(common_data.pos)
