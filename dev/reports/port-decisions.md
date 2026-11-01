@@ -31,7 +31,7 @@ Two facts that drive most decisions:
 | Function | LIES delta vs 246.1 | 248.2 delta vs 246.1 | Decision | Gate |
 |---|---|---|---|---|
 | `CopLogicBase._upd_attention_obj_detection` | full rewrite: instant acquire (weapons hot), quick-register, hhtacs ranges, whisper delay, blind-enemy purge, own `_nearly_visible_chk` | only `_nearly_visible_chk` (distance-scaled probe height) | **keep LIES** | smoke |
-| `CopLogicAttack._upd_aim` | full rewrite: nav-segment sight logic, wall-peek (`find_walls_across_pos`), cover-fire, aggro/reaction caps, no charge-by-default | **none functional** (`math.lerp(c,o,0)` → `c` is a no-op; dead `debug_pause_unit`/`same_z` removed) | **keep LIES** | smoke |
+| `CopLogicAttack._upd_aim` | full rewrite: nav-segment sight logic, wall-peek (`find_walls_across_pos`), cover-fire, aggro/reaction caps, no charge-by-default | **none functional** (`math.lerp(c,o,0)` → `c` is a no-op; dead `debug_pause_unit`/`same_z` removed) | **port 248.2 body + ledger blocks 5-9** (V8.75/V8.77; blocks 1-4 retired) | smoke |
 | `CopLogicAttack.action_complete_clbk` | adds `act`/`heal`/`healed`, cover+movement+aim re-run on completion, `in_cover[7]`, `charging`, `at_cover_shoot_pos` gated on `expired()` | `math.lerp(a,b,math.random())` → `math.rand(a,b)` | **merge** | smoke |
 | `CopLogicAttack.is_available_for_assignment` | sets `my_data.attitude`, honours `is_default`, path-fail window 6 → 3 s, sabotage gate; **drops `data.is_suppressed`** | reorders `is_suppressed` ahead of walk/path-fail | **merge** | smoke |
 | `CopLogicIdle.damage_clbk` | no forced verify/`verified_pos`; `identify_attention_obj_instant` instead of create+patch; `data.group` guard around `criminal_spotted` | create-time `data.t` → fresh `t` | **keep LIES** (+1-line fresh-time inherit) | static |
@@ -76,9 +76,14 @@ with the same signatures.
 **Decision: keep LIES.** Do not graft 248.2's height ramp onto the LIES probe:
 LIES already dropped the fixed +100 and is stricter at range through its
 three-probe shape. More importantly, `last_verified_m_pos` is produced *here*
-and consumed by `CopLogicAttack._upd_aim` (`find_walls_across_pos` branch,
-`enemy_m_pos`); pulling a vanilla `_nearly_visible_chk` back in silently
-returns nil `last_verified_m_pos` to aim.
+and read by `LIESBossLogicAttack._chk_use_throwable` (`bosslogicattack.lua:839/856`,
+no fallback) — that is the exposed consumer. `ShieldLogicAttack`
+(`shieldlogicattack.lua:90`) uses `enemy_data.last_verified_m_pos or enemy_data.m_pos`,
+so it degrades to the current position rather than nil. The aim body itself stopped
+reading it in V8.75 when the `find_walls_across_pos` branch was retired
+(`dev/reports/aim-port-behaviour-ledger.md` block 3), but a vanilla
+`_nearly_visible_chk` would still silently return nil `last_verified_m_pos` to the
+boss callers.
 
 **Merge points (only if the team later wants the ramp).** Inside the LIES
 `_nearly_visible_chk`, the `mvector3.add(near_pos, math.UP * 30)` probe is the
@@ -96,11 +101,13 @@ window, not instantly and not after several seconds.
 
 ## 2. `CopLogicAttack._upd_aim`
 
-Mod: `lua/coplogics/coplogicattack.lua` (~753). Depends on
-`_get_expected_pos` (~1314), `chk_should_turn` (~695), `aim_allow_fire`
-(~1627), `_chk_enrage` (~1529).
+Mod: `lua/coplogics/coplogicattack.lua` (V8.77 body spans `~870-1200`). Depends on
+the vanilla `_get_expected_attention_position`, `chk_should_turn`,
+`aim_allow_fire`, `_chk_enrage`, `LIESBossLogicAttack._chk_use_throwable`,
+`CopBrain:request_switch_to_safe_weapon` / `request_switch_to_normal_weapon`
+and `CopLogicAttack._cancel_charge` (vanilla).
 
-**LIES intent.** Near-total rewrite of aiming: works off
+**LIES intent (pre-port).** Near-total rewrite of aiming: works off
 `last_verified_pos` / `last_verified_m_pos`, adds nav-segment equality and
 door/segment watching when the enemy is out of sight, wall-peek search via
 `managers.navigation:find_walls_across_pos` + `pad_out_position`, cover-fire
@@ -116,20 +123,41 @@ per-attack reaction cap via `enemy_reaction_level`, and throwable use through
 `debug_pause_unit(... "doesn't have data.internal_data.weapon_range")`, and
 removal of the unused `same_z` local. LIES does not use any of those branches.
 
-**Decision: keep LIES.** Note the LIES local fallback `weapon_range`
-(`w_td`/`char_tweak.weapon[usage].range`, 2000/5000/1000 backup) is belt-and-
-braces: `CopLogicAttack.update` already assigns `my_data.weapon_range` with a
-fallback in this worktree, so no change is needed for 248.2.
+**Decision: port to the 248.2 body, then re-add the ledger blocks.**
+V8.75 (`bbb30fa`) replaced the body with vanilla because the LIES body aimed
+through the enemy's cached navigation tracker and that is the 2026-10-31 access
+violation (`dev/reports/aim-stale-nav-tracker-crash.md`); the per-block verdicts
+are in `dev/reports/aim-port-behaviour-ledger.md`. V8.77 restored the blocks
+that ledger marks RE-ADD:
+
+- script-free and back in the body: charge abort + `tankboss` table (block 5),
+  turn-to-shoot concessions (block 6), hostage safe-weapon pair (block 7),
+  `_chk_enrage` / `_chk_use_throwable` (block 8), reload callout (block 9);
+- the watch position comes from `_get_expected_attention_position`, so nothing
+  in `_upd_aim` reads `nav_tracker`, `_nav_segments`, `find_segment_doors` or
+  `find_walls_across_pos`;
+- retired on purpose, do not re-add without a new decision: blocks 1-4 (tracker
+  and its derivatives), block 10 (`enemy_reaction_level`, constant `false` since
+  7.84 because of `and not data.team.id == "criminal1"`), block 11 (0.5 s
+  shoot-stop hold, written against the old action-handle `my_data.shooting`) and
+  block 12 (weapon-range self-heal; the caller already guarantees the field).
+
+The LIES local fallback `weapon_range` (`w_td`/`char_tweak.weapon[usage].range`,
+2000/5000/1000 backup) stays retired: `CopBrain:check_upd_aim` returns early
+without `internal_data.weapon_range` (`copbrain.lua:248-250`) and
+`CopLogicAttack.enter` sets it for the attack family.
 
 **Risk if wrong.** Aim is the highest-blast-radius function in the mod. A
 mis-merge yields cops that never fire, fire while strafing, or stare at walls.
 Scenario: 3–4 SWAT at 10–25 m, player strafing between two cover pieces — cops
 must track, shoot, stop firing when the player breaks LOS behind cover, and
-re-acquire on peek. Also check a dozer (charge path) and a shield (cover path)
-since they share this function.
+re-acquire on peek. Also check a dozer (charge path, and now enrage) and a
+shield (cover path) since they share this function.
 
 **Gate.** Smoke, minimal 2–3 min loud run with `enemy_aggro_level` at default
-and at 4.
+and at 4, once with `hhtacs` on and once with a dozer in the wave. Static gates:
+`dev/tools/test/aim-behaviour-ledger.test.mjs` and
+`dev/tools/test/aim-tracker-guard.test.mjs`.
 
 ## 3. `CopLogicAttack.action_complete_clbk`
 
@@ -526,8 +554,10 @@ whether cops path in.
    sabotage markers.
 7. `_chk_play_charge_weapon_sound` — restore vertical guard.
 8. `CopLogicIdle.damage_clbk` — optional `data.t = t` before instant identify.
-9. Keep as-is (no edit): `_upd_attention_obj_detection`, `_upd_aim`,
+9. Keep as-is (no edit): `_upd_attention_obj_detection`,
    `_upd_enemy_detection`, `_cancel_tase_attempt`, `TankCopLogicAttack.update`.
+   `_upd_aim` is no longer on this list: it was ported in V8.75 and had ledger
+   blocks 5-9 re-added in V8.77 (see section 2).
 
 ## Notes for the reviewer
 

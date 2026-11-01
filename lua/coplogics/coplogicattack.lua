@@ -861,6 +861,12 @@ function CopLogicAttack._check_needs_reload(data, my_data)
 	end
 end
 
+-- ledger #5: charge abort reads this table (author: fugsystem 8.x)
+local tankboss = {
+	triad_boss = true,
+	deep_boss = true
+}
+
 function CopLogicAttack._upd_aim(data, my_data)
 	LIES:Trace(data.unit, data, "aim", nil, lies_aim_window(data))
 
@@ -870,26 +876,141 @@ function CopLogicAttack._upd_aim(data, my_data)
 	if focus_enemy and focus_enemy.reaction >= AIAttentionObject.REACT_AIM then
 		local last_sup_t = data.unit:character_damage():last_suppression_t()
 
+		-- ledger #7: hostage safe weapon (author: fugsystem 7.35 / 7.36)
+		if LIES.settings.hhtacs and (focus_enemy.verified_t and data.t - focus_enemy.verified_t < 2 or my_data.shooting) then
+			if focus_enemy.hostage_blocked then
+				if data.important then
+					if data.char_tweak.chatter and data.char_tweak.chatter.ready then
+						managers.groupai:state():chk_say_enemy_chatter(data.unit, data.m_pos, "hostageblock")
+					end
+				end
+
+				if data.brain:request_switch_to_safe_weapon(3) then
+					if my_data.shooting then
+						local new_action = {
+							body_part = 3,
+							type = "idle"
+						}
+
+						data.unit:brain():action_request(new_action)
+					end
+
+					if my_data.firing then
+						data.unit:movement():set_allow_fire(false)
+
+						my_data.firing = nil
+					end
+
+					return
+				end
+			end
+		end
+
+		-- ledger #7, restore half: a cop that is already on its sidearm always tries to
+		-- pick the main weapon back up, even outside the hhtacs window above. The
+		-- hostage check keeps the pre-port `elseif` behaviour (no swap back while the
+		-- shot is still blocked).
+		if not focus_enemy.hostage_blocked and data.safe_equipped and data.brain:request_switch_to_normal_weapon(7) then
+			if my_data.shooting then
+				local new_action = {
+					body_part = 3,
+					type = "idle"
+				}
+
+				data.unit:brain():action_request(new_action)
+			end
+
+			if my_data.firing then
+				data.unit:movement():set_allow_fire(false)
+
+				my_data.firing = nil
+			end
+
+			return
+		end
+
+		-- ledger #12 (weapon-range self-heal) stays retired, but foreign logics
+		-- (teamailogictravel.lua:189, teamailogicassault.lua:299) run this body with
+		-- their own internal_data, which never had weapon_range: fall back to the same
+		-- close value instead of faulting on nil.
+		local weapon_range_close = my_data.weapon_range and my_data.weapon_range.close or 1000
+
+		-- ledger #5: charge abort (author: fugsystem 8.x)
+		local try_stop_charge
+		local charge_aborted
+
+		if focus_enemy.verified and AIAttentionObject.REACT_COMBAT <= focus_enemy.reaction then
+			my_data.charging = my_data.charging or my_data.flank_cover
+
+			-- stop the charge, we are not chargers we do not push unless nescessary
+			if my_data.charging and not data.unit:movement():chk_action_forbidden("walk") then
+				try_stop_charge = true
+
+				if data.attention_obj.dis <= 200 or LIES.settings.enemy_aggro_level < 4 and (not data.tactics or not data.tactics.charge) and not data.unit:base():has_tag("tank") and not tankboss[data.unit:base()._tweak_table] then
+					local new_action = {
+						body_part = 2,
+						type = "idle"
+					}
+
+					if data.unit:brain():action_request(new_action) then
+						CopLogicAttack._cancel_charge(data, my_data)
+						my_data.at_cover_shoot_pos = true
+						try_stop_charge = nil
+					end
+				end
+			end
+
+			my_data.cover_test_step = 0
+			my_data.flank_cover = nil
+		end
+
 		if focus_enemy.verified or focus_enemy.nearly_visible then
-			if data.unit:anim_data().run and focus_enemy.dis > my_data.weapon_range.close then
-				local walk_to_pos = data.unit:movement():get_walk_to_pos()
+			-- pre-port `1005`: always-face units and dangerous specials never had the
+			-- run-away-from-the-target aim suppression applied
+			if not data.char_tweak.always_face_enemy and not focus_enemy.dangerous_special then
+				if (my_data.low_value_att or data.unit:anim_data().run) and focus_enemy.dis > weapon_range_close and not (data.tactics and data.tactics.sniper) then
+					local walk_to_pos = data.unit:movement():get_walk_to_pos()
 
-				if walk_to_pos then
-					mvector3.direction(temp_vec1, data.m_pos, walk_to_pos)
-					mvector3.direction(temp_vec2, data.m_pos, focus_enemy.m_pos)
+					if walk_to_pos then
+						mvector3.direction(temp_vec1, data.m_pos, walk_to_pos)
+						mvector3.direction(temp_vec2, data.m_pos, focus_enemy.m_pos)
 
-					local dot = mvector3.dot(temp_vec1, temp_vec2)
+						local dot = mvector3.dot(temp_vec1, temp_vec2)
 
-					if dot < 0.6 then
-						shoot = false
-						aim = false
+						if dot < 0.6 then
+							-- ledger #5: aborted charge stops where it stands
+							if try_stop_charge then
+								local new_action = {
+									body_part = 2,
+									type = "idle"
+								}
+
+								if data.unit:brain():action_request(new_action) then
+									CopLogicAttack._cancel_charge(data, my_data)
+									my_data.at_cover_shoot_pos = true
+									try_stop_charge = nil
+									-- pre-port `1031-1032` dropped the running state too, so the
+									-- firing range below stays `far` for the abort pass
+									charge_aborted = true
+								end
+							else
+								-- ledger #6: turn-to-shoot concessions (author: fugsystem 8.5 / 8.57)
+								local can_turn_to_shoot = focus_enemy.dmg_t and data.t - focus_enemy.dmg_t < 5
+								can_turn_to_shoot = can_turn_to_shoot or focus_enemy.acquire_t and data.t - focus_enemy.acquire_t < 4 and focus_enemy.dis <= weapon_range_close
+
+								if not can_turn_to_shoot then
+									shoot = false
+									aim = false
+								end
+							end
+						end
 					end
 				end
 			end
 
 			if aim == nil and focus_enemy.reaction >= AIAttentionObject.REACT_AIM then
 				if focus_enemy.reaction >= AIAttentionObject.REACT_SHOOT then
-					local running = my_data.advancing and not my_data.advancing:stopping() and my_data.advancing:haste() == "run"
+					local running = my_data.advancing and not my_data.advancing:stopping() and my_data.advancing:haste() == "run" and not charge_aborted
 					local firing_range = 500
 
 					if data.internal_data.weapon_range then
@@ -1058,6 +1179,38 @@ function CopLogicAttack._upd_aim(data, my_data)
 
 	if not shoot and aim and data.tactics and data.tactics.provide_coverfire_LIES and focus_enemy.reaction >= AIAttentionObject.REACT_SHOOT and (focus_enemy.verified or focus_enemy.nearly_visible) and alive(focus_enemy.unit) and focus_enemy.verified_t and data.t - focus_enemy.verified_t < 7 then
 		shoot = true
+	end
+
+	-- ledger #8: enrage meter for tanks / dozers (author: fugsystem 4.6)
+	if focus_enemy and focus_enemy.reaction >= AIAttentionObject.REACT_AIM then
+		CopLogicAttack._chk_enrage(data, focus_enemy)
+	end
+
+	-- ledger #9: reload callout (author: fugsystem v4). The aim pass also runs from
+	-- the movement update, so both reads sit behind a liveness and nil check.
+	if shoot and focus_enemy and data.tactics and data.tactics.harass and data.char_tweak.chatter and data.char_tweak.chatter.clear and focus_enemy.verified and alive(focus_enemy.unit) then
+		local fe_unit = focus_enemy.unit
+
+		if focus_enemy.is_local_player then
+			local fe_movement = fe_unit:movement()
+			local cur_state = fe_movement and fe_movement:current_state()
+
+			if cur_state and cur_state:_is_reloading() then
+				managers.groupai:state():chk_say_enemy_chatter(data.unit, data.m_pos, "calloutreload")
+			end
+		else
+			local focus_anim_data = fe_unit:anim_data()
+
+			if focus_anim_data and focus_anim_data.reload then
+				managers.groupai:state():chk_say_enemy_chatter(data.unit, data.m_pos, "calloutreload")
+			end
+		end
+	end
+
+	-- ledger #8: boss throwable (author: fugsystem 6). Self-gated on
+	-- data.char_tweak.throwable, so non-boss units never reach the throw path.
+	if shoot and focus_enemy and not data.safe_equipped and not focus_enemy.hostage_blocked then
+		LIESBossLogicAttack._chk_use_throwable(data, my_data, focus_enemy)
 	end
 
 	CopLogicAttack.aim_allow_fire(shoot, aim, data, my_data)

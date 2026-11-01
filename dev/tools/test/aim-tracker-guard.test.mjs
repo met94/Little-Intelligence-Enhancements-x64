@@ -122,11 +122,10 @@ test('the aim pass keeps the breadcrumb first and hands the enemy unit on untouc
   // pass and this update would fault there, so the caller has to gate it (the
   // second use below is that liveness check on the coverfire branch).
   assert.doesNotMatch(aim, /focus_enemy\.unit:/, 'no method calls on the (possibly dead) attention unit');
-  assert.equal(
-    (aim.match(/focus_enemy\.unit(?![\w:.])/g) || []).length,
-    2,
-    'the only uses are the liveness check and the coarse-path search argument',
-  );
+  // The reload callout (ledger #9) reads the unit through a local, and its liveness
+  // gate has to sit inside the callout condition itself.
+  assert.match(aim, /local fe_unit = focus_enemy\.unit/, 'the reload callout must read the unit through a local');
+  assert.match(aim, /data\.tactics\.harass[\s\S]{0,200}?alive\(focus_enemy\.unit\)/, 'the callout must check liveness before it reads');
   assert.match(aim, /alive\(focus_enemy\.unit\)/, 'the coverfire branch must check liveness before it fires');
   assert.match(aim, /search_for_path_to_unit\("hunt" \.\. tostring\(my_data\.key\), focus_enemy\.unit\)/);
 });

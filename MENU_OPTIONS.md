@@ -67,9 +67,19 @@ experimental option until the full hhtacs audit is complete.
 | NORMAL | Fast. |
 | NO DELAYS | Intended LIES speed; enemies relocate almost immediately. |
 
-## Reaction Level (`enemy_reaction_level`)
+## Reaction Level (`enemy_reaction_level`) — reserved, not functional for regular cops
 
-| Value | Effect |
+**Status: does not work on ordinary cops in this fork.** The aim-body gate that
+implemented it was `and not data.team.id == "criminal1"` (added V7.84), which Lua
+parses as `(not data.team.id) == "criminal1"` and is therefore always `false`.
+The delay has been inert since then, and it stays retired after the V8.75 aim port
+(see `dev/reports/aim-port-behaviour-ledger.md` block 10). Only boss logic still
+honours it: `bosslogicattack.lua:451-466` carries the same reaction/fire-delay
+block without that clause. Cloaker logic is not a second case — its
+`enemy_reaction_level < 3` gate only guards `_chk_play_charge_spooc_sound`
+(`spooclogicattack.lua:340/372`), which is a charge sound, not a fire delay.
+
+| Value | Intended effect (not delivered on ordinary cops) |
 |---|---|
 | SLOW | Closest to vanilla reaction speed. |
 | NORMAL | Faster reactions. |
