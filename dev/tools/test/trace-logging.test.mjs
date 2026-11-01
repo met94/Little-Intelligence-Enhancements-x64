@@ -116,9 +116,34 @@ test('the tracker guard logs when it refuses a dead enemy', () => {
   assert.ok(helper, 'lies_enemy_tracker is missing');
 
   const aliveAt = helper[1].indexOf('if alive(unit) then');
-  const traceAt = helper[1].indexOf('LIES:Trace(data.unit, data, "stale_tracker")');
+  const traceAt = helper[1].indexOf('"stale_tracker"');
 
   assert.ok(aliveAt !== -1 && traceAt !== -1 && aliveAt < traceAt, 'trace only when the unit is not alive');
+});
+
+test('file-local helpers are declared before their first use', () => {
+  const files = [
+    ['lua', 'coplogics', 'coplogicattack.lua'],
+    ['lua', 'coplogics', 'coplogicbase.lua'],
+    ['lua', 'copextensions', 'copbrain.lua'],
+  ];
+
+  for (const parts of files) {
+    const text = readStripped(...parts);
+    const helperPattern = /local function (lies_[a-z_]+)/g;
+    let match;
+
+    while ((match = helperPattern.exec(text)) !== null) {
+      const name = match[1];
+      const definedAt = match.index;
+      const usedAt = text.search(new RegExp(`(?<!function )${name}\\(`));
+
+      assert.ok(
+        usedAt === definedAt || usedAt > definedAt,
+        `${parts.join('/')}: ${name} is used before it is declared, so the earlier call sites resolve to a nil global`,
+      );
+    }
+  }
 });
 
 // Native faults name a unit and a phase at best. Reconstructing *why* needs the

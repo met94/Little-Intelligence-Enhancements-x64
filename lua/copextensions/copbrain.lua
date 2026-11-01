@@ -27,7 +27,8 @@ function CopBrain:set_logic(name, enter_params)
 			from = tostring(self._current_logic_name or "-"),
 			to = tostring(name),
 			obj = tostring(objective and objective.type or "nil"),
-			obj_forced = tostring((objective and objective.forced) or false)
+			obj_forced = tostring((objective and objective.forced) or false),
+			during = tostring(self._logic_data.updating or "no")
 		})
 	end
 
@@ -1393,7 +1394,14 @@ function CopBrain:update(unit, t, dt)
 		l_data.t = t
 		l_data.dt = true_dt
 
+		-- Re-entrancy marker: if something switches this unit's logic from inside
+		-- its own update (group objective churn), the logic event records
+		-- `during=<old logic>` and we can see the internal_data swap.
+		l_data.updating = self._current_logic_name or "?"
+
 		logic.update(l_data)
+
+		l_data.updating = nil
 	end
 end
 

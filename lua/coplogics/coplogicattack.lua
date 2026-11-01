@@ -14,6 +14,49 @@ local temp_vec1 = Vector3()
 local temp_vec2 = Vector3()
 local temp_vec3 = Vector3()
 
+-- Trace window per call: spooc paths crash in ways that need sub-second detail.
+-- These must stay local vars before every function that uses them, otherwise the
+-- earlier call sites resolve to globals (nil).
+local function lies_trace_window(data)
+	if data and data.unit and data.unit:base() and data.unit:base()._tweak_table == "spooc" then
+		return 0.2
+	end
+end
+
+-- The enemy's nav tracker is destroyed together with the enemy unit
+-- (`CopMovement:pre_destroy` -> `NavigationManager:destroy_nav_tracker`), while
+-- the attention object keeps the pointer (`AIAttentionObject:_register` stored
+-- `unit:movement():nav_tracker()`). LIES also runs this aim pass from the
+-- movement update (`CopBrain:check_upd_aim` via `CopMovement:_upd_actions`), i.e.
+-- outside the logic update that refreshes `attention_obj`, so the cached tracker
+-- can already be freed. Calling `nav_segment()`/`obstructed()` on it is an
+-- engine access violation, not a catchable Lua error.
+-- Crash report: 2026-10-31 11:03, heist `red2`, bot movement update ->
+-- `check_upd_aim` -> `_upd_aim` line 998.
+-- Rule: the cached tracker is only touched while its owner unit is alive.
+local function lies_enemy_tracker(focus_enemy, data)
+	if not focus_enemy then
+		return
+	end
+
+	local unit = focus_enemy.unit
+
+	if not unit then
+		return
+	end
+
+	if alive(unit) then
+		return focus_enemy.nav_tracker
+	end
+
+	-- The enemy is gone while its attention entry survives: everything the aim,
+	-- cover and charge code would do with this tracker is unsafe, and seeing this
+	-- phase in the breadcrumbs is how the V8.68 crash class gets confirmed.
+	if data and LIES and LIES.Trace then
+		LIES:Trace(data.unit, data, "stale_tracker", nil, lies_trace_window(data))
+	end
+end
+
 function CopLogicAttack.enter(data, new_logic_name, enter_params)
 	CopLogicBase.enter(data, new_logic_name, enter_params)
 	data.unit:brain():cancel_all_pathing_searches()
@@ -282,6 +325,8 @@ function CopLogicAttack.update(data)
 end
 
 function CopLogicAttack._chk_request_action_walk_to_cover_shoot_pos(data, my_data, path, speed)
+	LIES:Trace(data.unit, data, "action_walk_shoot", nil, lies_trace_window(data))
+
 	CopLogicAttack._cancel_cover_pathing(data, my_data)
 	CopLogicAttack._cancel_charge(data, my_data)
 	CopLogicAttack._correct_path_start_pos(data, path)
@@ -319,12 +364,12 @@ function CopLogicAttack._upd_combat_movement(data)
 	if not focus_enemy then
 		-- Old code dereferenced it three lines down: this used to be a Lua error
 		-- crash, and a missing attention object means there is no movement plan.
-		LIES:Trace(data.unit, data, "combat_no_attention")
+		LIES:Trace(data.unit, data, "combat_no_attention", nil, lies_trace_window(data))
 
 		return
 	end
 
-	LIES:Trace(data.unit, data, "combat")
+	LIES:Trace(data.unit, data, "combat", nil, lies_trace_window(data))
 
 	local enemy_visible = focus_enemy.verified
 	local enemy_visible_soft = focus_enemy.verified_t and t - focus_enemy.verified_t < 7
@@ -333,7 +378,7 @@ function CopLogicAttack._upd_combat_movement(data)
 	local action_taken = data.logic.action_taken(data, my_data)
 	local want_to_take_cover = my_data.want_to_take_cover
 
-	LIES:Trace(data.unit, data, "pose")
+	LIES:Trace(data.unit, data, "pose", nil, lies_trace_window(data))
 
 	action_taken = action_taken or CopLogicAttack._upd_pose(data, my_data)
 	local move_to_cover, want_flank_cover = nil
@@ -439,7 +484,7 @@ function CopLogicAttack._upd_combat_movement(data)
 				local enemy_tracker = lies_enemy_tracker(data.attention_obj, data)
 
 				if not my_data.charge_path_search_id and enemy_tracker then
-					LIES:Trace(data.unit, data, "charge_search")
+					LIES:Trace(data.unit, data, "charge_search", nil, lies_trace_window(data))
 
 					my_data.charge_pos = CopLogicAttack._find_charge_pos(data, my_data, enemy_tracker, wanted_attack_range and wanted_attack_range * 0.9 or my_data.weapon_range.close)
 
@@ -553,7 +598,7 @@ function CopLogicAttack._upd_combat_movement(data)
 					local enemy_tracker = lies_enemy_tracker(data.attention_obj, data)
 
 					if not my_data.charge_path_search_id and enemy_tracker then
-						LIES:Trace(data.unit, data, "charge_search")
+						LIES:Trace(data.unit, data, "charge_search", nil, lies_trace_window(data))
 
 						my_data.charge_pos = CopLogicAttack._find_charge_pos(data, my_data, enemy_tracker, wanted_attack_range and wanted_attack_range * 0.9 or my_data.weapon_range.close)
 
@@ -578,7 +623,7 @@ function CopLogicAttack._upd_combat_movement(data)
 	
 	local have_flank_cover = my_data.flank_cover and true
 
-	LIES:Trace(data.unit, data, "flank")
+	LIES:Trace(data.unit, data, "flank", nil, lies_trace_window(data))
 	
 	if want_flank_cover then
 		if not my_data.flank_cover then
@@ -595,7 +640,7 @@ function CopLogicAttack._upd_combat_movement(data)
 	end
 	
 	if not want_flank_cover or want_flank_cover and have_flank_cover then
-		LIES:Trace(data.unit, data, "cover_path")
+		LIES:Trace(data.unit, data, "cover_path", nil, lies_trace_window(data))
 
 		if not action_taken and move_to_cover and my_data.cover_path then
 			if not best_cover then
@@ -619,14 +664,14 @@ function CopLogicAttack._upd_combat_movement(data)
 			my_data.cover_path_search_id = tostring(unit:key()) .. "cover"
 			my_data.cover_search_t = TimerManager:game():time()
 
-			LIES:Trace(data.unit, data, "cover_path_search")
+			LIES:Trace(data.unit, data, "cover_path_search", nil, lies_trace_window(data))
 
 			data.unit:brain():search_for_path_to_cover(my_data.cover_path_search_id, best_cover[1], best_cover[5])
 		end
 	end
 
 	if not data.is_converted and not my_data.moving_to_cover and not data.unit:movement():chk_action_forbidden("walk") and CopLogicAttack._can_move(data) and data.attention_obj.verified and not action_taken then
-		LIES:Trace(data.unit, data, "dodge")
+		LIES:Trace(data.unit, data, "dodge", nil, lies_trace_window(data))
 
 		if data.is_suppressed and data.t - data.unit:character_damage():last_suppression_t() < 0.7 then
 			action_taken = CopLogicBase.chk_start_action_dodge(data, "scared")
@@ -639,7 +684,7 @@ function CopLogicAttack._upd_combat_movement(data)
 				-- Enemy died/despawned since the last detection pass: its movement
 				-- and anim data are gone, and reading them is what took the game
 				-- down (2026-11-01 05:46, spooc -> combat movement).
-				LIES:Trace(data.unit, data, "dodge_dead_enemy")
+				LIES:Trace(data.unit, data, "dodge_dead_enemy", nil, lies_trace_window(data))
 			elseif focus_enemy.is_local_player then
 				local e_movement_state = focus_enemy.unit:movement():current_state()
 
@@ -655,7 +700,7 @@ function CopLogicAttack._upd_combat_movement(data)
 			end
 
 			if dodge and focus_enemy.aimed_at then
-				LIES:Trace(data.unit, data, "dodge_preemptive")
+				LIES:Trace(data.unit, data, "dodge_preemptive", nil, lies_trace_window(data))
 
 				action_taken = CopLogicBase.chk_start_action_dodge(data, "preemptive")
 			end
@@ -663,12 +708,12 @@ function CopLogicAttack._upd_combat_movement(data)
 	end
 
 	if not action_taken and (want_to_take_cover or move_to_cover) and not best_cover then
-		LIES:Trace(data.unit, data, "retreat")
+		LIES:Trace(data.unit, data, "retreat", nil, lies_trace_window(data))
 
 		action_taken = CopLogicAttack._chk_start_action_move_back(data, my_data, focus_enemy, false)
 	end
 
-	LIES:Trace(data.unit, data, "move_out")
+	LIES:Trace(data.unit, data, "move_out", nil, lies_trace_window(data))
 
 	action_taken = action_taken or CopLogicAttack._chk_start_action_move_out_of_the_way(data, my_data)
 end
@@ -807,42 +852,8 @@ local tankboss = {
 	deep_boss = true
 }
 
--- The enemy's nav tracker is destroyed together with the enemy unit
--- (`CopMovement:pre_destroy` -> `NavigationManager:destroy_nav_tracker`), while
--- the attention object keeps the pointer (`AIAttentionObject:_register` stored
--- `unit:movement():nav_tracker()`). LIES also runs this aim pass from the
--- movement update (`CopBrain:check_upd_aim` via `CopMovement:_upd_actions`), i.e.
--- outside the logic update that refreshes `attention_obj`, so the cached tracker
--- can already be freed. Calling `nav_segment()`/`obstructed()` on it is an
--- engine access violation, not a catchable Lua error.
--- Crash report: 2026-10-31 11:03, heist `red2`, bot movement update ->
--- `check_upd_aim` -> `_upd_aim` line 998.
--- Rule: the cached tracker is only touched while its owner unit is alive.
-local function lies_enemy_tracker(focus_enemy, data)
-	if not focus_enemy then
-		return
-	end
-
-	local unit = focus_enemy.unit
-
-	if not unit then
-		return
-	end
-
-	if alive(unit) then
-		return focus_enemy.nav_tracker
-	end
-
-	-- The enemy is gone while its attention entry survives: everything the aim,
-	-- cover and charge code would do with this tracker is unsafe, and seeing this
-	-- phase in the breadcrumbs is how the V8.68 crash class gets confirmed.
-	if data and LIES and LIES.Trace then
-		LIES:Trace(data.unit, data, "stale_tracker")
-	end
-end
-
 function CopLogicAttack._upd_aim(data, my_data)
-	LIES:Trace(data.unit, data, "aim")
+	LIES:Trace(data.unit, data, "aim", nil, lies_trace_window(data))
 
 	local shoot, aim, expected_pos = nil
 	local focus_enemy = data.attention_obj
@@ -1588,7 +1599,7 @@ function CopLogicAttack._chk_request_action_turn_to_enemy(data, my_data, my_pos,
 end
 
 function CopLogicAttack._peek_for_pos_sideways(data, my_data, from_racker, peek_to_pos, height, short_back_vec)
-	LIES:Trace(data.unit, data, "peek")
+	LIES:Trace(data.unit, data, "peek", nil, lies_trace_window(data))
 
 	local unit = data.unit
 	local my_tracker = from_racker
@@ -2024,7 +2035,7 @@ function CopLogicAttack._chk_start_action_move_out_of_the_way(data, my_data)
 		return
 	end
 
-	LIES:Trace(data.unit, data, "move_out_lost_test")
+	LIES:Trace(data.unit, data, "move_out_lost_test", nil, lies_trace_window(data))
 
 	local my_tracker = data.unit:movement():nav_tracker()
 	
@@ -2299,7 +2310,7 @@ function CopLogicAttack._confirm_retreat_position_visless(retreat_pos, threat_po
 end
 
 function CopLogicAttack._upd_pose(data, my_data)
-	LIES:Trace(data.unit, data, "pose_upd")
+	LIES:Trace(data.unit, data, "pose_upd", nil, lies_trace_window(data))
 
 	-- Ported to 248.2: vanilla dropped the sniper-style stand/crouch visibility
 	-- raycasts this function used to run (`World:raycast` per pose decision).
@@ -2314,12 +2325,12 @@ function CopLogicAttack._upd_pose(data, my_data)
 
 	if not unit_can_stand or need_cover and not stand_objective or crouch_objective then
 		if not data.unit:anim_data().crouch and unit_can_crouch then
-			LIES:Trace(data.unit, data, "pose_req_crouch")
+			LIES:Trace(data.unit, data, "pose_req_crouch", nil, lies_trace_window(data))
 
 			return CopLogicAttack._chk_request_action_crouch(data)
 		end
 	elseif (not unit_can_crouch or (my_data.cover_test_step or 0) > 2 and not crouch_objective or stand_objective) and data.unit:anim_data().crouch and unit_can_stand then
-		LIES:Trace(data.unit, data, "pose_req_stand")
+		LIES:Trace(data.unit, data, "pose_req_stand", nil, lies_trace_window(data))
 
 		return CopLogicAttack._chk_request_action_stand(data)
 	end
@@ -2516,6 +2527,8 @@ function CopLogicAttack._chk_request_action_walk_to_cover_offset_pos(data, my_da
 end
 
 function CopLogicAttack._chk_request_action_walk_to_cover(data, my_data)
+	LIES:Trace(data.unit, data, "action_walk_cover", nil, lies_trace_window(data))
+
 	CopLogicAttack._correct_path_start_pos(data, my_data.cover_path)
 
 	local haste = nil
@@ -2803,7 +2816,7 @@ function CopLogicAttack._find_friend_pos(data, my_data)
 end
 
 function CopLogicAttack._update_cover(data)
-	LIES:Trace(data.unit, data, "cover_upd")
+	LIES:Trace(data.unit, data, "cover_upd", nil, lies_trace_window(data))
 
 	local my_data = data.internal_data
 	local cover_release_dis_sq = 10000

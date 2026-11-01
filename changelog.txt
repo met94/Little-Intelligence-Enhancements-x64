@@ -1,3 +1,14 @@
+Revision V8.73_x64 — 2026-11-01
+Sub-second tracing for the spooc path, re-entrancy marker, and a fixed ordering bug in the helpers.
+- 06:29 crash (81 s session, V8.72): `access violation`, script stack `update() @.../spooclogicattack.lua:161` (the `_upd_combat_movement` call) -> `original() @.../copextensions/copbrain.lua:1396`. The last spooc trace was `phase=spooc_combat` at t=84.62; the sub-phases that would name the exact call were **suppressed by the 2.5 s per-phase dedupe** (the same unit had logged `combat`/`pose` a second earlier)
+- fix 1 (tracing): `LIES:Trace` calls in `coplogicattack` now pass `lies_trace_window(data)`, which is 0.2 s for `spooc` and the default 2.5 s otherwise, so a cloaker's last sub-step is never more than a fifth of a second old. Added `action_walk_shoot`, `action_walk_cover` phases around the walk `action_request` calls (the remaining engine calls in that path)
+- fix 2 (tracing): `CopBrain:update` stamps `l_data.updating` while a logic update runs; the `kind=logic` event now carries `during=<logic>`, so a group assignment that switches logic **mid-update** (and swaps `internal_data` under the running function) is visible directly
+- fix 3 (bug in this fork, not upstream): `lies_enemy_tracker` and the new `lies_trace_window` were declared *after* two call sites in `_upd_combat_movement`, so those two references resolved to globals (nil) and would have raised `attempt to call a nil value` the first time the charge branch ran. Both helpers now sit at the top of the file; a test asserts no `lies_*` local is used before its declaration
+- observation from the 81 s session (context, not a conclusion): 473 lifecycle events, 176 logic switches of which 92 were `from==to` re-entries, 130 objective assignments of which 45 were `new==old`, and 8 retirements (`travel -> inactive`, `objective defend_area -> nil`) spread every 1-3 s. Retire/recon code and the crashing AI functions are byte-identical to V8.57, so the difference between then and now is runtime conditions (cover priority, path cache, spawn pacing), not those functions
+- no behaviour change from this release; it is instrumentation plus the ordering bug fix
+
+Player notes: nothing changes in play. Crash logs now carry the exact sub-step of a cloaker's combat decision (0.2 s resolution) and whether an AI logic was switched while it was still running, which is what is needed to name the failing engine call.
+
 Revision V8.72_x64 — 2026-11-01
 Lifecycle tracing: the objective/logic/exit chain behind every crash, not more guards.
 - why the log was not enough: breadcrumbs name a unit and a phase, but not *why* that unit was there. This release adds a second channel, `[LIES-EVENT]`, that records the discrete lifecycle events which put units into the crashing functions

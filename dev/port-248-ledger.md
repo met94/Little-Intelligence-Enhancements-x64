@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T06:24:16.414Z
+Generated: 2026-11-01T06:31:54.139Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -13,7 +13,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 24 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 212 |
+| MOD_ONLY | 213 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -439,11 +439,11 @@ No function definitions (hook/overlay file).
 | [ ] | keep | `CopBrain.search_for_path` | 25 | 18 | 18 |  |
 | [ ] | keep | `CopBrain.search_for_path_from_pos` | 25 | 18 | 18 |  |
 | [ ] | keep | `CopBrain.search_for_path_to_cover` | 32 | 16 | 16 |  |
-| [ ] | keep | `CopBrain.set_logic` | 14 | 16 | 16 |  |
+| [ ] | keep | `CopBrain.set_logic` | 15 | 16 | 16 |  |
 | [ ] | keep | `CopBrain.set_objective` | 152 | 13 | 13 |  |
 | [ ] | keep | `CopBrain.set_pos_rsrv` | 23 | 19 | 19 |  |
 | [ ] | keep | `CopBrain.set_spawn_ai` | 37 | 17 | 17 |  |
-| [ ] | keep | `CopBrain.update` | 31 | 12 | 12 |  |
+| [ ] | keep | `CopBrain.update` | 38 | 12 | 12 |  |
 
 ## lua/copextensions/copsound.lua
 
@@ -621,13 +621,14 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `CopLogicAttack._move_back_into_field_position` | 27 | 0 | 0 |  |
 | [ ] | audit | `CopLogicAttack._pathing_complete_clbk` | 21 | 0 | 0 |  |
 | [ ] | audit | `lies_enemy_tracker` | 22 | 0 | 0 |  |
+| [ ] | audit | `lies_trace_window` | 5 | 0 | 0 |  |
 | [ ] | keep | `CopLogicAttack._can_move` | 3 | 3 | 3 |  |
 | [ ] | keep | `CopLogicAttack._cancel_cover_pathing` | 9 | 16 | 16 |  |
 | [ ] | keep | `CopLogicAttack._chk_covered` | 20 | 23 | 23 |  |
 | [ ] | keep | `CopLogicAttack._chk_exit_attack_logic` | 39 | 19 | 19 |  |
 | [ ] | keep | `CopLogicAttack._chk_request_action_turn_to_enemy` | 21 | 19 | 19 |  |
-| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover` | 85 | 32 | 32 |  |
-| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover_shoot_pos` | 26 | 23 | 23 |  |
+| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover` | 87 | 32 | 32 |  |
+| [ ] | keep | `CopLogicAttack._chk_request_action_walk_to_cover_shoot_pos` | 28 | 23 | 23 |  |
 | [ ] | keep | `CopLogicAttack._chk_start_action_move_back` | 78 | 32 | 32 |  |
 | [ ] | keep | `CopLogicAttack._chk_start_action_move_out_of_the_way` | 61 | 21 | 21 |  |
 | [ ] | keep | `CopLogicAttack._chk_wants_to_take_cover` | 49 | 15 | 15 |  |
