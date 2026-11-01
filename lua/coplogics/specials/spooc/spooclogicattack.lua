@@ -343,6 +343,14 @@ function SpoocLogicAttack._upd_spooc_attack(data, my_data)
 
 			local action = SpoocLogicAttack._chk_request_action_spooc_attack(data, my_data)
 
+			if action and LIES and LIES.Event then
+				LIES:Event("spooc_start", data.unit, data, {
+					dis = string.format("%.0f", focus_enemy.dis or -1),
+					reaction = tostring(focus_enemy.reaction),
+					cover = tostring(my_data.want_to_take_cover and "y" or "n")
+				})
+			end
+
 			if action then
 				my_data.spooc_attack = {
 					start_t = data.t,

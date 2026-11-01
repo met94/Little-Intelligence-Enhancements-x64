@@ -120,3 +120,37 @@ test('the tracker guard logs when it refuses a dead enemy', () => {
 
   assert.ok(aliveAt !== -1 && traceAt !== -1 && aliveAt < traceAt, 'trace only when the unit is not alive');
 });
+
+// Native faults name a unit and a phase at best. Reconstructing *why* needs the
+// lifecycle: which logic switch and which objective assignment put that unit
+// there. These are discrete events, so they get their own channel and tag.
+test('LIES:Event logs lifecycle events on the same switch as the breadcrumbs', () => {
+  const manager = readStripped('menumanager.lua');
+  const body = manager.match(/function LIES:Event\(kind, unit, logic_data, fields\)([\s\S]*?)\n\tend/);
+
+  assert.ok(body, 'LIES:Event is missing');
+  assert.match(body[1], /self\.settings\.trace/, 'events share the diagnostics switch');
+  assert.match(body[1], /t - last < 1/, 'per unit+kind dedupe');
+  assert.match(body[1], /self\.event_window_n >= 40/, 'global cap');
+  assert.match(body[1], /\[LIES-EVENT\] v=/, 'own tag so events and phases can be filtered');
+  assert.match(manager, /self\.event_state = \{\}/, 'event state resets with the watch channel');
+});
+
+test('the lifecycle chain is traced end to end', () => {
+  const brain = readStripped('lua', 'copextensions', 'copbrain.lua');
+  const base = readStripped('lua', 'coplogics', 'coplogicbase.lua');
+  const travel = readStripped('lua', 'coplogics', 'coplogictravel.lua');
+  const spooc = readStripped('lua', 'coplogics', 'specials', 'spooc', 'spooclogicattack.lua');
+  const group = readStripped('lua', 'groupaistate', 'groupaistatebesiege.lua');
+
+  assert.match(brain, /local set_logic_original = CopBrain\.set_logic/);
+  assert.match(brain, /LIES:Event\("logic", self\._unit, self\._logic_data/);
+  assert.match(brain, /return set_logic_original\(self, name, enter_params\)/, 'wrapper must still switch logic');
+  assert.match(brain, /LIES:Event\("objective", self\._unit, self\._logic_data/);
+
+  assert.match(base, /LIES:Event\("exit", unit, logic_data/);
+  assert.match(travel, /LIES:Event\("travel_no_objective", data\.unit, data/);
+  assert.match(spooc, /LIES:Event\("spooc_start", data\.unit, data/);
+  assert.match(group, /LIES:Event\("group_retire", nil, nil/);
+  assert.match(group, /LIES:Event\("group_recon", nil, nil/);
+});

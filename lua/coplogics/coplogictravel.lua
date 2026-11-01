@@ -912,6 +912,17 @@ function CopLogicTravel.upd_advance(data)
 		else
 			local wanted_state = data.logic._get_logic_state_from_reaction(data) or "idle"
 
+			-- Every crash #1 of this series started here: travel running with no
+			-- objective at all. Record what the unit was in the middle of so the
+			-- objective lifecycle (set/clear/retire) can be lined up against it.
+			LIES:Event("travel_no_objective", data.unit, data, {
+				wanted = tostring(wanted_state),
+				advancing = tostring(my_data.advancing and "y" or "n"),
+				old_action = tostring(my_data.has_old_action and "y" or "n"),
+				coarse = tostring(my_data.coarse_path_index or 0) .. "/" .. tostring(my_data.coarse_path and #my_data.coarse_path or 0),
+				cover = tostring(my_data.best_cover and "y" or "n")
+			})
+
 			CopLogicBase._exit(data.unit, wanted_state)
 		end
 	end

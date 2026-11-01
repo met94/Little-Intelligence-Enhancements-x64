@@ -159,7 +159,7 @@ the breadcrumbs are what was written *before* it. Add `"trace": false` to
 Each line looks like:
 
 ```
-[LIES-TRACE] v=V8.71_x64 t=143.27 u=1081 tweak=spooc logic=attack phase=combat att=769 att_alive=true att_trk=true dropped=0
+[LIES-TRACE] v=V8.72_x64 t=143.27 u=1081 tweak=spooc logic=attack phase=combat att=769 att_alive=true att_trk=true dropped=0
 ```
 
 - `u` is the acting unit, `tweak` its character type, `logic` its current logic,
@@ -183,6 +183,25 @@ Each line looks like:
 
 Report a crash by attaching `crash.txt` plus the last `[LIES-TRACE]` lines from
 `mods\logs\<date>_log.txt`.
+
+## Lifecycle events (`[LIES-EVENT]`)
+
+Same switch (`trace`), separate tag, one line per unit and kind per second:
+
+```
+[LIES-EVENT] v=V8.72_x64 kind=objective t=143.20 u=1081 tweak=spooc logic=travel att=769 old=defend_area new=nil forced=false follow=n
+[LIES-EVENT] v=V8.72_x64 kind=logic     t=143.21 u=1081 tweak=spooc logic=travel att=769 from=travel to=idle obj=nil obj_forced=false
+[LIES-EVENT] v=V8.72_x64 kind=exit      t=143.21 u=1081 tweak=spooc logic=travel att=769 req=idle obj=nil internal=y
+```
+
+- `objective` - every objective assignment (old/new type, no objective = `nil`).
+- `logic` - every logic switch with the objective that was present.
+- `exit` - every logic exit with the requested state and the objective.
+- `travel_no_objective` - travel ran with no objective: `advancing`, `old_action`, `coarse=index/len`, `cover`.
+- `spooc_start` - cloaker tackle started: `dis`, `reaction`, `cover`.
+- `group_retire` / `group_recon` - group-level retire/recon assignment: `group`, `units`, `area`/`phase`.
+
+Together they reconstruct the chain: which group event produced which objective change, which logic switch followed, and which exit the unit took. That is the evidence needed when a native fault names only one frame.
 
 ## Instant Spawn Groups (`instant_spawn_groups`) - removed in V8.66
 

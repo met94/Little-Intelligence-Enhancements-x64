@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.71_x64",
+		version = "V8.72_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -307,6 +307,63 @@ if RequiredScript == "lib/managers/menumanager" then
 			extra and (" " .. tostring(extra)) or ""))
 	end
 
+	-- Discrete event channel. Logic switches, objective assignments and exits are
+	-- the causal chain behind a crash; they are low volume, so they get their own
+	-- tag and their own throttle. Gated by the same `trace` switch.
+	LIES.event_state = LIES.event_state or {}
+	LIES.event_window_t = LIES.event_window_t or 0
+	LIES.event_window_n = LIES.event_window_n or 0
+
+	function LIES:Event(kind, unit, logic_data, fields)
+		if not (self.settings and self.settings.trace) then
+			return
+		end
+
+		local timer = TimerManager and TimerManager:game()
+
+		if not timer then
+			return
+		end
+
+		local t = timer:time()
+		local u_key = unit and unit:key() or 0
+		local key = tostring(kind) .. "|" .. tostring(u_key)
+		local last = self.event_state[key]
+
+		if last and t >= last and t - last < 1 then
+			return
+		end
+
+		if t < self.event_window_t or t > self.event_window_t + 1 then
+			self.event_window_t = t
+			self.event_window_n = 0
+		end
+
+		if self.event_window_n >= 40 then
+			return
+		end
+
+		self.event_window_n = self.event_window_n + 1
+		self.event_state[key] = t
+
+		local base = unit and unit:base()
+		local brain = unit and unit:brain()
+		local att = logic_data and logic_data.attention_obj
+		local merged = {
+			t = string.format("%.2f", t),
+			u = tostring(u_key),
+			tweak = tostring(base and base._tweak_table or "?"),
+			logic = tostring(brain and brain._current_logic_name or "?"),
+			att = tostring(att and att.u_key or "-")
+		}
+
+		for field_key, value in pairs(fields or {}) do
+			merged[field_key] = value
+		end
+
+		log("[LIES-EVENT] v=" .. tostring(self.version) .. " kind=" .. tostring(kind) .. " " .. lies_watch_fields(merged))
+	end
+
 	function LIES:Alarm(name, fields, now)
 		if (self.watch_alarm_budget or 0) <= 0 then
 			return
@@ -343,6 +400,9 @@ if RequiredScript == "lib/managers/menumanager" then
 		self.trace_window_t = 0
 		self.trace_window_n = 0
 		self.trace_prune_t = 0
+		self.event_state = {}
+		self.event_window_t = 0
+		self.event_window_n = 0
 	end
 
 	local function lies_level_id()

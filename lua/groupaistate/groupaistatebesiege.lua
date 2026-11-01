@@ -1372,6 +1372,20 @@ function GroupAIStateBesiege:_voice_movedin_civs(group)
 end
 
 function GroupAIStateBesiege:_assign_group_to_retire(group)
+	if LIES and LIES.Event then
+		local unit_count = 0
+
+		for _ in pairs(group.units or {}) do
+			unit_count = unit_count + 1
+		end
+
+		LIES:Event("group_retire", nil, nil, {
+			group = tostring(group.id or "?"),
+			units = tostring(unit_count),
+			area = tostring(group.objective and group.objective.area and group.objective.area.id or "?")
+		})
+	end
+
 	local group_leader_u_key, group_leader_u_data = self._determine_group_leader(group.units)
 	
 	if not group_leader_u_data or not alive(group_leader_u_data.unit) then
@@ -1813,6 +1827,21 @@ function GroupAIStateBesiege:_assign_enemy_group_to_assault(group)
 end
 
 function GroupAIStateBesiege:_assign_enemy_group_to_recon(group)
+	if LIES and LIES.Event and group.objective and group.objective.type == "recon_area" then
+		local unit_count = 0
+
+		for _ in pairs(group.units or {}) do
+			unit_count = unit_count + 1
+		end
+
+		LIES:Event("group_recon", nil, nil, {
+			group = tostring(group.id or "?"),
+			units = tostring(unit_count),
+			phase = tostring(group.objective.phase or "?"),
+			moving_out = tostring(group.objective.moving_out or false)
+		})
+	end
+
 	if group.has_spawned and group.objective.type == "recon_area" then
 		if group.objective.moving_out then
 			local done_moving = nil

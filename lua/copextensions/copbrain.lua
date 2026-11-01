@@ -14,6 +14,26 @@ CopBrain._logic_variants.hector_boss = CopBrain._logic_variants.triad_boss
 CopBrain._logic_variants.mobster_boss = CopBrain._logic_variants.triad_boss
 CopBrain._logic_variants.snowman_boss = CopBrain._logic_variants.triad_boss
 
+-- Lifecycle tracing: every logic switch with the objective that caused it.
+-- `set_logic` is the single choke point for transitions, so one wrapper covers
+-- travel/idle/attack/arrest/retire alike.
+local set_logic_original = CopBrain.set_logic
+
+function CopBrain:set_logic(name, enter_params)
+	if LIES and LIES.Event and self._logic_data then
+		local objective = self._logic_data.objective
+
+		LIES:Event("logic", self._unit, self._logic_data, {
+			from = tostring(self._current_logic_name or "-"),
+			to = tostring(name),
+			obj = tostring(objective and objective.type or "nil"),
+			obj_forced = tostring((objective and objective.forced) or false)
+		})
+	end
+
+	return set_logic_original(self, name, enter_params)
+end
+
 function CopBrain:post_init()
 	if LIES and LIES.LogCheck and not LIES._check_marshal_logged then
 		LIES._check_marshal_logged = true
@@ -720,6 +740,17 @@ function CopBrain:on_suppressed(state)
 end
 
 function CopBrain:set_objective(new_objective, params)
+	if LIES and LIES.Event and self._logic_data then
+		local old_objective = self._logic_data.objective
+
+		LIES:Event("objective", self._unit, self._logic_data, {
+			old = tostring(old_objective and old_objective.type or "nil"),
+			new = tostring(new_objective and new_objective.type or "nil"),
+			forced = tostring((params and params.forced) or false),
+			follow = tostring(new_objective and new_objective.follow_unit and "y" or "n")
+		})
+	end
+
 	if self._logic_data and not self._logic_data.team then
 		self._spawn_ai = self._spawn_ai or {}
 		

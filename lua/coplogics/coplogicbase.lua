@@ -104,6 +104,17 @@ function CopLogicBase._exit(unit, state_name, params)
 		state_name = fallback
 	end
 
+	if brain and LIES and LIES.Event then
+		local logic_data = brain._logic_data
+		local objective = logic_data and logic_data.objective
+
+		LIES:Event("exit", unit, logic_data, {
+			req = tostring(state_name),
+			obj = tostring(objective and objective.type or "nil"),
+			internal = tostring(logic_data and logic_data.internal_data and "y" or "n")
+		})
+	end
+
 	return exit_original(unit, state_name, params)
 end
 
