@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-11-01 (after the V8.79 door-watch restore).
+Last updated: 2026-11-01 (after the first in-game door-watch evidence).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -34,8 +34,21 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   `_get_expected_attention_position`, gated by
   `door_watch and not highperformance`, plus the `find_segment_doors` guards
   (`a9bfba0`). Report, deviations and the test-play procedure:
-  `dev/reports/door-watch-port.md`. Code and static gates are green; **not yet
-  observed in game** — `dev/tools/door-watch-report.mjs` adjudicates the log.
+  `dev/reports/door-watch-port.md`. Code and static gates are green.
+- Door watch, in-game verification — **done for the armed and gated paths**
+  (2026-11-01, level `auc`, deployed `V8.79_x64`). Armed run: watch positions
+  from all three sources (`dw_raw_hit=24`, `dw_expected_pos_hit=37`,
+  `dw_path_prestep_hit=4`), `dw_gap=0` on every digest,
+  `fsd_navlink_seg_ok=158` with tracker create/destroy balanced and
+  `fsd_bad_shape=0`. High Performance run: the gate held — `dw_call=30085`
+  split into `dw_gate_off=23339` + `dw_stale_bail=6746` +
+  `dw_no_my_tracker=0` with every work counter 0. The one crash's stack was
+  entirely Iter's (follow-unit UAF after a queued coarse search; fixed out of
+  tree as Iter 200.2 on `feat/iter-follow-unit-uaf`, `ea7732a` + `aa6211c`), no
+  LIES frame involved. **A repeat armed run is still wanted**: Run A lasted
+  about two minutes before that crash, so the cost figure is a lower bound, and
+  the `--ab` control has not been run. Evidence: `door-watch-port.md` §10; open
+  questions §7.
 
 ## Open — core AI (needs in-game testing)
 

@@ -1,9 +1,10 @@
 # Door watching restored in `_upd_aim` (V8.79)
 
 Investigation report for the V8.79 door-watch restore. Status: code, tests and
-static gates are green; **not yet observed in game** — §6 is the procedure that
-produces the evidence, and `dev/tools/door-watch-report.mjs` is the reader that
-adjudicates it.
+static gates are green, and the armed and gated paths **were observed in game on
+2026-11-01** (level `auc`, deployed `V8.79_x64`). §6 is the procedure that
+produced the evidence, `dev/tools/door-watch-report.mjs` is the reader that
+adjudicates it, and §10 records what the two runs showed.
 
 - **Blocks:** `dev/reports/aim-port-behaviour-ledger.md` #1 (cached-tracker aim
   path), #2 (door probing), #4 (expected-position machinery).
@@ -244,7 +245,10 @@ leak invariant is the harness test
 
 ## 6. Test-play procedure
 
-Nothing below has been run in game yet.
+Runs A and B below were executed on 2026-11-01 (level `auc`, deployed
+`V8.79_x64`); §10 is what they showed. Run C — the `--ab` cost control — has not
+been run, so the cost figure is still one-sided. Keep the procedure as written
+for the repeat: a longer armed run on the same map as its control.
 
 Settings (game closed), `mods\saves\LittleIntelligenceEnhancementS.txt`:
 
@@ -325,8 +329,10 @@ session.
    cannot separate it from `find_segment_doors`; `dw_path_prestep / dw_call` per
    window is the number to watch on a populated map, together with
    `dw_path_prestep_hit / dw_path_prestep` (how often the read actually yields a
-   position). Not measured in game. `dw_path_prestep` is INFO in the report for
-   this reason: it is an attempt, not a produced position.
+   position). First measured in Run A (§10): 68 pre-steps out of 23 966 calls,
+   4 of them returning a position — too short a run to characterise frequency on
+   a populated map. `dw_path_prestep` is INFO in the report for this reason: it
+   is an attempt, not a produced position.
 2. **`dw_cached_reuse` is a reuse count.** It fires only in the window-closed
    arm, i.e. exactly "the 0.2/1.5 s window had not elapsed and the saved position
    was reused as-is" — after deviation 6 the pre-step cannot produce a position
@@ -352,12 +358,41 @@ session.
 5. **Nav-link door volume.** `fsd_navlink_seg_ok` vs `fsd_raw` says how often
    the LIES door list contains doors vanilla would skip; if the ratio is
    ~0 the restore's extra value is only the cross-segment watch position.
+   Run A: 158 nav-link doors accepted out of 5396 raw doors on `auc` (~2.9 %),
+   so nav-link doors are a real but small slice of the list — one map, two
+   minutes, no vanilla comparison.
 6. **Per-door tracker churn.** `find_segment_doors` creates and destroys one
    nav tracker per nav-link door per call (`fsd_tracker_created`). The probe and
    the pre-step that reach it now run only inside the 0.2 s / 1.5 s cadence
    window (and the pre-step only when nothing is saved), so the churn is bounded
    by the window rather than by the frame rate; precomputing door segments per
    nav build is the obvious optimisation if `--ab` shows real cost.
+7. **The watch position is rarely invalidated.** Run A saw
+   `dw_cached_reuse=1733` against `dw_cached_unsighted=28`: the saved position
+   was reused far more often than the re-test ray broke it.
+   `dw_cached_unsighted` counts only blocked re-tests — a visible re-test is
+   counted nowhere — so 28 is invalidations observed, not opportunities. Is the
+   ratio right for play feel — a cop that keeps the same doorway through most of
+   an engagement instead of re-picking one as the player moves? The question is
+   whether cops visibly keep aiming at a doorway the player has left.
+8. **The outer gate skipped 81 % of armed calls.** Run A:
+   `dw_outer_gate_skip=19456` of `dw_call=23966`, i.e. the author's gate
+   (`time_since_verification and not focus_enemy.lost_track or my_seg ==
+   enemy_seg`, open question 4) sent most calls to vanilla before any probing.
+   Decide later whether to relax it — nothing in this run says the skips were
+   wrong, only that they dominate the armed path.
+9. **The cost figure is a lower bound.** Run A produced only about two minutes of
+   assault (it ended in the crash in §10), so `dw_us` = 17.77 µs average over
+   23 966 calls ≈ 0.43 s of Lua across 120 s is measured on a short slice of one
+   map's assault. A longer repeat plus the `--ab` control is needed before
+   calling the cost bounded.
+10. **Stale-bail ratio differs between the two runs.** 0.5 % armed (125/23966)
+    against 22.4 % gated (6746/30085). The two runs do not sample the same call
+    population either — ≈200 calls/s armed over ~2 min versus ≈84 calls/s gated
+    over ~6 min — so the likeliest explanation is the `highperformance` aim-path
+    difference, not a guard misfire. Confirm on a longer armed run that
+    `dw_stale_bail` stays low while the gate is off and that the gated share
+    tracks the assault's death rate.
 
 ## 8. Player POV
 
@@ -406,6 +441,9 @@ not reopened.
   selection, out-of-range exits 3). A SuperBLT file can hold several plays, so a
   control play used to be summed into the armed play's claim table and made the
   gate claim unjudgeable. Every claim rule and exit code is unchanged.
+- Verification (the commit that carries this text): §10 records the 2026-11-01
+  `auc` plays on deployed `V8.79_x64`, and §7 gains the four questions the
+  numbers raised. Docs only — no Lua, settings or version change.
 - Tests: `dev/tools/test/door-watch.test.mjs` (source pins),
   `dev/test-harness/test/find_segment_doors.lua` (tracker balance, raw
   `Vector3` contract, nav-link segment filter),
@@ -414,7 +452,97 @@ not reopened.
   out-of-range exit code),
   `dev/tools/test/compat.test.mjs` (in-code version pinned to `mod.txt`).
 
-**Not verified.** No in-game play; nothing in §5 is observed yet. The report
-tool is validated against synthetic logs only. Perf numbers, nav-link door
-volume, the same-segment delegation and the outer gate's `lost_track` skip are
-all open (§7). The user deploys; this worktree contains no game install.
+**Verified in game (2026-11-01).** Runs A and B (§10) observed the §5 claims on
+level `auc` with the deployed `V8.79_x64`: watch positions from all three
+sources, `dw_gap=0` on every digest, `fsd_bad_shape=0`, the gate holding with
+every work counter at zero, and both reaction-level paths. Run A lasted about two
+minutes and ended in Iter's follow-unit UAF, fixed out of tree (Iter 200.2); no
+LIES frame was on the stack. Still open: the `--ab` cost control, nav-link door
+volume against the vanilla list, the same-segment delegation, the outer gate's
+`lost_track` skip and a longer repeat of Run A (§7). The user deploys; this
+worktree contains no game install, so the raw logs stay outside the repo.
+
+## 10. Verification (2026-11-01)
+
+First in-game evidence for the restore: deployed build `V8.79_x64`, level `auc`,
+`dev/tools/door-watch-report.mjs` as the reader, no `--ab` control. Two plays —
+A armed, B gated — so the cost comparison is still open (§7.9).
+
+### Run A — armed
+
+Header `door_watch=true highperformance=false trace=true watch_log=true
+enemy_reaction_level=1 level=auc`. About two minutes of assault; the play ended
+in a crash (see below), so the session carries the t=0 snapshot and the digests
+at t=60 and t=120.
+
+| Counter | Value | Reading |
+|---|---:|---|
+| `dw_call` | 23966 | denominator |
+| `dw_gap` | 0 | outcome accounting held on every digest |
+| `dw_hit` / `dw_raw_hit` / `dw_expected_pos_hit` / `dw_path_prestep_hit` | 2015 / 24 / 37 / 4 | all three position sources produced positions |
+| `dw_path_prestep` | 68 | attempts only; 4 returned a position |
+| `dw_cached_reuse` / `dw_cached_unsighted` | 1733 / 28 | saved position reused; 28 re-test rays blocked |
+| `dw_cadence_skip` / `dw_advancing_skip` | 3053 / 3053 | window closed (the advancing count is implied at this call site) |
+| `dw_outer_gate_skip` | 19456 | 81 % of calls — the `lost_track` gate (§7.8) |
+| `dw_stale_bail` / `dw_no_my_tracker` | 125 / 0 | liveness guards fired on 0.5 % of calls |
+| `dw_seg_same` / `dw_height_skip` / `dw_ray` | 2 / 4 / 1333 | same-segment delegation, height gate, per-door rays |
+| `dw_us` avg / `dw_us_max` | 17.77 µs / 1000 µs | 17.77 µs × 23 966 ≈ 0.43 s of Lua across 120 s; the max is one `os.clock` tick (1 ms granularity), a quantisation reading rather than a 1 ms solve |
+
+Claims observed: positions from raw doors, expected position and the armed-path
+pre-step (24 + 37 + 4 = 65); `dw_gap=0`; no `door_outcome_gap` or
+`door_contract_violation` alarm. The SLOW reaction level did what V8.78 intends:
+`react_level=1`, `react_hold=42043`, `react_allow=2713` — the fire hold fired and
+then expired into allowed shots.
+
+NAV (`find_segment_doors`): `fsd_navlink_seg_ok=158`,
+`fsd_navlink_seg_mismatch=0`, `fsd_tracker_created = fsd_tracker_destroyed =
+158`, `fsd_bad_shape=0`, `fsd_raw=5396`, `fsd_disabled=248`,
+`fsd_call_2arg=1896`, `fsd_call_center=217`. Nav-link doors were reached and
+segment-matched, the raw-`Vector3` contract held, and no non-`Vector3` end
+position reached `mvec3_set`/distance.
+
+Trace: 58 `[LIES-TRACE] phase=door_watch` lines, `raw=21 expected=37`; first
+adoption `evt=door_watch_first src=raw seg=124 tweak=shield`.
+
+### Run B — gated (High Performance Mode on)
+
+Header `door_watch=true highperformance=true react_level=3`. About six minutes,
+digests at t=0/60/120/180/240/300/360. `dw_call=30085` split exactly into
+`dw_gate_off=23339` + `dw_stale_bail=6746` + `dw_no_my_tracker=0`, with every
+work counter at 0 (`dw_raw_hit`, `dw_expected_pos_hit`, `dw_path_prestep`,
+`dw_path_prestep_hit`, `dw_hit`, `dw_ray`, `dw_cached_reuse`,
+`dw_cached_unsighted`, `dw_cadence_skip`, `dw_outer_gate_skip`, `dw_none`,
+`dw_vanilla_call`, `dw_path_kick`, `dw_height_skip`, `dw_seg_same`) and
+`dw_gap=0`. The `gate respected` claim therefore PASSed on a real log; the
+evidence line also prints the 22.4 % stale-bail share (§7.10).
+
+NAV was still exercised under the gate: `fsd_navlink_seg_ok=263`,
+`fsd_tracker_created = fsd_tracker_destroyed = 263`, `fsd_bad_shape=0`.
+
+ULTRA-VIOLENCE behaved as intended: `react_level=3`, `react_hold=0`,
+`react_allow=72325` — no hold, shots allowed throughout. No crash in this
+session.
+
+### The crash was Iter's, not LIES'
+
+Run A ended in an engine access violation whose stack is entirely Iter's:
+`results_callback() @ mods/Iter/lua/copbrain.lua:115` →
+`_commence_coarce_searches` → `NavigationManager:update`. No LIES frame is on
+it. The cause is Iter reading `objective.follow_unit:position()` without an
+`alive()` check after a queued coarse search landed on a destroyed unit. Fixed
+out of tree on Iter branch `feat/iter-follow-unit-uaf` (commits `ea7732a`,
+`aa6211c`, Iter 200.2; unmerged when this was written).
+
+LIES is not implicated: `_get_expected_pos` calls the synchronous `search_coarse`
+branch (`results_clbk` nil), and that branch never queues a callback — so the
+restore cannot produce the queued-callback shape that crashed.
+
+### Tooling the evidence exposed (already fixed on this branch)
+
+- `d8d6b06` — one SuperBLT log file accumulates launches, so the report needs
+  `--session last|all|<n>`; summing an armed and a gated play made the gate
+  claim unjudgeable.
+- `a31a029` — the gate claim required `dw_gate_off == dw_call`, which is
+  unreachable because the tracker liveness check runs before the gate. It now
+  requires the three termination counters to sum to `dw_call` with every work
+  counter zero, and prints the stale-bail ratio (Run B: 22.4 %).
