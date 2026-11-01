@@ -691,10 +691,16 @@ whether cops path in.
 - **What is adopted.** The LIES vertical fallback probe (previously a fixed
   `math.UP * 30`, fired fourth, after the exact-point and both ±30 lateral
   probes) now rises by `height_over_target`. LIES's probe **order** (exact →
-  lateral + → lateral − → vertical), its **±30 lateral tolerance** (vanilla
-  uses 150, deliberately not adopted) and its `last_verified_pos` /
-  `last_verified_m_pos` / `last_verified_dis` / `last_expected` / `lost_track`
-  bookkeeping are unchanged.
+  lateral + → lateral − → vertical) and its **±30 lateral tolerance** (vanilla
+  uses 150, deliberately not adopted) are unchanged, and so is its
+  `last_verified_pos` / `last_verified_m_pos` / `last_verified_dis` /
+  `last_expected` / `lost_track` bookkeeping **code** — but not the values it
+  stores. When only the vertical ray clears, `last_verified_pos` is set to the
+  elevated `near_pos`, so it now sits up to ~70 units higher at contact range
+  (100 instead of 30), fading to the old height by ~2000 units. That field is
+  read as an aim/look point (`lua/coplogics/coplogicattack.lua` `aim_pos` /
+  `look_pos`), so smoke should watch for shots and aim passing over the head of
+  a player who peeks from behind low cover at close range.
 - **`MAX_DISTANCE` hoist.** Vanilla declares the constant inside the helper and
   gates there on `verified_dis`; LIES gates at the three call sites instead, on
   `attention_info.dis`. Each site has just written `verified_dis = dis`
@@ -715,14 +721,23 @@ whether cops path in.
   fallback ran, after both lateral probes) and `LIES:Gauge("near_vis_h",
   height_over_target)` (tallest height seen in the window), digested as
   `near_vis_probe` and `near_vis_h_max` (`menumanager.lua:529-530`, right after
-  the `dw_*` group). The pair is what makes the merge observable in a log:
-  `near_vis_h_max` ≈ 100 at contact range, ≈ 10 near 2000 units.
+  the `dw_*` group). `LIES:Gauge` keeps only the window **maximum**, so the pair
+  proves two things and not a third: the probe fired (`near_vis_probe` counts
+  it), and the height really is the merged one at its worst case
+  (`near_vis_h_max` ≈ 100, not the pre-merge 30). The taper itself is **not**
+  observable in the digest: a single contact-range probe pins the gauge near 100
+  for the whole window, so ≈ 10 near 2000 units can only be seen on a play whose
+  covered targets were all far away.
 - **Player-visible effect, stated honestly.** At contact range the peek probe
   rises to ~100 units instead of 30, so a cop keeps a "nearly visible" read on
   a target behind low cover more readily up close; by ~2000 units the probe has
   faded to 10, so distant peeking is less likely to keep them watching. Nothing
   else in detection changes — no new acquisition, no wider lateral search, no
-  different notice timing path. **Not yet observed in game.**
+  different notice timing path — but the elevated probe does move the derived
+  value: `last_verified_pos` (and the `last_verified_m_pos` /
+  `last_verified_dis` computed from it) is up to ~70 units higher at contact
+  range when the vertical ray is the one that cleared, and that position feeds
+  the aim/look points. **Not yet observed in game.**
 - **Risk if wrong.** Detection is the most visible LIES feature. A too-tall
   probe over-reads cover: cops keep the target flagged `nearly_visible=true`
   and stay on it instead of dropping to search. A too-short probe makes them
@@ -731,6 +746,10 @@ whether cops path in.
   while you crouch-walk behind it, and drop the read within a couple of seconds
   of you breaking away. Repeat at ~40 m behind the same wall: the read should be
   less sticky there than up close.
-- **Gate:** smoke (`near_vis_probe > 0` and a plausible `near_vis_h_max` in one
-  digest). Static coverage: `dev/tools/test/detection-near-visible.test.mjs`.
+- **Gate:** smoke (`near_vis_probe > 0` and `near_vis_h_max` ≈ 100 rather than
+  the pre-merge 30 in one digest). Note what the gauge cannot do: it holds the
+  window maximum, so one contact-range probe pins it near 100 and the taper is
+  not visible in the digest — the claim is "the merge is live and tall at worst
+  case", not "the fade works". Static coverage:
+  `dev/tools/test/detection-near-visible.test.mjs`.
 

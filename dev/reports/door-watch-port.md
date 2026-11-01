@@ -212,6 +212,7 @@ it. The report tool turns this table into PASS/FAIL
 | reaction level still works | header/digest `react_level` + `react_hold`/`react_allow`, `[LIES-EVENT] kind=reaction_hold level=…` | the delay is inert or firing when it should not |
 | no door alarm | no `evt=alarm name=door_outcome_gap` / `door_contract_violation` | a gap or a contract failure happened in play |
 | the session survived | 0 FATAL, 0 LIES-attributable Lua errors | crash class regression |
+| the near-visible probe merge is live | digest `near_vis_probe > 0` (the vertical fallback ran) plus `near_vis_h_max` (the V8.80 probe height, ≈ 100 at worst case, not the pre-merge 30) | — (this claim never FAILs: PASS when the probe fired, INFO `no near-visible probe fired in these windows` when it did not, INFO `digest has no near_vis_* fields: pre-V8.80 log` when the field is missing — a mis-wired counter cannot read as a clean play) |
 
 Watch digest fields that back the table, by group:
 
@@ -237,6 +238,9 @@ Watch digest fields that back the table, by group:
   `fsd_navlink_seg_mismatch`, `fsd_tracker_created`, `fsd_tracker_destroyed`,
   `fsd_bad_shape` — why the door list shrank, and the `Vector3` contract.
 - `react_hold`, `react_allow`, `react_level` — the V8.78 delay.
+- `near_vis_probe`, `near_vis_h_max` — the V8.80 near-visible probe: the first is
+  a per-window delta and is summed, the second is a high-water gauge and is
+  aggregated as a maximum (summing it would report a height no probe used).
 
 `fsd_tracker_created` / `fsd_tracker_destroyed` are incremented in the same
 unconditional block, so a balance check would be zero by construction; the

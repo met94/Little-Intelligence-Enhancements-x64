@@ -93,7 +93,10 @@ const HARD_ALARMS = ['door_outcome_gap', 'door_contract_violation'];
 
 // Digest fields that are gauges/averages/settings rather than per-window
 // deltas. Summing them would be meaningless (`dw_us` is a mean, `cache_len` a
-// high-water mark, `react_level` a setting).
+// high-water mark, `react_level` a setting). A high-water gauge is not just
+// skipped: `aggregateDigests` keeps its maximum (`dw_us_max`,
+// `near_vis_h_max`), because adding up per-window maxima would report a height
+// that no probe ever used.
 const NON_COUNTER_FIELDS = new Set([
   't',
   'level',
@@ -105,6 +108,7 @@ const NON_COUNTER_FIELDS = new Set([
   'engine_us',
   'cover_id_age_ms',
   'cover_id_age_max_ms',
+  'near_vis_h_max',
   'cache_hits0',
   'cache_hits1',
   'cache_hits2_7',
@@ -343,6 +347,7 @@ export function aggregateDigests(digests) {
   const counters = {};
   const dwUsValues = [];
   let dwUsMax = 0;
+  let nearVisHMax = 0;
 
   for (const digest of digests) {
     for (const [key, raw] of Object.entries(digest.fields)) {
@@ -358,6 +363,12 @@ export function aggregateDigests(digests) {
         if (value > 0) dwUsValues.push(value);
         continue;
       }
+      if (key === 'near_vis_h_max') {
+        // High-water gauge: the tallest probe of the play, never a sum of the
+        // per-window maxima.
+        nearVisHMax = Math.max(nearVisHMax, value);
+        continue;
+      }
       if (NON_COUNTER_FIELDS.has(key)) continue;
 
       counters[key] = counter(counters, key) + value;
@@ -368,6 +379,7 @@ export function aggregateDigests(digests) {
     counters,
     dw_us_avg: mean(dwUsValues),
     dw_us_max: dwUsMax,
+    near_vis_h_max: nearVisHMax,
     dw_us_windows: dwUsValues.length,
     windows: digests.length
   };
@@ -583,6 +595,35 @@ export function analyzeLog(text, {
       `dw_path_prestep_hit=${counter(counters, 'dw_path_prestep_hit')}: cadence-window frames with an armed coarse path; ` +
       `the attempt counter runs before _get_expected_pos, the hit counter proves a position came out`
   );
+
+  // --- near-visible probe -------------------------------------------------
+  // The V8.80 probe-height merge (`_nearly_visible_chk` in
+  // `lua/coplogics/coplogicbase.lua`) is only proven by a log that shows the
+  // probe firing: `near_vis_probe` counts the vertical fallback (a per-window
+  // delta), `near_vis_h_max` is the tallest height it used (a gauge, so the
+  // aggregate keeps its maximum). A digest with neither field is an older build
+  // — "cannot tell" must never look like a clean pass.
+  const probeFired = counter(counters, 'near_vis_probe');
+  const probeFields = parsed.digests.some(digest =>
+    'near_vis_probe' in digest.fields || 'near_vis_h_max' in digest.fields);
+
+  if (!probeFields) {
+    claim('nearvis', 'near-visible probe', 'INFO', 'digest has no near_vis_* fields: pre-V8.80 log');
+  } else if (probeFired > 0) {
+    claim(
+      'nearvis',
+      'near-visible probe',
+      'PASS',
+      `near_vis_probe=${probeFired}, near_vis_h_max=${aggregate.near_vis_h_max}`
+    );
+  } else {
+    claim(
+      'nearvis',
+      'near-visible probe',
+      'INFO',
+      `near_vis_probe=0 over ${parsed.digests.length} window(s): no near-visible probe fired in these windows`
+    );
+  }
 
   // --- gate respected -----------------------------------------------------
   const workTotal = DW_WORK_COUNTERS.reduce((sum, key) => sum + counter(counters, key), 0);

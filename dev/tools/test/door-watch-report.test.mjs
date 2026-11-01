@@ -650,6 +650,72 @@ test('parseLog keeps the per-window fields the digest is judged on', () => {
   assert.equal(aggregate.dw_us_max, 180);
 });
 
+// --- near-visible probe (V8.80 probe height) -------------------------------
+//
+// The merge in `_nearly_visible_chk` is only observable if the probe fired, and
+// "the digest has no such field" (an older build) must not read as a clean play.
+test('a fired near-visible probe passes and prints the height', () => {
+  const log = [SETUP, header(), digest({ near_vis_probe: 3, near_vis_h_max: 96 })].join('\n');
+  const report = analyzeLog(log, { file: 'probe.txt', modVersion: VERSION });
+  const probe = claimOf(report, 'nearvis');
+
+  assert.equal(probe.claim, 'near-visible probe');
+  assert.equal(probe.result, 'PASS');
+  assert.match(probe.evidence, /near_vis_probe=3, near_vis_h_max=96/);
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('a probe field that never fired is INFO, not a failure', () => {
+  // A play where no target was ever covered by low cover: the merge is wired,
+  // the probe simply never ran.
+  const log = [SETUP, header(), digest({ near_vis_probe: 0, near_vis_h_max: 0 })].join('\n');
+  const report = analyzeLog(log, { file: 'probe_idle.txt', modVersion: VERSION });
+  const probe = claimOf(report, 'nearvis');
+
+  assert.equal(probe.result, 'INFO');
+  assert.match(probe.evidence, /no near-visible probe fired in these windows/);
+  assert.match(probe.evidence, /near_vis_probe=0/);
+  // Still a healthy armed run: nothing failed.
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('a digest without the near_vis_* fields is named as a pre-V8.80 log', () => {
+  // The build under test is wired for the merge; a log that never mentions it
+  // cannot prove anything, so it must be INFO and say why.
+  const log = [SETUP, header(), digest()].join('\n');
+  const report = analyzeLog(log, { file: 'old_build.txt', modVersion: VERSION });
+  const probe = claimOf(report, 'nearvis');
+
+  assert.equal(probe.result, 'INFO');
+  assert.match(probe.evidence, /digest has no near_vis_\* fields: pre-V8\.80 log/);
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('near_vis_h_max is a high-water gauge, not a summed counter', () => {
+  // Two windows: the probe fired 3 + 2 times, but the reported height is the
+  // taller of the two windows (100), not 160.
+  const aggregate = aggregateDigests([
+    { fields: { near_vis_probe: '3', near_vis_h_max: '100' } },
+    { fields: { near_vis_probe: '2', near_vis_h_max: '60' } }
+  ]);
+
+  assert.equal(aggregate.counters.near_vis_probe, 5);
+  assert.equal(aggregate.counters.near_vis_h_max, undefined);
+  assert.equal(aggregate.near_vis_h_max, 100);
+
+  const log = [
+    SETUP,
+    header(),
+    digest({ near_vis_probe: 3, near_vis_h_max: 100 }),
+    digest({ t: 120, near_vis_probe: 2, near_vis_h_max: 60 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'probe.txt', modVersion: VERSION });
+
+  assert.equal(report.counters.near_vis_probe, 5);
+  assert.equal(report.counters.near_vis_h_max, undefined);
+  assert.match(claimOf(report, 'nearvis').evidence, /near_vis_probe=5, near_vis_h_max=100/);
+});
+
 // --- game sessions ---------------------------------------------------------
 //
 // One SuperBLT log file accumulates every launch that day. This fixture is two
