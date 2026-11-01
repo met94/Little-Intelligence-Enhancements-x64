@@ -803,18 +803,20 @@ whether cops path in.
   1. `register_cover_units` — the legacy cover-unit branch now passes the create
      flag, `self._quad_field:get_script_data(nav_tracker, true)` (`:552`).
      248.2:849 added it to match the sibling `cover_data` call site
-     (`246.1:1389` already passed it); 246.1:1433 did not. Without it the
-     following `location_script_data.covers` write is an index-nil error that
-     aborts cover registration for the map. Reachable only when
-     `managers.worlddefinition:get_cover_data()` returns nil.
+     (`246.1@a3180fc:1389` already passed it); `246.1@a3180fc:1433` did not. Line
+     numbers here name the commit they were read from — the 246.1 restyle pivot
+     `a3180fc`; the manifest baseline `b36f5fbb` carries identical bodies.
+     Without it the following `location_script_data.covers` write is an
+     index-nil error that aborts cover registration for the map. Reachable only
+     when `managers.worlddefinition:get_cover_data()` returns nil.
   2. `_execute_coarce_search` — restored the nav-link availability gate:
      `local t = TimerManager:game():time()` hoisted (`:2296`) and
      `t > i_door:delay_time()` ahead of `check_access` (`:2325`). The construct
-     exists in **both** baselines (246.1:1829, 248.2:1257), so this is a LIES
-     drop relative to 246.1, not a 248.2 fix.
+     exists in **both** baselines (246.1@a3180fc:1829, 248.2:1257), so this is a
+     LIES drop relative to 246.1, not a 248.2 fix.
   3. `_sort_nav_segs_after_pos` — the same gate, same hoist (`:2409`),
      `alive(door) and not door:is_obstructed() and t > door:delay_time() and
-     door:check_access(...)` (`:2422`); 246.1:1952 and 248.2:1368.
+     door:check_access(...)` (`:2422`); 246.1@a3180fc:1952 and 248.2:1368.
   Not ported in the same pass, deliberately: the 248.2 `for i = 1, 500` loop
   restyle (equivalent — `i == 500` is checked before the increment — plus two
   hoists the gate did not need) and the `check_segment` closure in the sort
@@ -831,16 +833,18 @@ whether cops path in.
 - **Iter-override caveat.** Iter replaces `_execute_coarce_search` **wholesale**
   when its `nav_search` setting is on
   (`NavigationManager._execute_coarce_search = NavigationManager.itr_execute_coarce_search`,
-  `mods/Iter/lua/navigationmanager.lua:2146-2147` on Iter's `feat/ai-suite-compat`
-  branch, 200.21; default `true` at `lua/corecode.lua:17`). Under that profile
-  gap 2 is unreachable and Iter's own search runs — including its 200.20 FIFO
-  cursor rework (`f896b61`). Gap 2 is still correct standalone, and **gap 3 is
-  the one that always runs**, because Iter does not override
-  `_sort_nav_segs_after_pos`. Load order keeps the interaction safe: LIES is
-  priority 100, Iter 40, `mods/base/base.lua:236` sorts descending, so LIES'
-  bodies are installed first and Iter's wrappers/assignment run over them (the
-  opposite of NavFixes, priority 0, which loads last and breaks LIES' 7-argument
-  caller — `compatibility.md` §2.1).
+  `mods/Iter/lua/navigationmanager.lua:2147` on Iter's `feat/ai-suite-compat`
+  branch, 200.21; default `true` at `lua/corecode.lua:17`). That function is the
+  only caller of `_sort_nav_segs_after_pos`
+  (`lua/managers/navigationmanager.lua:2371`), and Iter's replacement never calls
+  it, so under that profile — the default layout — **both** gap 2 and gap 3 are
+  dead: they are live only in a LIES-only profile or with Iter's nav search off.
+  Under Iter its own search runs instead, including its 200.20 FIFO cursor rework
+  (`f896b61`). Both gates are still correct standalone. Load order keeps the
+  interaction safe: LIES is priority 100, Iter 40, `mods/base/base.lua:236` sorts
+  descending, so LIES' bodies are installed first and Iter's wrappers/assignment
+  run over them (the opposite of NavFixes, priority 0, which loads last and breaks
+  LIES' 7-argument caller — `compatibility.md` §2.1).
 - **Risk if wrong.** Both gates add one userdata method call (`delay_time()`) in
   the path-expansion hot loop, on the same object LIES already calls
   `is_obstructed()` and `check_access()` on, so no new pointer class. The failure
@@ -850,5 +854,6 @@ whether cops path in.
   opens and re-opens — cops should walk through it, and should not stack at a
   closed vault or ladder while it is still settling.
 - **Gate:** smoke. Not yet observed in game; the change is only visible on maps
-  with nav links that are cooling or reserved during a search.
+  with nav links that are still cooling down during a search, and only with
+  Iter's nav search off.
 

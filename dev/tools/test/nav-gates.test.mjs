@@ -12,13 +12,19 @@ import { fileURLToPath } from 'node:url';
 //    legacy cover-unit map gets no script-data extension and the following
 //    `.covers` write indexes nil.
 // 2. `_execute_coarce_search` must gate nav-link candidates on
-//    `t > door:delay_time()` (`248.2:1257`, `246.1:1829`). A cooling or reserved
-//    nav link is otherwise treated as traversable immediately.
+//    `t > door:delay_time()` (`248.2:1257`, `246.1@a3180fc:1829`). A nav link
+//    that is still cooling down is otherwise treated as traversable immediately.
 // 3. `_sort_nav_segs_after_pos` needs the same gate (`248.2:1368`,
-//    `246.1:1952`), with one timestamp per search/sort.
+//    `246.1@a3180fc:1952`), with one timestamp per search/sort.
+//
+// `246.1@...` citations name the commit the line was read from, the 246.1
+// restyle pivot `a3180fc`; the manifest baseline `b36f5fbb` (what `pd2fn -From
+// 246.1` reads) carries the same bodies at different offsets (1801/1924).
 //
 // The two delay-gate checks are asserted on the condition line itself, because
-// the cheap timestamp comparison must come before the engine calls.
+// the cheap timestamp comparison must come before the engine calls - and on
+// EVERY line carrying `delay_time()` in each function, so a second nav-link
+// branch cannot slip in with the gate in the wrong order.
 //
 // Deliberate LIES constructs this test also guards: the 4-tuple path with
 // `is_obstructed()` in `_execute_coarce_search` (AI-06), the 7-argument
@@ -72,12 +78,18 @@ const sortBody = () =>
     'function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)'
   );
 
-// The single source line carrying a marker; condition ordering is positional
-// inside that one line.
+// Every source line carrying a marker; condition ordering is positional inside
+// that one line, and every match is checked so a second nav-link branch cannot
+// hide a mis-ordered gate behind the first.
+function linesWith(body, marker) {
+  const lines = body.split('\n').filter((candidate) => candidate.includes(marker));
+  assert.ok(lines.length > 0, `no line carries ${marker}`);
+  return lines;
+}
+
+// The first such line, for assertions that only describe the branch shape.
 function lineWith(body, marker) {
-  const line = body.split('\n').find((candidate) => candidate.includes(marker));
-  assert.ok(line, `no line carries ${marker}`);
-  return line;
+  return linesWith(body, marker)[0];
 }
 
 test('register_cover_units passes the 248.2 create flag to get_script_data', () => {
@@ -120,23 +132,29 @@ test('_sort_nav_segs_after_pos hoists one timestamp before the neighbour loop', 
 });
 
 test('the coarse search gates nav links on delay_time before check_access', () => {
-  const line = lineWith(coarseBody(), 'delay_time()');
-  const delayAt = line.indexOf('delay_time()');
-  const accessAt = line.indexOf('check_access');
+  const lines = linesWith(coarseBody(), 'delay_time()');
 
-  assert.ok(delayAt !== -1 && accessAt !== -1, 'the nav-link branch must carry both the gate and the access check');
-  assert.ok(delayAt < accessAt, 'the cheap timestamp comparison runs before the engine access check (248.2:1257 order)');
-  assert.match(line, /^\s*elseif t > i_door:delay_time\(\) and i_door:check_access\(/, 'the gate is a strict greater-than on the hoisted t');
+  for (const line of lines) {
+    const delayAt = line.indexOf('delay_time()');
+    const accessAt = line.indexOf('check_access');
+
+    assert.ok(delayAt !== -1 && accessAt !== -1, 'the nav-link branch must carry both the gate and the access check');
+    assert.ok(delayAt < accessAt, 'the cheap timestamp comparison runs before the engine access check (248.2:1257 order)');
+    assert.match(line, /^\s*elseif t > i_door:delay_time\(\) and i_door:check_access\(/, 'the gate is a strict greater-than on the hoisted t');
+  }
 });
 
 test('_sort_nav_segs_after_pos gates nav links on delay_time before check_access', () => {
-  const line = lineWith(sortBody(), 'delay_time()');
-  const delayAt = line.indexOf('delay_time()');
-  const accessAt = line.indexOf('check_access');
+  const lines = linesWith(sortBody(), 'delay_time()');
 
-  assert.ok(delayAt !== -1 && accessAt !== -1, 'the nav-link branch must carry both the gate and the access check');
-  assert.ok(delayAt < accessAt, 'the gate precedes the access check');
-  assert.match(line, /t > door:delay_time\(\)/, 'the gate is a strict greater-than on the hoisted t');
+  for (const line of lines) {
+    const delayAt = line.indexOf('delay_time()');
+    const accessAt = line.indexOf('check_access');
+
+    assert.ok(delayAt !== -1 && accessAt !== -1, 'the nav-link branch must carry both the gate and the access check');
+    assert.ok(delayAt < accessAt, 'the gate precedes the access check');
+    assert.match(line, /t > door:delay_time\(\)/, 'the gate is a strict greater-than on the hoisted t');
+  }
 });
 
 test('the delay gate is added to the existing conditions, not replacing their terms', () => {

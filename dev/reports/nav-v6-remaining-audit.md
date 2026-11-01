@@ -2,9 +2,13 @@
 
 Date: 2026-11-01
 Branch: `feat/ai-suite-compat` (HEAD `08c7156`)
-Game target: 248.2, commit `e3a8b616`. Baseline: 246.1, commit `a3180fc`.
+Game target: 248.2, commit `e3a8b616`. Baseline: 246.1 - `game-data\manifest.json`
+maps it to `b36f5fbb`, which is what `pd2fn -From 246.1` reads; the line numbers
+in this report were read from the 246.1 restyle pivot `a3180fc` and are labelled
+`246.1@a3180fc:<line>`. The bodies cited here are the same code in both (restyle
+pivot only), at different line offsets.
 
-Status: **closed** — the three gaps this audit lists (P1/P2/P3, "Real gaps and
+Status: **closed** — the three edits this audit lists (P1/P2/P3, "Real gaps and
 implementation order") were merged in `cbc4a29` and released as `V8.81_x64`;
 `dev/tools/test/nav-gates.test.mjs` pins them. Verdicts that were `keep LIES`
 (`remove_obstacle`, `_draw_covers`) and `already merged` (`add_obstacle`,
@@ -17,8 +21,8 @@ Purpose: decide the five open rows of the nav-v6 block (`register_cover_units`,
 (`add_obstacle`, `set_nav_segment_state`) before any further Lua is written.
 **No runtime Lua was edited by this audit.** Two of the seven rows were already
 fully merged, one is dead code, one needs no change (LIES is a superset of the
-vanilla fix); two real gaps remain, and the larger one is a construct LIES
-dropped that *both* baselines still have.
+vanilla fix); what is left is three edits across two constructs, and the larger
+one is a construct LIES dropped that *both* baselines still have.
 
 ## Method
 
@@ -26,11 +30,20 @@ dropped that *both* baselines still have.
 | --- | --- |
 | LIES body | `lua/managers/navigationmanager.lua` (2512 lines, 40 `NavigationManager:` definitions) |
 | Vanilla 248.2 | `D:\Programowanie\payday\2\v2\game-data\Payday-2-LuaJIT-Complete\lib\managers\navigationmanager.lua` |
-| Vanilla 246.1 | `git -C game-data\Payday-2-LuaJIT-Complete show a3180fc:lib/managers/navigationmanager.lua` (2970 lines) |
+| Vanilla 246.1 | `git -C game-data\Payday-2-LuaJIT-Complete show a3180fc:lib/managers/navigationmanager.lua` (2970 lines, the restyle-pivot commit the line numbers here were read from) |
 | Per-function delta | `powershell -ExecutionPolicy Bypass -File tools\pd2fn.ps1 -From 246.1 -To 248.2 -Path lib/managers/navigationmanager.lua -Class NavigationManager -Name <fn>` |
 
-The `pd2fn` diffs below are quoted verbatim from that command; `@246.1` numbers
-are lines in the `git show` dump, `@248.2` numbers are lines in the checkout.
+The manifest baseline for 246.1 is `b36f5fbb` (2928 lines) - the commit
+`pd2fn -From 246.1` reads - while the `246.1@a3180fc:<line>` citations in this
+report were read from the restyle pivot `a3180fc`. The body of every function
+cited here is the same code in both (operand-order flips in the two delay
+comparisons, `= nil` omitted in `set_nav_segment_state`); only the offsets
+differ - the two delay-gate lines are `246.1@a3180fc:1829`/`1952` and
+`b36f5fbb:1801`/`1924`.
+
+The `pd2fn` diffs below are quoted verbatim from that command; `246.1@a3180fc`
+numbers are lines in the `git show` dump, `248.2` numbers are lines in the
+checkout.
 
 Scope note: LIES is a SuperBLT **post-hook file** (`mod.txt:45-46`,
 `"hook_id": "lib/managers/navigationmanager"`), so it executes after the game's
@@ -82,8 +95,8 @@ Four deltas, one behavioural:
 3. `mvector3.copy` -> the file-local `mvec3_copy` alias (248.2:824, :830) - perf
    restyle only;
 4. the cover-unit fallback branch now passes `get_script_data(nav_tracker, true)`
-   (248.2:849) where 246.1:1433 passed no flag. The sibling call site already
-   passed `true` in 246.1 (`@246.1:1389`) and 248.2 made the two consistent.
+   (248.2:849) where 246.1@a3180fc:1433 passed no flag. The sibling call site already
+   passed `true` in 246.1 (`246.1@a3180fc:1389`) and 248.2 made the two consistent.
 
 ### LIES delta vs 248.2
 
@@ -225,7 +238,7 @@ LIES `:2292-2401` is the 246.1 shape with nav-link extensions:
   `from_pos` and guards it in `_sort_nav_segs_after_pos` (`:2407`).
 
 **Missing 248.2-family construct: the nav-link `delay_time()` gate.** It exists
-in *both* baselines - `@246.1:1829`
+in *both* baselines - `246.1@a3180fc:1829`
 (`TimerManager:game():time() > i_door:delay_time()`) and 248.2:1257
 (`t > door:delay_time()`) - and LIES has neither. This is not a "248.2 fix";
 it is a construct LIES dropped relative to 246.1.
@@ -351,13 +364,15 @@ function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ign
 - dead nav links are **silently skipped** (`:2417` `alive(door) and ...`) where
   248.2 `debug_pause`s (`:1366`). Keep - a `debug_pause` in the nav hot path is
   worse than skipping.
-- **no `t`, no `delay_time()` gate** - 246.1:1952 and 248.2:1368 both have
+- **no `t`, no `delay_time()` gate** - 246.1@a3180fc:1952 and 248.2:1368 both have
   `TimerManager:game():time() > i_door:delay_time()` inside the
   `not is_obstructed` branch; LIES' `:2417` condition is
   `alive(door) and not door:is_obstructed() and door:check_access(...)`.
 
-Note this function is **not** touched by Iter, so LIES' 7-argument contract is
-safe under Iter. It is only unsafe under NavFixes, which redefines it with 6
+Note this function is **not redefined** by Iter, so LIES' 7-argument contract is
+safe there; but Iter's `_execute_coarce_search` replacement never calls it, so the
+gate in it is unreachable while Iter's `nav_search` is on (see section 2), i.e. in
+the default layout. It is only unsafe under NavFixes, which redefines it with 6
 arguments (`compatibility.md`, section 2.1).
 
 **Verdict: `merge: add the nav-link delay gate`.** Do **not** adopt the
@@ -368,7 +383,7 @@ arguments (`compatibility.md`, section 2.1).
 
 ### Vanilla delta 246.1 -> 248.2
 
-Whole-function rewrite (`@246.1:2744` -> 248.2:2015-2060): nil-object guard,
+Whole-function rewrite (`246.1@a3180fc:2744` -> 248.2:2015-2060): nil-object guard,
 `unit_data():remove_destroy_listener(NavigationManager._OBSTACLE_DESTROY_KEY)`,
 an unconditional `self._quad_field:remove_obstacle(obstacle_obj)`, and the
 swap-with-last removal replaced by an index-based `temp_array` rebuild that
@@ -584,7 +599,7 @@ NavigationManager.COVER_RESERVATION = 5
 ```
 
 246.1 had only `COVER_RESERVED = 4` and `COVER_RESERVATION = 5`
-(`@246.1:39-40`) - `_draw_covers` used literals `cover[1]`/`cover[3]` there.
+(`246.1@a3180fc:39-40`) - `_draw_covers` used literals `cover[1]`/`cover[3]` there.
 
 LIES **defines none of them** (grep for `COVER_POSITION|COVER_FORWARD|
 COVER_TRACKER|COVER_RESERVATION` across `lua/`: 0 hits); it reads only
@@ -661,8 +676,8 @@ the tracker and `cover[1]` as the position
 | Function | Vanilla delta 246.1 -> 248.2 | LIES gap | Verdict | Risk | Testable |
 | --- | --- | --- | --- | --- | --- |
 | `register_cover_units` | drop dead `_rooms` local; covers pushed unconditionally (was debug-only); `mvec3_copy` alias; `get_script_data(nav_tracker, true)` | one token: `get_script_data(nav_tracker)` at `:551` lacks the create flag (248.2:849) | **merge: 1 token** | low - legacy cover-unit branch only (`get_cover_data()` nil); `location_script_data` may be nil -> Lua error at `:553` | yes (body-slice assertion) |
-| `_execute_coarce_search` | `while true`+`i==500` -> `for i = 1,500`; hoist `t`, `all_nav_segments`, `to_search`; `door.x` instead of `type()==number` | keeps 246.1 loop; **missing nav-link `delay_time()` gate** (present in 246.1:1829 and 248.2:1257); 4-tuple path vs 2-tuple (deliberate, AI-06); `[4]` never set | **merge: delay gate** | medium - nav-link userdata call (`delay_time`) in the path-expansion hot loop; no trackers/cover structs; engine pointer class unchanged (LIES already calls `is_obstructed`/`check_access` on the same object). Dead when Iter `nav_search` is on | yes |
-| `_sort_nav_segs_after_pos` | 6-arg signature kept; `all_doors`/`all_rooms` removed -> Vector3 doors; `check_segment` closure; single `t`; one-term weight | 7-arg LIES variant with two-term weight + `nav_link` (deliberate); **missing `delay_time()` gate** (246.1:1952, 248.2:1368); dead links skipped instead of `debug_pause` (deliberate) | **merge: delay gate** (same commit as above) | medium - same userdata class; no trackers; `found_segs` contract unchanged | yes |
+| `_execute_coarce_search` | `while true`+`i==500` -> `for i = 1,500`; hoist `t`, `all_nav_segments`, `to_search`; `door.x` instead of `type()==number` | keeps 246.1 loop; **missing nav-link `delay_time()` gate** (present in 246.1@a3180fc:1829 and 248.2:1257); 4-tuple path vs 2-tuple (deliberate, AI-06); `[4]` never set | **merge: delay gate** | medium - nav-link userdata call (`delay_time`) in the path-expansion hot loop; no trackers/cover structs; engine pointer class unchanged (LIES already calls `is_obstructed`/`check_access` on the same object). Dead when Iter `nav_search` is on | yes |
+| `_sort_nav_segs_after_pos` | 6-arg signature kept; `all_doors`/`all_rooms` removed -> Vector3 doors; `check_segment` closure; single `t`; one-term weight | 7-arg LIES variant with two-term weight + `nav_link` (deliberate); **missing `delay_time()` gate** (246.1@a3180fc:1952, 248.2:1368); dead links skipped instead of `debug_pause` (deliberate) | **merge: delay gate** (same commit as above) | medium - same userdata class; no trackers; `found_segs` contract unchanged. Dead too while Iter's search owns the only call site | yes |
 | `remove_obstacle` | nil guard + destroy-listener removal + index-based `temp_array` + unconditional `remove_obstacle(obstacle_obj)` | all three already-merged pieces present; missing only `remove_obstacle(obstacle_obj)` (248.2:2030); LIES *adds* id removal for dead units (248.2 leaks there) | **keep LIES** (optional parity line) | low - `_obstacles` bookkeeping is complete (`:1581-1587`), `on_simulation_ended` sweeps ids (248.2:1722-1752) | yes (weak) |
 | `_draw_covers` | index aliases, `mvec3_set/add` into `temp_vec*`, `tracker:m_position`, `mrot_set_look_at`; pure restyle + alloc reduction | 246.1-shape body **plus** obstructed/disabled colour branch; LIES' call site is commented out (`:1250`) | **keep LIES** | none - debug-only, never called in-game | n/a |
 | `add_obstacle` | nil guard; destroy listener; `id` in table; duplicate debug guard removed | none - both pieces present (`:1543-1557`, `:1583-1587`); LIES keeps the removed duplicate guard (safer) | **already merged** | none | yes |
@@ -670,9 +685,11 @@ the tracker and `cover[1]` as the position
 
 ## Real gaps and implementation order
 
-Only two gaps are real: one 1-token 248.2 restyle leftover, and one construct LIES
-dropped that both baselines still have (in two sibling functions). The two
-delay-gate edits should ship as one commit because they share the
+Only two constructs need work, three edits in all: a one-token **behavioural**
+fix in `register_cover_units` (the create flag decides whether the script-data
+extension exists - a filled table versus a nil index, not a restyle), and one
+construct LIES dropped that both baselines still have, in two sibling functions.
+The two delay-gate edits should ship as one commit because they share the
 `TimerManager` timestamp.
 
 1. **P1 - `register_cover_units` create flag** (`:551`): `get_script_data(nav_tracker, true)`.
@@ -690,8 +707,13 @@ delay-gate edits should ship as one commit because they share the
    opens or closes mid-path.*
 3. **P3 - the same gate in `_execute_coarce_search`** (`:2294-2303`, `:2322`):
    hoist `local t = TimerManager:game():time()` before the loop and extend the
-   entry test to `... and not i_door:is_obstructed() and t > i_door:delay_time()`.
-   Keep LIES' loop shape and last-usable-link capture.
+   entry test to
+   `t > i_door:delay_time() and i_door:check_access(...) and not i_door:is_obstructed()`.
+   The delay comparison stays first for vanilla parity (both baselines lead with
+   it, then `check_access`) and to avoid an engine `is_obstructed()` call per
+   cooling candidate - a link that is still cooling down costs no engine call at
+   all. LIES' extra `is_obstructed()` term goes last; 248.2 has no obstruction
+   term in this branch. Keep LIES' loop shape and last-usable-link capture.
    *Player POV: same as P2, for the "goal segment already adjacent" fast path; no
    change while Iter's nav search is enabled (it replaces this function).*
 

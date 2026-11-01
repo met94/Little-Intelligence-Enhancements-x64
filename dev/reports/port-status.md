@@ -57,8 +57,8 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   `register_cover_units`' `get_script_data(nav_tracker, true)` create flag and
   the nav-link `delay_time()` gate in `_execute_coarce_search` and
   `_sort_nav_segs_after_pos`. Code and static gates green; **not observed in
-  game** (the gate only bites on cooling/reserved nav links, the flag only on
-  maps shipping legacy cover units).
+  game** (Iter's nav search owns the only call site, so the gates only bite with
+  it off; the flag only on maps shipping legacy cover units).
 
 ## Open — core AI (needs in-game testing)
 
