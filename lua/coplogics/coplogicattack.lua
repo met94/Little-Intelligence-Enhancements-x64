@@ -1511,9 +1511,10 @@ function CopLogicAttack._upd_aim(data, my_data)
 			if not focus_enemy.lies_react_t or not focus_enemy.verified_t or data.t - focus_enemy.verified_t > 2 then
 				focus_enemy.lies_react_t = data.t
 
-				-- One event per hold, alongside the arm: the digest counts held
-				-- frames, this records when a hold started and at which level.
-				LIES:Event("reaction_hold", data.unit, data, { level = level })
+				-- The counters are the telemetry; this event is debug-only because it was 76% of the event volume.
+				if LIES.settings.debug_log then
+					LIES:Event("reaction_hold", data.unit, data, { level = level })
+				end
 			end
 
 			local react_t = 2 / level

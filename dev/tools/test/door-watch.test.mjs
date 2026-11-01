@@ -433,7 +433,8 @@ test('the reaction block counts held and allowed passes', () => {
 
   assert.match(block, /LIES:Count\("react_hold"\)/);
   assert.match(block, /LIES:Count\("react_allow"\)/);
-  assert.match(block, /LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)/);
+  // The event exists but is debug-only: it was 76 % of the event channel.
+  assert.match(block, /if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end/);
 
   // One of each per pass: a single if/else, not one count per condition term.
   const counts = [...block.matchAll(/LIES:Count\("react_(?:hold|allow)"\)/g)];

@@ -164,11 +164,17 @@ test('ledger #10: the reaction-level fire delay is restored with a working gate'
   assert.doesNotMatch(aim, /charge_aggro_level/);
   // Private timer, so it cannot stack with the shared `react_t` writes elsewhere.
   assert.match(aim, /local react_t = 2 \/ level/);
-  assert.match(aim, /if not focus_enemy\.lies_react_t or not focus_enemy\.verified_t or data\.t - focus_enemy\.verified_t > 2 then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end/);
+  assert.match(aim, /if not focus_enemy\.lies_react_t or not focus_enemy\.verified_t or data\.t - focus_enemy\.verified_t > 2 then\s*focus_enemy\.lies_react_t = data\.t\s*if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end\s*end/);
   assert.match(aim, /if data\.t - focus_enemy\.lies_react_t < react_t then\s*shoot = nil\s*react_hold = true\s*end/);
   // Both pass counters exist so a test play can see held vs allowed frames.
   assert.match(aim, /if react_hold then\s*LIES:Count\("react_hold"\)\s*else\s*LIES:Count\("react_allow"\)\s*end/);
+  // The event exists but is debug-only: it was 76 % of the event channel, and
+  // the counters above are the telemetry a normal play leaves behind.
+  assert.match(aim, /if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end/);
   assert.match(aim, /LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)/);
+  const debugGate = /if LIES\.settings\.debug_log then\s*([\s\S]*?)\s*end/.exec(aim);
+  assert.ok(debugGate, 'the reaction_hold event must sit behind debug_log');
+  assert.doesNotMatch(debugGate[1], /LIES:Count\(/, 'the counters must stay unconditional');
   assert.doesNotMatch(aim, /focus_enemy\.react_t/, 'the shared react_t field must not be used here');
 
   // Placement: inside the `REACT_COMBAT` gate, before the throwable call and the fire decision.

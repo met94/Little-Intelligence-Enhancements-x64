@@ -227,6 +227,9 @@ Same channel shape as Iter's, so one reader handles both mods:
   - `react_*` — `react_hold` / `react_allow` / `react_level`: whether the
     Reaction Level fire delay actually held frames.
   The counter meanings are also listed under "Door Watching" above.
+  The digest is the cheap channel — one header plus one line per minute — so a
+  routine play should run `watch_log` on and `trace` off; the per-unit
+  `reaction_hold` `[LIES-EVENT]` line additionally needs `debug_log` (V8.83).
 
 Read a play mechanically — the tool turns the digest into PASS/FAIL claims
 (exit 0 PASS, 1 FAIL, 2 INCOMPLETE — no header or the feature was disarmed — and
@@ -252,6 +255,10 @@ On by default, settings file only, no menu entry. A native access violation
 kills the game without a Lua error, so nothing can be logged *after* the fault;
 the breadcrumbs are what was written *before* it. Add `"trace": false` to
 `mods\saves\LittleIntelligenceEnhancementS.txt` (game closed) to silence them.
+At its 120 lines/s cap this channel is what makes a log tens of MB, so routine
+plays should run `"trace": false` with `"watch_log": true`, and `trace` should
+only be turned on for crash forensics; `reaction_hold` `[LIES-EVENT]` lines also
+need `debug_log` (V8.83).
 
 Each line looks like:
 
@@ -298,6 +305,7 @@ Same switch (`trace`), separate tag, one line per unit and kind per second:
 - `travel_no_objective` - travel ran with no objective: `advancing`, `old_action`, `coarse=index/len`, `cover`.
 - `spooc_start` - cloaker tackle started: `dis`, `reaction`, `cover`.
 - `group_retire` / `group_recon` - group-level retire/recon assignment: `group`, `units`, `area`/`phase`.
+- `reaction_hold` - one line when the reaction-level fire delay arms for a unit: `level`. It needs `debug_log` on top of `trace` (V8.83), because it was 76 % of this channel; the `react_hold` / `react_allow` digest counters cover the same behaviour without it.
 
 Together they reconstruct the chain: which group event produced which objective change, which logic switch followed, and which exit the unit took. That is the evidence needed when a native fault names only one frame.
 
