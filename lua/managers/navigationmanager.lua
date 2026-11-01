@@ -548,7 +548,8 @@ function NavigationManager:register_cover_units()
 			}
 
 			t_ins(covers, cover)
-			local location_script_data = self._quad_field:get_script_data(nav_tracker)
+			-- vanilla 248.2:849 passes the create flag too: it creates the tracker's script-data extension when missing, so the `.covers` write below cannot index nil.
+			local location_script_data = self._quad_field:get_script_data(nav_tracker, true)
 
 			if not location_script_data.covers then
 				location_script_data.covers = {}
@@ -2291,6 +2292,8 @@ end
 
 function NavigationManager:_execute_coarce_search(search_data)
 	local search_id = search_data.id
+	-- vanilla 248.2:1257 gates nav links on one timestamp read per search.
+	local t = TimerManager:game():time()
 	local i = 0
 
 	while true do
@@ -2319,7 +2322,7 @@ function NavigationManager:_execute_coarce_search(search_data)
 					nav_link_element = nil
 
 					break
-				elseif i_door:check_access(search_data.access_pos, search_data.access_neg) and not i_door:is_obstructed() then
+				elseif t > i_door:delay_time() and i_door:check_access(search_data.access_pos, search_data.access_neg) and not i_door:is_obstructed() then
 					entry_found = true
 					nav_link_element = i_door
 				end
@@ -2402,6 +2405,8 @@ end
 
 function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)
 	local all_segs = self._nav_segments
+	-- vanilla 248.2:1368 gates nav links on one timestamp read per sort.
+	local t = TimerManager:game():time()
 	local seg = all_segs[i_seg]
 	local neighbours = seg.neighbours
 	from_pos = from_pos or seg.pos
@@ -2414,7 +2419,7 @@ function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ign
 
 				if door.x then
 					door_pos = door
-				elseif alive(door) and not door:is_obstructed() and door:check_access(access_pos, access_neg) then
+				elseif alive(door) and not door:is_obstructed() and t > door:delay_time() and door:check_access(access_pos, access_neg) then
 					door_pos = door:script_data().element:nav_link_end_pos()
 					nav_link = door
 				end
