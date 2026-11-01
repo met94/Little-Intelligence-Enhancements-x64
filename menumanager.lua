@@ -511,6 +511,7 @@ if RequiredScript == "lib/managers/menumanager" then
 			dw_cached_unsighted = d.dw_cached_unsighted or 0,
 			dw_height_skip = d.dw_height_skip or 0,
 			dw_seg_same = d.dw_seg_same or 0,
+			dw_path_prestep = d.dw_path_prestep or 0,
 			dw_raw_hit = d.dw_raw_hit or 0,
 			dw_expected_pos_hit = d.dw_expected_pos_hit or 0,
 			dw_vanilla_call = d.dw_vanilla_call or 0,
@@ -539,8 +540,12 @@ if RequiredScript == "lib/managers/menumanager" then
 			fsd_navlink_seg_mismatch = d.fsd_navlink_seg_mismatch or 0,
 			fsd_tracker_created = d.fsd_tracker_created or 0,
 			fsd_tracker_destroyed = d.fsd_tracker_destroyed or 0,
+			-- No `fsd_balance` field: the two counters above are incremented in
+			-- the same unconditional block, so a balance would be zero by
+			-- construction. The leak invariant is enforced by
+			-- `dev/test-harness/test/find_segment_doors.lua`, and they are here
+			-- for the churn volume.
 			fsd_bad_shape = d.fsd_bad_shape or 0,
-			fsd_balance = (d.fsd_tracker_created or 0) - (d.fsd_tracker_destroyed or 0),
 
 			-- reaction-level fire delay: held frames vs allowed frames
 			react_hold = d.react_hold or 0,
@@ -703,20 +708,10 @@ if RequiredScript == "lib/managers/menumanager" then
 			}, t)
 		end
 
-		-- Door probing. A tracker created and not destroyed is an engine
-		-- resource leak; it does not show up as an error until memory runs out.
-		local fsd_created = lies_delta(self.watch_counters, self.watch_prev, "fsd_tracker_created")
-		local fsd_destroyed = lies_delta(self.watch_counters, self.watch_prev, "fsd_tracker_destroyed")
-		local fsd_balance = fsd_created - fsd_destroyed
-
-		if fsd_balance ~= 0 then
-			self:Alarm("door_tracker_leak", {
-				created = fsd_created,
-				destroyed = fsd_destroyed,
-				balance = fsd_balance
-			}, t)
-		end
-
+		-- Door probing. `fsd_tracker_created`/`fsd_tracker_destroyed` are digested
+		-- for churn volume only: they are written in the same block, so a runtime
+		-- balance check cannot fail and is not an alarm. The create/destroy
+		-- invariant lives in `dev/test-harness/test/find_segment_doors.lua`.
 		-- Every aim-pass call must land in exactly one outcome counter.
 		local dw_call = lies_delta(self.watch_counters, self.watch_prev, "dw_call")
 		local dw_outcomes = lies_delta(self.watch_counters, self.watch_prev, "dw_gate_off") +
@@ -745,6 +740,13 @@ if RequiredScript == "lib/managers/menumanager" then
 
 		if self:WatchEnabled() then
 			self:WatchDigest(t)
+		else
+			-- The digest is the only other place the snapshot is refreshed, so
+			-- without this the alarm deltas above stay cumulative and re-fire
+			-- every window (until the alarm budget silences the real ones).
+			for key, value in pairs(self.watch_counters) do
+				self.watch_prev[key] = value
+			end
 		end
 	end
 	

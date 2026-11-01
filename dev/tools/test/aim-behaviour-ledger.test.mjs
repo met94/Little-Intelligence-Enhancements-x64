@@ -164,7 +164,7 @@ test('ledger #10: the reaction-level fire delay is restored with a working gate'
   assert.doesNotMatch(aim, /charge_aggro_level/);
   // Private timer, so it cannot stack with the shared `react_t` writes elsewhere.
   assert.match(aim, /local react_t = 2 \/ level/);
-  assert.match(aim, /if not focus_enemy\.lies_react_t or not focus_enemy\.verified_t or data\.t - focus_enemy\.verified_t > 2 then\s*focus_enemy\.lies_react_t = data\.t/);
+  assert.match(aim, /if not focus_enemy\.lies_react_t or not focus_enemy\.verified_t or data\.t - focus_enemy\.verified_t > 2 then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end/);
   assert.match(aim, /if data\.t - focus_enemy\.lies_react_t < react_t then\s*shoot = nil\s*react_hold = true\s*end/);
   // Both pass counters exist so a test play can see held vs allowed frames.
   assert.match(aim, /if react_hold then\s*LIES:Count\("react_hold"\)\s*else\s*LIES:Count\("react_allow"\)\s*end/);

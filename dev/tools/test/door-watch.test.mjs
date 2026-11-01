@@ -86,6 +86,29 @@ test('the switch gate needs door_watch and must be off under highperformance', (
   assert.match(body, /return CopLogicAttack\._get_expected_attention_position\(data, my_data\)/);
 });
 
+test('tracker liveness runs before the setting gate', () => {
+  const body = helper();
+  const callAt = body.indexOf('LIES:Count("dw_call")');
+  const trackerAt = body.indexOf('local enemy_tracker = lies_enemy_tracker(focus_enemy, data)');
+  const bailAt = body.indexOf('LIES:Count("dw_stale_bail")');
+  const gateAt = body.indexOf('if not (LIES.settings.door_watch and not LIES.settings.highperformance) then');
+  const gateOffAt = body.indexOf('LIES:Count("dw_gate_off")');
+
+  for (const [name, at] of [['dw_call', callAt], ['tracker', trackerAt], ['dw_stale_bail', bailAt], ['gate', gateAt], ['dw_gate_off', gateOffAt]]) {
+    assert.notEqual(at, -1, `${name} is missing`);
+  }
+
+  assert.ok(callAt < trackerAt, 'the tracker read must come after the call counter');
+  assert.ok(trackerAt < bailAt && bailAt < gateAt, 'the stale bail must run before the setting gate');
+  assert.ok(gateAt < gateOffAt);
+
+  // The bail must not reach vanilla: with the feature off, vanilla
+  // `_get_expected_attention_position` dereferences the same freed tracker.
+  const bailBranch = body.slice(bailAt, gateAt);
+  assert.doesNotMatch(bailBranch, /_get_expected_attention_position/, 'the stale branch must not dereference the freed tracker through vanilla');
+  assert.match(bailBranch, /return\s*\n?\s*end/);
+});
+
 test('a freed enemy tracker bails without calling vanilla', () => {
   const body = helper();
   const bailAt = body.indexOf('LIES:Count("dw_stale_bail")');
@@ -118,9 +141,43 @@ test('the cached watch position is read, re-tested, cleared and written back', (
   assert.match(body, /expected_pos = nil\s*my_data\.expected_pos = nil\s*\n?[\s\S]{0,80}?LIES:Count\("dw_cached_unsighted"\)/);
   assert.match(body, /my_data\.expected_pos_last_check_t = data\.t/);
   assert.match(body, /my_data\.expected_pos = expected_pos/);
-  // The advancing branch is skipped, and it says so.
-  assert.match(body, /if test_for_sight and not my_data\.advancing then/);
+  // The cached re-test is gated on advancing; the probe below is not.
+  assert.match(body, /if test_for_sight and expected_pos and not my_data\.advancing then/);
   assert.match(body, /LIES:Count\("dw_advancing_skip"\)/);
+});
+
+test('the probe is reachable: gated on the cadence only, never on advancing', () => {
+  const body = helper();
+  const probeAt = body.indexOf('if not expected_pos and test_for_sight then');
+
+  assert.notEqual(probeAt, -1, 'the probe block is gated on expected_pos and the cadence only');
+  // Everything from the probe header to the end of its body must be free of an
+  // advancing gate, otherwise the only call site (which reaches here while
+  // running, i.e. while my_data.advancing is set) can never enter it.
+  const probeEnd = body.indexOf('my_data.expected_pos_last_check_t = data.t', probeAt);
+  assert.notEqual(probeEnd, -1, 'the probe block must write expected_pos_last_check_t');
+  const probe = body.slice(probeAt, probeEnd);
+  assert.doesNotMatch(probe, /my_data\.advancing/, 'the probe must not be gated on advancing');
+  // The engine work really sits inside that block.
+  assert.match(probe, /find_segment_doors/);
+  assert.match(probe, /local test_pos = door:with_z\(door\.z \+ 140\)/);
+  // expected_pos_last_check_t is written on probe frames only, not on the
+  // cached-reuse arm, so the cadence keeps re-arming after a cached hit.
+  const cachedReuseAt = body.indexOf('LIES:Count("dw_cached_reuse")');
+  assert.ok(cachedReuseAt > probeEnd, 'the cached-reuse counter sits after the probe block');
+});
+
+test('the path pre-step runs before the sight test, like the pre-port body', () => {
+  const body = helper();
+
+  assert.match(body, /local expected_path = my_data\.expected_pos_path/);
+  assert.match(body, /if expected_path then\s*LIES:Count\("dw_path_prestep"\)\s*expected_pos = CopLogicAttack\._get_expected_pos\(data, my_data\)\s*if expected_pos then\s*src = "expected"\s*end\s*elseif my_data\.expected_pos then\s*expected_pos = my_data\.expected_pos\s*end/);
+
+  // Order: pre-step, then the cached re-test, then the probe.
+  const prestepAt = body.indexOf('dw_path_prestep');
+  const retestAt = body.indexOf('dw_cached_unsighted');
+  const probeAt = body.indexOf('if not expected_pos and test_for_sight then');
+  assert.ok(prestepAt < retestAt && retestAt < probeAt, 'pre-step, cached re-test, probe');
 });
 
 test('the height gate is tracker-free and no nav segment table is read', () => {
@@ -152,6 +209,11 @@ test('the door probe counts its rays and its hit, and times the loop', () => {
   assert.match(body, /local t0 = os\.clock\(\)/);
   assert.match(body, /LIES:Sum\("dw_us", elapsed_us\)/);
   assert.match(body, /LIES:Gauge\("dw_us_max", elapsed_us\)/);
+  // The clock starts before the pre-step and the engine call, so both are priced.
+  const t0At = body.indexOf('local t0 = os.clock()');
+  assert.ok(t0At < body.indexOf('local expected_path = my_data.expected_pos_path'), 't0 must precede the pre-step');
+  assert.ok(t0At < body.indexOf('find_segment_doors'), 't0 must precede the engine call');
+  assert.ok(body.indexOf('find_segment_doors') < body.indexOf('local elapsed_us = (os.clock() - t0)'));
 });
 
 test('the five outcome counters and every sub-event are present', () => {
@@ -169,6 +231,7 @@ test('the five outcome counters and every sub-event are present', () => {
     'dw_cached_unsighted',
     'dw_height_skip',
     'dw_seg_same',
+    'dw_path_prestep',
     'dw_raw_hit',
     'dw_expected_pos_hit',
     'dw_vanilla_call',
@@ -182,9 +245,12 @@ test('the five outcome counters and every sub-event are present', () => {
   assert.match(body, /local had_id = my_data\.expected_pos_path_search_id/);
   assert.match(body, /if not had_id and my_data\.expected_pos_path_search_id then\s*LIES:Count\("dw_path_kick"\)/);
 
-  // The fallback still calls the previously dead `_get_expected_pos`.
+  // The fallback still calls the previously dead `_get_expected_pos`, but never
+  // on the same segment: `search_coarse` with from_seg == to_seg cannot succeed.
   assert.match(body, /not enemy_tracker:obstructed\(\) and not my_tracker:obstructed\(\)/);
   assert.match(body, /local fallback = CopLogicAttack\._get_expected_pos\(data, my_data\)/);
+  assert.match(body, /if not expected_pos and my_seg ~= enemy_seg and not enemy_tracker:obstructed\(\)/, 'the same-segment case must delegate to vanilla instead of searching');
+  assert.match(body, /LIES:Count\("dw_seg_same"\)/);
 });
 
 test('one trace per fresh position, and one watch line per session', () => {
@@ -200,7 +266,7 @@ test('one trace per fresh position, and one watch line per session', () => {
 
   assert.match(body, /lies_door_watch_first\(/);
   assert.match(attackSource(), /local function lies_door_watch_first\(src, data, enemy_seg\)/);
-  assert.match(attackSource(), /if LIES\._door_watch_first then\s*return\s*end\s*LIES\._door_watch_first = true/);
+  assert.match(attackSource(), /if LIES\._door_watch_first then\s*return\s*end\s*if not LIES:WatchEnabled\(\) then\s*return\s*end\s*LIES\._door_watch_first = true/);
   assert.match(attackSource(), /LIES:Watch\("door_watch_first", \{\s*src = src,\s*seg = enemy_seg,\s*u = unit and unit:key\(\) or "\?",\s*tweak = base and base\._tweak_table or "\?"\s*\}\)/);
 });
 
@@ -220,6 +286,7 @@ test('the digest reports the door watch, the door list and the reaction hold', (
     'dw_cached_unsighted',
     'dw_height_skip',
     'dw_seg_same',
+    'dw_path_prestep',
     'dw_raw_hit',
     'dw_expected_pos_hit',
     'dw_vanilla_call',
@@ -251,18 +318,25 @@ test('the digest reports the door watch, the door list and the reaction hold', (
 
   assert.match(manager, /dw_us = self:_avg_sum\("dw_us"\)/);
   assert.match(manager, /dw_us_max = math\.floor\(\(self\.watch_gauges\.dw_us_max or 0\) \+ 0\.5\)/);
-  assert.match(manager, /fsd_balance = \(d\.fsd_tracker_created or 0\) - \(d\.fsd_tracker_destroyed or 0\)/);
+  assert.match(manager, /dw_path_prestep = d\.dw_path_prestep or 0/);
+  // The tracker balance was 0 by construction (both counters move in the same
+  // block), so the field and its alarm are gone; the harness test owns the
+  // invariant.
+  assert.doesNotMatch(manager, /fsd_balance/);
   // The gap is computed from the five outcome counters, not hardcoded.
   assert.match(manager, /dw_gap = \(d\.dw_call or 0\) - \(\(d\.dw_gate_off or 0\) \+ \(d\.dw_stale_bail or 0\) \+ \(d\.dw_outer_gate_skip or 0\) \+ \(d\.dw_hit or 0\) \+ \(d\.dw_none or 0\)\)/);
 });
 
-test('the watchdog alarms cover tracker leaks, outcome gaps and bad door shapes', () => {
+test('the watchdog alarms cover outcome gaps and bad door shapes', () => {
   const manager = managerSource();
   const tick = manager.slice(manager.indexOf('function LIES:WatchTick(t)'));
 
-  assert.match(tick, /if fsd_balance ~= 0 then\s*self:Alarm\("door_tracker_leak", \{\s*created = fsd_created,\s*destroyed = fsd_destroyed,\s*balance = fsd_balance\s*\}, t\)/);
+  assert.doesNotMatch(tick, /door_tracker_leak/, 'the impossible balance alarm must not come back');
   assert.match(tick, /if dw_gap ~= 0 and dw_call > 0 then\s*self:Alarm\("door_outcome_gap", \{\s*call = dw_call,\s*outcomes = dw_outcomes,\s*gap = dw_gap\s*\}, t\)/);
   assert.match(tick, /if fsd_bad_shape > 0 then\s*self:Alarm\("door_contract_violation", \{\s*bad_shape = fsd_bad_shape\s*\}, t\)/);
+
+  // With the digest off, the alarm window must still advance per minute.
+  assert.match(tick, /if self:WatchEnabled\(\) then\s*self:WatchDigest\(t\)\s*else\s*for key, value in pairs\(self\.watch_counters\) do\s*self\.watch_prev\[key\] = value\s*end\s*end\s*end/);
 });
 
 test('the header records the switches a digest reader needs', () => {

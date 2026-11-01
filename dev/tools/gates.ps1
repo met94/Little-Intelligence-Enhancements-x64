@@ -45,12 +45,19 @@ $luaTests = @(Get-ChildItem $testDir -Filter '*.lua' | Sort-Object Name)
 $luaBody = @()
 $luaOk = $luaTests.Count -gt 0
 if (-not $luaOk) { $luaBody += 'No *.lua tests found in dev\test-harness\test' }
-foreach ($test in $luaTests) {
-    $out = & $Luajit $test.FullName 2>&1 | Out-String
-    $fileOk = $LASTEXITCODE -eq 0
-    if (-not $fileOk) { $luaOk = $false }
-    $luaBody += (($(if ($fileOk) { 'PASS' } else { 'FAIL' })) + ' ' + $test.Name)
-    if ($out.Trim()) { $luaBody += ('  ' + $out.Trim()) }
+# The tests dofile repo-relative paths, so run them from the repo root whatever
+# the caller's directory was.
+Push-Location $RepoRoot
+try {
+    foreach ($test in $luaTests) {
+        $out = & $Luajit $test.FullName 2>&1 | Out-String
+        $fileOk = $LASTEXITCODE -eq 0
+        if (-not $fileOk) { $luaOk = $false }
+        $luaBody += (($(if ($fileOk) { 'PASS' } else { 'FAIL' })) + ' ' + $test.Name)
+        if ($out.Trim()) { $luaBody += ('  ' + $out.Trim()) }
+    }
+} finally {
+    Pop-Location
 }
 Add-Section 'Test-harness Lua tests' ($luaBody -join "`n") $luaOk
 

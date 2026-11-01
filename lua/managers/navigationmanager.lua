@@ -107,10 +107,14 @@ function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_
 										center = door_pos
 									}
 
-									if end_pos then
+									if not end_pos then
+										lies_count("fsd_nil_end_pos")
+									elseif end_pos.x then
 										door_data.end_pos = end_pos
 									else
-										lies_count("fsd_nil_end_pos")
+										-- `_get_expected_pos` calls `door.end_pos:with_z(...)`,
+										-- so a non-Vector3 here would crash there.
+										lies_count("fsd_bad_shape")
 									end
 
 									table.insert(found_doors, door_data)

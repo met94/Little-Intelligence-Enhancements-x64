@@ -419,6 +419,25 @@ do
   check_trackers('bad shape')
 end
 
+-- 14. The same shape rule applies to the center_only table: a non-Vector3
+--     `end_pos` would reach `door.end_pos:with_z(...)` in `_get_expected_pos`.
+do
+  local pos = vec3(60, 60, 60)
+  local not_a_vector = { center = vec3(2, 2, 2) }
+  local nav = make_nav({
+    [FROM] = { neighbours = { [TO] = { make_door({ element = make_element(pos, not_a_vector) }) } } },
+    [TO] = {}
+  }, { [pos] = { segment = FROM } })
+  local before = count('fsd_bad_shape')
+  local result = nav:find_segment_doors(FROM, nil, true)
+
+  assert(#result == 1, 'center_only must still emit the centre')
+  assert(result[1].center == pos, 'center_only centre must be the element position')
+  assert(result[1].end_pos == nil, 'center_only must not carry a non-Vector3 end_pos')
+  assert(count_since(before, 'fsd_bad_shape') == 1, 'center_only must count fsd_bad_shape')
+  check_trackers('bad shape, center_only')
+end
+
 -- Final gate: every scenario above allocated and freed the same number.
 check_trackers('all scenarios')
 
