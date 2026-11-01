@@ -573,3 +573,22 @@ Artifacts:
 - `dev/reports/port-status.md` and `port-decisions.md` are left as-is on
   purpose — the open question in item 1 above is the user's call, and recording
   "inert" is a decision, not an observation.
+
+## Applied
+
+Verdicts recorded; **no Lua was edited** and no version bump.
+
+- `dev/reports/port-decisions.md` §9 is re-labelled **inert fallback** — the
+  dozer remap at `lua/copextensions/copbrain.lua:3-10` orphans
+  `TankCopLogicAttack`, dozers run `LIESBossLogicAttack` — with the latent
+  `old_action_advancing` latch kept as a named risk plus the condition that
+  makes it live (remap removed / `CopBrain._logic_variants` re-exposed) and the
+  note that the boss body does clear the field. §7 and §8 now record the two
+  claims as verified present (300-unit guard `:446`, lerp `:441`, 3000 range).
+- `dev/reports/port-status.md` marks this re-verify done (`38b8582`) and
+  re-points the backlog at the group smoke/flash checks
+  (`GroupAIStateBesiege._chk_group_use_flash_grenade`,
+  `_chk_group_use_smoke_grenade`).
+- **The tank latch stays documented rather than fixed.** It is dead code today,
+  so a two-line `action_complete_clbk` clear would be dead code too; if the
+  remap is ever changed, that clear must ship in the same commit.

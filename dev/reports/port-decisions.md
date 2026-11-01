@@ -36,9 +36,9 @@ Two facts that drive most decisions:
 | `CopLogicAttack.is_available_for_assignment` | sets `my_data.attitude`, honours `is_default`, path-fail window 6 → 3 s, sabotage gate; **drops `data.is_suppressed`** | reorders `is_suppressed` ahead of walk/path-fail | **merge** | smoke |
 | `CopLogicIdle.damage_clbk` | no forced verify/`verified_pos`; `identify_attention_obj_instant` instead of create+patch; `data.group` guard around `criminal_spotted` | create-time `data.t` → fresh `t` | **keep LIES** (+1-line fresh-time inherit) | static |
 | `TaserLogicAttack._upd_enemy_detection` | returns `delay`, drops the wind-up focus lock | local declaration order only | **keep LIES** | smoke |
-| `TaserLogicAttack._cancel_tase_attempt` | splits handle (`tasing_action`) from data (`tasing`); nils `tasing` first | inline action table only | **keep LIES** | static |
-| `TaserLogicAttack._chk_play_charge_weapon_sound` | distance-scaled 15–30 s cooldown, 3000 range, **z-check dropped** | cooldown 30 → 3 s, range `2000` → `tase_distance * 2` | **merge** (keep LIES scaling, restore z-check) | static/ear |
-| `TankCopLogicAttack.update` | `old_action_advancing`, per-frame `attitude`, `next_mov_time` gate, walk/run chase choice | `within_z_distance` refactor, inline action table, `unit:movement()` | **keep LIES** | static |
+| `TaserLogicAttack._cancel_tase_attempt` | splits handle (`tasing_action`) from data (`tasing`); nils `tasing` first | inline action table only | **keep LIES** — verified present 2026-11-01 (`38b8582`) | static |
+| `TaserLogicAttack._chk_play_charge_weapon_sound` | distance-scaled 15–30 s cooldown, 3000 range, **z-check dropped** | cooldown 30 → 3 s, range `2000` → `tase_distance * 2` | **merge — applied, verified present 2026-11-01** (`38b8582`; 300 guard `:446`, lerp `:441`, 3000 range) | static/ear |
+| `TankCopLogicAttack.update` | `old_action_advancing`, per-frame `attitude`, `next_mov_time` gate, walk/run chase choice | restyle only (`within_z_distance`, inline action table, `unit:movement()`) | **keep LIES — inert fallback**: every dozer variant is remapped to `LIESBossLogicAttack` (`lua/copextensions/copbrain.lua:3-10`); latent `old_action_advancing` latch documented, not fixed (§9) | static |
 | `ShieldLogicAttack.queued_update` | movement gates (`next_mov_time`, charging, `follow_unit`), `_chk_wants_to_take_cover`, 2500 sq threshold, `old_action_advancing` | reservation plumbing: `brain:add_pos_rsrv` + `set_pos_rsrv` only on success | **merge** | smoke |
 | `CarryData._chk_register_steal_SO` | `sabotage = true` / `sabo_voiceline` markers on pickup+drop objectives | `_add_body_activation_clbk()` helper, server/`_AI_carry` hoisted into first guard | **merge** | smoke-lite |
 | `NavigationManager.add_obstacle` | invalidates cached LIES paths that intersect the new obstacle | nil-object guard, destroy listener, field reorder | **merge** | smoke |
@@ -371,29 +371,86 @@ charge whine should leak through the ceiling.
 
 **Gate.** Static (verifiable by ear in any smoke run).
 
-## 9. `TankCopLogicAttack.update`
+## 9. `TankCopLogicAttack.update` — inert fallback (do not port)
 
 Mod: `lua/coplogics/specials/tankcoplogicattack.lua` (~39).
 
-**LIES intent.** `old_action_advancing` treated like `has_old_action` (retry
-after `_upd_stop_old_action`), per-frame
+**Status: inert fallback** (re-verified 2026-11-01 at `38b8582`;
+`dev/reports/tank-taser-reverify.md`). The body is correct for 248.2, but in a
+LIES profile it never runs. `lua/copextensions/copbrain.lua:3-10` rebinds
+`CopBrain._logic_variants.triad_boss.attack = LIESBossLogicAttack` (`:3`) and
+then points every dozer tweak table at that entry — `tank` (`:6`),
+`tank_medic` (`:7`), `tank_mini` (`:8`), `tank_hw` (`:9`), `piggydozer`
+(`:10`) — before any unit spawns, and `CopBrain:post_init` resolves `_logics`
+from that same table (248.2 `copbrain.lua:126`, `:156`). Vanilla's
+`logic_variants.tank.attack = TankCopLogicAttack` (248.2 `:109`) is therefore
+**orphaned**: no other file in the mod references `TankCopLogicAttack` (5 grep
+hits, all inside its own file), and dozers run `LIESBossLogicAttack`
+(`lua/coplogics/boss/bosslogicattack.lua:166-241`). No port work should be
+spent here, and the cosmetic `within_z_distance` rebase buys nothing while the
+body is dead.
+
+**LIES intent (kept as written, for the fallback).** `old_action_advancing`
+treated like `has_old_action` (retry after `_upd_stop_old_action`), per-frame
 `my_data.attitude = data.objective.attitude or "engage"`, `next_mov_time`
 movement gate owned by the LIES `CopBrain:get_movement_delay` /
 `request_stillness` machinery, and the walk/run decision
 (`walk and "walk" or "run"`) instead of always `"run"`.
 
-**248.2 delta.** `z_dist` → `within_z_distance` (same value),
-`data.unit:movement()` → `unit:movement()` (same unit), inline
-`action_request({...})`. No new fields or callbacks, no behaviour change.
+**248.2 delta.** Restyle only: `z_dist` → `within_z_distance` (same
+predicate, hoisted), `data.unit:movement()` → `unit:movement()` (same unit,
+`unit = data.unit`), inline `action_request({...})`. No new fields or
+callbacks, no behaviour change.
 
-**Decision: keep LIES.** Optional cosmetic rebase (adopt `within_z_distance`
-naming) so future 248.3 diffs stay small; behaviour must not change.
+**Decision: keep LIES** — as an inert fallback. Not a port, not a rebase, not
+a deletion: the file costs nothing and is the body that would come back if the
+remap were ever reverted.
 
-**Risk if wrong.** Dozer either stops chasing (`next_mov_time` gate never
-satisfied) or charges non-stop (gate lost). Scenario: aggro a dozer at 30 m,
-break LOS around a corner; it must keep closing, and must not freeze.
+**Known risk — latent latch, documented not fixed.** `old_action_advancing` is
+a LIES-only field, set by `CopLogicIdle._chk_has_old_action`
+(`lua/coplogics/coplogicidle.lua:131-140`) and cleared in the
+`action_complete_clbk` of every other attack-family logic that gates on it
+(`coplogicattack.lua:2467`, `taserlogicattack.lua:343`,
+`shieldlogicattack.lua:564`, `spooclogicattack.lua:226`,
+`bosslogicattack.lua:704`, `coplogictravel.lua:1594`,
+`coplogicidle.lua:1942`, `teamailogicassault.lua:417`,
+`teamailogicidle.lua:442`, `coplogicsniper.lua:176`,
+`coplogicarrest.lua:468`). The tank has **no clear**: `enter` calls
+`CopLogicIdle._chk_has_old_action` (`:22`), its
+`action_complete_clbk` (`:222-239`) clears `advancing` (`:227`) but not
+`old_action_advancing`, and `CopLogicAttack._upd_stop_old_action` cannot
+interrupt an in-progress walk (it requests idle only when
+`chk_action_forbidden("walk")` is false, which it is not while the walk action
+still owns body part 2). So if the body were ever reachable, the `update` gate
+at `:44-48` could latch: `update` would `return` every frame after the current
+walk ends, and the dozer would stop starting chase walks (it would still shoot —
+aim/fire run from `CopBrain:check_upd_aim`).
 
-**Gate.** Static. (Dozer behaviour is covered by any loud smoke.)
+- Condition that makes it live: the remap in `copbrain.lua:3-10` removed or
+  reverted, or `CopBrain._logic_variants` otherwise re-exposed with vanilla's
+  `tank.attack` — any change that lets `TankCopLogicAttack` be reached.
+- Why it is not a live bug today: the body is never entered (§ above), and the
+  body that does run — `LIESBossLogicAttack` — clears the field in its own
+  `action_complete_clbk` (`bosslogicattack.lua:704`) while re-arming it
+  deliberately when it cannot stop the current walk (`:762-765`).
+- If that condition ever happens: the two-line `action_complete_clbk` clear on
+  `"walk"` (same shape as `bosslogicattack.lua:704`) must ship **with** the
+  remap change. It is dead code while the remap stands, so it is not added
+  now.
+
+**Also verified present in this pass** (the two rows previously recorded as
+applied, re-read against the current bodies):
+
+- `TaserLogicAttack._cancel_tase_attempt` (§7) — `tasing` nil'd first, body-part-3
+  idle gated on the `tasing_action` handle (`lua/coplogics/specials/taserlogicattack.lua:487-498`).
+- `TaserLogicAttack._chk_play_charge_weapon_sound` (§8) — the recorded merge is
+  in the body: 300-unit vertical guard present (`:446`), distance-scaled
+  cooldown `math.lerp(15, 30, focus_enemy.verified_dis / 3000)` (`:441`),
+  3000 range (`:441`). 248.2's 3 s cadence and `tase_distance * 2` range
+  deliberately not taken.
+
+**Gate.** Static. (Dozer behaviour is covered by any loud smoke — and today it
+is the boss logic that produces it, not this file.)
 
 ## 10. `ShieldLogicAttack.queued_update`
 
@@ -576,7 +633,8 @@ whether cops path in.
 7. `_chk_play_charge_weapon_sound` — restore vertical guard.
 8. `CopLogicIdle.damage_clbk` — optional `data.t = t` before instant identify.
 9. Keep as-is (no edit): `_upd_attention_obj_detection`,
-   `_upd_enemy_detection`, `_cancel_tase_attempt`, `TankCopLogicAttack.update`.
+   `_upd_enemy_detection`, `_cancel_tase_attempt`, `TankCopLogicAttack.update`
+   (inert fallback — remapped away by LIES, see §9).
    `_upd_aim` is no longer on this list: it was ported in V8.75 and had ledger
    blocks 5-9 re-added in V8.77 (see section 2).
 

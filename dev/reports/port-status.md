@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-11-01 (after the V8.81 nav-v6 close-out).
+Last updated: 2026-11-01 (after the tank/taser re-verify close-out, `38b8582`).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -59,6 +59,15 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   `_sort_nav_segs_after_pos`. Code and static gates green; **not observed in
   game** (Iter's nav search owns the only call site, so the gates only bite with
   it off; the flag only on maps shipping legacy cover units).
+- Tank/taser re-verify closed (`38b8582`, docs only): `pd2fn` 246.1 → 248.2
+  deltas for all four bodies are restyle-only; **no port gap**.
+  `TankCopLogicAttack.update` is an inert fallback (dozer remap in
+  `lua/copextensions/copbrain.lua:3-10`), its latent `old_action_advancing`
+  latch is documented not fixed; the taser `delay` plumbing and dropped
+  wind-up lock are confirmed LIES intent; `_cancel_tase_attempt` (handle gate,
+  `tasing` nil'd first) and `_chk_play_charge_weapon_sound` (300-unit guard
+  `:446`, `math.lerp(15, 30, …)` `:441`, 3000 range) were verified present.
+  Report: `dev/reports/tank-taser-reverify.md`.
 
 ## Open — core AI (needs in-game testing)
 
@@ -83,16 +92,40 @@ restyle, and the `check_segment` closure. The ledger rows still read `PORT` —
 completion, so it is not the "is it done" source; this file and
 `port-decisions.md` are.
 
-Next block: **re-verify `TankCopLogicAttack.update` and
-`TaserLogicAttack._upd_enemy_detection` against 248.2 and record verdicts — do
-not port.** `port-decisions.md` decides `keep LIES` on both (§9 and §6): the
-tank body is a deliberate LIES rewrite (`old_action_advancing`, per-frame
-`attitude`, `next_mov_time` gate, walk/run chase choice) and the taser body
-deliberately returns `delay` and drops the wind-up focus lock. Neither has been
-re-read since the 246.1 baseline, so the task is a `pd2fn` 246.1 → 248.2 delta
-plus a recorded verdict, the same shape as the nav-v6 audit. Expect restyle
-only (`within_z_distance` refactor, inline action table, `unit:movement()` on
-the tank; local declaration order on the taser) — verify, then write it down.
+Next block: tank/taser re-verify — **done (`38b8582`, docs only, no Lua)**.
+`dev/reports/tank-taser-reverify.md` re-read
+`TankCopLogicAttack.update`, `TaserLogicAttack._upd_enemy_detection`,
+`_cancel_tase_attempt` and `_chk_play_charge_weapon_sound` via `pd2fn` 246.1 →
+248.2: every vanilla delta is restyle-only, so **no port gap**. The tank body is
+an inert fallback (dozer remap, `lua/copextensions/copbrain.lua:3-10`) and its
+latent `old_action_advancing` latch is documented, not fixed;
+`port-decisions.md` §9 is now labelled "inert fallback". The taser `delay`
+plumbing and dropped wind-up focus lock stand as LIES intent (§6), and both
+already-applied taser rows were verified present in the body (§7, §8).
+
+Next block: the **group smoke/flash grenade checks** — the remaining item from
+`dev/reports/handoff-2026-11-01.md` §7 item 5 (`ShieldLogicAttack`,
+`TankCopLogicAttack`, `TaserLogicAttack.*` and `CarryData` in that item are all
+done or recorded). Both are ledger `PORT` rows in
+`dev/port-248-ledger.md:312-313` and neither the group-AI audit
+(`dev/reports/groupai-audit.md`, LIES_EDIT_CLEAN bodies only) nor
+`port-status.md` line 15 covers them — line 15 is the *door handling* port
+(besiege `_upd_assault_task` / `force_end_assault_phase`), a different surface.
+
+| Function (ledger row) | LIES / 246.1 / 248.2 lines | Why |
+|---|---:|---|
+| `GroupAIStateBesiege._chk_group_use_flash_grenade` (`:312`) | 145 / 45 / 45 | group flashbang decision; LIES body is ~3× vanilla, so expect a real rewrite delta, not restyle |
+| `GroupAIStateBesiege._chk_group_use_smoke_grenade` (`:313`) | 179 / 47 / 47 | same shape; smoke screening for assault groups |
+
+Shape: one `pd2fn` 246.1 → 248.2 delta per function plus a line-by-line read of
+the LIES body, then a `keep LIES` / `merge` decision in `port-decisions.md` —
+the same audit-first pass the nav-v6 and tank/taser blocks used. Do the two
+together: they share the `tweak_data.group_ai.smoke_and_flash_grenade_timeout`
+window and are always evaluated as a random first/second pair by the same
+callers (`lua/groupaistate/groupaistatebesiege.lua:2944-2945`, `:3095-3096`,
+`:3242-3243`, `:3409-3410`), so one read answers both. Adjacent ledger `PORT`
+rows left after them: `_queue_police_upd_task` (17/7/13) and
+`_upd_police_activity` (38/28/22), both in the same file.
 
 Dossiers in `dev/reports/dossiers/`:
 
@@ -103,10 +136,10 @@ Dossiers in `dev/reports/dossiers/`:
 | `CopLogicAttack.action_complete_clbk` | 101L | Action completion + state transitions. **Done** — merged in `f0370d4` (`math.rand` dodge timeout); re-verified 2026-11-01 that this is the function's only 246.1→248.2 delta and the LIES body carries it (`port-decisions.md` §3). |
 | `CopLogicAttack.is_available_for_assignment` | 51L | Assignment gating. |
 | `CopLogicIdle.damage_clbk` | 61L | Damage reaction / relocation. |
-| `TaserLogicAttack._upd_enemy_detection` | 75L | Taser target selection. |
-| `TaserLogicAttack._cancel_tase_attempt` | 12L | Taser cancel; LIES uses `tasing_action` vs vanilla `tasing`. |
-| `TaserLogicAttack._chk_play_charge_weapon_sound` | 7L | Balance timings. |
-| `TankCopLogicAttack.update` | 106L | Dozer logic. |
+| `TaserLogicAttack._upd_enemy_detection` | 75L | Taser target selection. **Done** — re-verified 2026-11-01 (`38b8582`): restyle-only vanilla delta, keep LIES (`port-decisions.md` §6); behaviour smoke still open. |
+| `TaserLogicAttack._cancel_tase_attempt` | 12L | Taser cancel; LIES uses `tasing_action` vs vanilla `tasing`. **Done** — claim verified present (`38b8582`, §7). |
+| `TaserLogicAttack._chk_play_charge_weapon_sound` | 7L | Balance timings. **Done** — merge verified present (`38b8582`, §8). |
+| `TankCopLogicAttack.update` | 106L | Dozer logic. **Inert fallback** — every dozer variant is remapped to `LIESBossLogicAttack` (`lua/copextensions/copbrain.lua:3-10`); no port, latent latch documented (`38b8582`, §9). |
 | `ShieldLogicAttack.queued_update` | 117L | Shield logic. |
 | `CarryData._chk_register_steal_SO` | 128L | Carry/steal objective registration. |
 
@@ -129,7 +162,7 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 - `TaserLogicAttack._chk_play_charge_weapon_sound`: restored the 300-unit vertical guard; LIES distance-scaled cooldown and 3000 range kept. Smoke 2026-10-24: 14 allowed, 7 cross-floor blocked.
 - `ShieldLogicAttack.queued_update`: adopted 248.2's reservation split (`set_pos_rsrv` success / `add_pos_rsrv` fallback), kept LIES 70 radius and movement gates. Smoke 2026-10-24: 53 set, 4 fallback, no leak.
 - `CarryData._chk_register_steal_SO`: adopted 248.2's guard order + `_add_body_activation_clbk()`, kept LIES `sabotage`/`sabo_voiceline`; fixed the nil drop-point fall-through so no broken drop objective is registered. Smoke 2026-10-24: 12 registered, 5 expected skips.
-- Keep LIES body (no edit): `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update`, `CopLogicIdle.damage_clbk`. `CopLogicBase._upd_attention_obj_detection` keeps the LIES body but now carries the 248.2 near-visible probe height (V8.80, `c409ba4`).
+- Keep LIES body (no edit): `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update` (inert fallback — remapped away, see `port-decisions.md` §9), `CopLogicIdle.damage_clbk`. `CopLogicBase._upd_attention_obj_detection` keeps the LIES body but now carries the 248.2 near-visible probe height (V8.80, `c409ba4`).
 - Merge pending: none from the current decisions doc.
 
 ## Group AI / data / periphery — audited
