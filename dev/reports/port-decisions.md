@@ -133,14 +133,23 @@ that ledger marks RE-ADD:
 - script-free and back in the body: charge abort + `tankboss` table (block 5),
   turn-to-shoot concessions (block 6), hostage safe-weapon pair (block 7),
   `_chk_enrage` / `_chk_use_throwable` (block 8), reload callout (block 9);
+- V8.78 restored block 10 in corrected form: `level < 3 and not
+  data.unit:in_slot(16) and not data.is_converted and not (data.team and
+  data.team.id == "criminal1") and not (data.tactics and
+  data.tactics.provide_coverfire_LIES)`, `2 / level` with the level computed and
+  clamped before the gate, and a private `focus_enemy.lies_react_t` timer. The
+  7.84 clause `and not data.team.id == "criminal1"` is
+  `(not data.team.id) == "criminal1"`, i.e. constant `false`, so the block is a
+  re-derivation rather than a re-copy and needs in-game verification at each
+  menu value. Coverfire is exempt because the hold would otherwise silence the
+  suppression fire block 7 exists for;
 - the watch position comes from `_get_expected_attention_position`, so nothing
   in `_upd_aim` reads `nav_tracker`, `_nav_segments`, `find_segment_doors` or
   `find_walls_across_pos`;
 - retired on purpose, do not re-add without a new decision: blocks 1-4 (tracker
-  and its derivatives), block 10 (`enemy_reaction_level`, constant `false` since
-  7.84 because of `and not data.team.id == "criminal1"`), block 11 (0.5 s
-  shoot-stop hold, written against the old action-handle `my_data.shooting`) and
-  block 12 (weapon-range self-heal; the caller already guarantees the field).
+  and its derivatives), block 11 (0.5 s shoot-stop hold, written against the old
+  action-handle `my_data.shooting`) and block 12 (weapon-range self-heal; the
+  caller already guarantees the field).
 
 The LIES local fallback `weapon_range` (`w_td`/`char_tweak.weapon[usage].range`,
 2000/5000/1000 backup) stays retired: `CopBrain:check_upd_aim` returns early

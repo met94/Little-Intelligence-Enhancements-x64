@@ -67,23 +67,33 @@ experimental option until the full hhtacs audit is complete.
 | NORMAL | Fast. |
 | NO DELAYS | Intended LIES speed; enemies relocate almost immediately. |
 
-## Reaction Level (`enemy_reaction_level`) — reserved, not functional for regular cops
+## Reaction Level (`enemy_reaction_level`)
 
-**Status: does not work on ordinary cops in this fork.** The aim-body gate that
-implemented it was `and not data.team.id == "criminal1"` (added V7.84), which Lua
-parses as `(not data.team.id) == "criminal1"` and is therefore always `false`.
-The delay has been inert since then, and it stays retired after the V8.75 aim port
-(see `dev/reports/aim-port-behaviour-ledger.md` block 10). Only boss logic still
-honours it: `bosslogicattack.lua:451-466` carries the same reaction/fire-delay
-block without that clause. Cloaker logic is not a second case — its
-`enemy_reaction_level < 3` gate only guards `_chk_play_charge_spooc_sound`
-(`spooclogicattack.lua:340/372`), which is a charge sound, not a fire delay.
+How long a cop holds fire after verifying a target. The delay is `2 / level`
+seconds, so SLOW waits about two seconds before the first shot, NORMAL about one
+second, and ULTRA-VIOLENCE does not wait at all (the delay is off from level 3
+upwards). Cops still aim and turn during the pause — only the shot is held.
 
-| Value | Intended effect (not delivered on ordinary cops) |
+Exempt: converted criminals (Jokers — one category, caught by both the
+`is_converted` flag and slot 16), crew-AI bots (their `criminal1` team id, since
+`TeamAIBrain` never sets the conversion flag), and any unit running the LIES
+coverfire tactic, because that suppression fire is deliberate and must not be
+silenced. Bosses run this block through `CopLogicAttack._upd_aim` and also carry
+their own copy of it in boss logic.
+
+**History:** the option itself dates back to v4, but from LIES 7.84 (2024-02-09)
+until V8.78 its gate read `and not data.team.id == "criminal1"`. Lua parses that
+as `(not data.team.id) == "criminal1"`, always `false`, so ordinary cops ignored
+the option for every build in between; V8.75 then dropped the block with the aim
+port. V8.78 restores it with the two terms the author meant
+(`not data.is_converted` and `not (data.team and data.team.id == "criminal1")`).
+See `dev/reports/aim-port-behaviour-ledger.md` block 10.
+
+| Value | Effect |
 |---|---|
-| SLOW | Closest to vanilla reaction speed. |
-| NORMAL | Faster reactions. |
-| ULTRA-VIOLENCE | Fastest. |
+| SLOW | Holds fire ~2 s after verifying a target. |
+| NORMAL | Holds fire ~1 s. |
+| ULTRA-VIOLENCE | No hold; fires as soon as the target is aimable. |
 
 ## Navlink Delays (`nav_link_interval`)
 

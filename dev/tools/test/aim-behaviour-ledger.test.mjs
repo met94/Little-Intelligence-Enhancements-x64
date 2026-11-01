@@ -148,6 +148,43 @@ test('ledger #9: the reload callout is back behind liveness guards', () => {
   assert.match(tweak, /self\.enemy_chatter\.calloutreload = \{/);
 });
 
+test('ledger #10: the reaction-level fire delay is restored with a working gate', () => {
+  const aim = rawAim();
+  const aimAllowFireAt = aim.indexOf('CopLogicAttack.aim_allow_fire(');
+  const throwableAt = aim.indexOf('LIESBossLogicAttack._chk_use_throwable(');
+
+  // Computed before the gate, clamped, so a nil/zero setting cannot error or divide by zero.
+  assert.match(aim, /local level = math\.max\(1, tonumber\(LIES\.settings\.enemy_reaction_level\) or 1\)/);
+  assert.ok(aim.indexOf('local level = math.max') < aim.indexOf('if level < 3'), 'the level is clamped before the comparison');
+  assert.match(aim, /if level < 3 and not data\.unit:in_slot\(16\) and not data\.is_converted and not \(data\.team and data\.team\.id == "criminal1"\)/);
+  // Coverfire is deliberate suppression fire: it must not be silenced by the hold.
+  assert.match(aim, /and not \(data\.tactics and data\.tactics\.provide_coverfire_LIES\) then/);
+  // The 7.84 operator-precedence bug must not come back.
+  assert.doesNotMatch(aim, /not data\.team\.id ==/, 'the constant-false team clause must stay out');
+  assert.doesNotMatch(aim, /charge_aggro_level/);
+  // Private timer, so it cannot stack with the shared `react_t` writes elsewhere.
+  assert.match(aim, /local react_t = 2 \/ level/);
+  assert.match(aim, /if not focus_enemy\.lies_react_t or not focus_enemy\.verified_t or data\.t - focus_enemy\.verified_t > 2 then\s*focus_enemy\.lies_react_t = data\.t\s*end/);
+  assert.match(aim, /if data\.t - focus_enemy\.lies_react_t < react_t then\s*shoot = nil\s*end/);
+  assert.doesNotMatch(aim, /focus_enemy\.react_t/, 'the shared react_t field must not be used here');
+
+  // Placement: inside the `REACT_COMBAT` gate, before the throwable call and the fire decision.
+  const gateAt = aim.indexOf('if focus_enemy and AIAttentionObject.REACT_COMBAT <= focus_enemy.reaction then');
+  const gateEnd = aim.indexOf('\n\tend', gateAt);
+  const delayAt = aim.indexOf('local level = math.max');
+  assert.notEqual(gateAt, -1, 'the REACT_COMBAT gate is missing');
+  assert.notEqual(gateEnd, -1, 'the REACT_COMBAT gate is unterminated');
+  assert.ok(delayAt > gateAt && delayAt < gateEnd, 'the delay sits inside the REACT_COMBAT gate');
+  assert.ok(delayAt < throwableAt, 'the delay runs before the boss throwable call');
+  assert.ok(delayAt < aimAllowFireAt, 'the delay runs before aim_allow_fire');
+  // `shoot = nil` is the last write to `shoot` before the fire decision.
+  const lastShootNil = aim.lastIndexOf('shoot = nil');
+  assert.ok(lastShootNil !== -1 && lastShootNil < aimAllowFireAt);
+  assert.doesNotMatch(aim.slice(lastShootNil + 'shoot = nil'.length, aimAllowFireAt), /shoot =/, 'nothing writes shoot after the hold and before aim_allow_fire');
+  // No tracker access.
+  assert.doesNotMatch(aim.slice(gateAt, gateEnd), /nav_tracker|nav_segment\(|obstructed\(/);
+});
+
 test('the retired tracker machinery did not come back with the re-adds', () => {
   const aim = rawAim();
 
@@ -164,8 +201,7 @@ test('the retired tracker machinery did not come back with the re-adds', () => {
     assert.ok(!aim.includes(token), `_upd_aim must not reference ${token} again`);
   }
 
-  // Retired on purpose (ledger blocks 10-12), not accidentally dropped again.
-  assert.ok(!aim.includes('enemy_reaction_level'), 'the constant-false reaction gate stays retired');
+  // Retired on purpose (ledger blocks 11-12), not accidentally dropped again.
   assert.ok(!aim.includes('start_shoot_t'), 'the 0.5 s shoot-stop hold stays retired');
   assert.ok(!aim.includes('complained_about_invalid_range'), 'the weapon-range self-heal stays retired');
 });

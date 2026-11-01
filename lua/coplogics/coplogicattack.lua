@@ -1207,6 +1207,34 @@ function CopLogicAttack._upd_aim(data, my_data)
 		end
 	end
 
+	-- ledger #10: reaction-level fire delay (author: fugsystem v4 `712387f`, 2/N
+	-- divisor since 6.7 `6be9cb2`). LIES 7.84 `ab0d5e4` broke the gate with
+	-- `and not data.team.id == "criminal1"`, which Lua parses as
+	-- `(not data.team.id) == "criminal1"` and is therefore constant false. The
+	-- intended terms are the converted-state flag `data.is_converted`, plus the
+	-- `criminal1` team id for crew-AI bots (`TeamAIBrain` reuses
+	-- `CopBrain:_reset_logic_data` and never sets `is_converted`). Coverfire is
+	-- deliberate suppression fire and must win, so that tactic is exempt too.
+	-- Only `shoot` is delayed, never `aim`.
+	if focus_enemy and AIAttentionObject.REACT_COMBAT <= focus_enemy.reaction then
+		local level = math.max(1, tonumber(LIES.settings.enemy_reaction_level) or 1)
+
+		if level < 3 and not data.unit:in_slot(16) and not data.is_converted and not (data.team and data.team.id == "criminal1") and not (data.tactics and data.tactics.provide_coverfire_LIES) then
+			-- private timer: the attention object's `react_t` is also written by
+			-- coplogicbase (`608-618`) and spooclogicidle (`30/72/85`), so a shared
+			-- field would let the two delays stack
+			if not focus_enemy.lies_react_t or not focus_enemy.verified_t or data.t - focus_enemy.verified_t > 2 then
+				focus_enemy.lies_react_t = data.t
+			end
+
+			local react_t = 2 / level
+
+			if data.t - focus_enemy.lies_react_t < react_t then
+				shoot = nil
+			end
+		end
+	end
+
 	-- ledger #8: boss throwable (author: fugsystem 6). Self-gated on
 	-- data.char_tweak.throwable, so non-boss units never reach the throw path.
 	if shoot and focus_enemy and not data.safe_equipped and not focus_enemy.hostage_blocked then
