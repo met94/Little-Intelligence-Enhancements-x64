@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import {
   normalizeLua,
   classifySources,
-  renderMarkdown
+  renderMarkdown,
+  decisionKey,
+  loadDecisions,
+  summarizeDecisions
 } from '../fn-ledger.mjs';
 
 const OLD = `
@@ -169,4 +172,54 @@ test('markdown contains totals and one row per function', () => {
   assert.match(md, /PORT/);
   assert.match(md, /audit/);
   assert.match(md, /Nested helpers/);
+});
+
+test('markdown carries a decision column, undecided when no entry', () => {
+  const old = 'function A:foo(x) return x + 1 end';
+  const nw = 'function A:foo(x) return x + 2 end';
+  const mod = 'function A:foo(x) return x + 3 end';
+  const { rows, totals } = classifySources(mod, old, nw);
+  const md = renderMarkdown({ oldRev: 'old', newRev: 'new', generated: 'now', files: [{ file: 'lua/a.lua', rows, totals }] });
+  assert.match(md, /\| done \| status \| decision \| function \|/);
+  assert.match(md, /\*\*PORT\*\* \| — \| `A\.foo`/);
+  assert.match(md, /\| undecided \| 1 \|/);
+});
+
+test('decision entry replaces the dash with verdict and reference', () => {
+  const old = 'function A:foo(x) return x + 1 end';
+  const nw = 'function A:foo(x) return x + 2 end';
+  const mod = 'function A:foo(x) return x + 3 end';
+  const { rows, totals } = classifySources(mod, old, nw);
+  const decisions = new Map([[decisionKey('lua/a.lua', 'A.foo'), { function: 'A.foo', file: 'lua/a.lua', verdict: 'done', reference: '703c9af' }]]);
+  const md = renderMarkdown({ oldRev: 'old', newRev: 'new', generated: 'now', files: [{ file: 'lua/a.lua', rows, totals }], decisions });
+  assert.match(md, /\*\*PORT\*\* \| done \(703c9af\) \| `A\.foo`/);
+  assert.match(md, /\| done \| 1 \|/);
+  assert.match(md, /\| undecided \| 0 \|/);
+});
+
+test('summarizeDecisions counts verdicts and only PORT/BLOCKED as undecided', () => {
+  const files = [{
+    file: 'lua/a.lua',
+    rows: [
+      { name: 'A.ported', category: 'LIES_EDIT_VANILLA_CHANGED' },
+      { name: 'A.keptbutvanilla', category: 'LIES_EDIT_VANILLA_CHANGED' },
+      { name: 'A.local', category: 'SAME_AS_OLD_VANILLA_LOCAL' },
+      { name: 'A.audit', category: 'MOD_ONLY' }
+    ]
+  }];
+  const decisions = new Map([
+    [decisionKey('lua/a.lua', 'A.ported'), { verdict: 'done', reference: 'abc1234' }],
+    [decisionKey('lua/a.lua', 'A.keptbutvanilla'), { verdict: 'keep', reference: 'dev/reports/x.md' }]
+  ]);
+  const summary = summarizeDecisions({ files, decisions });
+  assert.equal(summary.counts.done, 1);
+  assert.equal(summary.counts.keep, 1);
+  assert.equal(summary.undecided, 0);
+
+  const withoutEntry = summarizeDecisions({ files, decisions: new Map() });
+  assert.equal(withoutEntry.undecided, 2);
+});
+
+test('loadDecisions indexes by file::function and tolerates a missing file', () => {
+  assert.equal(loadDecisions('does-not-exist.json').size, 0);
 });
