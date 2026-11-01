@@ -4,6 +4,13 @@ Date: 2026-11-01
 Branch: `feat/ai-suite-compat` (HEAD `08c7156`)
 Game target: 248.2, commit `e3a8b616`. Baseline: 246.1, commit `a3180fc`.
 
+Status: **closed** — the three gaps this audit lists (P1/P2/P3, "Real gaps and
+implementation order") were merged in `cbc4a29` and released as `V8.81_x64`;
+`dev/tools/test/nav-gates.test.mjs` pins them. Verdicts that were `keep LIES`
+(`remove_obstacle`, `_draw_covers`) and `already merged` (`add_obstacle`,
+`set_nav_segment_state`) stand unchanged. The Iter note in section 2 carries a
+correction (the audit first read the stale `master` checkout of `mods/Iter`).
+
 Purpose: decide the five open rows of the nav-v6 block (`register_cover_units`,
 `_execute_coarce_search`, `_sort_nav_segs_after_pos`, `remove_obstacle`,
 `_draw_covers`) plus re-verify the two rows `port-status.md` calls done
@@ -227,7 +234,7 @@ it is a construct LIES dropped relative to 246.1.
 hoists). The `t` hoist is only needed *because* the delay gate wants one
 timestamp per search.
 
-**Iter interaction.** `mods/Iter/lua/navigationmanager.lua:1436-1438`:
+**Iter interaction.** `mods/Iter/lua/navigationmanager.lua:2146-2147`:
 
 ```lua
 if Iter.settings.nav_search then
@@ -235,17 +242,36 @@ if Iter.settings.nav_search then
 end
 ```
 
-with `nav_search = true` as the shipped default (`mods/Iter/lua/corecode.lua:14`).
+with `nav_search = true` as the shipped default (`mods/Iter/lua/corecode.lua:17`).
 That is a wholesale **assignment**, not a wrap: when Iter is installed with
-defaults, LIES' body is dead. Iter 200.1's replacement is a separate
-Dijkstra (`potential_paths` + string path keys + `itr_coarse_cache`,
-`navigationmanager.lua:1202-1425`) and has **no FIFO/cursor code** - grep for
-`cursor|fifo` in that file returns 0 hits, and `mods/Iter/changelog.txt` starts
-at `Revision 200.1`. So "Iter 200.20 FIFO-cursor rework" does not exist in this
-checkout; the only interaction is (a) total replacement of the function and
-(b) `set_nav_segment_state` clearing `itr_coarse_cache` (see section 7). The delay-gate
+defaults, LIES' body is dead. Iter's replacement is a separate Dijkstra
+(`potential_paths` + string path keys + `itr_coarse_cache`,
+`itr_execute_coarce_search` at `navigationmanager.lua:1901`), so the only
+interaction is (a) total replacement of the function and (b)
+`set_nav_segment_state` clearing `itr_coarse_cache` (see section 7). The delay-gate
 gap therefore only matters for the **LIES-only profile** or Iter with
 `nav_search` off.
+
+**Correction to the first version of this note (2026-11-01, after `cbc4a29`).**
+The paragraph above was first written against the stale `master` checkout of
+`mods/Iter` (a tree whose `changelog.txt` starts at `Revision 200.1`), and it
+therefore claimed that the Iter 200.20 FIFO-cursor rework "does not exist in
+this checkout". That was wrong about the live line: Iter's current branch is
+`feat/ai-suite-compat`, version **200.21**, and it **does** carry the FIFO
+cursor rework of `_execute_coarce_search` - commit `f896b61` *perf(nav): FIFO
+cursor instead of table_remove(seg_to_search, 1)*, released as **200.20**, which
+replaced the `table_remove(seg_to_search, 1)` head shift with head/tail indices.
+Both line references above are from that branch: it has the assignment at
+`:2146-2147` and `itr_execute_coarce_search` at `:1901`, where the stale `200.1`
+tree this audit first read had them at `:1436-1438` and `:1202`.
+
+The conclusion does not change, because it never depended on the Iter body: Iter
+still **assigns the whole function**
+(`NavigationManager._execute_coarce_search = NavigationManager.itr_execute_coarce_search`),
+so LIES' body - and with it the restored gate - is unreachable while
+`nav_search` is on, whatever that body does internally. The cursor rework is a
+performance change *inside* the Iter replacement, not a third participant in the
+LIES/Iter interaction.
 
 **Verdict: `merge: add the nav-link delay gate`** (`local t` + one condition).
 Keep LIES' loop shape, 4-tuple contract and nav-link capture.
@@ -602,16 +628,22 @@ facing *direction* (LIES points at the wall, engine covers point away  -
 
 ## 9. Cross-mod: Iter also hooks `lib/managers/navigationmanager`
 
-`mods/Iter/mod.txt` -> `"priority": 40`, version `200.1`. LIES `mod.txt` ->
+`mods/Iter/mod.txt` -> `"priority": 40`, version `200.21` on branch
+`feat/ai-suite-compat` (the `master` checkout this audit first read is stale at
+`200.1`; see the correction in section 2). LIES `mod.txt` ->
 `"priority": 100`. Load order is descending priority (`mods/base/base.lua:236-238`),
 so **LIES loads first, Iter second**.
 
+Line references below were re-read on Iter `feat/ai-suite-compat` (200.21)
+except the `_sort_nav_segs_after_pos`/`_draw_covers` rows, which are LIES-side
+(`lua/managers/navigationmanager.lua`) and carry this worktree's numbers.
+
 | Function | LIES | Iter | Effective winner |
 | --- | --- | --- | --- |
-| `register_cover_units` | bare override `:454` | wrap: saves `itr_original_...`, sets `self._debug = true`, calls it, then filters `self._covers` (`navigationmanager.lua:101-128`) | **Iter's wrapper -> LIES' body**. Both run. |
-| `set_nav_segment_state` | bare override `:1736` | wrap: `tostring`, `itr_original_...`, clears `itr_coarse_cache`, rebuilds neighbour lists (`:339-352`) | **Iter's wrapper -> LIES' body**, then Iter's rebuild. LIES' second `tostring` is idempotent. |
-| `_execute_coarce_search` | bare override `:2292` | **assignment** under `if Iter.settings.nav_search` (`:1436-1438`) | **Iter's body entirely** (default `nav_search = true`, `corecode.lua:14`). LIES' body is dead in that profile. |
-| `_sort_nav_segs_after_pos` | bare override, 7 args `:2403` | not overridden | **LIES** (Iter never calls/overrides it; only NavFixes is 6-arg incompatible) |
+| `register_cover_units` | bare override `:454` | wrap: saves `itr_original_...`, sets `self._debug = true`, calls it, then filters `self._covers` (`navigationmanager.lua:208-235`; early-returns to the original when `nav_streamline` is off, `:210-212`) | **Iter's wrapper -> LIES' body**. Both run. |
+| `set_nav_segment_state` | bare override `:1737` | wrap: `tostring`, `itr_original_...`, clears `itr_coarse_cache`, rebuilds neighbour lists (`:1039-1051`) | **Iter's wrapper -> LIES' body**, then Iter's rebuild. LIES' second `tostring` is idempotent. |
+| `_execute_coarce_search` | bare override `:2293` | **assignment** under `if Iter.settings.nav_search` (`:2146-2147`) | **Iter's body entirely** (default `nav_search = true`, `corecode.lua:17`). LIES' body is dead in that profile. |
+| `_sort_nav_segs_after_pos` | bare override, 7 args `:2406` | not overridden | **LIES** (Iter never calls/overrides it; only NavFixes is 6-arg incompatible) |
 | `add_obstacle`, `remove_obstacle`, `_draw_covers` | bare overrides | not overridden | **LIES** |
 
 Because Iter's wrappers are installed after LIES', a LIES bare override can never

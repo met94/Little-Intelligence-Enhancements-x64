@@ -11,7 +11,7 @@ evaluate, aim, take cover, path, suppress, and coordinate — without replacing
 the game's core combat loop. This fork ports the original LIES V8.57 design to
 the current 64-bit 248.2 game build.
 
-- **Current release:** `V8.80_x64`
+- **Current release:** `V8.81_x64`
 - **Download:** [GitHub Releases](https://github.com/met94/Little-Intelligence-Enhancements-x64/releases)
 - **Original project:** [fuglore/Little-Intelligence-Enhancements](https://github.com/fuglore/Little-Intelligence-Enhancements)
 

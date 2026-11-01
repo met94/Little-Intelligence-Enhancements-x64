@@ -759,3 +759,96 @@ whether cops path in.
   case", not "the fade works". Static coverage:
   `dev/tools/test/detection-near-visible.test.mjs`.
 
+---
+
+## Nav-v6 audit outcome (2026-11-01, V8.81)
+
+- **Functions:** the five open rows of the `NavigationManager` nav-v6 block in
+  `lua/managers/navigationmanager.lua` — `register_cover_units`,
+  `_execute_coarce_search`, `_sort_nav_segs_after_pos`, `remove_obstacle`,
+  `_draw_covers` — plus a re-verify of the two rows this file calls done
+  (`add_obstacle` §12, `set_nav_segment_state` §13).
+- **Evidence.** `dev/reports/nav-v6-remaining-audit.md` (2026-11-01), built with
+  `tools\pd2fn.ps1 -From 246.1 -To 248.2
+  -Path lib/managers/navigationmanager.lua -Class NavigationManager -Name <fn>`
+  and `git show a3180fc:lib/managers/navigationmanager.lua`, cross-checked
+  against `mods/base/base.lua`, `mods/base/req/BLTMod.lua` and
+  `mods/Iter/lua/navigationmanager.lua`.
+- **Audit first, Lua second.** The backlog row list was stale, so porting on its
+  word would have cost a regression plus a dead-code rewrite. Four of the seven
+  rows were closed without editing Lua:
+  - `add_obstacle` — **already merged** (nil-object guard, `unit_data()`
+    destroy listener, `id` stored in the entry). LIES additionally keeps the
+    246.1 duplicate-add `self._debug` guard, which 248.2 deleted; that is the
+    safer side and the only `self._debug` read left in the file.
+  - `set_nav_segment_state` — **already merged**: all eight `tostring(id)` /
+    `unique_id` constructs are present, so the v6 string segment keys are
+    handled; LIES adds the two `_cached_paths` invalidations and a `log()` line
+    before the `debug_pause`.
+  - `remove_obstacle` — **keep LIES**. Three of 248.2's four pieces are present
+    (nil guard, destroy-listener removal, index-based `temp_array` rebuild) and
+    LIES *adds* `self._quad_field:remove_obstacle(obs_data.id)` for a dead unit,
+    where 248.2 merely drops the list entry and leaks the engine blocker. The
+    one absent line, `self._quad_field:remove_obstacle(obstacle_obj)`
+    (248.2:2030), only covers "an obstacle exists in the quad field with no
+    `_obstacles` entry" — no caller can produce that state, `add_obstacle` always
+    stores the id it got back, and `on_simulation_ended` (248.2:1722-1752)
+    sweeps the remaining ids between heists.
+  - `_draw_covers` — **keep LIES**, and it is dead code on both sides: 248.2
+    reaches it only from `_debug_draw_options.covers` (`248.2:159-161`), LIES
+    comments its own call out (`:1251`). Porting 248.2's body would drag in
+    `temp_rot1` and `mrot_set_look_at`, which LIES' chunk does not declare — a
+    freevars hit for zero gameplay value.
+- **Three gaps merged** (`cbc4a29`, released V8.81):
+  1. `register_cover_units` — the legacy cover-unit branch now passes the create
+     flag, `self._quad_field:get_script_data(nav_tracker, true)` (`:552`).
+     248.2:849 added it to match the sibling `cover_data` call site
+     (`246.1:1389` already passed it); 246.1:1433 did not. Without it the
+     following `location_script_data.covers` write is an index-nil error that
+     aborts cover registration for the map. Reachable only when
+     `managers.worlddefinition:get_cover_data()` returns nil.
+  2. `_execute_coarce_search` — restored the nav-link availability gate:
+     `local t = TimerManager:game():time()` hoisted (`:2296`) and
+     `t > i_door:delay_time()` ahead of `check_access` (`:2325`). The construct
+     exists in **both** baselines (246.1:1829, 248.2:1257), so this is a LIES
+     drop relative to 246.1, not a 248.2 fix.
+  3. `_sort_nav_segs_after_pos` — the same gate, same hoist (`:2409`),
+     `alive(door) and not door:is_obstructed() and t > door:delay_time() and
+     door:check_access(...)` (`:2422`); 246.1:1952 and 248.2:1368.
+  Not ported in the same pass, deliberately: the 248.2 `for i = 1, 500` loop
+  restyle (equivalent — `i == 500` is checked before the increment — plus two
+  hoists the gate did not need) and the `check_segment` closure in the sort
+  (pure restructure that would displace LIES' extra `from_pos` parameter and
+  two-term weight, and touch the caller).
+- **Deliberate LIES shapes this decision protects**, pinned by
+  `dev/tools/test/nav-gates.test.mjs` so a later 248.2 restyle cannot silently
+  drop them: the 7-argument `_sort_nav_segs_after_pos` signature, its two-term
+  `mvec3_dis(from_pos, door_pos) + mvec3_dis(door_pos, to_pos)` weight, the
+  4-tuple path with its `nav_link`, `not is_obstructed()` in the coarse-search
+  entry test (AI-06), dead-link skipping instead of `debug_pause`, and the
+  246.1 `while true` / `i == 500` loop with the per-iteration
+  `self._nav_segments` lookup.
+- **Iter-override caveat.** Iter replaces `_execute_coarce_search` **wholesale**
+  when its `nav_search` setting is on
+  (`NavigationManager._execute_coarce_search = NavigationManager.itr_execute_coarce_search`,
+  `mods/Iter/lua/navigationmanager.lua:2146-2147` on Iter's `feat/ai-suite-compat`
+  branch, 200.21; default `true` at `lua/corecode.lua:17`). Under that profile
+  gap 2 is unreachable and Iter's own search runs — including its 200.20 FIFO
+  cursor rework (`f896b61`). Gap 2 is still correct standalone, and **gap 3 is
+  the one that always runs**, because Iter does not override
+  `_sort_nav_segs_after_pos`. Load order keeps the interaction safe: LIES is
+  priority 100, Iter 40, `mods/base/base.lua:236` sorts descending, so LIES'
+  bodies are installed first and Iter's wrappers/assignment run over them (the
+  opposite of NavFixes, priority 0, which loads last and breaks LIES' 7-argument
+  caller — `compatibility.md` §2.1).
+- **Risk if wrong.** Both gates add one userdata method call (`delay_time()`) in
+  the path-expansion hot loop, on the same object LIES already calls
+  `is_obstructed()` and `check_access()` on, so no new pointer class. The failure
+  mode of a too-strict gate is a cop refusing a usable link and stalling on a
+  reachable route; the failure mode of the code before this release is
+  committing to a link that is not ready. Scenario: fight through a door the AI
+  opens and re-opens — cops should walk through it, and should not stack at a
+  closed vault or ladder while it is still settling.
+- **Gate:** smoke. Not yet observed in game; the change is only visible on maps
+  with nav links that are cooling or reserved during a search.
+

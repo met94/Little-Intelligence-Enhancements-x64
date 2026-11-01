@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-11-01 (after the V8.80 near-visible probe merge).
+Last updated: 2026-11-01 (after the V8.81 nav-v6 close-out).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -27,8 +27,10 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   marshal harasser swap).
 - API review triage: 147 known-safe, 5 engine/uncertain, 0 confirmed drift
   (`dev/reports/api-audit-triage.md`).
-- Static gates: 54 Node tests, 71/71 LuaJIT syntax, 68/68 freevars, ledger,
-  API audit pass.
+- Static gates (V8.81): 179 Node test cases (0 fail), 71/71 LuaJIT syntax,
+  68/68 freevars, ledger (`errors=0`, 580 functions), API audit
+  (`hooks=68/68`, `errors=0`, `review=151`). Report:
+  `dev/reports/static-gates.md`.
 - Door watching restored (V8.79, `0edc8bc` + `e389d5e` + `189a053`): ledger
   blocks #1/#2/#4 are back as a LIES layer over vanilla
   `_get_expected_attention_position`, gated by
@@ -49,6 +51,14 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   about two minutes before that crash, so the cost figure is a lower bound, and
   the `--ab` control has not been run. Evidence: `door-watch-port.md` §10; open
   questions §7.
+- Nav v6 closed (V8.81, `cbc4a29`): the audit-first pass
+  (`dev/reports/nav-v6-remaining-audit.md`) found four of the seven backlog rows
+  already satisfied or dead, and merged the three real gaps —
+  `register_cover_units`' `get_script_data(nav_tracker, true)` create flag and
+  the nav-link `delay_time()` gate in `_execute_coarce_search` and
+  `_sort_nav_segs_after_pos`. Code and static gates green; **not observed in
+  game** (the gate only bites on cooling/reserved nav links, the flag only on
+  maps shipping legacy cover units).
 
 ## Open — core AI (needs in-game testing)
 
@@ -59,14 +69,30 @@ height"); `CopLogicAttack.action_complete_clbk` — **done** (merged in
 `f0370d4`, re-verified complete 2026-11-01).
 
 Next block: the **`NavigationManager` nav-v6 set** in
-`lua/managers/navigationmanager.lua` — `register_cover_units`,
-`_execute_coarce_search`, `_sort_nav_segs_after_pos`, `remove_obstacle`,
-`_draw_covers`. `add_obstacle` and `set_nav_segment_state` are already applied
-(`dev/reports/port-decisions.md` §12/§13, including the v6 `tostring(id)`
-segment keys); the ledger rows for the remaining five still read `PORT`, as do
-those two — `dev/port-248-ledger.md` records the *proposed* action per function,
-not completion, so it is not the "is it done" source; this file and
+`lua/managers/navigationmanager.lua` — **done (V8.81)**. The audit
+(`dev/reports/nav-v6-remaining-audit.md`) closed four of the seven rows before
+any Lua was written, and the three real gaps landed in `cbc4a29`:
+`register_cover_units`' create flag, and the nav-link `delay_time()` gate in
+both `_execute_coarce_search` and `_sort_nav_segs_after_pos`
+(`dev/reports/port-decisions.md`, "Nav-v6 audit outcome"; test:
+`dev/tools/test/nav-gates.test.mjs`). Deliberately not ported, recorded so it is
+not re-litigated: `_draw_covers` (dead code on both sides), the
+`remove_obstacle` object-call parity line, the 248.2 `for i = 1, 500` loop
+restyle, and the `check_segment` closure. The ledger rows still read `PORT` —
+`dev/port-248-ledger.md` records the *proposed* action per function, not
+completion, so it is not the "is it done" source; this file and
 `port-decisions.md` are.
+
+Next block: **re-verify `TankCopLogicAttack.update` and
+`TaserLogicAttack._upd_enemy_detection` against 248.2 and record verdicts — do
+not port.** `port-decisions.md` decides `keep LIES` on both (§9 and §6): the
+tank body is a deliberate LIES rewrite (`old_action_advancing`, per-frame
+`attitude`, `next_mov_time` gate, walk/run chase choice) and the taser body
+deliberately returns `delay` and drops the wind-up focus lock. Neither has been
+re-read since the 246.1 baseline, so the task is a `pd2fn` 246.1 → 248.2 delta
+plus a recorded verdict, the same shape as the nav-v6 audit. Expect restyle
+only (`within_z_distance` refactor, inline action table, `unit:movement()` on
+the tank; local declaration order on the taser) — verify, then write it down.
 
 Dossiers in `dev/reports/dossiers/`:
 
@@ -90,6 +116,11 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 
 - `set_nav_segment_state`: stringified `tostring(id)` keys; LIES cache invalidation kept.
 - `add_obstacle`: 248.2 nil guard + destroy listener; LIES cache invalidation kept.
+- nav-v6 close-out (V8.81, `cbc4a29`): `register_cover_units` create flag on the
+  legacy cover-unit branch; nav-link `delay_time()` gate in
+  `_execute_coarce_search` and `_sort_nav_segs_after_pos`. `remove_obstacle`
+  and `_draw_covers` stay LIES (dead-code / no-reachable-state; see
+  `port-decisions.md` "Nav-v6 audit outcome").
 - `force_end_assault_phase`: 248.2 timestamp poke.
 - `CopLogicAttack.action_complete_clbk`: `math.rand` dodge timeout (applied
   `f0370d4`; verified complete 2026-11-01 via `pd2fn`).
