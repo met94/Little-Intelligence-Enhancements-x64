@@ -86,7 +86,7 @@ test('the digest is one line per minute and the alarms have thresholds', () => {
 
 test('the tagged call sites feed the digest counters', () => {
   const kinds = {
-    'lua/coplogics/coplogicattack.lua': ['suppression_deny'],
+    'lua/coplogics/coplogicattack.lua': ['suppression_deny', 'door_raw'],
     'lua/coplogics/specials/shieldlogicattack.lua': ['cover_set', 'cover_fallback'],
     'lua/coplogics/specials/taserlogicattack.lua': ['taser_allowed', 'taser_blocked'],
     'lua/props/carrydata.lua': ['bag_registered', 'bag_skipped', 'bag_deferred'],

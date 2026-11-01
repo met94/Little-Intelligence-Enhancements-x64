@@ -63,6 +63,194 @@ local function lies_enemy_tracker(focus_enemy, data)
 	end
 end
 
+-- One [LIES-WATCH] line per session proving the door probe produced a real
+-- position, and from which source. `Watch` no-ops while `watch_log` is off.
+local function lies_door_watch_first(src, data, enemy_seg)
+	if LIES._door_watch_first then
+		return
+	end
+
+	LIES._door_watch_first = true
+
+	local unit = data.unit
+	local base = unit and unit:base()
+
+	LIES:Watch("door_watch_first", {
+		src = src,
+		seg = enemy_seg,
+		u = unit and unit:key() or "?",
+		tweak = base and base._tweak_table or "?"
+	})
+end
+
+-- Door watch for the aim pass (ledger #1 and #2). Pre-port `_upd_aim` kept the
+-- last good watch position, re-tested its line of sight on a 0.2/1.5 s cadence,
+-- probed the enemy's nav segment for a doorway when the target sat in another
+-- segment, and fell back to `_get_expected_pos`. The 248.2 port (`bbb30fa`)
+-- dropped all of it, which is why cops stopped predicting a target through a
+-- doorway. This is the same body with the retired `_nav_segments[seg].pos`
+-- height read replaced by the attention object's position, and with one counter
+-- per branch so a test play can prove which path ran.
+--
+-- Outcome accounting: every call increments exactly one of `dw_gate_off`,
+-- `dw_stale_bail`, `dw_outer_gate_skip`, `dw_hit`, `dw_none`. Everything else
+-- (`dw_cadence_skip`, `dw_raw_hit`, `dw_ray`, ...) is a sub-event.
+local function lies_upd_expected_pos(data, my_data, time_since_verification)
+	LIES:Count("dw_call")
+
+	if not (LIES.settings.door_watch and not LIES.settings.highperformance) then
+		LIES:Count("dw_gate_off")
+
+		return CopLogicAttack._get_expected_attention_position(data, my_data)
+	end
+
+	local focus_enemy = data.attention_obj
+	local enemy_tracker = lies_enemy_tracker(focus_enemy, data)
+
+	if not enemy_tracker then
+		-- The attention object outlived its unit. Vanilla
+		-- `_get_expected_attention_position` (`1508-1516`) would read the same
+		-- freed pointer, so this branch returns without calling it.
+		LIES:Count("dw_stale_bail")
+
+		return
+	end
+
+	local my_tracker = data.unit:movement():nav_tracker()
+	local my_seg = my_tracker:nav_segment()
+	local enemy_seg = enemy_tracker:nav_segment()
+
+	-- Author's outer gate: another segment is only worth watching when the
+	-- target has not been lost, or when both units share a segment anyway.
+	if not ((time_since_verification and not focus_enemy.lost_track) or my_seg == enemy_seg) then
+		LIES:Count("dw_outer_gate_skip")
+
+		return CopLogicAttack._get_expected_attention_position(data, my_data)
+	end
+
+	local expected_pos = my_data.expected_pos
+	local last_check_t = my_data.expected_pos_last_check_t
+	-- A clock that moved backwards means a level change: re-test right away.
+	local test_for_sight = not last_check_t or data.t - last_check_t > (data.important and 0.2 or 1.5) or data.t < last_check_t
+	local cached = expected_pos and 1 or 0
+	local src
+	local height
+
+	if test_for_sight and not my_data.advancing then
+		local raycast_f = data.unit.raycast
+		local head_pos = data.m_pos:with_z(data.unit:movement():m_head_pos().z)
+
+		if expected_pos and raycast_f(data.unit, "ray", head_pos, expected_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report") then
+			expected_pos = nil
+			my_data.expected_pos = nil
+
+			LIES:Count("dw_cached_unsighted")
+		end
+
+		if not expected_pos then
+			if my_seg ~= enemy_seg then
+				-- Tracker-free height gate: `focus_enemy.m_pos` is the last known
+				-- position, so no nav segment table and no engine pointer.
+				local enemy_z = focus_enemy.m_pos and focus_enemy.m_pos.z or data.m_pos.z
+				local try_watch_enemy_seg = data.m_pos.z >= enemy_z or math.abs(data.m_pos.z - enemy_z) < 250 or (focus_enemy.dis or 0) >= 2000
+
+				height = try_watch_enemy_seg and 1 or 0
+
+				if try_watch_enemy_seg then
+					local nav = managers and managers.navigation
+					-- 2-arg form: raw Vector3 positions only, no segment filter.
+					local doors = nav and nav.find_segment_doors and nav:find_segment_doors(enemy_seg)
+					local t0 = os.clock()
+
+					if doors then
+						for i = 1, #doors do
+							local door = doors[i]
+
+							if door.x then
+								local test_pos = door:with_z(door.z + 140)
+
+								LIES:Count("dw_ray")
+
+								if not raycast_f(data.unit, "ray", head_pos, test_pos, "slot_mask", data.visibility_slotmask, "ray_type", "ai_vision", "report") then
+									LIES:Count("dw_raw_hit")
+									LIES:Count("door_raw")
+
+									expected_pos = test_pos
+									src = "raw"
+
+									break
+								end
+							end
+						end
+					end
+
+					local elapsed_us = (os.clock() - t0) * 1000000
+
+					LIES:Sum("dw_us", elapsed_us)
+					LIES:Gauge("dw_us_max", elapsed_us)
+				else
+					LIES:Count("dw_height_skip")
+				end
+			else
+				LIES:Count("dw_seg_same")
+			end
+
+			if not expected_pos and not enemy_tracker:obstructed() and not my_tracker:obstructed() then
+				local fallback = CopLogicAttack._get_expected_pos(data, my_data)
+
+				if fallback then
+					expected_pos = fallback
+					src = "expected"
+
+					LIES:Count("dw_expected_pos_hit")
+				end
+			end
+		else
+			LIES:Count("dw_cached_reuse")
+		end
+
+		my_data.expected_pos_last_check_t = data.t
+	else
+		LIES:Count("dw_cadence_skip")
+
+		if my_data.advancing then
+			LIES:Count("dw_advancing_skip")
+		end
+	end
+
+	if expected_pos then
+		my_data.expected_pos = expected_pos
+
+		LIES:Count("dw_hit")
+
+		-- Trace only a position this call derived; a cached reuse would flood
+		-- the trace channel with the same line.
+		if src then
+			lies_door_watch_first(src, data, enemy_seg)
+
+			LIES:Trace(data.unit, data, "door_watch", string.format("src=%s seg=%s dis=%d cached=%d height=%d",
+				src, tostring(enemy_seg), math.floor((focus_enemy.dis or 0) + 0.5), cached, height or 0), 2.5)
+		end
+
+		return expected_pos
+	end
+
+	LIES:Count("dw_none")
+
+	-- Vanilla still owns the coarse-path scheduling; `dw_path_kick` proves the
+	-- search id was armed on this call instead of being inherited.
+	local had_id = my_data.expected_pos_path_search_id
+	local pos = CopLogicAttack._get_expected_attention_position(data, my_data)
+
+	LIES:Count("dw_vanilla_call")
+
+	if not had_id and my_data.expected_pos_path_search_id then
+		LIES:Count("dw_path_kick")
+	end
+
+	return pos
+end
+
 function CopLogicAttack.enter(data, new_logic_name, enter_params)
 	CopLogicBase.enter(data, new_logic_name, enter_params)
 	data.unit:brain():cancel_all_pathing_searches()
@@ -1067,7 +1255,7 @@ function CopLogicAttack._upd_aim(data, my_data)
 			end
 
 			if not aim then
-				expected_pos = CopLogicAttack._get_expected_attention_position(data, my_data)
+				expected_pos = lies_upd_expected_pos(data, my_data, time_since_verification)
 
 				if expected_pos then
 					if running then
@@ -1218,6 +1406,7 @@ function CopLogicAttack._upd_aim(data, my_data)
 	-- Only `shoot` is delayed, never `aim`.
 	if focus_enemy and AIAttentionObject.REACT_COMBAT <= focus_enemy.reaction then
 		local level = math.max(1, tonumber(LIES.settings.enemy_reaction_level) or 1)
+		local react_hold = false
 
 		if level < 3 and not data.unit:in_slot(16) and not data.is_converted and not (data.team and data.team.id == "criminal1") and not (data.tactics and data.tactics.provide_coverfire_LIES) then
 			-- private timer: the attention object's `react_t` is also written by
@@ -1225,13 +1414,27 @@ function CopLogicAttack._upd_aim(data, my_data)
 			-- field would let the two delays stack
 			if not focus_enemy.lies_react_t or not focus_enemy.verified_t or data.t - focus_enemy.verified_t > 2 then
 				focus_enemy.lies_react_t = data.t
+
+				-- One event per hold, alongside the arm: the digest counts held
+				-- frames, this records when a hold started and at which level.
+				LIES:Event("reaction_hold", data.unit, data, { level = level })
 			end
 
 			local react_t = 2 / level
 
 			if data.t - focus_enemy.lies_react_t < react_t then
 				shoot = nil
+				react_hold = true
 			end
+		end
+
+		-- Exactly one of the two per pass: `react_hold` when the delay swallowed
+		-- `shoot`, `react_allow` when it did not (timer elapsed, or the block is
+		-- exempt / level >= 3).
+		if react_hold then
+			LIES:Count("react_hold")
+		else
+			LIES:Count("react_allow")
 		end
 	end
 

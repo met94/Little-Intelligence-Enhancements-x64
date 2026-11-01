@@ -67,9 +67,9 @@ test('every tracker read goes through the helper', () => {
   const text = source();
   const calls = text.match(/lies_enemy_tracker\(/g) || [];
 
-  // 1 definition + 5 call sites. The aim pass is no longer one of them: it runs
-  // the vanilla 248.2 body, which resolves its target through the nav graph.
-  assert.equal(calls.length, 6, `expected 1 definition + 5 call sites, found ${calls.length}`);
+  // 1 definition + 6 call sites. The aim pass is one of them again: the restored
+  // door watch resolves the enemy tracker through the liveness rule.
+  assert.equal(calls.length, 7, `expected 1 definition + 6 call sites, found ${calls.length}`);
 
   // Charge branches (both copies) and cover selection.
   assert.equal(

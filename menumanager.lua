@@ -496,7 +496,56 @@ if RequiredScript == "lib/managers/menumanager" then
 			cover_id_age_ms = self:_avg_sum("cover_id_age_ms"),
 			cover_id_age_max_ms = math.floor((self.watch_gauges.cover_id_age_ms or 0) + 0.5),
 			cover_abandoned_inflight = d.cover_abandoned_inflight or 0,
-			cover_stale_applied = d.cover_stale_applied or 0
+			cover_stale_applied = d.cover_stale_applied or 0,
+
+			-- door watch in the aim pass: which branch ran
+			dw_call = d.dw_call or 0,
+			dw_hit = d.dw_hit or 0,
+			dw_gate_off = d.dw_gate_off or 0,
+			dw_stale_bail = d.dw_stale_bail or 0,
+			dw_outer_gate_skip = d.dw_outer_gate_skip or 0,
+			dw_none = d.dw_none or 0,
+			dw_cadence_skip = d.dw_cadence_skip or 0,
+			dw_advancing_skip = d.dw_advancing_skip or 0,
+			dw_cached_reuse = d.dw_cached_reuse or 0,
+			dw_cached_unsighted = d.dw_cached_unsighted or 0,
+			dw_height_skip = d.dw_height_skip or 0,
+			dw_seg_same = d.dw_seg_same or 0,
+			dw_raw_hit = d.dw_raw_hit or 0,
+			dw_expected_pos_hit = d.dw_expected_pos_hit or 0,
+			dw_vanilla_call = d.dw_vanilla_call or 0,
+			dw_path_kick = d.dw_path_kick or 0,
+			dw_ray = d.dw_ray or 0,
+			dw_us = self:_avg_sum("dw_us"),
+			dw_us_max = math.floor((self.watch_gauges.dw_us_max or 0) + 0.5),
+			-- The five outcome counters are disjoint; a non-zero gap means a call
+			-- returned without an outcome.
+			dw_gap = (d.dw_call or 0) - ((d.dw_gate_off or 0) + (d.dw_stale_bail or 0) + (d.dw_outer_gate_skip or 0) + (d.dw_hit or 0) + (d.dw_none or 0)),
+
+			-- find_segment_doors: why the door list shrank, and tracker balance
+			fsd_call_2arg = d.fsd_call_2arg or 0,
+			fsd_call_center = d.fsd_call_center or 0,
+			fsd_no_from_seg = d.fsd_no_from_seg or 0,
+			fsd_neighbour_missing = d.fsd_neighbour_missing or 0,
+			fsd_disabled = d.fsd_disabled or 0,
+			fsd_raw = d.fsd_raw or 0,
+			fsd_door_dead = d.fsd_door_dead or 0,
+			fsd_door_obstructed = d.fsd_door_obstructed or 0,
+			fsd_nil_element = d.fsd_nil_element or 0,
+			fsd_nil_position = d.fsd_nil_position or 0,
+			fsd_nil_tracker = d.fsd_nil_tracker or 0,
+			fsd_nil_end_pos = d.fsd_nil_end_pos or 0,
+			fsd_navlink_seg_ok = d.fsd_navlink_seg_ok or 0,
+			fsd_navlink_seg_mismatch = d.fsd_navlink_seg_mismatch or 0,
+			fsd_tracker_created = d.fsd_tracker_created or 0,
+			fsd_tracker_destroyed = d.fsd_tracker_destroyed or 0,
+			fsd_bad_shape = d.fsd_bad_shape or 0,
+			fsd_balance = (d.fsd_tracker_created or 0) - (d.fsd_tracker_destroyed or 0),
+
+			-- reaction-level fire delay: held frames vs allowed frames
+			react_hold = d.react_hold or 0,
+			react_allow = d.react_allow or 0,
+			react_level = tonumber(self.settings.enemy_reaction_level) or 1
 		}
 
 		self.watch_gauges = {}
@@ -587,6 +636,11 @@ if RequiredScript == "lib/managers/menumanager" then
 		return bad / total, total, bad
 	end
 
+	-- Delta of one counter inside the alarm window.
+	local function lies_delta(counters, prev, kind)
+		return (counters[kind] or 0) - (prev[kind] or 0)
+	end
+
 	function LIES:WatchTick(t)
 		t = tonumber(t) or 0
 
@@ -599,7 +653,11 @@ if RequiredScript == "lib/managers/menumanager" then
 				highperformance = tostring(self.settings.highperformance),
 				hhtacs = tostring(self.settings.hhtacs),
 				nav_link_interval = tostring(self.settings.nav_link_interval),
-				debug_log = tostring(self.settings.debug_log)
+				debug_log = tostring(self.settings.debug_log),
+				door_watch = tostring(self.settings.door_watch),
+				trace = tostring(self.settings.trace),
+				watch_log = tostring(self.settings.watch_log),
+				enemy_reaction_level = tostring(self.settings.enemy_reaction_level)
 			})
 		end
 
@@ -642,6 +700,46 @@ if RequiredScript == "lib/managers/menumanager" then
 				rate = string.format("%.2f", ratio),
 				deny = bad,
 				total = total
+			}, t)
+		end
+
+		-- Door probing. A tracker created and not destroyed is an engine
+		-- resource leak; it does not show up as an error until memory runs out.
+		local fsd_created = lies_delta(self.watch_counters, self.watch_prev, "fsd_tracker_created")
+		local fsd_destroyed = lies_delta(self.watch_counters, self.watch_prev, "fsd_tracker_destroyed")
+		local fsd_balance = fsd_created - fsd_destroyed
+
+		if fsd_balance ~= 0 then
+			self:Alarm("door_tracker_leak", {
+				created = fsd_created,
+				destroyed = fsd_destroyed,
+				balance = fsd_balance
+			}, t)
+		end
+
+		-- Every aim-pass call must land in exactly one outcome counter.
+		local dw_call = lies_delta(self.watch_counters, self.watch_prev, "dw_call")
+		local dw_outcomes = lies_delta(self.watch_counters, self.watch_prev, "dw_gate_off") +
+			lies_delta(self.watch_counters, self.watch_prev, "dw_stale_bail") +
+			lies_delta(self.watch_counters, self.watch_prev, "dw_outer_gate_skip") +
+			lies_delta(self.watch_counters, self.watch_prev, "dw_hit") +
+			lies_delta(self.watch_counters, self.watch_prev, "dw_none")
+		local dw_gap = dw_call - dw_outcomes
+
+		if dw_gap ~= 0 and dw_call > 0 then
+			self:Alarm("door_outcome_gap", {
+				call = dw_call,
+				outcomes = dw_outcomes,
+				gap = dw_gap
+			}, t)
+		end
+
+		-- A non-Vector3 door position would be handed to mvec3_set by vanilla.
+		local fsd_bad_shape = lies_delta(self.watch_counters, self.watch_prev, "fsd_bad_shape")
+
+		if fsd_bad_shape > 0 then
+			self:Alarm("door_contract_violation", {
+				bad_shape = fsd_bad_shape
 			}, t)
 		end
 
