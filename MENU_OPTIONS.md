@@ -171,16 +171,17 @@ How to verify it from a log (needs `"watch_log": true`, see the next section):
 | `dw_gate_off` | Calls that returned because the setting or High Performance Mode was off; with door watching off, this must equal `dw_call` |
 | `dw_stale_bail` | The feature refused to touch a freed enemy tracker and used no position; informational, the guard working |
 | `dw_outer_gate_skip` | The target is lost (or was never verified) and is in another segment, so the watch was not attempted |
+| `dw_no_my_tracker` | The cop's own nav tracker was nil, so nothing was attempted and vanilla was not called either |
 | `dw_hit` / `dw_none` | A watch position was produced / nothing was found |
-| `dw_gap` | Must be `0`: a call that returned without landing in one of the outcomes above |
+| `dw_gap` | Must be `0`: a call that returned without landing in one of the six outcomes above |
 | `dw_raw_hit` / `dw_ray` | Door position raycast that hit / door raycasts attempted |
 | `dw_expected_pos_hit` | The fallback nav-graph position was used |
-| `dw_path_prestep` | A coarse path was already armed and read for a watch position |
-| `dw_cached_reuse` | A cadence window opened without the cached re-test (no saved position, or the cop was running); the probe can still follow in the same call |
+| `dw_path_prestep` | A coarse path was already armed and read for a watch position (an attempt: counted before `_get_expected_pos`, so it does not prove a position) |
+| `dw_cached_reuse` | The 0.2/1.5 s window had not elapsed, so a saved position was reused as-is (no re-test, no probe on that call) |
 | `dw_height_skip` | The height gate rejected the enemy segment (target far below) |
 | `dw_seg_same` | Same nav segment, so vanilla handles it (`m_pos + 140`) |
-| `dw_cadence_skip` / `dw_advancing_skip` | The 0.2/1.5 s window had not elapsed / the cop was running |
-| `dw_us`, `dw_us_max` | Average and worst time of the armed path in microseconds |
+| `dw_cadence_skip` / `dw_advancing_skip` | The 0.2/1.5 s window had not elapsed / …and the cop was running |
+| `dw_us`, `dw_us_max` | Average and worst time of the armed path (pre-step, re-test and door probe) in microseconds |
 
 `[LIES-WATCH] evt=door_watch_first` and `[LIES-TRACE] … phase=door_watch`
 name the first produced position (`src=raw` or `src=expected`) and the per-unit
@@ -209,10 +210,10 @@ Same channel shape as Iter's, so one reader handles both mods:
   set/fallback, suppression denies, taser allowed/blocked, bag steal-SO
   registered/skipped/deferred, marshal mapping and civilian follow fallbacks.
   V8.79 adds three more groups to the same line:
-  - `dw_*` — door watching: the five outcome counters (`dw_call`,
-    `dw_gate_off`, `dw_stale_bail`, `dw_outer_gate_skip`, `dw_hit`,
-    `dw_none`), the derived `dw_gap` (must be 0), the branch sub-events
-    (`dw_raw_hit`, `dw_expected_pos_hit`, `dw_path_prestep`,
+  - `dw_*` — door watching: the six outcome counters (`dw_call`,
+    `dw_gate_off`, `dw_stale_bail`, `dw_outer_gate_skip`, `dw_no_my_tracker`,
+    `dw_hit`, `dw_none`), the derived `dw_gap` (must be 0), the branch
+    sub-events (`dw_raw_hit`, `dw_expected_pos_hit`, `dw_path_prestep`,
     `dw_cached_reuse`, `dw_cadence_skip`, `dw_advancing_skip`,
     `dw_height_skip`, `dw_seg_same`, `dw_vanilla_call`, `dw_path_kick`,
     `dw_ray`) and the timing (`dw_us`, `dw_us_max`).
@@ -227,7 +228,8 @@ Same channel shape as Iter's, so one reader handles both mods:
   The counter meanings are also listed under "Door Watching" above.
 
 Read a play mechanically — the tool turns the digest into PASS/FAIL claims
-(exit 0 PASS, 1 FAIL, 2 INCOMPLETE with the setting to enable):
+(exit 0 PASS, 1 FAIL, 2 INCOMPLETE — no header or the feature was disarmed — and
+3 for a usage error):
 
 ```powershell
 node dev\tools\door-watch-report.mjs "…\PAYDAY 2\mods\logs\2026_11_02_log.txt" `

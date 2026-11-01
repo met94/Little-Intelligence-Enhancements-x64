@@ -141,30 +141,43 @@ test('the cached watch position is read, re-tested, cleared and written back', (
   assert.match(body, /expected_pos = nil\s*my_data\.expected_pos = nil\s*\n?[\s\S]{0,80}?LIES:Count\("dw_cached_unsighted"\)/);
   assert.match(body, /my_data\.expected_pos_last_check_t = data\.t/);
   assert.match(body, /my_data\.expected_pos = expected_pos/);
-  // The cached re-test is gated on advancing; the probe below is not.
-  assert.match(body, /if test_for_sight and expected_pos and not my_data\.advancing then/);
   assert.match(body, /LIES:Count\("dw_advancing_skip"\)/);
 });
 
-test('the probe is reachable: gated on the cadence only, never on advancing', () => {
+test('the cadence re-test is not gated on advancing', () => {
   const body = helper();
-  const probeAt = body.indexOf('if not expected_pos and test_for_sight then');
+  const cadenceAt = body.indexOf('if test_for_sight then');
+  const stampAt = body.indexOf('my_data.expected_pos_last_check_t = data.t', cadenceAt);
 
-  assert.notEqual(probeAt, -1, 'the probe block is gated on expected_pos and the cadence only');
-  // Everything from the probe header to the end of its body must be free of an
-  // advancing gate, otherwise the only call site (which reaches here while
-  // running, i.e. while my_data.advancing is set) can never enter it.
+  assert.notEqual(cadenceAt, -1, 'the cadence block is missing');
+  assert.notEqual(stampAt, -1, 'the cadence block must stamp expected_pos_last_check_t');
+
+  // The window-open arm (re-test + probe) must not read `advancing`: the only
+  // call site is reached while running, so such a gate would make the re-test
+  // and the probe dead code. The `advancing` read belongs to the skip arm only.
+  const openArm = body.slice(cadenceAt, stampAt);
+  assert.doesNotMatch(openArm, /my_data\.advancing/, 'the cadence arm must not be gated on advancing');
+  assert.match(openArm, /if expected_pos then[\s\S]*?ai_vision/, 'the re-test ray runs whenever a position is held');
+  assert.match(body.slice(stampAt), /LIES:Count\("dw_cadence_skip"\)[\s\S]{0,160}?if my_data\.advancing then\s*LIES:Count\("dw_advancing_skip"\)/);
+});
+
+test('the probe is reachable: cadence only, never advancing', () => {
+  const body = helper();
+  const probeAt = body.indexOf('if not expected_pos then');
+
+  assert.notEqual(probeAt, -1, 'the probe block is gated on expected_pos only');
   const probeEnd = body.indexOf('my_data.expected_pos_last_check_t = data.t', probeAt);
-  assert.notEqual(probeEnd, -1, 'the probe block must write expected_pos_last_check_t');
+  assert.notEqual(probeEnd, -1, 'the probe block ends at the cadence stamp');
   const probe = body.slice(probeAt, probeEnd);
   assert.doesNotMatch(probe, /my_data\.advancing/, 'the probe must not be gated on advancing');
+  assert.doesNotMatch(probe, /test_for_sight/, 'the probe sits inside the cadence block, it does not re-test the window');
   // The engine work really sits inside that block.
   assert.match(probe, /find_segment_doors/);
   assert.match(probe, /local test_pos = door:with_z\(door\.z \+ 140\)/);
-  // expected_pos_last_check_t is written on probe frames only, not on the
-  // cached-reuse arm, so the cadence keeps re-arming after a cached hit.
+  // `dw_cached_reuse` only counts the window-closed arm, so it cannot claim a
+  // reuse on a frame that ran the probe.
   const cachedReuseAt = body.indexOf('LIES:Count("dw_cached_reuse")');
-  assert.ok(cachedReuseAt > probeEnd, 'the cached-reuse counter sits after the probe block');
+  assert.ok(cachedReuseAt > probeEnd, 'the cached-reuse counter sits in the else arm, after the cadence block');
 });
 
 test('the path pre-step runs before the sight test, like the pre-port body', () => {
@@ -176,7 +189,7 @@ test('the path pre-step runs before the sight test, like the pre-port body', () 
   // Order: pre-step, then the cached re-test, then the probe.
   const prestepAt = body.indexOf('dw_path_prestep');
   const retestAt = body.indexOf('dw_cached_unsighted');
-  const probeAt = body.indexOf('if not expected_pos and test_for_sight then');
+  const probeAt = body.indexOf('if not expected_pos then');
   assert.ok(prestepAt < retestAt && retestAt < probeAt, 'pre-step, cached re-test, probe');
 });
 
@@ -199,7 +212,7 @@ test('find_segment_doors is called with exactly two arguments', () => {
   assert.doesNotMatch(body, /find_segment_doors\([^)]*,\s*true\s*\)/, 'no center_only: that shape returns tables');
 });
 
-test('the door probe counts its rays and its hit, and times the loop', () => {
+test('the door probe counts its rays and its hit, and the armed path is timed once', () => {
   const body = helper();
 
   assert.match(body, /local test_pos = door:with_z\(door\.z \+ 140\)/);
@@ -213,14 +226,21 @@ test('the door probe counts its rays and its hit, and times the loop', () => {
   const t0At = body.indexOf('local t0 = os.clock()');
   assert.ok(t0At < body.indexOf('local expected_path = my_data.expected_pos_path'), 't0 must precede the pre-step');
   assert.ok(t0At < body.indexOf('find_segment_doors'), 't0 must precede the engine call');
-  assert.ok(body.indexOf('find_segment_doors') < body.indexOf('local elapsed_us = (os.clock() - t0)'));
+  assert.ok(t0At < body.indexOf('local elapsed_us = (os.clock() - t0)'));
+  // One sample per armed call, read after the cadence block, so a frame that
+  // stops at the cached re-test or the pre-step is still priced.
+  const elapsedAt = body.indexOf('local elapsed_us = (os.clock() - t0)');
+  const stampAt = body.indexOf('my_data.expected_pos_last_check_t = data.t');
+  assert.ok(stampAt < elapsedAt, 'the timing sample sits after the cadence block');
+  assert.ok(elapsedAt < body.indexOf('LIES:Count("dw_hit")'), 'the timing sample precedes the outcome return');
+  assert.equal((body.match(/os\.clock\(\)/g) || []).length, 2, 'one start and one read per call');
 });
 
-test('the five outcome counters and every sub-event are present', () => {
+test('the six outcome counters and every sub-event are present', () => {
   const body = helper();
 
-  for (const kind of ['dw_gate_off', 'dw_stale_bail', 'dw_outer_gate_skip', 'dw_hit', 'dw_none']) {
-    assert.match(body, new RegExp(`LIES:Count\\("${kind}"\\)`), `${kind} is the only outcome counter here; it is missing`);
+  for (const kind of ['dw_gate_off', 'dw_stale_bail', 'dw_outer_gate_skip', 'dw_no_my_tracker', 'dw_hit', 'dw_none']) {
+    assert.match(body, new RegExp(`LIES:Count\\("${kind}"\\)`), `${kind} is an outcome counter here; it is missing`);
   }
 
   for (const kind of [
@@ -240,6 +260,10 @@ test('the five outcome counters and every sub-event are present', () => {
   ]) {
     assert.match(body, new RegExp(`LIES:Count\\("${kind}"\\)`), `${kind} sub-event counter is missing`);
   }
+
+  // The cop's own tracker is dereferenced twice below the gate, so a nil one is
+  // its own outcome and must not reach vanilla.
+  assert.match(body, /local my_tracker = data\.unit:movement\(\):nav_tracker\(\)\s*\n\s*\n\tif not my_tracker then\s*\n\s*LIES:Count\("dw_no_my_tracker"\)\s*\n\s*\n\t\treturn\s*\n\tend/);
 
   // The counter that proves vanilla's coarse-path scheduling still runs.
   assert.match(body, /local had_id = my_data\.expected_pos_path_search_id/);
@@ -279,6 +303,7 @@ test('the digest reports the door watch, the door list and the reaction hold', (
     'dw_gate_off',
     'dw_stale_bail',
     'dw_outer_gate_skip',
+    'dw_no_my_tracker',
     'dw_none',
     'dw_cadence_skip',
     'dw_advancing_skip',
@@ -323,8 +348,8 @@ test('the digest reports the door watch, the door list and the reaction hold', (
   // block), so the field and its alarm are gone; the harness test owns the
   // invariant.
   assert.doesNotMatch(manager, /fsd_balance/);
-  // The gap is computed from the five outcome counters, not hardcoded.
-  assert.match(manager, /dw_gap = \(d\.dw_call or 0\) - \(\(d\.dw_gate_off or 0\) \+ \(d\.dw_stale_bail or 0\) \+ \(d\.dw_outer_gate_skip or 0\) \+ \(d\.dw_hit or 0\) \+ \(d\.dw_none or 0\)\)/);
+  // The gap is computed from the six outcome counters, not hardcoded.
+  assert.match(manager, /dw_gap = \(d\.dw_call or 0\) - \(\(d\.dw_gate_off or 0\) \+ \(d\.dw_stale_bail or 0\) \+ \(d\.dw_outer_gate_skip or 0\) \+ \(d\.dw_no_my_tracker or 0\) \+ \(d\.dw_hit or 0\) \+ \(d\.dw_none or 0\)\)/);
 });
 
 test('the watchdog alarms cover outcome gaps and bad door shapes', () => {

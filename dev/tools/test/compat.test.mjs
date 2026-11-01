@@ -64,6 +64,14 @@ test('version metadata agrees on V8.79_x64', () => {
   const modTxt = JSON.parse(read('mod.txt').replace(/^\uFEFF/, ''));
   assert.equal(modTxt.version, 'V8.79_x64');
 
+  // The in-code version is what every `[LIES-WATCH] v=` and `[LIES-TRACE] v=`
+  // line reports, so a release bump that misses it makes a correct run's
+  // version claim FAIL. Pin it to mod.txt.
+  const manager = read('menumanager.lua');
+  const inCode = /_G\.LIES = \{\s*\n\s*mod_path[\s\S]{0,600}?version = "(V[\d.]+_x64)"/.exec(manager);
+  assert.ok(inCode, 'menumanager.lua does not declare LIES.version');
+  assert.equal(inCode[1], modTxt.version, 'menumanager.lua LIES.version must equal the mod.txt version');
+
   const feed = JSON.parse(read('autoupdate.json').replace(/^\uFEFF/, ''));
   assert.equal(feed[0].version, 'V8.79_x64');
 

@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.78_x64",
+		version = "V8.79_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -504,6 +504,7 @@ if RequiredScript == "lib/managers/menumanager" then
 			dw_gate_off = d.dw_gate_off or 0,
 			dw_stale_bail = d.dw_stale_bail or 0,
 			dw_outer_gate_skip = d.dw_outer_gate_skip or 0,
+			dw_no_my_tracker = d.dw_no_my_tracker or 0,
 			dw_none = d.dw_none or 0,
 			dw_cadence_skip = d.dw_cadence_skip or 0,
 			dw_advancing_skip = d.dw_advancing_skip or 0,
@@ -519,9 +520,9 @@ if RequiredScript == "lib/managers/menumanager" then
 			dw_ray = d.dw_ray or 0,
 			dw_us = self:_avg_sum("dw_us"),
 			dw_us_max = math.floor((self.watch_gauges.dw_us_max or 0) + 0.5),
-			-- The five outcome counters are disjoint; a non-zero gap means a call
+			-- The six outcome counters are disjoint; a non-zero gap means a call
 			-- returned without an outcome.
-			dw_gap = (d.dw_call or 0) - ((d.dw_gate_off or 0) + (d.dw_stale_bail or 0) + (d.dw_outer_gate_skip or 0) + (d.dw_hit or 0) + (d.dw_none or 0)),
+			dw_gap = (d.dw_call or 0) - ((d.dw_gate_off or 0) + (d.dw_stale_bail or 0) + (d.dw_outer_gate_skip or 0) + (d.dw_no_my_tracker or 0) + (d.dw_hit or 0) + (d.dw_none or 0)),
 
 			-- find_segment_doors: why the door list shrank, and tracker balance
 			fsd_call_2arg = d.fsd_call_2arg or 0,
@@ -717,6 +718,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		local dw_outcomes = lies_delta(self.watch_counters, self.watch_prev, "dw_gate_off") +
 			lies_delta(self.watch_counters, self.watch_prev, "dw_stale_bail") +
 			lies_delta(self.watch_counters, self.watch_prev, "dw_outer_gate_skip") +
+			lies_delta(self.watch_counters, self.watch_prev, "dw_no_my_tracker") +
 			lies_delta(self.watch_counters, self.watch_prev, "dw_hit") +
 			lies_delta(self.watch_counters, self.watch_prev, "dw_none")
 		local dw_gap = dw_call - dw_outcomes

@@ -69,7 +69,7 @@ function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_
 			local number_of_doors = 0
 
 			for _, door in ipairs(door_list) do
-				if door.x then
+				if door.x ~= nil then
 					lies_count("fsd_raw")
 					mvector3.add(door_central, door)
 					number_of_doors = number_of_doors + 1
@@ -109,7 +109,7 @@ function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_
 
 									if not end_pos then
 										lies_count("fsd_nil_end_pos")
-									elseif end_pos.x then
+									elseif end_pos.x ~= nil then
 										door_data.end_pos = end_pos
 									else
 										-- `_get_expected_pos` calls `door.end_pos:with_z(...)`,
@@ -139,7 +139,7 @@ function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_
 			end
 		else
 			for _, door in ipairs(door_list) do
-				if door.x then
+				if door.x ~= nil then
 					lies_count("fsd_raw")
 					table.insert(found_doors, door)
 				elseif not alive(door) then
@@ -176,7 +176,7 @@ function NavigationManager:find_segment_doors(from_seg_id, approve_clbk, center_
 
 									if not end_pos then
 										lies_count("fsd_nil_end_pos")
-									elseif end_pos.x then
+									elseif end_pos.x ~= nil then
 										table.insert(found_doors, end_pos)
 									else
 										-- Not a Vector3: a caller would hand this to

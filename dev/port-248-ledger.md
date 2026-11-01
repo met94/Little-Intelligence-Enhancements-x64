@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T11:17:01.017Z
+Generated: 2026-11-01T11:33:42.053Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the proposed action. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure.
@@ -52,10 +52,10 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | `LIES.Trace` | 81 | 0 | 0 |  |
 | [ ] | audit | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.Watch` | 7 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchDigest` | 126 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchDigest` | 127 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
 | [ ] | audit | `LIES.WatchReset` | 17 | 0 | 0 |  |
-| [ ] | audit | `LIES.WatchTick` | 103 | 0 | 0 |  |
+| [ ] | audit | `LIES.WatchTick` | 104 | 0 | 0 |  |
 
 ## menunodegui.lua
 
@@ -627,7 +627,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | `lies_door_watch_first` | 23 | 0 | 0 |  |
 | [ ] | audit | `lies_enemy_tracker` | 22 | 0 | 0 |  |
 | [ ] | audit | `lies_trace_window` | 5 | 0 | 0 |  |
-| [ ] | audit | `lies_upd_expected_pos` | 193 | 0 | 0 |  |
+| [ ] | audit | `lies_upd_expected_pos` | 217 | 0 | 0 |  |
 | [ ] | keep | `CopLogicAttack._can_move` | 3 | 3 | 3 |  |
 | [ ] | keep | `CopLogicAttack._cancel_cover_pathing` | 9 | 16 | 16 |  |
 | [ ] | keep | `CopLogicAttack._chk_covered` | 20 | 23 | 23 |  |

@@ -10,7 +10,9 @@
 //   node dev/tools/door-watch-report.mjs <log...> [--ab <control-log>] [--mod DIR]
 //                                        [--json out.json] [--out out.md]
 //
-// Exit codes: 0 PASS, 1 FAIL, 2 INCOMPLETE (no header: the digest was off).
+// Exit codes: 0 PASS, 1 FAIL, 2 INCOMPLETE (the run cannot prove the feature:
+// no header, or the header shows it disarmed), 3 usage error (unknown flag,
+// missing/unreadable log).
 //
 // Digest counters are per-window DELTAS (`menumanager.lua` `WatchDigest`), so
 // every counter below is summed across digests before it is judged.
@@ -21,11 +23,19 @@ import { fileURLToPath } from 'node:url';
 import { scanLog } from './log-scan.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+const USAGE = 'Usage: node dev/tools/door-watch-report.mjs <log...> [--ab <control-log>] [--mod DIR] [--json out.json] [--out out.md]';
 
-// What the five outcome counters are, and what a "sub-event" is. Every call to
+// What the six outcome counters are, and what a "sub-event" is. Every call to
 // `lies_upd_expected_pos` increments exactly one outcome (menumanager.lua
 // `dw_gap`); everything else is instrumentation.
-const DW_OUTCOMES = ['dw_gate_off', 'dw_stale_bail', 'dw_outer_gate_skip', 'dw_hit', 'dw_none'];
+const DW_OUTCOMES = [
+  'dw_gate_off',
+  'dw_stale_bail',
+  'dw_outer_gate_skip',
+  'dw_no_my_tracker',
+  'dw_hit',
+  'dw_none'
+];
 const DW_SUBEVENTS = [
   'dw_cadence_skip',
   'dw_advancing_skip',
@@ -40,7 +50,9 @@ const DW_SUBEVENTS = [
   'dw_path_kick',
   'dw_ray'
 ];
-const POSITION_COUNTERS = ['dw_raw_hit', 'dw_expected_pos_hit', 'dw_path_prestep'];
+// `dw_path_prestep` is deliberately NOT here: it increments before
+// `_get_expected_pos` runs, so it proves the attempt, not a produced position.
+const POSITION_COUNTERS = ['dw_raw_hit', 'dw_expected_pos_hit'];
 const HARD_ALARMS = ['door_outcome_gap', 'door_contract_violation'];
 
 // Digest fields that are gauges/averages/settings rather than per-window
@@ -90,6 +102,20 @@ function num(value) {
 
 function counter(counters, key) {
   return Number.isFinite(counters[key]) ? counters[key] : 0;
+}
+
+// `menumanager.lua` writes the header switches with `tostring(boolean)`, i.e.
+// `true`/`false`, while the menu stores `on`/`off` strings. Both spellings (and
+// 1/0) mean the same thing, so normalise before any comparison — otherwise
+// every `=== 'off'` test is false and a run with the feature off can never
+// prove a thing.
+function switchState(value) {
+  const text = String(value ?? '').trim().toLowerCase();
+
+  if (text === 'true' || text === 'on' || text === '1') return 'on';
+  if (text === 'false' || text === 'off' || text === '0') return 'off';
+
+  return 'unknown';
 }
 
 function mean(values) {
@@ -265,8 +291,14 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
   const aggregate = aggregateDigests(parsed.digests);
   const counters = aggregate.counters;
   const header = parsed.header ? parsed.header.fields : null;
-  const doorWatch = header ? header.door_watch || 'unknown' : 'unknown';
-  const highPerformance = header ? header.highperformance || 'unknown' : 'unknown';
+  const doorWatchRaw = header ? header.door_watch ?? 'unknown' : 'unknown';
+  const highPerformanceRaw = header ? header.highperformance ?? 'unknown' : 'unknown';
+  const doorWatch = switchState(doorWatchRaw);
+  const highPerformance = switchState(highPerformanceRaw);
+  const armed = doorWatch === 'on' && highPerformance === 'off';
+  const rawSpelling = doorWatchRaw === doorWatch && highPerformanceRaw === highPerformance
+    ? ''
+    : ` (log spells it door_watch=${doorWatchRaw} highperformance=${highPerformanceRaw})`;
   const digestLevel = [...parsed.digests].reverse()
     .map(digest => num(digest.fields.react_level))
     .find(value => value !== null);
@@ -336,7 +368,8 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
       `door_watch=${doorWatch} highperformance=${highPerformance}` +
         (doorWatch === 'on' && highPerformance === 'on'
           ? ' (honoured OFF while High Performance Mode is on)'
-          : '')
+          : '') +
+        rawSpelling
     );
   }
 
@@ -346,7 +379,7 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
 
   if (!header || !parsed.digests.length) {
     claim('positions', 'watch positions produced', 'INFO', `no digest: ${producedDetail}`);
-  } else if (doorWatch === 'on' && highPerformance === 'off') {
+  } else if (armed) {
     claim(
       'positions',
       'watch positions produced',
@@ -358,6 +391,15 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
   } else {
     claim('positions', 'watch positions produced', 'INFO', `not applicable: door_watch=${doorWatch} highperformance=${highPerformance}`);
   }
+
+  // The pre-step is a separate INFO claim: it counts armed `expected_pos_path`
+  // frames, which is an attempt, not proof that a position came out.
+  claim(
+    'prestep',
+    'door pre-step',
+    'INFO',
+    `dw_path_prestep=${counter(counters, 'dw_path_prestep')}: frames with an armed coarse path, counted before _get_expected_pos runs, so it does not prove a position`
+  );
 
   // --- gate respected -----------------------------------------------------
   const subeventTotal = DW_SUBEVENTS.reduce((sum, key) => sum + counter(counters, key), 0);
@@ -449,9 +491,19 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
   // --- cost ---------------------------------------------------------------
   const cost = costFigures(aggregate);
   const controlCost = controlText ? costFigures(aggregateDigests(parseLog(controlText, { file: controlFile }).digests)) : null;
+  const controlUsable = !controlCost || controlCost.windows > 0;
 
   if (!parsed.digests.length) {
     claim('cost', 'cost', 'INFO', 'no digest: no dw_us/dw_ray figures');
+  } else if (!controlUsable) {
+    claim(
+      'cost',
+      'cost',
+      'INFO',
+      `dw_us avg ${cost.dw_us_avg} us, dw_us_max ${cost.dw_us_max} us, dw_ray ${cost.dw_ray} (${cost.dw_ray_per_min}/min) ` +
+        `over ${cost.windows} minute window(s), dw_call=${cost.dw_call}; control unusable: ` +
+        `no digest window in \`${controlFile}\` (watch_log off?), so no delta is printed`
+    );
   } else {
     const usDelta = controlCost ? round(cost.dw_us_avg - controlCost.dw_us_avg, 2) : null;
     const rayDelta = controlCost ? round(cost.dw_ray_per_min - controlCost.dw_ray_per_min, 2) : null;
@@ -530,7 +582,14 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
   );
 
   const hasFail = claims.some(entry => entry.result === 'FAIL');
-  const verdict = hasFail ? 'FAIL' : (header ? 'PASS' : 'INCOMPLETE');
+  // A disarmed run cannot prove the feature, so it is INCOMPLETE even when the
+  // checks it can make (the gate above all) pass. A hard failure still wins.
+  const verdict = hasFail ? 'FAIL' : (armed ? 'PASS' : 'INCOMPLETE');
+  const verdictReason = hasFail || armed
+    ? ''
+    : (!header
+      ? 'no watch header: the digest was off'
+      : `door_watch=${doorWatch} highperformance=${highPerformance}`);
 
   return {
     file,
@@ -538,6 +597,8 @@ export function analyzeLog(text, { file = '', otherFiles = [], modVersion = null
     modDir,
     modVersion,
     verdict,
+    verdict_reason: verdictReason,
+    armed,
     claims,
     header,
     digest_windows: parsed.digests.length,
@@ -605,9 +666,16 @@ export function renderReport(report) {
 
   if (report.verdict === 'INCOMPLETE') {
     lines.push('');
-    lines.push('Enable the digest before the next play: with the game closed, set `"watch_log": true` in');
-    lines.push('`mods\\saves\\LittleIntelligenceEnhancementS.txt`, and `"debug_log": true` for the per-event');
-    lines.push('`[LIES-CHECK]` lines. `trace` is on by default; without it there is no `phase=door_watch` line.');
+
+    if (report.armed === false && report.header) {
+      lines.push('The run cannot prove the feature: the header shows it disarmed' +
+        (report.verdict_reason ? ` (${report.verdict_reason})` : '') + '.');
+      lines.push('Re-run with `door_watch` on and High Performance Mode off.');
+    } else {
+      lines.push('Enable the digest before the next play: with the game closed, set `"watch_log": true` in');
+      lines.push('`mods\\saves\\LittleIntelligenceEnhancementS.txt`, and `"debug_log": true` for the per-event');
+      lines.push('`[LIES-CHECK]` lines. `trace` is on by default; without it there is no `phase=door_watch` line.');
+    }
   }
 
   lines.push('');
@@ -632,31 +700,57 @@ function parseArgs(argv) {
     else if (arg === '--json') args.json = argv[++i];
     else if (arg === '--ab') args.ab = argv[++i];
     else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: node dev/tools/door-watch-report.mjs <log...> [--ab <control-log>] [--mod DIR] [--json out.json] [--out out.md]');
+      console.log(USAGE);
       process.exit(0);
-    } else if (arg.startsWith('-')) throw new Error(`Unknown argument: ${arg}`);
+    } else if (arg.startsWith('-')) throw new Error(`unknown argument: ${arg}`);
     else args.logs.push(arg);
   }
 
   return args;
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
+// 3 = the invocation was wrong, not the run: printed with the usage line so a
+// wrapper script can tell "bad command" from "bad play".
+function usageError(message) {
+  console.error(`door-watch-report: ${message}`);
+  console.error(USAGE);
+  process.exitCode = 3;
+}
 
-  if (!args.logs.length) throw new Error('at least one log file is required');
+function main() {
+  let args;
+
+  try {
+    args = parseArgs(process.argv.slice(2));
+  } catch (err) {
+    usageError(err.message);
+    return;
+  }
+
+  if (!args.logs.length) {
+    usageError('at least one log file is required');
+    return;
+  }
 
   const read = log => fs.readFileSync(path.resolve(log), 'utf8');
   const [first, ...rest] = args.logs;
-  const modTxt = readModTxt(path.resolve(args.mod));
-  const report = analyzeLog(read(first), {
-    file: path.resolve(first),
-    otherFiles: rest.map(log => ({ file: path.resolve(log), text: read(log) })),
-    modVersion: modTxt ? modTxt.version || null : null,
-    modDir: path.resolve(args.mod),
-    controlText: args.ab ? read(args.ab) : null,
-    controlFile: args.ab ? path.resolve(args.ab) : ''
-  });
+  let report;
+
+  try {
+    const modTxt = readModTxt(path.resolve(args.mod));
+    report = analyzeLog(read(first), {
+      file: path.resolve(first),
+      otherFiles: rest.map(log => ({ file: path.resolve(log), text: read(log) })),
+      modVersion: modTxt ? modTxt.version || null : null,
+      modDir: path.resolve(args.mod),
+      controlText: args.ab ? read(args.ab) : null,
+      controlFile: args.ab ? path.resolve(args.ab) : ''
+    });
+  } catch (err) {
+    usageError(`cannot read a log: ${err.message}`);
+    return;
+  }
+
   const markdown = renderReport(report);
 
   if (args.out) {
@@ -675,7 +769,8 @@ function main() {
 
   const fails = report.claims.filter(entry => entry.result === 'FAIL').map(entry => entry.claim);
   console.log(`verdict=${report.verdict} digests=${report.digest_windows} door_watch_traces=${report.door_watch_traces}` +
-    (fails.length ? ` failed=${fails.join(',')}` : ''));
+    (fails.length ? ` failed=${fails.join(',')}` : '') +
+    (report.verdict_reason ? ` reason="${report.verdict_reason}"` : ''));
 
   if (report.verdict === 'FAIL') process.exitCode = 1;
   else if (report.verdict === 'INCOMPLETE') process.exitCode = 2;

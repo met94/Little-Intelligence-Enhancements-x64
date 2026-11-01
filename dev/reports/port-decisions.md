@@ -613,9 +613,12 @@ whether cops path in.
 - **Decision:** restore ledger blocks #1/#2/#4 as a LIES layer *over* the
   vanilla `_get_expected_attention_position`, gated by
   `door_watch and not highperformance`, instead of overriding the vanilla
-  method. Review finding: `BossLogicAttack:694` calls the vanilla
-  `CopLogicAttack._upd_aim` directly (boss logic also runs its own copy at
-  `bosslogicattack.lua:451-466`), so a method override would either miss the
+  method. Review finding: the game's
+  `lib/units/enemies/boss/logics/bosslogicattack.lua:694` calls
+  `CopLogicAttack._get_expected_attention_position` directly (LIES'
+  `lua/coplogics/boss/bosslogicattack.lua` delegates to `_upd_aim` at `245`
+  and `935`, and its own reaction-delay copy sits at `bosslogicattack.lua:451-466`
+  in that same LIES file), so a method override would either miss the
   boss path or need a second override; keeping the watch as a call target
   inside the shared body reaches every caller (attack family, team-AI assault,
   bosses) with one gate.
@@ -628,7 +631,15 @@ whether cops path in.
     fallback burned a search per cadence window and returned nothing;
   - the probe calls the 2-arg `find_segment_doors(enemy_seg)`, so nav-link
     doors arrive as raw `Vector3` `nav_link_end_pos()` (AI-02 shape) and the
-    `if door.x` test holds; `center_only` callers keep the table shape.
+    `door.x ~= nil` test holds; `center_only` callers keep the table shape;
+  - the cadence re-test is not gated on `advancing`: the pre-port term
+    (`bbb30fa^:1213`) is unreachable at the only call site, where the cop is
+    running, so it froze the watch position forever — the re-test now runs on
+    the 0.2/1.5 s window like the probe;
+  - the cop's own tracker is nil-guarded (`dw_no_my_tracker`, a sixth outcome):
+    vanilla `_get_expected_attention_position` would dereference it unguarded;
+  - `dw_cached_reuse` only counts the window-closed arm, i.e. "a saved position
+    is being reused", not "there is none".
 - **Safety order:** the tracker liveness check runs before the feature gate,
   because vanilla `_get_expected_attention_position` dereferences
   `attention_obj.nav_tracker` unguarded (`248.2:1508/1516`); with the feature

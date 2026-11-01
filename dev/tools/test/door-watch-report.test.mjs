@@ -27,16 +27,18 @@ function watch(event, fields = {}) {
 }
 
 function header(overrides = {}) {
+  // Real header shape: `menumanager.lua` writes `tostring(boolean)`, so the
+  // values are `true`/`false`, not the menu's `on`/`off`.
   return watch('header', {
     level: 'red2',
     lua_cover: 0,
-    highperformance: 'off',
-    hhtacs: 'off',
+    highperformance: 'false',
+    hhtacs: 'false',
     nav_link_interval: 1,
-    debug_log: 'off',
-    door_watch: 'on',
-    trace: 'on',
-    watch_log: 'on',
+    debug_log: 'false',
+    door_watch: 'true',
+    trace: 'true',
+    watch_log: 'true',
     enemy_reaction_level: 1,
     version: VERSION,
     ...overrides
@@ -124,11 +126,14 @@ test('a healthy armed run passes every claim', () => {
   const report = analyzeLog(happyLog, { file: 'happy_log.txt', modVersion: VERSION });
 
   assert.equal(report.verdict, 'PASS');
+  assert.equal(report.armed, true);
   assert.equal(claimOf(report, 'loaded').result, 'PASS');
   assert.equal(claimOf(report, 'version').result, 'PASS');
   assert.equal(claimOf(report, 'enabled').result, 'INFO');
   assert.match(claimOf(report, 'enabled').evidence, /door_watch=on highperformance=off/);
+  assert.match(claimOf(report, 'enabled').evidence, /log spells it door_watch=true highperformance=false/);
   assert.equal(claimOf(report, 'positions').result, 'PASS');
+  assert.equal(claimOf(report, 'prestep').result, 'INFO');
   assert.equal(claimOf(report, 'gaps').result, 'PASS');
   assert.equal(claimOf(report, 'tracker').result, 'PASS');
   assert.equal(claimOf(report, 'contract').result, 'PASS');
@@ -169,12 +174,14 @@ test('the rendered report is a table, a verdict line and the raw JSON', () => {
 test('a high-performance run proves the gate instead of the feature', () => {
   const log = [
     SETUP,
-    header({ highperformance: 'on', enemy_reaction_level: 3 }),
+    header({ highperformance: 'true', enemy_reaction_level: 3 }),
     digest({ dw_call: 20, dw_gate_off: 20, dw_hit: 0, dw_none: 0, dw_cadence_skip: 0, dw_cached_reuse: 0, dw_path_prestep: 0, dw_raw_hit: 0, dw_expected_pos_hit: 0, dw_ray: 0, react_hold: 0, react_allow: 9, react_level: 3 })
   ].join('\n');
   const report = analyzeLog(log, { file: 'hp_log.txt', modVersion: VERSION });
 
-  assert.equal(report.verdict, 'PASS');
+  // Disarmed: the gate claim can pass, but the run cannot prove the feature.
+  assert.equal(report.verdict, 'INCOMPLETE');
+  assert.equal(report.armed, false);
   assert.equal(claimOf(report, 'gate').result, 'PASS');
   assert.match(claimOf(report, 'gate').evidence, /dw_call=20 dw_gate_off=20/);
   assert.equal(claimOf(report, 'positions').result, 'INFO');
@@ -191,26 +198,71 @@ test('a high-performance run proves the gate instead of the feature', () => {
 test('a door_watch=off run must also land in dw_gate_off', () => {
   const log = [
     SETUP,
-    header({ door_watch: 'off', enemy_reaction_level: 3 }),
+    header({ door_watch: 'false', enemy_reaction_level: 3 }),
     digest({ dw_call: 6, dw_gate_off: 6, dw_hit: 0, dw_none: 0, dw_cadence_skip: 0, dw_cached_reuse: 0, dw_path_prestep: 0, dw_raw_hit: 0, dw_expected_pos_hit: 0, dw_ray: 0, react_hold: 0, react_allow: 2, react_level: 3 })
   ].join('\n');
   const report = analyzeLog(log, { file: 'off_log.txt', modVersion: VERSION });
 
   assert.equal(claimOf(report, 'gate').result, 'PASS');
   assert.equal(claimOf(report, 'positions').result, 'INFO');
-  assert.equal(report.verdict, 'PASS');
+  // Disarmed: still not a proof of the feature, and the report says why.
+  assert.equal(report.verdict, 'INCOMPLETE');
+  assert.match(report.verdict_reason, /door_watch=off/);
+  assert.match(renderReport(report), /header shows it disarmed/);
 });
 
-test('an unreached door branch fails the position claim and names the hint', () => {
+test('a hand-edited on/off header is normalised like the real true/false one', () => {
+  const armed = analyzeLog(happyLog, { file: 'a.txt', modVersion: VERSION });
+  const handEdited = analyzeLog(
+    happyLog.replace('door_watch=true', 'door_watch=on').replace('highperformance=false', 'highperformance=off'),
+    { file: 'a.txt', modVersion: VERSION }
+  );
+
+  assert.equal(handEdited.armed, true);
+  assert.equal(handEdited.verdict, 'PASS');
+  assert.equal(claimOf(handEdited, 'positions').result, claimOf(armed, 'positions').result);
+  // The evidence names the spelling the log used.
+  assert.match(claimOf(handEdited, 'enabled').evidence, /door_watch=on highperformance=off/);
+  assert.doesNotMatch(claimOf(handEdited, 'enabled').evidence, /log spells it/);
+
+  // 1/0 and mixed case mean the same thing.
+  const numeric = analyzeLog(
+    happyLog.replace('door_watch=true', 'door_watch=1').replace('highperformance=false', 'highperformance=OFF'),
+    { file: 'a.txt', modVersion: VERSION }
+  );
+
+  assert.equal(numeric.armed, true);
+  assert.equal(numeric.verdict, 'PASS');
+});
+
+test('a no-activity log with the feature armed is a FAIL, not a PASS', () => {
+  // Every counter exists but nothing happened: this is exactly the run that
+  // must not be reported as a pass.
   const log = [
     SETUP,
     header(),
-    digest({ dw_path_prestep: 0, dw_raw_hit: 0, dw_expected_pos_hit: 0 })
+    digest({ dw_call: 0, dw_gate_off: 0, dw_hit: 0, dw_none: 0, dw_cadence_skip: 0, dw_cached_reuse: 0, dw_path_prestep: 0, dw_raw_hit: 0, dw_expected_pos_hit: 0, dw_ray: 0 })
   ].join('\n');
-  const report = analyzeLog(log, { file: 'cold_log.txt', modVersion: VERSION });
+  const report = analyzeLog(log, { file: 'idle_log.txt', modVersion: VERSION });
 
   assert.equal(claimOf(report, 'positions').result, 'FAIL');
   assert.match(claimOf(report, 'positions').evidence, /no call reached the door branch/);
+  assert.equal(report.verdict, 'FAIL');
+});
+
+test('dw_path_prestep alone does not prove a position', () => {
+  const log = [
+    SETUP,
+    header(),
+    digest({ dw_path_prestep: 7, dw_raw_hit: 0, dw_expected_pos_hit: 0 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'prestep_log.txt', modVersion: VERSION });
+
+  assert.equal(claimOf(report, 'positions').result, 'FAIL');
+  assert.match(claimOf(report, 'positions').evidence, /dw_raw_hit=0 dw_expected_pos_hit=0 \(sum 0\)/);
+  // The pre-step is reported, but only as INFO.
+  assert.equal(claimOf(report, 'prestep').result, 'INFO');
+  assert.match(claimOf(report, 'prestep').evidence, /dw_path_prestep=7/);
   assert.equal(report.verdict, 'FAIL');
 });
 
@@ -264,7 +316,7 @@ test('a version mismatch against mod.txt fails', () => {
 test('--ab prints the control figures and the delta', () => {
   const control = [
     SETUP,
-    header({ door_watch: 'off' }),
+    header({ door_watch: 'false' }),
     digest({ dw_call: 10, dw_gate_off: 10, dw_hit: 0, dw_none: 0, dw_ray: 10, dw_us: 8, dw_us_max: 90 })
   ].join('\n');
   const report = analyzeLog(happyLog, { file: 'a.txt', modVersion: VERSION, controlText: control, controlFile: 'b.txt' });
@@ -276,6 +328,24 @@ test('--ab prints the control figures and the delta', () => {
   assert.match(claimOf(report, 'cost').evidence, /delta dw_ray\/min \+5/);
   assert.equal(claimOf(report, 'cost').result, 'INFO');
   // The control log is not adjudicated: its own verdict is irrelevant here.
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('--ab with a control that has no digest window reports it as unusable', () => {
+  // A control log with no `evt=digest` (e.g. watch_log left off) must not be
+  // printed as a set of deltas against zero — those numbers would look like a
+  // real cost comparison.
+  const control = [SETUP, header({ door_watch: 'false' }), trace('raw')].join('\n');
+  const report = analyzeLog(happyLog, { file: 'a.txt', modVersion: VERSION, controlText: control, controlFile: 'b.txt' });
+
+  assert.equal(report.cost.control.windows, 0);
+  assert.equal(claimOf(report, 'cost').result, 'INFO');
+  assert.match(claimOf(report, 'cost').evidence, /control unusable/);
+  assert.match(claimOf(report, 'cost').evidence, /b\.txt/);
+  assert.doesNotMatch(claimOf(report, 'cost').evidence, /delta dw_ray\/min/);
+  assert.doesNotMatch(claimOf(report, 'cost').evidence, /control dw_us avg/);
+  // The run's own numbers are still reported.
+  assert.match(claimOf(report, 'cost').evidence, /dw_us avg 11 us/);
   assert.equal(report.verdict, 'PASS');
 });
 
@@ -374,7 +444,7 @@ test('parseLog keeps the per-window fields the digest is judged on', () => {
   const parsed = parseLog(happyLog, { file: 'happy_log.txt' });
   const aggregate = aggregateDigests(parsed.digests);
 
-  assert.equal(parsed.header.fields.door_watch, 'on');
+  assert.equal(parsed.header.fields.door_watch, 'true');
   assert.equal(parsed.digests.length, 2);
   assert.equal(parsed.digests[0].fields.dw_call, '10');
   // Gauges are not counters: a sum of cache_len/dw_us would be meaningless.

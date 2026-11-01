@@ -128,10 +128,11 @@ end
 The height preference has no vanilla counterpart and reads a private manager field
 (`NavigationManager._nav_segments`, `navigationmanager.lua:94`) to decide whether to
 bother watching the enemy segment. Verdict: the segment gate is **PORTed already**
-(reached through `_get_expected_attention_position`, current lines `949` and `982`); the
-height preference is **RE-ADD (tracker-free substitute)** in V8.79. It keeps the
-author's three conditions (`data.m_pos.z >= enemy_z`, `|Δz| < 250`, target distance
-`>= 2000`) but reads Z from `focus_enemy.m_pos` (the attention object's last known
+(reached through `_get_expected_attention_position`: the vanilla arm at
+`lua/coplogics/coplogicattack.lua:1371` and the door-watch helper's two vanilla calls at
+`134`/`159`); the height preference is **RE-ADD (tracker-free substitute)** in V8.79. It
+keeps the author's three conditions (`data.m_pos.z >= enemy_z`, `|Δz| < 250`, target
+distance `>= 2000`) but reads Z from `focus_enemy.m_pos` (the attention object's last known
 position, falling back to the cop's own `m_pos.z`) — no `_nav_segments` lookup and no
 enemy tracker. Details, plus the other deviations: `dev/reports/door-watch-port.md` §4.
 
@@ -172,13 +173,19 @@ already the "raw position" shape (AI-02 in the gap audit says 248.2 callers assu
 `Vector3`), so the port inherits AI-01's fix rather than losing it.
 
 Verdict: **RE-ADD (V8.79)**. The restore is a LIES layer *around* the vanilla helper,
-gated by `door_watch and not highperformance`, not a method override: `BossLogicAttack:694`
-calls the vanilla method, so the watch runs inside the shared `_upd_aim` body
+gated by `door_watch and not highperformance`, not a method override: the game's
+`lib/units/enemies/boss/logics/bosslogicattack.lua:694` calls the vanilla
+`_get_expected_attention_position` directly (and LIES' own
+`lua/coplogics/boss/bosslogicattack.lua` delegates to `CopLogicAttack._upd_aim` at
+`245`/`935`), so the watch runs inside the shared `_upd_aim` body
 (`lies_upd_expected_pos`, `lua/coplogics/coplogicattack.lua`). Deliberate deviations from
 the pre-port probe: it calls the 2-arg `find_segment_doors(enemy_seg)` so nav-link doors
-arrive as raw `Vector3` (vanilla's default branch shape), it probes on cadence only (the
-pre-port shared `not advancing` gate made the probe unreachable at the only call site),
-and the height gate is tracker-free (§3.1). `door_raw` has a producer again and is
+arrive as raw `Vector3` (vanilla's default branch shape); it probes on cadence only —
+the pre-port probe itself was gated on `not expected_pos and test_for_sight`
+(`bbb30fa^:1223`), and the `not my_data.advancing` term lived on the cached re-test
+(`bbb30fa^:1213`) where it was unreachable at the only call site, so the re-test now runs
+on the window too (`dev/reports/door-watch-port.md` §4); and the height gate is
+tracker-free (§3.1). `door_raw` has a producer again and is
 un-retired in `dev/reports/smoke-check-logging.md`. Evidence table and test-play
 procedure: `dev/reports/door-watch-port.md` §5-§6.
 
@@ -228,8 +235,10 @@ Introduced with `46a93f2` (2025-10-22, fugsystem) — both `_get_expected_pos` (
 itself is base-level (`083c856`, 2022-04-30, Fuglore).
 
 Vanilla's replacement is `_get_expected_attention_position` (`coplogicattack.lua:1506-1618`)
-plus `_chk_is_right_segment` (`1620`) and the coarse-path kick-off (`1613-1616`), called
-from the current body at lines `949` and `982`. Through V8.78 that was a genuine PORT, not
+plus `_chk_is_right_segment` (`1620`) and the coarse-path kick-off (`1613-1616`). In the
+current body it is reached at `lua/coplogics/coplogicattack.lua:1371` (the
+`reaction < REACT_AIM` arm) and at `134`/`159` from inside `lies_upd_expected_pos` (the
+feature-off and outer-gate fallbacks). Through V8.78 that was a genuine PORT, not
 a retirement: the port's own changelog states it, and the vanilla helper does the same job
 (same segment → `m_pos + 140`; else walk `expected_pos_path` and pick the door towards the
 enemy segment).
@@ -689,8 +698,8 @@ block 11's 0.5 s hold, block 12's range self-heal.
 Blocks 1, 2 and 4 were restored in V8.79 (`dev/reports/door-watch-port.md`) as a LIES
 layer around the vanilla expected-position helper: the height preference is tracker-free
 (`focus_enemy.m_pos`), the door probe uses the 2-arg `find_segment_doors` so nav-link doors
-arrive as raw `Vector3`, and `door_raw` has a producer again. The vanilla helper at `949`
-and `982` is still the fallback, not the only path.
+arrive as raw `Vector3`, and `door_raw` has a producer again. The vanilla helper at
+`1371` (plus the two gated calls at `134`/`159`) is still the fallback, not the only path.
 
 Regression gate for the re-adds: `dev/tools/test/aim-tracker-guard.test.mjs` will need its
 `_upd_aim` token list and call-count assertions reviewed (finding 4), plus the usual

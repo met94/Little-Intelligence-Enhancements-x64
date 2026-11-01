@@ -1,17 +1,17 @@
 ﻿# LIES 248.2 static gates
 
-Generated: 2026-11-01 11:16:53Z
+Generated: 2026-11-01 11:33:34Z
 
 ## Node tool tests
 
 Result: PASS
 
-ℹ pass 135
-ℹ fail 0
-ℹ cancelled 0
-ℹ skipped 0
-ℹ todo 0
-ℹ duration_ms 166.7474
+Γä╣ pass 139
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 164.6297
 
 ## Test-harness Lua tests
 
