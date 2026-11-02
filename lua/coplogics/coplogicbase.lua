@@ -904,6 +904,16 @@ function CopLogicBase.identify_attention_obj_instant(data, att_u_key)
 end
 
 function CopLogicBase._upd_attention_obj_detection(data, min_reaction, max_reaction)
+	-- Queued detection callbacks can land after the unit is gone (V8.57 report,
+	-- access violation at the `my_pos` read below, driven by
+	-- TeamAILogicTravel._upd_enemy_detection). `alive()` is the validity
+	-- predicate for freed engine objects (dev/reports/aim-stale-nav-tracker-crash.md);
+	-- a unit that no longer exists has no detection to update, so bail with the
+	-- vanilla 2 s delay instead of dereferencing a freed unit or movement ext.
+	if not alive(data.unit) or not data.unit:movement() then
+		return 2
+	end
+
 	local t = data.t
 	local detected_obj = data.detected_attention_objects
 	local my_data = data.internal_data
