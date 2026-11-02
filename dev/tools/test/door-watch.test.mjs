@@ -51,6 +51,8 @@ function sliceFunction(source, header) {
 
 const helper = () => sliceFunction(attackSource(), 'local function lies_upd_expected_pos(data, my_data, time_since_verification)');
 
+const watchAimBody = () => sliceFunction(attackSource(), 'local function lies_watch_aim_trace(data, my_data, focus_enemy, expected_pos)');
+
 const aimBody = () => sliceFunction(attackSource(), 'function CopLogicAttack._upd_aim(data, my_data)');
 
 const expectedPosBody = () => sliceFunction(attackSource(), 'function CopLogicAttack._get_expected_pos(data, my_data)');
@@ -368,6 +370,9 @@ test('the digest reports the door watch, the door list and the reaction hold', (
     'dw_vanilla_call',
     'dw_path_kick',
     'dw_ray',
+    'watch_aim_adopted',
+    'watch_aim_cached',
+    'watch_aim_verified',
     'fsd_call_2arg',
     'fsd_call_center',
     'fsd_no_from_seg',
@@ -395,6 +400,8 @@ test('the digest reports the door watch, the door list and the reaction hold', (
   assert.match(manager, /dw_us = self:_avg_sum\("dw_us"\)/);
   assert.match(manager, /dw_us_max = math\.floor\(\(self\.watch_gauges\.dw_us_max or 0\) \+ 0\.5\)/);
   assert.match(manager, /dw_path_prestep = d\.dw_path_prestep or 0/);
+  // The adoption facing error is a per-window mean, not a delta.
+  assert.match(manager, /watch_aim_dot = self:_avg_sum\("watch_aim_dot"\)/);
   // The tracker balance was 0 by construction (both counters move in the same
   // block), so the field and its alarm are gone; the harness test owns the
   // invariant.
@@ -447,3 +454,151 @@ test('the reaction block counts held and allowed passes', () => {
   assert.ok(eventAt < armEnd, 'the event must sit inside the arm block');
   assert.ok(block.indexOf('focus_enemy.lies_react_t = data.t') < eventAt, 'the event fires alongside the arm');
 });
+
+// The V8.79 instrumentation proved a watch position was *computed*; nothing
+// said a cop then adopted it as its attention target. That is the downstream
+// link these tests pin: one trace phase, one line, three counters.
+test('adopting a watch position is traced at the adoption site', () => {
+  const aim = aimBody();
+
+  // The adoption branch is the only place `expected_pos` becomes the cop's
+  // attention target: the trace hangs off `lies_watch_src`, which only a watch
+  // return sets (fresh or cached — vanilla's `m_pos + 140` leaves it nil). The
+  // `attention_unit ~= expected_pos` test above it is vanilla's reference
+  // compare and never filters: `attention_unit` is always a fresh copy.
+  assert.match(
+    aim,
+    /if my_data\.attention_unit ~= expected_pos then\s*CopLogicBase\._set_attention_on_pos\(data, mvector3\.copy\(expected_pos\)\)\s*my_data\.attention_unit = mvector3\.copy\(expected_pos\)\s*if my_data\.lies_watch_src then\s*lies_watch_aim_trace\(data, my_data, focus_enemy, expected_pos\)\s*end\s*end/,
+    'the trace must sit inside the adoption branch, after the attention change'
+  );
+
+  const trace = watchAimBody();
+
+  // Field names: a log reader keys on them.
+  assert.match(
+    trace,
+    /LIES:Trace\(data\.unit, data, "watch_aim", string\.format\(\s*"src=%s door_seg=%s my_seg=%s dis=%d dot=%s verified=%d nearly=%d react=%s"/
+  );
+  assert.match(trace, /tostring\(src\), tostring\(seg\), tostring\(my_seg\)/);
+  assert.match(trace, /math\.floor\(mvec3_dis\(data\.m_pos, expected_pos\) \+ 0\.5\)/, 'dis is rounded');
+  assert.match(trace, /focus_enemy and tostring\(focus_enemy\.reaction\)/, 'react comes from the attention object');
+  // Tight window: an adoption is worth seeing on its own, not once per 2.5 s.
+  assert.match(trace, /, 1\.0\)/, 'the watch_aim trace must use a 1.0 s window');
+});
+
+test('the adoption counters separate adoptions from visible-target adoptions', () => {
+  const trace = watchAimBody();
+
+  assert.match(trace, /LIES:Count\("watch_aim_adopted"\)/);
+  // A cached adoption is still an adoption, but the subset is its own counter so
+  // a run whose adoptions all came from the cache can be told apart.
+  assert.match(trace, /if src == "cached" then\s*LIES:Count\("watch_aim_cached"\)\s*end/);
+  // An adoption made while the enemy is visible cannot help the feature, so it
+  // is counted separately instead of being folded into the total.
+  assert.match(
+    trace,
+    /if focus_enemy and \(focus_enemy\.verified or focus_enemy\.nearly_visible\) then\s*LIES:Count\("watch_aim_verified"\)\s*end/
+  );
+  // The facing dot is stored, and the stored value is the one that was logged.
+  const sumAt = trace.indexOf('LIES:Sum("watch_aim_dot", dot)');
+  assert.notEqual(sumAt, -1, 'watch_aim_dot must accumulate the facing dot');
+  assert.ok(trace.indexOf('dot = mvec3_dot(fwd_flat, dir_flat)') < sumAt, 'the sum reads the computed dot');
+  assert.ok(sumAt < trace.indexOf('LIES:Trace('), 'the sum is taken before the line is formatted');
+});
+
+test('an unknown facing logs dot=n/a and stays out of the mean', () => {
+  const trace = watchAimBody();
+
+  // `dot` starts nil, not 0: 0 is a real 90-degree miss. A window where either
+  // flattened vector has no length has no facing to measure, so it must neither
+  // be averaged in as a miss nor printed as one.
+  assert.match(trace, /local dot\r?\n/, 'the dot starts unset');
+  assert.doesNotMatch(trace, /local dot = 0/);
+  assert.match(trace, /if dot then\s*LIES:Sum\("watch_aim_dot", dot\)\s*end/, 'an unknown facing must not be summed');
+  assert.match(trace, /dot and string\.format\("%\.2f", dot\) or "n\/a"/, 'an unknown facing is logged as dot=n\/a');
+});
+
+test('the expensive formatting waits for the trace switch', () => {
+  const trace = watchAimBody();
+  const guardAt = trace.indexOf('if LIES.settings.trace then');
+  const formatAt = trace.indexOf('LIES:Trace(');
+  const trackerAt = trace.indexOf('nav_tracker()');
+
+  assert.notEqual(guardAt, -1, 'the trace call needs the cheap settings gate');
+  assert.ok(guardAt < formatAt, 'the format is built only when Trace can write');
+  assert.ok(guardAt < trackerAt, 'the tracker read sits behind the same gate');
+  // Everything the counters need (`Count`, `Sum`) stays outside the gate: the
+  // digest is the evidence, the line is optional.
+  for (const at of [trace.indexOf('LIES:Count("watch_aim_adopted")'), trace.indexOf('LIES:Sum("watch_aim_dot", dot)')]) {
+    assert.ok(at !== -1 && at < guardAt, 'counters must not depend on trace');
+  }
+  // The per-unit window check is still inside `Trace`; this guard only avoids
+  // paying for a string that would be dropped.
+  assert.match(managerSource(), /function LIES:Trace\(unit, logic_data, phase, extra, window\)\s*if not \(self\.settings and self\.settings\.trace\) then\s*return\s*end/);
+});
+
+test('the adoption trace is a trace phase, not a debug-gated event', () => {
+  const trace = watchAimBody();
+
+  // `debug_log` is off in routine plays and the event channel needs it; the
+  // adoption must be observable from the same switch as the door_watch phase.
+  assert.doesNotMatch(trace, /debug_log/, 'the adoption line must not need debug_log');
+  assert.doesNotMatch(trace, /LIES:Event\(/, 'an adoption is a per-unit phase, not a lifecycle event');
+  assert.match(trace, /LIES:Trace\(data\.unit, data, "watch_aim"/);
+});
+
+test('the helper stamps provenance on every watch return, cached included', () => {
+  const body = helper();
+  const aim = aimBody();
+
+  // Exactly one stamp per call, and it is unconditional inside the returning
+  // arm: a cached reuse is still a watch position the cop aimed at, so it is
+  // stamped `cached` instead of staying silent. Only the computed-position line
+  // (`phase=door_watch`) stays behind `if src then`.
+  const stamps = [...body.matchAll(/my_data\.lies_watch_src = src or "cached"/g)];
+  assert.equal(stamps.length, 1, 'one provenance stamp per watch return');
+  assert.match(body, /my_data\.lies_watch_src = src or "cached"\s*my_data\.lies_watch_seg = enemy_seg/);
+  assert.equal((body.match(/my_data\.lies_watch_seg = enemy_seg/g) || []).length, 1);
+  const stampAt = body.indexOf('my_data.lies_watch_src = src or "cached"');
+  assert.ok(
+    body.indexOf('LIES:Count("dw_hit")') < stampAt,
+    'the stamp belongs to the returning arm only'
+  );
+  // The cached-reuse arm runs on a closed window, i.e. before that return, and
+  // the stamp must not sit inside the fresh-only `if src then` block.
+  assert.ok(body.indexOf('LIES:Count("dw_cached_reuse")') < stampAt);
+  assert.ok(stampAt < body.indexOf('if src then'), 'the stamp is not nested inside the fresh-only block');
+  assert.match(
+    helper(),
+    /if src then\s*lies_door_watch_first\(src, data, enemy_seg\)/,
+    'the computed-position line stays fresh-only'
+  );
+
+  // The consumer clears the stamp every pass: the low-reaction branch produces
+  // `expected_pos` without touching the helper at all, so a stamp from an
+  // earlier pass would be read as this pass's source.
+  assert.match(
+    aim,
+    /local focus_enemy = data\.attention_obj\s*[\s\S]{0,300}?my_data\.lies_watch_src = nil\s*my_data\.lies_watch_seg = nil/
+  );
+  const clearAt = aim.indexOf('my_data.lies_watch_src = nil');
+  assert.ok(clearAt < aim.indexOf('lies_upd_expected_pos(data, my_data'), 'the clear must precede the helper call');
+  assert.ok(clearAt < aim.indexOf('if my_data.lies_watch_src then'), 'the clear must precede the adoption read');
+});
+
+test('a cached watch return is traced and counted with src=cached', () => {
+  const trace = watchAimBody();
+  const body = helper();
+
+  // The helper's closed-window arm returns the saved position with no `src`, and
+  // the funnel stamps it as `cached`; the adoption trace then reports that
+  // source verbatim, so a log can separate a fresh derivation from a reuse.
+  assert.match(body, /my_data\.lies_watch_src = src or "cached"/);
+  assert.match(trace, /local src = my_data\.lies_watch_src/);
+  assert.match(trace, /src=%s door_seg=%s/, 'the source is the first field of the adoption line');
+  // Counted: one adoption for every return, and the cached subset on its own.
+  assert.match(trace, /LIES:Count\("watch_aim_adopted"\)[\s\S]{0,200}?if src == "cached" then\s*LIES:Count\("watch_aim_cached"\)/);
+  // The digest only carries the field if `menumanager.lua` writes it.
+  assert.match(managerSource(), /\bwatch_aim_cached = d\.watch_aim_cached or 0/);
+});
+

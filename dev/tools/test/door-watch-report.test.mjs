@@ -25,7 +25,7 @@ import {
   selectSessions
 } from '../door-watch-report.mjs';
 
-const VERSION = 'V8.84_x64';
+const VERSION = 'V8.85_x64';
 const CLI = fileURLToPath(new URL('../door-watch-report.mjs', import.meta.url));
 
 function watch(event, fields = {}) {
@@ -914,3 +914,109 @@ test('--ab applies the session selection to the control log too', () => {
   assert.match(claimOf(earlier, 'cost').evidence, /control session 1 of 2/);
   assert.equal(earlier.verdict, 'PASS');
 });
+
+// The V8.85 link: a digest can prove a watch position was *computed*
+// (`positions`) while saying nothing about whether a cop adopted it. This claim
+// reads the adoption counters, and the facing dot is a mean, not a delta.
+test('watch aim adopted passes when a cop adopted a computed position', () => {
+  const log = [
+    SETUP,
+    header(),
+    digest({ watch_aim_adopted: 3, watch_aim_verified: 0, watch_aim_cached: 1, watch_aim_dot: 0.4 }),
+    digest({ t: 120, watch_aim_adopted: 2, watch_aim_verified: 1, watch_aim_cached: 2, watch_aim_dot: 0.1 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'adopt_log.txt', modVersion: VERSION });
+  const adopted = claimOf(report, 'watchaim');
+
+  assert.equal(adopted.claim, 'watch aim adopted');
+  assert.equal(adopted.result, 'PASS');
+  assert.match(adopted.evidence, /watch_aim_adopted=5/);
+  assert.match(adopted.evidence, /watch_aim_cached=3/);
+  assert.match(adopted.evidence, /watch_aim_verified=1/);
+  // PASS reads the difference, not the raw total: 5 adoptions, 1 made while the
+  // target was visible, 4 while it was unseen.
+  assert.match(adopted.evidence, /adopted_while_unseen=4/);
+  // Weighted by each window's adoptions: (0.4*3 + 0.1*2) / 5 = 0.28, not the
+  // unweighted mean of the two window means (0.25).
+  assert.match(adopted.evidence, /before_dot=0\.28/);
+  assert.equal(report.counters.watch_aim_adopted, 5);
+  assert.equal(report.counters.watch_aim_cached, 3, 'the cached subset is summed like the other counters');
+  // Subset arithmetic: `watch_aim_verified` is counted per adoption pass, so it
+  // can never exceed the adoption total. Pinned as an assertion, not a comment,
+  // because the PASS above is a difference of the two.
+  assert.ok(report.counters.watch_aim_verified <= report.counters.watch_aim_adopted);
+  assert.equal(report.counters.watch_aim_dot, undefined, 'the dot is a mean, never summed');
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('a zero-adoption window does not weigh on the session dot', () => {
+  // `LIES:_avg_sum` prints `watch_aim_dot=0` for a window that counted no
+  // adoption. That 0 is an empty sentinel, not a sample: folding it in as one
+  // would drag the session dot towards "looked at a wall". The contributing
+  // window count is what makes the guard observable — deleting `adopted > 0`
+  // turns this into 3.
+  const aggregate = aggregateDigests([
+    { fields: { watch_aim_adopted: '3', watch_aim_dot: '0.4' } },
+    { fields: { watch_aim_adopted: '2', watch_aim_dot: '0.1' } },
+    { fields: { watch_aim_adopted: '0', watch_aim_dot: '0' } }
+  ]);
+
+  assert.equal(aggregate.watch_aim_dot_windows, 2, 'only windows that counted an adoption contribute');
+  // (0.4*3 + 0.1*2) / 5, unchanged by the empty window.
+  assert.equal(aggregate.watch_aim_dot_avg, 0.28);
+});
+
+test('watch aim adopted is INFO when every adoption had the target visible', () => {
+  // The feature fired (adoptions counted) but never while the target was
+  // unseen: nothing in this run can be attributed to the watch position. Not a
+  // failure, but it must not read as the PASS above.
+  const log = [
+    SETUP,
+    header(),
+    digest({ watch_aim_adopted: 4, watch_aim_cached: 1, watch_aim_verified: 4, watch_aim_dot: 0.8 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'visible_log.txt', modVersion: VERSION });
+  const adopted = claimOf(report, 'watchaim');
+
+  assert.equal(adopted.result, 'INFO');
+  assert.match(adopted.evidence, /watch_aim_adopted=4/);
+  assert.match(adopted.evidence, /watch_aim_verified=4/);
+  assert.match(adopted.evidence, /adopted_while_unseen=0/);
+  assert.match(adopted.evidence, /every adoption was made while the target was visible/);
+  assert.match(adopted.evidence, /never while the target was unseen/);
+  // INFO, so the run's verdict still comes from the other claims.
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('watch aim adopted is INFO when the position was computed but never adopted', () => {
+  const log = [
+    SETUP,
+    header(),
+    digest({ watch_aim_adopted: 0, watch_aim_cached: 0, watch_aim_verified: 0, watch_aim_dot: 0 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'no_adopt_log.txt', modVersion: VERSION });
+  const adopted = claimOf(report, 'watchaim');
+
+  assert.equal(adopted.result, 'INFO');
+  assert.match(adopted.evidence, /watch_aim_adopted=0/);
+  // The claim names what the counters show — no counted adoption — not why the
+  // cop never adopted; a pre-V8.85 log has no `watch_aim_*` field at all, and
+  // that case is named separately below.
+  assert.match(adopted.evidence, /no adoption of a watch position was counted/);
+  // INFO, so the run's verdict still comes from the other claims.
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('watch aim adopted is INFO (not PASS) for a digest without the fields', () => {
+  // Pre-V8.85 builds write no watch_aim_* field: "cannot tell" must not read as
+  // a clean pass, the same rule the near-visible probe claim follows.
+  const log = [SETUP, header(), digest()].join('\n');
+  const report = analyzeLog(log, { file: 'old_log.txt', modVersion: VERSION });
+  const adopted = claimOf(report, 'watchaim');
+
+  assert.equal(adopted.result, 'INFO');
+  assert.match(adopted.evidence, /no watch_aim_\* fields/);
+  assert.match(adopted.evidence, /pre-V8\.84/);
+  assert.equal(report.verdict, 'PASS');
+});
+

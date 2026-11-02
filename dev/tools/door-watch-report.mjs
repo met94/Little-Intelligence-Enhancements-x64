@@ -114,7 +114,11 @@ const NON_COUNTER_FIELDS = new Set([
   'cache_hits2_7',
   'cache_hits8p',
   'dw_us',
-  'dw_us_max'
+  'dw_us_max',
+  // A per-window mean of the adoption facing dot, not a delta: the session
+  // figure is a mean weighted by each window's adoptions (see
+  // `aggregateDigests`).
+  'watch_aim_dot'
 ]);
 
 const WATCH_RE = /\[LIES-WATCH\]\s+v=(\S+)\s+evt=(\S+)\s*(.*)$/;
@@ -348,8 +352,27 @@ export function aggregateDigests(digests) {
   const dwUsValues = [];
   let dwUsMax = 0;
   let nearVisHMax = 0;
+  let watchDotWeighted = 0;
+  let watchDotWeight = 0;
+  let watchDotWindows = 0;
 
   for (const digest of digests) {
+    // `watch_aim_dot` is the mean facing dot of the adoptions inside one
+    // window, so the session figure weights each window by that window's
+    // `watch_aim_adopted`: averaging the per-window means would let a window
+    // with a single adoption outweigh one with fifty. A window that counted no
+    // adoption contributes nothing — `LIES:_avg_sum` prints 0 for a window with
+    // no sample, and folding that 0 in as real data would drag the mean towards
+    // "looked at a wall".
+    const adopted = num(digest.fields.watch_aim_adopted) ?? 0;
+    const dot = num(digest.fields.watch_aim_dot);
+
+    if (dot !== null && adopted > 0) {
+      watchDotWeighted += dot * adopted;
+      watchDotWeight += adopted;
+      watchDotWindows++;
+    }
+
     for (const [key, raw] of Object.entries(digest.fields)) {
       const value = num(raw);
 
@@ -380,6 +403,8 @@ export function aggregateDigests(digests) {
     dw_us_avg: mean(dwUsValues),
     dw_us_max: dwUsMax,
     near_vis_h_max: nearVisHMax,
+    watch_aim_dot_avg: watchDotWeight > 0 ? watchDotWeighted / watchDotWeight : 0,
+    watch_aim_dot_windows: watchDotWindows,
     dw_us_windows: dwUsValues.length,
     windows: digests.length
   };
@@ -595,6 +620,68 @@ export function analyzeLog(text, {
       `dw_path_prestep_hit=${counter(counters, 'dw_path_prestep_hit')}: cadence-window frames with an armed coarse path; ` +
       `the attempt counter runs before _get_expected_pos, the hit counter proves a position came out`
   );
+
+  // --- watch aim adopted --------------------------------------------------
+  // `positions` proves a position was *computed*; this proves a cop then turned
+  // its attention to it. Two different links in the chain, and the second one
+  // only exists inside the attack logic while the cop is running and not
+  // aiming — a unit walking between rooms in `travel` never reaches `_upd_aim`,
+  // so zero adoptions next to produced positions is a map/route fact, not by
+  // itself a regression.
+  //
+  // Adoption counts a watch position either way: one derived on the adoption
+  // pass (`src=raw` / `src=expected`) and one the helper returned from its cache
+  // (`src=cached`) both put a doorway in front of the cop. `watch_aim_cached` is
+  // the cached subset, so a run made only of cached adoptions still shows that
+  // the probe itself did not fire. `watch_aim_verified` is the subset adopted
+  // while the enemy was visible (`verified` / `nearly_visible`, per pass, so it
+  // is also a subset of `watch_aim_adopted`); an adoption the cop could already
+  // see adds nothing, which is why the PASS reads the difference and not the
+  // raw total.
+  const adopted = counter(counters, 'watch_aim_adopted');
+  const adoptionCached = counter(counters, 'watch_aim_cached');
+  const adoptionVerified = counter(counters, 'watch_aim_verified');
+  const adoptedWhileUnseen = adopted - adoptionVerified;
+  const adoptionFields = parsed.digests.some(digest =>
+    'watch_aim_adopted' in digest.fields || 'watch_aim_dot' in digest.fields);
+  const beforeDot = round(aggregate.watch_aim_dot_avg, 2);
+  const adoptionEvidence = `watch_aim_adopted=${adopted}, watch_aim_cached=${adoptionCached}, ` +
+    `watch_aim_verified=${adoptionVerified}, adopted_while_unseen=${adoptedWhileUnseen}, ` +
+    `before_dot=${beforeDot}`;
+
+  if (!parsed.digests.length) {
+    claim('watchaim', 'watch aim adopted', 'INFO', `no digest: ${adoptionEvidence}`);
+  } else if (!adoptionFields) {
+    claim(
+      'watchaim',
+      'watch aim adopted',
+      'INFO',
+      'digest has no watch_aim_* fields: pre-V8.84 log, the adoption was never measured'
+    );
+  } else if (adoptedWhileUnseen > 0) {
+    claim('watchaim', 'watch aim adopted', 'PASS', adoptionEvidence);
+  } else if (adopted > 0) {
+    // The feature fired and the counters prove it, but every adoption happened
+    // while the enemy was visible: nothing in this run can be attributed to the
+    // watch position. Not a failure — the adoption code ran — but not evidence
+    // either, so it must not read as the PASS above.
+    claim(
+      'watchaim',
+      'watch aim adopted',
+      'INFO',
+      `${adoptionEvidence}: every adoption was made while the target was visible ` +
+        `(verified or nearly visible), so the watch position was adopted but never while the target was unseen`
+    );
+  } else {
+    claim(
+      'watchaim',
+      'watch aim adopted',
+      'INFO',
+      `${adoptionEvidence}: no adoption of a watch position was counted ` +
+        `(door watch only runs inside the attack logic while a cop is running and not aiming; ` +
+        `a cop in \`travel\` never enters it)`
+    );
+  }
 
   // --- near-visible probe -------------------------------------------------
   // The V8.80 probe-height merge (`_nearly_visible_chk` in

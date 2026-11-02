@@ -183,10 +183,20 @@ How to verify it from a log (needs `"watch_log": true`, see the next section):
 | `dw_seg_same` | Same nav segment, so vanilla handles it (`m_pos + 140`) |
 | `dw_cadence_skip` / `dw_advancing_skip` | The 0.2/1.5 s window had not elapsed / the helper was also reached while running. The second is implied by the first at the only call site (it is reached only while running), so it never adds information on its own |
 | `dw_us`, `dw_us_max` | Average and worst time of the armed path (pre-step, re-test and door probe) in microseconds |
+| `watch_aim_adopted` | Aim passes that turned the cop's attention to a watch position, freshly derived (`src=raw` / `src=expected`) or reused from the cache (`src=cached`); vanilla's `m_pos + 140` is not counted |
+| `watch_aim_cached` | Of those, the ones whose position came from the cache, i.e. from a doorway derived on an earlier pass. Every adoption cached with no fresh derivation in the same run means the adoption fired but the probe itself did not |
+| `watch_aim_verified` | Of `watch_aim_adopted`, the ones adopted while the enemy was visible (`verified` / `nearly_visible`): the cop could see the target anyway, so these cannot help. A `watch_aim_adopted - watch_aim_verified` of 0 means the feature fired but never while the target was unseen |
+| `watch_aim_dot` | Mean flat facing dot at adoption: `1.0` = already facing the doorway, `0` = looking along the wall, negative = a turn past 90°. A per-window mean, weighted by each window's adoptions. Adoptions with no measurable facing are logged as `dot=n/a` and not averaged in |
 
 `[LIES-WATCH] evt=door_watch_first` and `[LIES-TRACE] … phase=door_watch`
 name the first produced position (`src=raw` or `src=expected`) and the per-unit
-branch. Not yet observed in game.
+branch; `[LIES-TRACE] … phase=watch_aim` names the adoption itself (`src`, `dot`,
+`verified`, `nearly`), including an adoption of a cached position (`src=cached`).
+Not yet observed in game.
+
+Door watching only runs inside the attack logic while a cop is running and not
+aiming: a cop walking between rooms in `travel` never enters it, which is why a
+room-heavy test can show produced positions and no adoptions.
 
 ## Debug Logging (`debug_log`)
 
@@ -270,14 +280,14 @@ Each line looks like:
   `phase` the AI step that just started (`combat`, `pose`, `pose_upd`,
   `pose_req_crouch`, `pose_req_stand`, `flank`, `cover_path`, `dodge`,
   `dodge_preemptive`, `move_out`, `charge_search`, `cover_upd`, `peek`,
-  `retreat`, `aim`, `spooc`, `spooc_combat`), `att` the enemy it is working with
-  (`att_alive`, `att_trk` = an enemy nav tracker is present), `dropped` how many
-  lines were suppressed so far.
+  `retreat`, `aim`, `door_watch`, `watch_aim`, `spooc`, `spooc_combat`), `att` the
+  enemy it is working with (`att_alive`, `att_trk` = an enemy nav tracker is
+  present), `dropped` how many lines were suppressed so far.
 - Throttle: one line per unit per phase per 2.5 s, and per call where the phase
   needs it (`spooc_combat` and the spooc combat sub-steps use 0.2 s, spooc `aim`
-  1 s), plus a global cap of 40 lines/s for low-value phases (`aim`, `peek`,
-  `cover_upd`) and 120 lines/s overall. A saturated minute adds roughly 3-6k
-  lines; `dropped` tells you how many were suppressed.
+  1 s, `watch_aim` 1 s), plus a global cap of 40 lines/s for low-value phases
+  (`aim`, `peek`, `cover_upd`) and 120 lines/s overall. A saturated minute adds
+  roughly 3-6k lines; `dropped` tells you how many were suppressed.
 - Failure phases are exempt from the cap because they are the ones a crash
   report cannot be reconstructed without: `combat_no_attention` (no attention
   object at all), `dodge_dead_enemy` / `spooc_dead_enemy` (AI met a dead enemy

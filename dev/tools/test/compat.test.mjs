@@ -60,9 +60,9 @@ function functionBody(source, signature) {
   return source.slice(start, next === -1 ? source.length : next);
 }
 
-test('version metadata agrees on V8.84_x64', () => {
+test('version metadata agrees on V8.85_x64', () => {
   const modTxt = JSON.parse(read('mod.txt').replace(/^\uFEFF/, ''));
-  assert.equal(modTxt.version, 'V8.84_x64');
+  assert.equal(modTxt.version, 'V8.85_x64');
 
   // The in-code version is what every `[LIES-WATCH] v=` and `[LIES-TRACE] v=`
   // line reports, so a release bump that misses it makes a correct run's
@@ -73,16 +73,16 @@ test('version metadata agrees on V8.84_x64', () => {
   assert.equal(inCode[1], modTxt.version, 'menumanager.lua LIES.version must equal the mod.txt version');
 
   const feed = JSON.parse(read('autoupdate.json').replace(/^\uFEFF/, ''));
-  assert.equal(feed[0].version, 'V8.84_x64');
+  assert.equal(feed[0].version, 'V8.85_x64');
 
   const readme = read('README.md');
-  assert.match(readme, /\*\*Current release:\*\* `V8\.84_x64`/);
+  assert.match(readme, /\*\*Current release:\*\* `V8\.85_x64`/);
   assert.doesNotMatch(readme, /V8\.57_x64/);
 
   const changelog = read('changelog.txt');
   const revisions = [...changelog.matchAll(/^Revision (V[\d.]+_x64) \u2014 (\d{4}-\d{2}-\d{2})\r?$/gm)];
   assert.ok(revisions.length > 0, 'changelog has no revision headers');
-  assert.equal(revisions[0][1], 'V8.84_x64');
+  assert.equal(revisions[0][1], 'V8.85_x64');
   assert.equal(revisions[0][2], '2026-11-02');
   assert.equal(revisions.at(-1)[1], 'V8.57_x64', 'older revision header was lost');
 });
