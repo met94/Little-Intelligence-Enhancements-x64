@@ -1,6 +1,6 @@
 ﻿# LIES 248.2 static gates
 
-Generated: 2026-11-02 11:26:26Z
+Generated: 2026-11-02 11:38:54Z
 
 ## Node tool tests
 
@@ -11,7 +11,7 @@ Result: PASS
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 343.8167
+ℹ duration_ms 341.4628
 
 ## Test-harness Lua tests
 
@@ -43,8 +43,8 @@ Result: PASS
 files=71 functions=584 errors=0 unhooked=3
 MOD_ONLY=218 MOD_ONLY_HOOK=43 LIES_EDIT_CLEAN=294 LIES_EDIT_VANILLA_CHANGED=23 VANISHED_IN_NEW=1 SAME_AS_OLD_VANILLA=3 SAME_AS_NEW_VANILLA=1 SAME_AS_OLD_VANILLA_LOCAL=1
 decisions: done=18 merge=0 keep=5 retire=0 parked=0 undecided=0
-wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-detect-dead-unit-guard\dev\port-248-ledger.md
-wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-detect-dead-unit-guard\dev\reports\port-248-ledger.json
+wrote D:\Programowanie\payday\2\v2\mods\LIES\dev\port-248-ledger.md
+wrote D:\Programowanie\payday\2\v2\mods\LIES\dev\reports\port-248-ledger.json
 
 ## API audit
 
