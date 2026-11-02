@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-02T11:20:01.770Z
+Generated: 2026-11-02T11:26:34.881Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -19,7 +19,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 292 |
+| LIES_EDIT_CLEAN | 294 |
 | SAME_AS_NEW_VANILLA | 1 |
 
 ## By decision
@@ -703,6 +703,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicPhalanxVip.enter` | 57 | 62 | 62 |  |
 | [ ] | keep | — | `CopLogicPhalanxVip.exit` | 31 | 29 | 29 |  |
 | [ ] | keep | — | `CopLogicPhalanxVip.is_available_for_assignment` | 11 | 3 | 3 |  |
+| [ ] | keep | — | `CopLogicPhalanxVip.queued_update` | 9 | 40 | 40 |  |
 
 ## lua/coplogics/specials/tankcoplogicattack.lua
 
@@ -850,6 +851,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `TeamAILogicDisabled._consider_surrender` | 42 | 49 | 49 |  |
 | [ ] | keep | — | `TeamAILogicDisabled._register_revive_SO` | 62 | 61 | 61 |  |
 | [ ] | keep | — | `TeamAILogicDisabled._upd_aim` | 65 | 70 | 70 |  |
+| [ ] | keep | — | `TeamAILogicDisabled._upd_enemy_detection` | 9 | 11 | 11 |  |
 
 ## lua/player/states/playerbleedout.lua
 

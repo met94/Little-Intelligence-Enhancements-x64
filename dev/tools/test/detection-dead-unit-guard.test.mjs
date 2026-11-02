@@ -90,9 +90,12 @@ const QUEUED_UPDATES = [
 ];
 
 // Vanilla owns these bodies, so LIES wraps them instead of copying them.
+// [file, name, captured local, delay returned instead of bare return]
 const VANILLA_WRAPPERS = [
-  ['lua/civlogics/civilianlogicflee.lua', 'CivilianLogicFlee._upd_detection', 'civ_flee_upd_detection'],
-  ['lua/civlogics/civilianlogicidle.lua', 'CivilianLogicIdle._upd_outline_detection', 'civ_idle_outline_detection'],
+  ['lua/civlogics/civilianlogicflee.lua', 'CivilianLogicFlee._upd_detection', 'civ_flee_upd_detection', false],
+  ['lua/civlogics/civilianlogicidle.lua', 'CivilianLogicIdle._upd_outline_detection', 'civ_idle_outline_detection', false],
+  ['lua/teamailogics/teamailogicdisabled.lua', 'TeamAILogicDisabled._upd_enemy_detection', 'teamai_disabled_upd_enemy_detection', true],
+  ['lua/coplogics/coplogicphalanxvip.lua', 'CopLogicPhalanxVip.queued_update', 'phalanx_vip_queued_update', false],
 ];
 
 const stripped = (file) => stripLuaComments(read(...file.split('/')));
@@ -153,21 +156,34 @@ test('the queued updates that run those entries are gated too', () => {
 });
 
 test('the vanilla-owned detection callbacks are wrapped, not copied', () => {
-  for (const [file, name, captured] of VANILLA_WRAPPERS) {
+  for (const [file, name, captured, returnsDelay] of VANILLA_WRAPPERS) {
     const text = stripped(file);
     const body = funcBody(text, `function ${name}(`);
 
-    assert.match(
-      text,
-      new RegExp(`local ${captured} = ${name.replace('.', '\\.')}\\r?\\n`),
-      `${file}: the vanilla body must be captured before the wrapper replaces it`,
-    );
+    const captureAt = text.indexOf(`local ${captured} = ${name}`);
+    const wrapperAt = text.indexOf(`function ${name}(`);
+
+    assert.notEqual(captureAt, -1, `${file}: the vanilla body must be captured before the wrapper replaces it`);
+    assert.ok(captureAt < wrapperAt, `${file}: the capture must precede the wrapper (self-capture recurses)`);
+
     assert.ok(firstStatement(body).startsWith(GUARD), `${file}: ${name} wrapper must start with the guard`);
     assert.match(body, new RegExp(`return ${captured}\\(data\\)`), `${file}: the wrapper must delegate to vanilla`);
+    assert.match(
+      body,
+      returnsDelay
+        ? new RegExp(`${escape(GUARD)}\\s*return 2\\s*end`)
+        : new RegExp(`${escape(GUARD)}\\s*return\\s*end`),
+      `${file}: the wrapper's early return must match the callback's contract`,
+    );
   }
 });
 
 test('no detection callback or queued update escapes the gate', () => {
+  // Discovery is deliberately textual: it covers `lua/**` and the
+  // `^function Table.name(` form that this codebase uses for logic methods.
+  // The vanilla-owned entries that LIES queues are named explicitly in
+  // VANILLA_WRAPPERS above instead, because their definition lives in the game
+  // clone, not in this repo.
   const discovered = luaFiles(path.join(root, 'lua')).flatMap((file) => {
     const text = stripLuaComments(fs.readFileSync(file, 'utf8'));
     const found = [];

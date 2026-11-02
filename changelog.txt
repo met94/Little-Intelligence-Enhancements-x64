@@ -40,12 +40,17 @@ could run on a team AI bot that no longer exists.
   `CopLogicArrest.queued_update`, `TaserLogicAttack.queued_update`,
   `ShieldLogicAttack.queued_update`, `CopLogicPhalanxMinion.queued_update`,
   `LIESBossLogicAttack.queued_update`, `CivilianLogicSurrender.queued_update`
-- two callbacks are vanilla-owned, so LIES captures the vanilla function at load
+- four callbacks are vanilla-owned, so LIES captures the vanilla function at load
   and installs a guard-then-delegate wrapper instead of copying the body:
   `CivilianLogicFlee._upd_detection` (vanilla `civilianlogicflee.lua:227` @
-  `e3a8b616`, reads `anim_data()` before its detection pass) and
+  `e3a8b616`, reads `anim_data()` before its detection pass),
   `CivilianLogicIdle._upd_outline_detection` (vanilla `civilianlogicidle.lua:117`,
-  reads `movement()`). Vanilla keeps owning each body
+  reads `movement()`), `TeamAILogicDisabled._upd_enemy_detection` (vanilla
+  `teamailogicdisabled.lua:83`, queued by vanilla `enter` and it calls the LIES
+  `_upd_aim` - the downed-bot sibling of the reported path) and
+  `CopLogicPhalanxVip.queued_update` (vanilla `coplogicphalanxvip.lua:135`,
+  queued by LIES `enter`, keeps dereferencing the unit after its detection
+  call). Vanilla keeps owning each body
 - return contract: every detection entry returns `2`, never `nil` -
   `data.logic._upd_enemy_detection(data)` is polymorphic
   (`CopLogicIdle.queued_update`, `CopLogicPhalanxMinion.queued_update`), so a
@@ -63,9 +68,9 @@ could run on a team AI bot that no longer exists.
 - tests: new `dev/tools/test/detection-dead-unit-guard.test.mjs` (5 tests) pins
   the shared pass (guard before the `my_pos` deref, `alive()` before
   `movement()`, `return 2`), all 13 detection entries (guard first, `return 2`),
-  all 9 queued wrappers (guard first, bare return), both vanilla wrappers
-  (captured body + delegation), and discovers every
-  `_upd_*detection`/`queued_update` definition under `lua/` so a deleted or
+  all 9 queued wrappers (guard first, bare return), all 4 vanilla wrappers
+  (capture before the wrapper, delegation, matching return kind), and discovers
+  every `_upd_*detection`/`queued_update` definition under `lua/` so a deleted or
   renamed guard fails the gate; the full suite is 201/201
 - version: `V8.84_x64` in `mod.txt`, `autoupdate.json`, `README.md`,
   `menumanager.lua` (`LIES.version`) and `dev/tools/test/compat.test.mjs`, which

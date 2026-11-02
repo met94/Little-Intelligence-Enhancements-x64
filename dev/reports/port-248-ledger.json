@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-11-02T11:20:01.771Z",
+  "generated": "2026-11-02T11:26:34.883Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -7250,12 +7250,27 @@
           "form": "decl",
           "note": "",
           "startLine": 160
+        },
+        {
+          "name": "CopLogicPhalanxVip.queued_update",
+          "category": "LIES_EDIT_CLEAN",
+          "modLines": 9,
+          "oldLines": 40,
+          "newLines": 40,
+          "modParams": "data",
+          "oldParams": "data",
+          "newParams": "data",
+          "isLocal": false,
+          "isHook": false,
+          "form": "decl",
+          "note": "",
+          "startLine": 208
         }
       ],
       "errors": [],
       "totals": {
         "MOD_ONLY": 1,
-        "LIES_EDIT_CLEAN": 4
+        "LIES_EDIT_CLEAN": 5
       }
     },
     {
@@ -8489,11 +8504,26 @@
           "form": "decl",
           "note": "",
           "startLine": 44
+        },
+        {
+          "name": "TeamAILogicDisabled._upd_enemy_detection",
+          "category": "LIES_EDIT_CLEAN",
+          "modLines": 9,
+          "oldLines": 11,
+          "newLines": 11,
+          "modParams": "data",
+          "oldParams": "data",
+          "newParams": "data",
+          "isLocal": false,
+          "isHook": false,
+          "form": "decl",
+          "note": "",
+          "startLine": 180
         }
       ],
       "errors": [],
       "totals": {
-        "LIES_EDIT_CLEAN": 3
+        "LIES_EDIT_CLEAN": 4
       }
     },
     {

@@ -169,3 +169,20 @@ function TeamAILogicDisabled._register_revive_SO(data, my_data, rescue_type)
 
 	my_data.deathguard_SO_id = PlayerBleedOut._register_deathguard_SO(data.unit)
 end
+
+-- Vanilla's `TeamAILogicDisabled._upd_enemy_detection`
+-- (`lib/units/player_team/logics/teamailogicdisabled.lua:83` @ `e3a8b616`) is
+-- queued by vanilla `enter` and calls the LIES `_upd_aim` above, so a queued
+-- copy that outlives its unit reaches mod code. Vanilla owns the body, so LIES
+-- wraps it instead of copying it.
+local teamai_disabled_upd_enemy_detection = TeamAILogicDisabled._upd_enemy_detection
+
+function TeamAILogicDisabled._upd_enemy_detection(data)
+	-- Dead unit: same queue-lifetime hole as the detection callbacks (V8.84
+	-- engine-AV fix); live units never take this branch.
+	if not alive(data.unit) or not data.unit:movement() then
+		return 2
+	end
+
+	return teamai_disabled_upd_enemy_detection(data)
+end
