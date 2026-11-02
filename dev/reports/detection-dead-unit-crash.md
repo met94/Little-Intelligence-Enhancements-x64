@@ -14,6 +14,8 @@ changelog).
 - **Evidence:** user-supplied script stack, reproduced below. No local `crash.txt`:
   the report came from a player, not this machine, and no further reports are
   available.
+- **Files:** the shared detection pass, thirteen detection entries, nine queued
+  wrappers, two vanilla-owned callbacks wrapped, one static test, this report.
 
 ## 1. Crash
 
@@ -110,7 +112,7 @@ end
 ```
 
 and the same guard as the first statement of every logic that owns a queued
-detection callback — twelve functions in twelve files:
+detection callback — thirteen functions in thirteen files:
 
 | file | entry |
 | --- | --- |
@@ -128,6 +130,22 @@ detection callback — twelve functions in twelve files:
 | `lua/coplogics/boss/bosslogicattack.lua` | `LIESBossLogicAttack._upd_enemy_detection` |
 | `lua/civlogics/civilianlogicidle.lua` | `CivilianLogicIdle._upd_detection` |
 
+The task that actually runs from the queue is often a wrapper, not the detection
+entry, so the nine queued wrappers are gated as well (bare `return`; the queue
+ignores their result):
+
+`CopLogicIdle.queued_update`, `CopLogicTravel.queued_detection_update`,
+`CopLogicAttack.queued_update`, `CopLogicArrest.queued_update`,
+`TaserLogicAttack.queued_update`, `ShieldLogicAttack.queued_update`,
+`CopLogicPhalanxMinion.queued_update`, `LIESBossLogicAttack.queued_update`,
+`CivilianLogicSurrender.queued_update`.
+
+Two callbacks are vanilla-owned — `CivilianLogicFlee._upd_detection`
+(`civilianlogicflee.lua:227` @ `e3a8b616`) and
+`CivilianLogicIdle._upd_outline_detection` (`civilianlogicidle.lua:117`). LIES
+captures the vanilla function at load and installs a guard-then-delegate
+wrapper, so vanilla keeps owning the body.
+
 - `alive()` first is deliberate: LIES already treats unit liveness as the
   validity predicate for engine objects (V8.68 §3, `lies_enemy_tracker`), and
   `movement()` is only read once liveness holds. `alive()` is itself a native
@@ -139,16 +157,13 @@ detection callback — twelve functions in twelve files:
   sniper's case reads `anim_data()` *before* the shared call. Guarding only the
   shared pass would move the fault a few lines down; returning at the entry also
   stops a dead unit from re-queuing.
-- Return value depends on the callback's contract: `return` where the caller
-  ignores the result, `return 2` where the value is a delay
-  (`CopLogicIdle`/`CopLogicTravel`/`CopLogicArrest`/`TaserLogicAttack`/
-  `SpoocLogicIdle`, whose `queued_update` does `data.t + delay` or
-  `delay = 0.5 + delay * 1.5`). A bare `nil` there would be a nil arithmetic
-  error instead of a skipped update. `2` mirrors the shared pass's own default
-  delay (`whisper_mode() and 0 or 2`); `CopLogicAttack` schedules with
-  `delay and data.t + delay`, where `nil` means "run next tick". The static test
-  derives the expectation from each body (`return delay` present or not), and it
-  caught `SpoocLogicIdle` during this change.
+- Every detection entry returns `2`, never `nil`, even where the immediate
+  caller ignores it: `data.logic._upd_enemy_detection(data)` is polymorphic
+  (`CopLogicIdle.queued_update`, `CopLogicPhalanxMinion.queued_update`), so a
+  stale task can dispatch to any logic's version, and `nil` would be a nil
+  arithmetic error in `data.t + delay` / `delay * 1.5`. `2` mirrors the shared
+  pass's own default delay (`whisper_mode() and 0 or 2`). The queued wrappers
+  return bare because the queue discards their result.
 - Live units are unaffected: the guard is false, cost is two native calls per
   detection tick, the same trade-off V8.82 accepted for one `alive()` per unit
   per check.
@@ -167,12 +182,14 @@ Deliberately **not** done, because each is riskier than the bug:
 
 ## 4. Verification
 
-- `dev/tools/test/detection-dead-unit-guard.test.mjs` — three tests: the shared
+- `dev/tools/test/detection-dead-unit-guard.test.mjs` — five tests: the shared
   pass reads `alive()` before `movement()` and returns `2` before the `my_pos`
-  deref; every detected `_upd_enemy_detection`/`_upd_detection` definition under
-  `lua/` (discovered from the source, not hardcoded) starts with the guard; and
-  each guard returns a number exactly when its callback reports a delay.
-- `node --test dev/tools/test/*.test.mjs` — 199/199 (196 before this release).
+  deref; all thirteen detection entries start with the guard and return `2`; all
+  nine queued wrappers start with the guard and return bare; both vanilla-owned
+  callbacks are captured and wrapped, not copied; and source discovery (every
+  `_upd_*detection`/`queued_update` definition under `lua/`) must equal the
+  expected set, so a deleted or renamed guard fails the gate.
+- `node --test dev/tools/test/*.test.mjs` — 201/201 (196 before this release).
 - LuaJIT syntax on all changed files, `lua-freevars` on them against
   `e3a8b616` — `no game-file locals missing`.
 - `dev/tools/gates.ps1` — see `dev/reports/static-gates.md`.
@@ -195,25 +212,23 @@ is not proven by anything in this report. If a fault moves to the guard line
 itself, that assumption is wrong and the guard has to be replaced by a liveness
 list (keys the manager still owns) instead of calling into the unit.
 
-The class is closed at the entry points: every logic that owns a queued
-detection callback guards before its first statement, so the two pre-guard reads
+The class is closed at the task boundary: every detection entry, every queued
+wrapper that owns one, and the two vanilla-owned callbacks (flee detection, civ
+outline detection) are gated before their first dereference. The pre-guard reads
 found earlier (`GroupAIStateBase:on_unit_detection_updated` while the group AI's
 `_draw_enabled` debug drawing is on, and `CopLogicSniper`'s
-`CopLogicAttack._upd_stop_old_action` branch at `coplogicsniper.lua:118-120`)
-now sit behind the guard.
+`CopLogicAttack._upd_stop_old_action` branch at `coplogicsniper.lua:118-120`) now
+sit behind the guard.
 
 What remains is the orphan itself, not the crash: a leaked queued task for a
-destroyed unit still fires at the normal cadence and now returns immediately
-(`return 2` where the callback reports a delay, bare `return` otherwise). The
-queue leak is vanilla behaviour — `queue_task` appends without id dedupe and
+destroyed unit still fires at the normal cadence and now returns immediately.
+The queue leak is vanilla behaviour — `queue_task` appends without id dedupe and
 `unqueue_task` removes one entry per id — and is left alone on purpose (see §3).
 
-One sibling callback is vanilla-owned and therefore outside this fix:
-`CivilianLogicIdle._upd_outline_detection` (queued by four civilian logics for
-`data.t + 2`) dereferences `data.unit:movement()` at
-`civilianlogicidle.lua:128` @ `e3a8b616`. LIES does not override that function,
-so covering it would mean shipping a vanilla civ-outline copy for a guard; it is
-recorded here rather than done.
+Not covered by design: queued callbacks that do not belong to the detection
+class (cover searches, pathing callbacks, delayed clbks). They have the same
+queue lifetime, but no report and no audit; gating them is a separate change.
 
-Player POV: no gameplay change. A bot whose unit is already gone no longer takes
-the session down on its next detection tick; live bots detect exactly as before.
+Player POV: no gameplay change. A cop, crew bot or civilian whose unit is
+already gone no longer takes the session down on its next detection tick; live
+units detect exactly as before.

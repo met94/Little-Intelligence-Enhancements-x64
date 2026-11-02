@@ -977,3 +977,20 @@ function CivilianLogicFlee.schedule_run_away_clbk(data)
 
 	CopLogicBase.add_delayed_clbk(my_data, my_data.run_away_clbk_id, callback(CivilianLogicFlee, CivilianLogicFlee, "clbk_chk_run_away", data), data.run_away_next_chk_t)
 end
+
+-- Vanilla's `CivilianLogicFlee._upd_detection`
+-- (`lib/units/civilians/logics/civilianlogicflee.lua:227` @ `e3a8b616`) is a
+-- queued callback that reads `data.unit:anim_data()` before its detection pass;
+-- a queued copy can outlive its unit. Vanilla owns the body, so LIES wraps it
+-- instead of copying it.
+local civ_flee_upd_detection = CivilianLogicFlee._upd_detection
+
+function CivilianLogicFlee._upd_detection(data)
+	-- Dead unit: same queue-lifetime hole as the detection callbacks (V8.84
+	-- engine-AV fix); live units never take this branch.
+	if not alive(data.unit) or not data.unit:movement() then
+		return
+	end
+
+	return civ_flee_upd_detection(data)
+end

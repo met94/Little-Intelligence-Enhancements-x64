@@ -114,7 +114,7 @@ function CopLogicSniper._upd_enemy_detection(data)
 	-- fix); live units never take this branch. The old-action branch below reads
 	-- anim_data(), so this must stay the first statement.
 	if not alive(data.unit) or not data.unit:movement() then
-		return
+		return 2
 	end
 
 	managers.groupai:state():on_unit_detection_updated(data.unit)

@@ -248,7 +248,7 @@ function TeamAILogicAssault._upd_enemy_detection(data, is_synchronous)
 	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
 	-- fix); live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
-		return
+		return 2
 	end
 
 	managers.groupai:state():on_unit_detection_updated(data.unit)

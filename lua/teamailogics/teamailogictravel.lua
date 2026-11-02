@@ -86,7 +86,7 @@ function TeamAILogicTravel._upd_enemy_detection(data)
 	-- bot (V8.57 access violation, coplogicbase.lua:807). Returning also stops
 	-- this unit from re-queuing the detection task.
 	if not alive(data.unit) or not data.unit:movement() then
-		return
+		return 2
 	end
 
 	data.t = TimerManager:game():time()

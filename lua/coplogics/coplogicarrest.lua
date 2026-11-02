@@ -233,6 +233,12 @@ function CopLogicArrest._upd_enemy_detection(data)
 end
 
 function CopLogicArrest.queued_update(data)
+	-- A queued update can outlive its unit; the rest of this body dereferences
+	-- it (V8.84 engine-AV fix). Live units never take this branch.
+	if not alive(data.unit) or not data.unit:movement() then
+		return
+	end
+
 	data.t = TimerManager:game():time()
 	local my_data = data.internal_data
 

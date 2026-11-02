@@ -188,6 +188,12 @@ function CopLogicTravel.queue_detection_update(data, my_data, delay)
 end
 
 function CopLogicTravel.queued_detection_update(data)
+	-- A queued update can outlive its unit; the rest of this body dereferences
+	-- it (V8.84 engine-AV fix). Live units never take this branch.
+	if not alive(data.unit) or not data.unit:movement() then
+		return
+	end
+
 	local my_data = data.internal_data
 	local delay = CopLogicTravel._upd_enemy_detection(data)
 	

@@ -1,5 +1,21 @@
 local tmp_vec1 = Vector3()
 
+-- Vanilla's `CivilianLogicIdle._upd_outline_detection`
+-- (`lib/units/civilians/logics/civilianlogicidle.lua:117` @ `e3a8b616`) is a
+-- queued callback that reads `data.unit:movement()`; a queued copy can outlive
+-- its unit. Vanilla owns the body, so LIES wraps it instead of copying it.
+local civ_idle_outline_detection = CivilianLogicIdle._upd_outline_detection
+
+function CivilianLogicIdle._upd_outline_detection(data)
+	-- Dead unit: same queue-lifetime hole as the detection callbacks (V8.84
+	-- engine-AV fix); live units never take this branch.
+	if not alive(data.unit) or not data.unit:movement() then
+		return
+	end
+
+	return civ_idle_outline_detection(data)
+end
+
 function CivilianLogicIdle.enter(data, new_logic_name, enter_params)
 	CopLogicBase.enter(data, new_logic_name, enter_params)
 
@@ -164,7 +180,7 @@ function CivilianLogicIdle._upd_detection(data)
 	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
 	-- fix); live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
-		return
+		return 2
 	end
 
 	managers.groupai:state():on_unit_detection_updated(data.unit)

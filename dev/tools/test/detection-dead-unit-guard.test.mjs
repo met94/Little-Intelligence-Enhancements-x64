@@ -48,6 +48,7 @@ function funcBody(text, signature) {
 
 const GUARD = 'if not alive(data.unit) or not data.unit:movement() then';
 const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const firstStatement = (body) => body.slice(body.indexOf(')') + 1).trimStart();
 
 // The V8.57 crash (reported 2026-11-02) was an engine access violation at the
 // `my_pos` read in `_upd_attention_obj_detection`, reached from a queued
@@ -55,13 +56,49 @@ const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // callback across its unit's destruction (`queue_task` appends with no id
 // dedupe, `unqueue_task` removes one entry per id), so a callback can be handed
 // a logic data whose unit is already gone. Any dereference then faults in engine
-// code, not in Lua, so every detection entry point needs a liveness gate, and a
-// pcall would not help.
+// code, not in Lua, so every detection entry point and every queued update that
+// owns one needs a liveness gate, and a pcall would not help.
+
+const DETECTION_ENTRIES = [
+  ['lua/teamailogics/teamailogictravel.lua', 'TeamAILogicTravel._upd_enemy_detection'],
+  ['lua/teamailogics/teamailogicidle.lua', 'TeamAILogicIdle._upd_enemy_detection'],
+  ['lua/teamailogics/teamailogicassault.lua', 'TeamAILogicAssault._upd_enemy_detection'],
+  ['lua/coplogics/coplogicidle.lua', 'CopLogicIdle._upd_enemy_detection'],
+  ['lua/coplogics/coplogictravel.lua', 'CopLogicTravel._upd_enemy_detection'],
+  ['lua/coplogics/coplogicattack.lua', 'CopLogicAttack._upd_enemy_detection'],
+  ['lua/coplogics/coplogicarrest.lua', 'CopLogicArrest._upd_enemy_detection'],
+  ['lua/coplogics/coplogicsniper.lua', 'CopLogicSniper._upd_enemy_detection'],
+  ['lua/coplogics/specials/taserlogicattack.lua', 'TaserLogicAttack._upd_enemy_detection'],
+  ['lua/coplogics/specials/shieldlogicattack.lua', 'ShieldLogicAttack._upd_enemy_detection'],
+  ['lua/coplogics/specials/spooc/spooclogicidle.lua', 'SpoocLogicIdle._upd_enemy_detection'],
+  ['lua/coplogics/boss/bosslogicattack.lua', 'LIESBossLogicAttack._upd_enemy_detection'],
+  ['lua/civlogics/civilianlogicidle.lua', 'CivilianLogicIdle._upd_detection'],
+];
+
+// The task the queue actually runs for the logics above: it calls the detection
+// entry, then keeps dereferencing the unit.
+const QUEUED_UPDATES = [
+  ['lua/coplogics/coplogicidle.lua', 'CopLogicIdle.queued_update'],
+  ['lua/coplogics/coplogictravel.lua', 'CopLogicTravel.queued_detection_update'],
+  ['lua/coplogics/coplogicattack.lua', 'CopLogicAttack.queued_update'],
+  ['lua/coplogics/coplogicarrest.lua', 'CopLogicArrest.queued_update'],
+  ['lua/coplogics/specials/taserlogicattack.lua', 'TaserLogicAttack.queued_update'],
+  ['lua/coplogics/specials/shieldlogicattack.lua', 'ShieldLogicAttack.queued_update'],
+  ['lua/coplogics/coplogicphalanxminion.lua', 'CopLogicPhalanxMinion.queued_update'],
+  ['lua/coplogics/boss/bosslogicattack.lua', 'LIESBossLogicAttack.queued_update'],
+  ['lua/civlogics/civilianlogicsurrender.lua', 'CivilianLogicSurrender.queued_update'],
+];
+
+// Vanilla owns these bodies, so LIES wraps them instead of copying them.
+const VANILLA_WRAPPERS = [
+  ['lua/civlogics/civilianlogicflee.lua', 'CivilianLogicFlee._upd_detection', 'civ_flee_upd_detection'],
+  ['lua/civlogics/civilianlogicidle.lua', 'CivilianLogicIdle._upd_outline_detection', 'civ_idle_outline_detection'],
+];
+
+const stripped = (file) => stripLuaComments(read(...file.split('/')));
+
 test('the shared detection pass refuses a dead unit before the first deref', () => {
-  const body = funcBody(
-    stripLuaComments(read('lua', 'coplogics', 'coplogicbase.lua')),
-    'function CopLogicBase._upd_attention_obj_detection(',
-  );
+  const body = funcBody(stripped('lua/coplogics/coplogicbase.lua'), 'function CopLogicBase._upd_attention_obj_detection(');
 
   const guardAt = body.indexOf(GUARD);
   const derefAt = body.indexOf('local my_pos = data.cool and data.unit:movement()');
@@ -76,59 +113,79 @@ test('the shared detection pass refuses a dead unit before the first deref', () 
     body.indexOf('alive(data.unit)', guardAt) < body.indexOf('data.unit:movement()', guardAt),
     'alive(data.unit) must short-circuit before movement() is read',
   );
-
-  assert.match(
-    body,
-    new RegExp(`${escape(GUARD)}\\s*return 2\\s*end`),
-    'a skipped detection pass must return a number (callers add the delay to data.t)',
-  );
 });
 
-// Every logic that owns a detection callback. The list is discovered from the
-// source rather than hardcoded, so a new `_upd_enemy_detection`/`_upd_detection`
-// cannot be added without the gate.
-const entries = luaFiles(path.join(root, 'lua')).flatMap((file) => {
-  const text = stripLuaComments(fs.readFileSync(file, 'utf8'));
-  const found = [];
-  const re = /^function ([A-Za-z0-9_.]+)\.(_upd_enemy_detection|_upd_detection)\(([^)]*)\)/gm;
-  let match;
-  while ((match = re.exec(text))) {
-    const signature = match[0];
-    const start = text.indexOf(signature, match.index);
-    const next = text.indexOf('\nfunction ', start + signature.length);
-    found.push({
-      file: path.relative(root, file),
-      name: `${match[1]}.${match[2]}`,
-      body: text.slice(start, next === -1 ? text.length : next),
-    });
-  }
-  return found;
-});
-
-test('every detection callback is gated on unit liveness before it does anything', () => {
-  assert.ok(entries.length >= 12, `expected the whole detection class, found ${entries.length}`);
-
-  for (const entry of entries) {
-    const firstStatement = entry.body.slice(entry.body.indexOf(')') + 1).trimStart();
+test('every detection entry is gated first and reports a delay, never nil', () => {
+  for (const [file, name] of DETECTION_ENTRIES) {
+    const body = funcBody(stripped(file), `function ${name}(`);
 
     assert.ok(
-      firstStatement.startsWith(GUARD),
-      `${entry.file}: ${entry.name} must start with the liveness guard`,
+      firstStatement(body).startsWith(GUARD),
+      `${file}: ${name} must start with the liveness guard`,
+    );
+
+    // A bare return here is a nil where callers do `data.t + delay`
+    // (`CopLogicIdle.queued_update`) or `delay = 0.5 + delay * 1.5`, and
+    // `data.logic._upd_enemy_detection` is polymorphic, so a stale task can hit
+    // any logic's version. 2 is the shared pass's own default delay.
+    assert.match(
+      body,
+      new RegExp(`${escape(GUARD)}\\s*return 2\\s*end`),
+      `${file}: ${name} must return the 2 s default delay, not nil`,
     );
   }
 });
 
-test('a gated callback that reports a delay returns a number, not nil', () => {
-  // Callers do `data.t + delay` (or `delay = 0.5 + delay * 1.5`); a bare return
-  // there would be a nil arithmetic error instead of a skipped update.
-  for (const entry of entries) {
-    const returnsDelay = /return delay\b/.test(entry.body);
-    const guardReturnsNumber = new RegExp(`${escape(GUARD)}\\s*return 2\\s*end`).test(entry.body);
+test('the queued updates that run those entries are gated too', () => {
+  for (const [file, name] of QUEUED_UPDATES) {
+    const body = funcBody(stripped(file), `function ${name}(`);
 
-    assert.equal(
-      guardReturnsNumber,
-      returnsDelay,
-      `${entry.file}: ${entry.name} ${returnsDelay ? 'returns a delay and needs `return 2`' : 'has no delay contract and should return bare'}`,
+    assert.ok(
+      firstStatement(body).startsWith(GUARD),
+      `${file}: ${name} must start with the liveness guard (it dereferences the unit after the detection call)`,
+    );
+    assert.match(
+      body,
+      new RegExp(`${escape(GUARD)}\\s*return\\s*end`),
+      `${file}: ${name} must bail with a bare return`,
     );
   }
+});
+
+test('the vanilla-owned detection callbacks are wrapped, not copied', () => {
+  for (const [file, name, captured] of VANILLA_WRAPPERS) {
+    const text = stripped(file);
+    const body = funcBody(text, `function ${name}(`);
+
+    assert.match(
+      text,
+      new RegExp(`local ${captured} = ${name.replace('.', '\\.')}\\r?\\n`),
+      `${file}: the vanilla body must be captured before the wrapper replaces it`,
+    );
+    assert.ok(firstStatement(body).startsWith(GUARD), `${file}: ${name} wrapper must start with the guard`);
+    assert.match(body, new RegExp(`return ${captured}\\(data\\)`), `${file}: the wrapper must delegate to vanilla`);
+  }
+});
+
+test('no detection callback or queued update escapes the gate', () => {
+  const discovered = luaFiles(path.join(root, 'lua')).flatMap((file) => {
+    const text = stripLuaComments(fs.readFileSync(file, 'utf8'));
+    const found = [];
+    const re = /^function ([A-Za-z0-9_.]+)\.(_upd_[a-z_]*detection|queued_update|queued_detection_update)\(/gm;
+    let match;
+    while ((match = re.exec(text))) found.push(`${match[1]}.${match[2]}`);
+    return found;
+  });
+
+  const expected = [
+    ...DETECTION_ENTRIES.map(([, name]) => name),
+    ...QUEUED_UPDATES.map(([, name]) => name),
+    ...VANILLA_WRAPPERS.map(([, name]) => name),
+    'CopLogicBase._upd_attention_obj_detection',
+    // Intimidated has carried its own liveness guard since 2a8bbb1; it is not
+    // part of this list because its guard sits after the detection helper.
+    'CopLogicIntimidated.queued_update',
+  ].sort();
+
+  assert.deepEqual(discovered.sort(), expected, 'a detection entry or queued update is missing from the gate');
 });

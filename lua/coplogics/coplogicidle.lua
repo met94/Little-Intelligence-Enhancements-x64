@@ -166,6 +166,12 @@ function CopLogicIdle._on_player_slow_pos_rsrv_upd(data)
 end
 
 function CopLogicIdle.queued_update(data)
+	-- A queued update can outlive its unit; the rest of this body dereferences
+	-- it (V8.84 engine-AV fix). Live units never take this branch.
+	if not alive(data.unit) or not data.unit:movement() then
+		return
+	end
+
 	local my_data = data.internal_data
 	local delay = data.logic._upd_enemy_detection(data)
 

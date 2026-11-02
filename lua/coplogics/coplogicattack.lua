@@ -430,6 +430,12 @@ function CopLogicAttack.enter(data, new_logic_name, enter_params)
 end
 
 function CopLogicAttack.queued_update(data)
+	-- A queued update can outlive its unit; the rest of this body dereferences
+	-- it (V8.84 engine-AV fix). Live units never take this branch.
+	if not alive(data.unit) or not data.unit:movement() then
+		return
+	end
+
 	local my_data = data.internal_data
 	data.t = TimerManager:game():time()
 	
@@ -479,7 +485,7 @@ function CopLogicAttack._upd_enemy_detection(data, is_synchronous)
 	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
 	-- fix); live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
-		return
+		return 2
 	end
 
 	managers.groupai:state():on_unit_detection_updated(data.unit)

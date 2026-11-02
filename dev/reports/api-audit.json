@@ -897,7 +897,7 @@
     },
     {
       "file": "lua/civlogics/civilianlogicidle.lua",
-      "line": 30,
+      "line": 46,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -905,7 +905,7 @@
     },
     {
       "file": "lua/civlogics/civilianlogicidle.lua",
-      "line": 35,
+      "line": 51,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -913,7 +913,7 @@
     },
     {
       "file": "lua/civlogics/civilianlogicidle.lua",
-      "line": 224,
+      "line": 240,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -977,7 +977,7 @@
     },
     {
       "file": "lua/coplogics/boss/bosslogicattack.lua",
-      "line": 163,
+      "line": 169,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -985,7 +985,7 @@
     },
     {
       "file": "lua/coplogics/boss/bosslogicattack.lua",
-      "line": 944,
+      "line": 950,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -993,7 +993,7 @@
     },
     {
       "file": "lua/coplogics/coplogicarrest.lua",
-      "line": 251,
+      "line": 257,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1001,7 +1001,7 @@
     },
     {
       "file": "lua/coplogics/coplogicarrest.lua",
-      "line": 318,
+      "line": 324,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1017,7 +1017,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 450,
+      "line": 456,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1025,7 +1025,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 527,
+      "line": 533,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1033,7 +1033,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1590,
+      "line": 1596,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1041,7 +1041,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1646,
+      "line": 1652,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1049,7 +1049,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1650,
+      "line": 1656,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1057,7 +1057,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 3145,
+      "line": 3151,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1105,7 +1105,7 @@
     },
     {
       "file": "lua/coplogics/coplogicidle.lua",
-      "line": 184,
+      "line": 190,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1113,7 +1113,7 @@
     },
     {
       "file": "lua/coplogics/coplogicidle.lua",
-      "line": 275,
+      "line": 281,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1121,7 +1121,7 @@
     },
     {
       "file": "lua/coplogics/coplogicidle.lua",
-      "line": 1931,
+      "line": 1937,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1153,7 +1153,7 @@
     },
     {
       "file": "lua/coplogics/coplogicphalanxminion.lua",
-      "line": 77,
+      "line": 83,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1161,7 +1161,7 @@
     },
     {
       "file": "lua/coplogics/coplogicphalanxminion.lua",
-      "line": 102,
+      "line": 108,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1201,7 +1201,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 287,
+      "line": 293,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1209,7 +1209,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 460,
+      "line": 466,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1217,7 +1217,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 1347,
+      "line": 1353,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1225,7 +1225,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 1410,
+      "line": 1416,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1233,7 +1233,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 2034,
+      "line": 2040,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1273,7 +1273,7 @@
     },
     {
       "file": "lua/coplogics/specials/taserlogicattack.lua",
-      "line": 65,
+      "line": 71,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1281,7 +1281,7 @@
     },
     {
       "file": "lua/coplogics/specials/taserlogicattack.lua",
-      "line": 75,
+      "line": 81,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1289,7 +1289,7 @@
     },
     {
       "file": "lua/coplogics/specials/taserlogicattack.lua",
-      "line": 105,
+      "line": 111,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1297,7 +1297,7 @@
     },
     {
       "file": "lua/coplogics/specials/taserlogicattack.lua",
-      "line": 127,
+      "line": 133,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",

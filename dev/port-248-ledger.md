@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-02T11:12:54.585Z
+Generated: 2026-11-02T11:20:01.770Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -19,7 +19,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 290 |
+| LIES_EDIT_CLEAN | 292 |
 | SAME_AS_NEW_VANILLA | 1 |
 
 ## By decision
@@ -546,7 +546,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `CopLogicTravel._upd_focus_on_undetected_criminal` | 173 | 0 | 0 |  |
 | [ ] | audit | — | `CopLogicTravel._upd_pose` | 39 | 0 | 0 |  |
 | [ ] | audit | — | `CopLogicTravel.queue_detection_update` | 7 | 0 | 0 |  |
-| [ ] | audit | — | `CopLogicTravel.queued_detection_update` | 10 | 0 | 0 |  |
+| [ ] | audit | — | `CopLogicTravel.queued_detection_update` | 16 | 0 | 0 |  |
 | [ ] | audit | — | `CopLogicTravel.update` | 7 | 0 | 0 |  |
 | [ ] | keep | — | `CopLogicTravel._begin_coarse_pathing` | 30 | 19 | 19 |  |
 | [ ] | keep | — | `CopLogicTravel._check_start_path_ahead` | 57 | 26 | 26 |  |
@@ -603,7 +603,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicIdle.is_available_for_assignment` | 35 | 27 | 27 |  |
 | [ ] | keep | — | `CopLogicIdle.on_alert` | 72 | 56 | 56 |  |
 | [ ] | keep | — | `CopLogicIdle.on_new_objective` | 59 | 45 | 45 |  |
-| [ ] | keep | — | `CopLogicIdle.queued_update` | 109 | 54 | 54 |  |
+| [ ] | keep | — | `CopLogicIdle.queued_update` | 115 | 54 | 54 |  |
 
 ## lua/coplogics/coplogicarrest.lua
 
@@ -618,7 +618,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicArrest._verify_arrest_targets` | 38 | 38 | 38 |  |
 | [ ] | keep | — | `CopLogicArrest.action_complete_clbk` | 30 | 29 | 29 |  |
 | [ ] | keep | — | `CopLogicArrest.enter` | 49 | 64 | 64 |  |
-| [ ] | keep | — | `CopLogicArrest.queued_update` | 86 | 83 | 83 |  |
+| [ ] | keep | — | `CopLogicArrest.queued_update` | 92 | 83 | 83 |  |
 
 ## lua/coplogics/coplogicattack.lua
 
@@ -669,7 +669,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicAttack.damage_clbk` | 17 | 3 | 3 |  |
 | [ ] | keep | — | `CopLogicAttack.enter` | 81 | 61 | 61 |  |
 | [ ] | keep | — | `CopLogicAttack.queue_update` | 3 | 3 | 3 |  |
-| [ ] | keep | — | `CopLogicAttack.queued_update` | 16 | 11 | 11 |  |
+| [ ] | keep | — | `CopLogicAttack.queued_update` | 22 | 11 | 11 |  |
 | [ ] | keep | — | `CopLogicAttack.update` | 89 | 58 | 58 |  |
 
 ## lua/coplogics/coplogicsniper.lua
@@ -692,7 +692,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicPhalanxMinion.calc_initial_phalanx_pos` | 15 | 17 | 17 |  |
 | [ ] | keep | — | `CopLogicPhalanxMinion.enter` | 59 | 65 | 65 |  |
 | [ ] | keep | — | `CopLogicPhalanxMinion.is_available_for_assignment` | 11 | 3 | 3 |  |
-| [ ] | keep | — | `CopLogicPhalanxMinion.queued_update` | 43 | 40 | 40 |  |
+| [ ] | keep | — | `CopLogicPhalanxMinion.queued_update` | 49 | 40 | 40 |  |
 
 ## lua/coplogics/coplogicphalanxvip.lua
 
@@ -715,7 +715,7 @@ No function definitions (hook/overlay file).
 
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | done (dev/reports/port-decisions.md) | `ShieldLogicAttack.queued_update` | 124 | 130 | 129 |  |
+| [ ] | **PORT** | done (dev/reports/port-decisions.md) | `ShieldLogicAttack.queued_update` | 130 | 130 | 129 |  |
 | [ ] | audit | — | `ShieldLogicAttack._pathing_complete_clbk` | 21 | 0 | 0 |  |
 | [ ] | audit | — | `ShieldLogicAttack.chk_should_turn` | 3 | 0 | 0 |  |
 | [ ] | keep | — | `ShieldLogicAttack._chk_request_action_walk_to_optimal_pos` | 25 | 24 | 24 |  |
@@ -736,7 +736,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `TaserLogicAttack._upd_aim` | 90 | 141 | 141 |  |
 | [ ] | keep | — | `TaserLogicAttack.action_complete_clbk` | 103 | 39 | 39 |  |
 | [ ] | keep | — | `TaserLogicAttack.enter` | 51 | 52 | 52 |  |
-| [ ] | keep | — | `TaserLogicAttack.queued_update` | 77 | 57 | 57 |  |
+| [ ] | keep | — | `TaserLogicAttack.queued_update` | 83 | 57 | 57 |  |
 
 ## lua/coplogics/specials/spooc/spooclogicattack.lua
 
@@ -771,7 +771,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `LIESBossLogicAttack.action_complete_clbk` | 55 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack.enter` | 83 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack.queue_update` | 9 | 0 | 0 |  |
-| [ ] | audit | — | `LIESBossLogicAttack.queued_update` | 18 | 0 | 0 |  |
+| [ ] | audit | — | `LIESBossLogicAttack.queued_update` | 24 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack.update` | 76 | 0 | 0 |  |
 | [ ] | audit | — | `LIESDeepBossLogicAttack.damage_clbk` | 7 | 0 | 0 |  |
 
@@ -875,6 +875,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CivilianLogicFlee._run_away_from_alert` | 40 | 29 | 29 |  |
 | [ ] | keep | — | `CivilianLogicFlee._start_moving_to_cover` | 24 | 23 | 23 |  |
 | [ ] | keep | — | `CivilianLogicFlee._unregister_rescue_SO` | 23 | 21 | 21 |  |
+| [ ] | keep | — | `CivilianLogicFlee._upd_detection` | 9 | 32 | 32 |  |
 | [ ] | keep | — | `CivilianLogicFlee._update_pathing` | 23 | 23 | 23 |  |
 | [ ] | keep | — | `CivilianLogicFlee.action_complete_clbk` | 40 | 35 | 35 |  |
 | [ ] | keep | — | `CivilianLogicFlee.clbk_chk_call_the_police` | 51 | 44 | 44 |  |
@@ -899,6 +900,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `CivilianLogicIdle.update` | 17 | 0 | 0 |  |
 | [ ] | keep | — | `CivilianLogicIdle._delayed_alert_clbk` | 43 | 33 | 33 |  |
 | [ ] | keep | — | `CivilianLogicIdle._upd_detection` | 63 | 55 | 55 |  |
+| [ ] | keep | — | `CivilianLogicIdle._upd_outline_detection` | 9 | 38 | 38 |  |
 | [ ] | keep | — | `CivilianLogicIdle.action_complete_clbk` | 25 | 17 | 17 |  |
 | [ ] | keep | — | `CivilianLogicIdle.enter` | 67 | 90 | 90 |  |
 | [ ] | keep | — | `CivilianLogicIdle.is_available_for_assignment` | 9 | 9 | 9 |  |
@@ -938,7 +940,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CivilianLogicSurrender.action_complete_clbk` | 18 | 10 | 10 |  |
 | [ ] | keep | — | `CivilianLogicSurrender.enter` | 108 | 110 | 110 |  |
 | [ ] | keep | — | `CivilianLogicSurrender.on_intimidated` | 39 | 31 | 31 |  |
-| [ ] | keep | — | `CivilianLogicSurrender.queued_update` | 40 | 31 | 31 |  |
+| [ ] | keep | — | `CivilianLogicSurrender.queued_update` | 46 | 31 | 31 |  |
 
 ## lua/equipment/sentry_gun/sentrygunbase.lua
 
