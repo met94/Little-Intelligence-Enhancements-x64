@@ -24,35 +24,37 @@ could run on a team AI bot that no longer exists.
   travel `_upd_enemy_detection`, the shared detection pass and the vanilla pump
   all dereference `data.unit` directly; LIES' head of the pass also reads
   `data.m_pos`, one term more than vanilla's `movement():m_head_pos()`
-- fix (`lua/coplogics/coplogicbase.lua`, first statement of
-  `_upd_attention_obj_detection`): `if not alive(data.unit) or not
-  data.unit:movement() then return 2 end`. `alive()` first follows the V8.68
-  liveness predicate and `movement()` is read only once liveness holds; the
-  report records that `alive()` is itself a native call and what would falsify
-  that assumption. `2` mirrors the function's own default delay (`whisper_mode()
-  and 0 or 2`); a `nil` return would re-schedule immediately, because
-  `CopLogicAttack` uses `delay and data.t + delay`
-- fix (`lua/teamailogics/teamailogictravel.lua`, first statement of
-  `_upd_enemy_detection`): the same guard with a bare `return`. Not redundant:
-  after the shared pass returns, this callback still dereferences the unit
-  (`movement()`, `anim_data()`, objective) and re-queues itself, so guarding only
-  the shared pass would move the fault down the same function. Returning also
-  stops the dead unit from re-queuing
+- fix: the same guard as the first statement of every logic that owns a queued
+  detection callback - `TeamAILogicTravel`, `TeamAILogicIdle`,
+  `TeamAILogicAssault`, `CopLogicIdle`, `CopLogicTravel`, `CopLogicAttack`,
+  `CopLogicArrest`, `CopLogicSniper`, `TaserLogicAttack`,
+  `ShieldLogicAttack`, `SpoocLogicIdle`, `LIESBossLogicAttack` and
+  `CivilianLogicIdle._upd_detection` (13 functions, 13 files), plus
+  `CopLogicBase._upd_attention_obj_detection` itself as defence in depth for any
+  other caller. The entry guards are not redundant with the shared one: each
+  callback dereferences the unit again after the pass (`movement()`,
+  `anim_data()`, objective) and re-queues itself, and the sniper reads
+  `anim_data()` through `_upd_stop_old_action` *before* the pass
+- return contract: bare `return` where the caller ignores the result, `return 2`
+  where it is a delay (`CopLogicIdle`, `CopLogicTravel`, `CopLogicArrest`,
+  `TaserLogicAttack`, `SpoocLogicIdle` - their `queued_update` does
+  `data.t + delay` or `delay = 0.5 + delay * 1.5`, so `nil` would be a nil
+  arithmetic error instead of a skipped update). `2` mirrors the shared pass's
+  own default delay (`whisper_mode() and 0 or 2`). The static test derives the
+  expectation from each body and caught `SpoocLogicIdle` during this change
 - deliberately not done: `pcall` around queued callbacks (hides real errors,
   changes crash output), `EnemyManager` id dedupe or an `unqueue_task` loop
   (vanilla queue semantics shared by every cop, civilian and bot), a
   `pre_destroy` cancel hook (the normal path already cancels and it cannot reach
-  a duplicate-id orphan)
-- scope: the other queued detection entries reach the shared guard in a normal
-  session, because `GroupAIStateBase:on_unit_detection_updated` only reads the
-  unit when the group AI's `_draw_enabled` debug drawing is on; two exceptions
-  stay open and are listed in the report - that callout with AI drawing enabled,
-  and `CopLogicSniper._upd_enemy_detection`'s `_upd_stop_old_action` branch,
-  which reads `anim_data()` before the guard when an old action is pending
+  a duplicate-id orphan). The orphan still fires at the normal detection
+  cadence for a destroyed unit and now returns immediately - that is the leak,
+  not the crash
 - tests: new `dev/tools/test/detection-dead-unit-guard.test.mjs` (3 tests) pins
-  the guard as the first statement of both callbacks, its position before the
-  `my_pos` deref, the `alive()`-before-`movement()` order and both return
-  values; the full suite is 199/199
+  the shared pass (guard before the `my_pos` deref, `alive()` before
+  `movement()`, `return 2`), discovers every
+  `_upd_enemy_detection`/`_upd_detection` definition under `lua/` from the source
+  and requires the guard as its first statement, and derives the return contract
+  from each body (`return delay` present or not); the full suite is 199/199
 - version: `V8.84_x64` in `mod.txt`, `autoupdate.json`, `README.md`,
   `menumanager.lua` (`LIES.version`) and `dev/tools/test/compat.test.mjs`, which
   also pins the newest changelog revision header and keeps the `V8.57_x64`
@@ -64,9 +66,9 @@ could run on a team AI bot that no longer exists.
   observation** - the reporter cannot supply another session, and the trigger
   (a destroyed bot with a live queued task) has no local reproduction
 
-Player notes: no gameplay change. A crew bot whose unit is already gone can no
-longer take the game down on its next detection tick; live bots detect exactly
-as before.
+Player notes: no gameplay change. A cop, crew bot or civilian whose engine
+object is already gone can no longer take the game down on its next detection
+tick; live units detect exactly as before.
 
 Revision V8.83_x64 — 2026-11-01
 Turn the reaction-hold event into debug-only detail: it was 76 % of the whole event channel, while the counters already carry the behaviour.

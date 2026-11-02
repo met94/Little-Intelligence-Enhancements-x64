@@ -98,10 +98,10 @@ LIES already treats this class as a crash source: `2a8bbb1` added
 
 ## 3. Fix
 
-Two guards, one idiom, no scheduler or queue changes.
+One idiom at every detection entry, no scheduler or queue changes.
 
 `lua/coplogics/coplogicbase.lua` (first statement of
-`_upd_attention_obj_detection`):
+`_upd_attention_obj_detection`, defence in depth for any other caller):
 
 ```lua
 if not alive(data.unit) or not data.unit:movement() then
@@ -109,28 +109,46 @@ if not alive(data.unit) or not data.unit:movement() then
 end
 ```
 
-`lua/teamailogics/teamailogictravel.lua` (first statement of the callback):
+and the same guard as the first statement of every logic that owns a queued
+detection callback — twelve functions in twelve files:
 
-```lua
-if not alive(data.unit) or not data.unit:movement() then
-	return
-end
-```
+| file | entry |
+| --- | --- |
+| `lua/teamailogics/teamailogictravel.lua` | `TeamAILogicTravel._upd_enemy_detection` |
+| `lua/teamailogics/teamailogicidle.lua` | `TeamAILogicIdle._upd_enemy_detection` |
+| `lua/teamailogics/teamailogicassault.lua` | `TeamAILogicAssault._upd_enemy_detection` |
+| `lua/coplogics/coplogicidle.lua` | `CopLogicIdle._upd_enemy_detection` |
+| `lua/coplogics/coplogictravel.lua` | `CopLogicTravel._upd_enemy_detection` |
+| `lua/coplogics/coplogicattack.lua` | `CopLogicAttack._upd_enemy_detection` |
+| `lua/coplogics/coplogicarrest.lua` | `CopLogicArrest._upd_enemy_detection` |
+| `lua/coplogics/coplogicsniper.lua` | `CopLogicSniper._upd_enemy_detection` |
+| `lua/coplogics/specials/taserlogicattack.lua` | `TaserLogicAttack._upd_enemy_detection` |
+| `lua/coplogics/specials/shieldlogicattack.lua` | `ShieldLogicAttack._upd_enemy_detection` |
+| `lua/coplogics/specials/spooc/spooclogicidle.lua` | `SpoocLogicIdle._upd_enemy_detection` |
+| `lua/coplogics/boss/bosslogicattack.lua` | `LIESBossLogicAttack._upd_enemy_detection` |
+| `lua/civlogics/civilianlogicidle.lua` | `CivilianLogicIdle._upd_detection` |
 
 - `alive()` first is deliberate: LIES already treats unit liveness as the
   validity predicate for engine objects (V8.68 §3, `lies_enemy_tracker`), and
   `movement()` is only read once liveness holds. `alive()` is itself a native
   call on the unit handle; the assumption behind it is stated in §5, not proven
   here.
-- The second guard is not redundant. After `_upd_attention_obj_detection`
-  returns, the callback still dereferences the unit (`movement()`,
-  `anim_data()`, `objective`) and re-queues itself, so guarding only the shared
-  function would move the fault a few lines down. Returning also stops the dead
-  unit from re-queuing.
-- `return 2` mirrors the function's own default delay
-  (`whisper_mode() and 0 or 2`). A `nil` return would be a behaviour change:
-  `CopLogicAttack._upd_enemy_detection` schedules with `delay and data.t + delay`,
-  where `nil` means "run next tick".
+- The entry guards are not redundant with the shared one. After
+  `_upd_attention_obj_detection` returns, each callback still dereferences the
+  unit (`movement()`, `anim_data()`, `objective`), re-queues itself, and in the
+  sniper's case reads `anim_data()` *before* the shared call. Guarding only the
+  shared pass would move the fault a few lines down; returning at the entry also
+  stops a dead unit from re-queuing.
+- Return value depends on the callback's contract: `return` where the caller
+  ignores the result, `return 2` where the value is a delay
+  (`CopLogicIdle`/`CopLogicTravel`/`CopLogicArrest`/`TaserLogicAttack`/
+  `SpoocLogicIdle`, whose `queued_update` does `data.t + delay` or
+  `delay = 0.5 + delay * 1.5`). A bare `nil` there would be a nil arithmetic
+  error instead of a skipped update. `2` mirrors the shared pass's own default
+  delay (`whisper_mode() and 0 or 2`); `CopLogicAttack` schedules with
+  `delay and data.t + delay`, where `nil` means "run next tick". The static test
+  derives the expectation from each body (`return delay` present or not), and it
+  caught `SpoocLogicIdle` during this change.
 - Live units are unaffected: the guard is false, cost is two native calls per
   detection tick, the same trade-off V8.82 accepted for one `alive()` per unit
   per check.
@@ -149,12 +167,13 @@ Deliberately **not** done, because each is riskier than the bug:
 
 ## 4. Verification
 
-- `dev/tools/test/detection-dead-unit-guard.test.mjs` — three tests: the guard is
-  the first statement of both callbacks, it sits before the `my_pos` deref, it
-  reads `alive()` before `movement()`, and the return values are a number
-  (`2`) in the shared pass and a bare `return` in the callback.
+- `dev/tools/test/detection-dead-unit-guard.test.mjs` — three tests: the shared
+  pass reads `alive()` before `movement()` and returns `2` before the `my_pos`
+  deref; every detected `_upd_enemy_detection`/`_upd_detection` definition under
+  `lua/` (discovered from the source, not hardcoded) starts with the guard; and
+  each guard returns a number exactly when its callback reports a delay.
 - `node --test dev/tools/test/*.test.mjs` — 199/199 (196 before this release).
-- LuaJIT syntax on both files, `lua-freevars` on both files against
+- LuaJIT syntax on all changed files, `lua-freevars` on them against
   `e3a8b616` — `no game-file locals missing`.
 - `dev/tools/gates.ps1` — see `dev/reports/static-gates.md`.
 - **No in-game observation.** The reporter cannot be asked for another session,
@@ -176,24 +195,25 @@ is not proven by anything in this report. If a fault moves to the guard line
 itself, that assumption is wrong and the guard has to be replaced by a liveness
 list (keys the manager still owns) instead of calling into the unit.
 
-The same hole exists on the other queued detection entries
-(`teamailogicidle:446`, `teamailogicassault:247`, `coplogicidle:1074`,
-`coplogictravel:1015`, `coplogicsniper:112`, `coplogicattack:478`,
-`taserlogicattack:260`, `bosslogicattack:906`). In a normal session they reach
-the shared pass without dereferencing the unit first:
-`GroupAIStateBase:on_unit_detection_updated` (`groupaistatebase.lua:1034` @
-`e3a8b616`) only reads `unit:movement()` when the group AI's `_draw_enabled`
-debug drawing is on, so the shared guard covers their reachable path. Two
-exceptions stay open and are candidates for the follow-up: that callout while
-AI drawing is enabled, and `CopLogicSniper._upd_enemy_detection`, whose
-`CopLogicAttack._upd_stop_old_action` branch (`coplogicsniper.lua:118-120`) reads
-`data.unit:anim_data()` before the guard when an old action is pending.
+The class is closed at the entry points: every logic that owns a queued
+detection callback guards before its first statement, so the two pre-guard reads
+found earlier (`GroupAIStateBase:on_unit_detection_updated` while the group AI's
+`_draw_enabled` debug drawing is on, and `CopLogicSniper`'s
+`CopLogicAttack._upd_stop_old_action` branch at `coplogicsniper.lua:118-120`)
+now sit behind the guard.
 
-`return 2` keeps those callbacks re-queuing at the normal detection cadence for
-a unit that is already gone, instead of stopping them. That is deliberate: the
-sites share the shared pass but not a single callback to return from, and a `nil`
-return would re-schedule them immediately. The travel callback, which owns its
-own re-queue, returns bare and stops.
+What remains is the orphan itself, not the crash: a leaked queued task for a
+destroyed unit still fires at the normal cadence and now returns immediately
+(`return 2` where the callback reports a delay, bare `return` otherwise). The
+queue leak is vanilla behaviour — `queue_task` appends without id dedupe and
+`unqueue_task` removes one entry per id — and is left alone on purpose (see §3).
+
+One sibling callback is vanilla-owned and therefore outside this fix:
+`CivilianLogicIdle._upd_outline_detection` (queued by four civilian logics for
+`data.t + 2`) dereferences `data.unit:movement()` at
+`civilianlogicidle.lua:128` @ `e3a8b616`. LIES does not override that function,
+so covering it would mean shipping a vanilla civ-outline copy for a guard; it is
+recorded here rather than done.
 
 Player POV: no gameplay change. A bot whose unit is already gone no longer takes
 the session down on its next detection tick; live bots detect exactly as before.

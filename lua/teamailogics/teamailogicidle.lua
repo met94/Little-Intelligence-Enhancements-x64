@@ -444,6 +444,12 @@ function TeamAILogicIdle.action_complete_clbk(data, action)
 end
 
 function TeamAILogicIdle._upd_enemy_detection(data)
+	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
+	-- fix); live units never take this branch.
+	if not alive(data.unit) or not data.unit:movement() then
+		return
+	end
+
 	managers.groupai:state():on_unit_detection_updated(data.unit)
 
 	data.t = TimerManager:game():time()

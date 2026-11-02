@@ -29,6 +29,16 @@ function stripLuaComments(source) {
   return out;
 }
 
+function luaFiles(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...luaFiles(full));
+    else if (entry.name.endsWith('.lua')) out.push(full);
+  }
+  return out;
+}
+
 function funcBody(text, signature) {
   const start = text.indexOf(signature);
   assert.notEqual(start, -1, `${signature} is missing`);
@@ -37,14 +47,16 @@ function funcBody(text, signature) {
 }
 
 const GUARD = 'if not alive(data.unit) or not data.unit:movement() then';
+const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// The V8.57 crash (2026-10-24, reported 2026-11-02) was an engine access
-// violation at the `my_pos` read in `_upd_attention_obj_detection`, reached from
-// a queued `TeamAILogicTravel._upd_enemy_detection` task. EnemyManager keeps
-// queued callbacks across a unit's destruction (`unqueue_task` removes one entry
-// per id), so a callback can be handed a logic data whose unit is already gone.
-// Any dereference then faults in engine code, not in Lua, so the fix is a
-// liveness gate at the callback entry, not a pcall.
+// The V8.57 crash (reported 2026-11-02) was an engine access violation at the
+// `my_pos` read in `_upd_attention_obj_detection`, reached from a queued
+// `TeamAILogicTravel._upd_enemy_detection` task. EnemyManager keeps a queued
+// callback across its unit's destruction (`queue_task` appends with no id
+// dedupe, `unqueue_task` removes one entry per id), so a callback can be handed
+// a logic data whose unit is already gone. Any dereference then faults in engine
+// code, not in Lua, so every detection entry point needs a liveness gate, and a
+// pcall would not help.
 test('the shared detection pass refuses a dead unit before the first deref', () => {
   const body = funcBody(
     stripLuaComments(read('lua', 'coplogics', 'coplogicbase.lua')),
@@ -67,43 +79,56 @@ test('the shared detection pass refuses a dead unit before the first deref', () 
 
   assert.match(
     body,
-    new RegExp(`${GUARD.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*return 2\\s*end`),
+    new RegExp(`${escape(GUARD)}\\s*return 2\\s*end`),
     'a skipped detection pass must return a number (callers add the delay to data.t)',
   );
 });
 
-test('the travel detection callback refuses a dead unit before it touches data.t', () => {
-  const body = funcBody(
-    stripLuaComments(read('lua', 'teamailogics', 'teamailogictravel.lua')),
-    'function TeamAILogicTravel._upd_enemy_detection(',
-  );
-
-  const guardAt = body.indexOf(GUARD);
-  const callbackStart = body.indexOf('data.t = TimerManager:game():time()');
-
-  assert.notEqual(guardAt, -1, 'the travel callback has no liveness guard');
-  assert.notEqual(callbackStart, -1, 'the travel callback body changed shape');
-  assert.ok(guardAt < callbackStart, 'the guard must run before the callback does any work');
-
-  // Returning (not returning a delay) also stops the unit from re-queuing its
-  // own detection task, so a destroyed bot cannot keep waking up the queue.
-  assert.match(
-    body,
-    new RegExp(`${GUARD.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*return\\s*end`),
-  );
+// Every logic that owns a detection callback. The list is discovered from the
+// source rather than hardcoded, so a new `_upd_enemy_detection`/`_upd_detection`
+// cannot be added without the gate.
+const entries = luaFiles(path.join(root, 'lua')).flatMap((file) => {
+  const text = stripLuaComments(fs.readFileSync(file, 'utf8'));
+  const found = [];
+  const re = /^function ([A-Za-z0-9_.]+)\.(_upd_enemy_detection|_upd_detection)\(([^)]*)\)/gm;
+  let match;
+  while ((match = re.exec(text))) {
+    const signature = match[0];
+    const start = text.indexOf(signature, match.index);
+    const next = text.indexOf('\nfunction ', start + signature.length);
+    found.push({
+      file: path.relative(root, file),
+      name: `${match[1]}.${match[2]}`,
+      body: text.slice(start, next === -1 ? text.length : next),
+    });
+  }
+  return found;
 });
 
-test('both guards sit at the very top of their callback, before any other statement', () => {
-  for (const [file, signature] of [
-    ['lua/coplogics/coplogicbase.lua', 'function CopLogicBase._upd_attention_obj_detection('],
-    ['lua/teamailogics/teamailogictravel.lua', 'function TeamAILogicTravel._upd_enemy_detection('],
-  ]) {
-    const body = funcBody(stripLuaComments(read(...file.split('/'))), signature);
-    const firstStatement = body.slice(body.indexOf(')') + 1).trimStart();
+test('every detection callback is gated on unit liveness before it does anything', () => {
+  assert.ok(entries.length >= 12, `expected the whole detection class, found ${entries.length}`);
+
+  for (const entry of entries) {
+    const firstStatement = entry.body.slice(entry.body.indexOf(')') + 1).trimStart();
 
     assert.ok(
       firstStatement.startsWith(GUARD),
-      `${file}: the liveness guard must be the first statement of the callback`,
+      `${entry.file}: ${entry.name} must start with the liveness guard`,
+    );
+  }
+});
+
+test('a gated callback that reports a delay returns a number, not nil', () => {
+  // Callers do `data.t + delay` (or `delay = 0.5 + delay * 1.5`); a bare return
+  // there would be a nil arithmetic error instead of a skipped update.
+  for (const entry of entries) {
+    const returnsDelay = /return delay\b/.test(entry.body);
+    const guardReturnsNumber = new RegExp(`${escape(GUARD)}\\s*return 2\\s*end`).test(entry.body);
+
+    assert.equal(
+      guardReturnsNumber,
+      returnsDelay,
+      `${entry.file}: ${entry.name} ${returnsDelay ? 'returns a delay and needs `return 2`' : 'has no delay contract and should return bare'}`,
     );
   }
 });

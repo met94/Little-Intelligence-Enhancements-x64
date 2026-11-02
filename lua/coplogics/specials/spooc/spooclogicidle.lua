@@ -1,4 +1,10 @@
 function SpoocLogicIdle._upd_enemy_detection(data)
+	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
+	-- fix); live units never take this branch. The return value is a delay.
+	if not alive(data.unit) or not data.unit:movement() then
+		return 2
+	end
+
 	managers.groupai:state():on_unit_detection_updated(data.unit)
 
 	data.t = TimerManager:game():time()
