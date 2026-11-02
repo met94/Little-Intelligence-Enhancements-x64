@@ -116,9 +116,11 @@ const NON_COUNTER_FIELDS = new Set([
   'dw_us',
   'dw_us_max',
   // A per-window mean of the adoption facing dot, not a delta: the session
-  // figure is a mean weighted by each window's adoptions (see
+  // figure is a mean weighted by each window's measured dots (see
   // `aggregateDigests`).
-  'watch_aim_dot'
+  'watch_aim_dot',
+  // Same rule for the settled-facing sample, weighted by its measured dots.
+  'watch_aim_settled_dot'
 ]);
 
 const WATCH_RE = /\[LIES-WATCH\]\s+v=(\S+)\s+evt=(\S+)\s*(.*)$/;
@@ -355,22 +357,46 @@ export function aggregateDigests(digests) {
   let watchDotWeighted = 0;
   let watchDotWeight = 0;
   let watchDotWindows = 0;
+  let settledDotWeighted = 0;
+  let settledDotWeight = 0;
+  let settledDotWindows = 0;
 
   for (const digest of digests) {
-    // `watch_aim_dot` is the mean facing dot of the adoptions inside one
-    // window, so the session figure weights each window by that window's
-    // `watch_aim_adopted`: averaging the per-window means would let a window
-    // with a single adoption outweigh one with fifty. A window that counted no
-    // adoption contributes nothing — `LIES:_avg_sum` prints 0 for a window with
-    // no sample, and folding that 0 in as real data would drag the mean towards
-    // "looked at a wall".
+    // `watch_aim_dot` is the mean facing dot of the adoptions *with a measurable
+    // facing* inside one window, so the session figure has to weight each window
+    // by that window's measured count (`watch_aim_dot_n`, the number of `Sum`
+    // calls behind the mean). Weighting by `watch_aim_adopted` would give a
+    // `dot=n/a` adoption the weight of a sample it never contributed; averaging
+    // the per-window means instead would let a window with one adoption outweigh
+    // one with fifty. Logs from before the measured count existed fall back to
+    // the adoption count, which is the best those logs can support. A window
+    // with no measured dot contributes nothing - `LIES:_avg_sum` prints 0 for it,
+    // and folding that 0 in as real data would drag the mean towards "looked at
+    // a wall".
     const adopted = num(digest.fields.watch_aim_adopted) ?? 0;
+    const adoptedMeasured = num(digest.fields.watch_aim_dot_n);
+    const adoptedWeight = adoptedMeasured === null ? adopted : adoptedMeasured;
     const dot = num(digest.fields.watch_aim_dot);
 
-    if (dot !== null && adopted > 0) {
-      watchDotWeighted += dot * adopted;
-      watchDotWeight += adopted;
+    if (dot !== null && adoptedWeight > 0) {
+      watchDotWeighted += dot * adoptedWeight;
+      watchDotWeight += adoptedWeight;
       watchDotWindows++;
+    }
+
+    // The settled sample follows the same rule with its own denominator: it is
+    // counted later (on the first aim pass at least 0.4 s after the adoption), so
+    // a window can hold adoptions with no settled sample yet, and a sample with
+    // `dot=n/a` has no measured facing to weight.
+    const settled = num(digest.fields.watch_aim_settled) ?? 0;
+    const settledMeasured = num(digest.fields.watch_aim_settled_dot_n);
+    const settledWeight = settledMeasured === null ? settled : settledMeasured;
+    const settledDot = num(digest.fields.watch_aim_settled_dot);
+
+    if (settledDot !== null && settledWeight > 0) {
+      settledDotWeighted += settledDot * settledWeight;
+      settledDotWeight += settledWeight;
+      settledDotWindows++;
     }
 
     for (const [key, raw] of Object.entries(digest.fields)) {
@@ -405,6 +431,8 @@ export function aggregateDigests(digests) {
     near_vis_h_max: nearVisHMax,
     watch_aim_dot_avg: watchDotWeight > 0 ? watchDotWeighted / watchDotWeight : 0,
     watch_aim_dot_windows: watchDotWindows,
+    watch_aim_settled_dot_avg: settledDotWeight > 0 ? settledDotWeighted / settledDotWeight : 0,
+    watch_aim_settled_dot_windows: settledDotWindows,
     dw_us_windows: dwUsValues.length,
     windows: digests.length
   };
@@ -623,11 +651,15 @@ export function analyzeLog(text, {
 
   // --- watch aim adopted --------------------------------------------------
   // `positions` proves a position was *computed*; this proves a cop then turned
-  // its attention to it. Two different links in the chain, and the second one
-  // only exists inside the attack logic while the cop is running and not
-  // aiming — a unit walking between rooms in `travel` never reaches `_upd_aim`,
-  // so zero adoptions next to produced positions is a map/route fact, not by
-  // itself a regression.
+  // its attention to it. Both are different links in the chain, and the second
+  // one only runs inside the attack logic while the cop is running and not
+  // aiming.
+  //
+  // Travel logics do run that pass too: the 2026-11-02 play (V8.85) logged
+  // `phase=watch_aim` lines with `logic=travel`, so a cop walking between rooms
+  // can adopt a watch position. Zero adoptions next to produced positions is
+  // therefore not explained by `travel` and is worth reading as "no adoption was
+  // counted in this run".
   //
   // Adoption counts a watch position either way: one derived on the adoption
   // pass (`src=raw` / `src=expected`) and one the helper returned from its cache
@@ -644,10 +676,16 @@ export function analyzeLog(text, {
   const adoptedWhileUnseen = adopted - adoptionVerified;
   const adoptionFields = parsed.digests.some(digest =>
     'watch_aim_adopted' in digest.fields || 'watch_aim_dot' in digest.fields);
-  const beforeDot = round(aggregate.watch_aim_dot_avg, 2);
+  // `watch_aim_dot` averages only the adoptions with a measurable facing, so the
+  // weight is that measured count (`watch_aim_dot_n`), not `watch_aim_adopted`:
+  // a `dot=n/a` adoption contributed no value and must not weigh on the mean. A
+  // log from before the measured count existed falls back to the adoption count.
+  const adoptedMeasuredPresent = parsed.digests.some(digest => 'watch_aim_dot_n' in digest.fields);
+  const adoptedMeasured = adoptedMeasuredPresent ? counter(counters, 'watch_aim_dot_n') : adopted;
+  const beforeDot = adoptedMeasured > 0 ? round(aggregate.watch_aim_dot_avg, 2) : null;
   const adoptionEvidence = `watch_aim_adopted=${adopted}, watch_aim_cached=${adoptionCached}, ` +
     `watch_aim_verified=${adoptionVerified}, adopted_while_unseen=${adoptedWhileUnseen}, ` +
-    `before_dot=${beforeDot}`;
+    `before_dot=${beforeDot === null ? 'n/a' : beforeDot}`;
 
   if (!parsed.digests.length) {
     claim('watchaim', 'watch aim adopted', 'INFO', `no digest: ${adoptionEvidence}`);
@@ -678,8 +716,102 @@ export function analyzeLog(text, {
       'watch aim adopted',
       'INFO',
       `${adoptionEvidence}: no adoption of a watch position was counted ` +
-        `(door watch only runs inside the attack logic while a cop is running and not aiming; ` +
-        `a cop in \`travel\` never enters it)`
+        `(door watch only runs inside the attack logic while a cop is running and not aiming)`
+    );
+  }
+
+  // --- settled facing -----------------------------------------------------
+  // The adoption dot is measured at the instant of adoption, which is always
+  // off-target: adopting the position is what starts the turn. V8.86 samples the
+  // same flat dot at least 0.4 s later, on the next due aim pass (`age` in the
+  // trace is the real delay), so this claim is the "does the cop look like it
+  // pre-aims" figure. `square` is the subset within 45 degrees of the doorway
+  // (dot >= 0.7, a chosen, untuned cut that is cheap to move), i.e. the cop ended
+  // up looking at the doorway rather than staying on the wall it started from.
+  //
+  // Every figure here divides by MEASURED dots, never by `watch_aim_settled`:
+  // that counter also includes samples where no facing could be measured
+  // (`dot=n/a`), and treating those as a value would make the share and the mean
+  // lie in the flattering direction. The sample is still counted - "the
+  // follow-up ran" is a real fact - so the count and the measured count are both
+  // printed. A digest from a V8.86 build before `watch_aim_settled_dot_n` existed
+  // falls back to the sample count.
+  const settled = counter(counters, 'watch_aim_settled');
+  const settledSquare = counter(counters, 'watch_aim_settled_square');
+  const settledFields = parsed.digests.some(digest =>
+    'watch_aim_settled' in digest.fields || 'watch_aim_settled_dot' in digest.fields);
+  const settledMeasuredPresent = parsed.digests.some(digest =>
+    'watch_aim_settled_dot_n' in digest.fields);
+  const settledMeasured = settledMeasuredPresent
+    ? counter(counters, 'watch_aim_settled_dot_n')
+    : settled;
+  const settledDot = settledMeasured > 0 ? round(aggregate.watch_aim_settled_dot_avg, 2) : null;
+  const settledShare = settledMeasured > 0
+    ? `${round((settledSquare / settledMeasured) * 100, 1)}%`
+    : 'n/a';
+  const settledEvidence = `watch_aim_settled=${settled}, measured=${settledMeasured}, ` +
+    `square=${settledSquare}/${settledMeasured} (${settledShare}), ` +
+    `dot=${settledDot === null ? 'n/a' : settledDot}`;
+
+  if (!parsed.digests.length) {
+    claim('settled', 'settled facing', 'INFO', `no digest: ${settledEvidence}`);
+  } else if (!settledFields) {
+    claim(
+      'settled',
+      'settled facing',
+      'INFO',
+      'digest has no watch_aim_settled* fields: pre-V8.86 log, the settled facing was never measured'
+    );
+  } else if (settledMeasured > 0) {
+    // PASS is about the measurement, and the headline is the result: a run whose
+    // cops settled facing away reads `square=0/<n> (0%)` next to the PASS, which
+    // is visibly not a success. Settled samples alone cannot pass it - a sample
+    // with no measurable facing proves the follow-up ran, not that the cop
+    // pre-aims.
+    claim('settled', 'settled facing', 'PASS', settledEvidence);
+  } else {
+    claim(
+      'settled',
+      'settled facing',
+      'INFO',
+      `${settledEvidence}: no settled sample with a measurable facing was counted ` +
+        `(the sample is taken at least 0.4 s after the first adoption of an episode, and dropped ` +
+        `when the unit changed logic, the target became visible or the aim target moved)`
+    );
+  }
+
+  // --- aim accounting -----------------------------------------------------
+  // Three relations the Lua cannot break: `watch_aim_verified` is counted per
+  // adoption, and a settled sample is consumed at most once per pending
+  // adoption, so neither can exceed `watch_aim_adopted`. A digest that says
+  // otherwise means the two groups came from different counter states (a
+  // mid-heist reset, a build that wrote one and not the other) - a measurement
+  // fault, so it fails here and leaves the `settled` claim above about the
+  // facing rather than about bookkeeping.
+  const aimAccounting = [];
+
+  if (settled > adopted) aimAccounting.push(`${settled} settled samples from ${adopted} adoptions`);
+  if (adoptionVerified > adopted) aimAccounting.push(`${adoptionVerified} verified adoptions from ${adopted} adoptions`);
+
+  const aimAccountingEvidence = `adopted=${adopted}, verified=${adoptionVerified}, settled=${settled}`;
+
+  if (!parsed.digests.length) {
+    claim('aimaccount', 'aim accounting', 'INFO', `no digest: ${aimAccountingEvidence}`);
+  } else if (!adoptionFields && !settledFields) {
+    claim(
+      'aimaccount',
+      'aim accounting',
+      'INFO',
+      'digest has no watch_aim_* fields: pre-V8.85 log, there is nothing to account for'
+    );
+  } else {
+    claim(
+      'aimaccount',
+      'aim accounting',
+      aimAccounting.length ? 'FAIL' : 'PASS',
+      aimAccounting.length
+        ? `${aimAccountingEvidence}: impossible state, ${aimAccounting.join('; ')}`
+        : `${aimAccountingEvidence}: every subset is inside the adoption total`
     );
   }
 

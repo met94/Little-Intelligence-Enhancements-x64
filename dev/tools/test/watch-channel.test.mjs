@@ -78,10 +78,43 @@ test('the digest is one line per minute and the alarms have thresholds', () => {
   assert.match(tick[1], /if t < \(self\.watch_next_t or 0\) then\s*\n\s*return/, 'cadence gate missing');
   assert.match(tick[1], /if self:WatchEnabled\(\) then\s*\n\s*self:WatchDigest\(t\)/, 'digest not gated in the tick');
   assert.match(tick[1], /lies_cover_fallback_rate/, 'cover fallback alarm missing');
-  assert.match(tick[1], /lies_suppression_deny_rate/, 'suppression alarm missing');
+  assert.match(tick[1], /lies_suppression_deny_spike/, 'suppression spike alarm missing');
   // No per-frame output: both alarms sit after the cadence gate.
   const gateAt = tick[1].indexOf('if t < (self.watch_next_t or 0) then');
   assert.ok(tick[1].indexOf('lies_cover_fallback_rate') > gateAt, 'alarms must run after the cadence gate');
+});
+
+test('the suppression alarm is an absolute spike, not a dead ratio', () => {
+  const tick = /function LIES:WatchTick\(t\)([\s\S]*?)\n\tend/.exec(manager);
+  assert.ok(tick, 'WatchTick missing');
+  const body = tick[1];
+
+  // Nothing in the mod ever increments `suppression_allow`, so the old
+  // deny/(deny+allow) ratio was 1.00 by construction and fired on six of 22
+  // windows in one 22-minute run. The alarm must not read the missing
+  // denominator at all.
+  assert.doesNotMatch(body, /lies_suppression_deny_rate/, 'the ratio alarm must stay gone');
+  assert.doesNotMatch(body, /suppression_allow/, 'nothing produces suppression_allow, so the alarm cannot read it');
+  assert.match(body, /local suppression_deny = lies_delta\(self\.watch_counters, self\.watch_prev, "suppression_deny"\)/);
+
+  const shape = /if suppression_deny > (\d+) then\s*self:Alarm\("lies_suppression_deny_spike", \{\s*deny = suppression_deny,\s*threshold = (\d+)\s*\}, t\)\s*end/.exec(body);
+  assert.ok(shape, 'the spike alarm shape is missing');
+  // The comparison and the reported field come from the same literal, so they
+  // cannot drift apart. 90 is not arbitrary: the observed healthy maximum of the
+  // 2026-11-02 session was 65 denials in a minute at high cop counts, so any cut
+  // below that fires on a normal assault wave.
+  assert.equal(shape[1], '90');
+  assert.equal(shape[2], shape[1]);
+
+  // Evaluated exactly as the Lua does: a minute with exactly the threshold does
+  // not fire, one denial above it does.
+  const threshold = Number(shape[1]);
+  const fires = delta => delta > threshold;
+
+  assert.equal(fires(threshold), false, 'exactly 90 denials must not fire');
+  assert.equal(fires(threshold + 1), true, '91 denials must fire');
+  // The observed healthy maximum stays quiet.
+  assert.equal(fires(65), false, 'the healthy 65-denial minute must not fire');
 });
 
 test('the tagged call sites feed the digest counters', () => {

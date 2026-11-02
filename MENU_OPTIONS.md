@@ -186,17 +186,29 @@ How to verify it from a log (needs `"watch_log": true`, see the next section):
 | `watch_aim_adopted` | Aim passes that turned the cop's attention to a watch position, freshly derived (`src=raw` / `src=expected`) or reused from the cache (`src=cached`); vanilla's `m_pos + 140` is not counted |
 | `watch_aim_cached` | Of those, the ones whose position came from the cache, i.e. from a doorway derived on an earlier pass. Every adoption cached with no fresh derivation in the same run means the adoption fired but the probe itself did not |
 | `watch_aim_verified` | Of `watch_aim_adopted`, the ones adopted while the enemy was visible (`verified` / `nearly_visible`): the cop could see the target anyway, so these cannot help. A `watch_aim_adopted - watch_aim_verified` of 0 means the feature fired but never while the target was unseen |
-| `watch_aim_dot` | Mean flat facing dot at adoption: `1.0` = already facing the doorway, `0` = looking along the wall, negative = a turn past 90°. A per-window mean, weighted by each window's adoptions. Adoptions with no measurable facing are logged as `dot=n/a` and not averaged in |
+| `watch_aim_dot` | Mean flat facing dot at adoption: `1.0` = already facing the doorway, `0` = looking along the wall, negative = a turn past 90°. A per-window mean, weighted by each window's **measured** dots (`watch_aim_dot_n`), not by its adoptions. Adoptions with no measurable facing are logged as `dot=n/a` and neither averaged in nor weighed |
+| `watch_aim_dot_n` | The measured subset behind `watch_aim_dot`: adoptions whose facing could actually be measured. The session mean is weighted by this count, so a `dot=n/a` adoption cannot outvote a measured one |
+| `watch_aim_settled` | Follow-up facing samples of the door watch: the first aim pass at least 0.4 s after the first adoption of an episode (`age` in the trace reports the actual delay). This is the "does the cop look like it pre-aims" figure; the adoption dot above cannot answer it. Dropped (uncounted) when the target became visible, the aim target moved more than 20 units away, or the unit changed logic |
+| `watch_aim_settled_square` | Of `watch_aim_settled`, the samples within 45° of the doorway (dot ≥ 0.7 - a chosen, untuned cut, cheap to move if the in-game sample disagrees). Reads "the cop settled towards the doorway", not "the cop is facing the enemy" |
+| `watch_aim_settled_dot` | Mean settled facing dot, weighted by each window's **measured** dots (`watch_aim_settled_dot_n`). A sample logged `n/a` in the trace (no measurable facing) is counted but not averaged |
+| `watch_aim_settled_dot_n` | The measured subset behind `watch_aim_settled_dot`, and the denominator of the `square` share in the report: `square / watch_aim_settled_dot_n` |
 
 `[LIES-WATCH] evt=door_watch_first` and `[LIES-TRACE] … phase=door_watch`
 name the first produced position (`src=raw` or `src=expected`) and the per-unit
 branch; `[LIES-TRACE] … phase=watch_aim` names the adoption itself (`src`, `dot`,
 `verified`, `nearly`), including an adoption of a cached position (`src=cached`).
-Not yet observed in game.
+`[LIES-TRACE] … phase=watch_aim_settle` names the follow-up sample at least
+0.4 s later (the first aim pass that is due after the first adoption of an
+episode; V8.86): `dot` is where the aim settled, `age` the actual delay since
+the adoption.
+The V8.85 adoption figures were measured on 2026-11-02; the settled sample is
+not yet observed in game.
 
-Door watching only runs inside the attack logic while a cop is running and not
-aiming: a cop walking between rooms in `travel` never enters it, which is why a
-room-heavy test can show produced positions and no adoptions.
+Door watching runs inside the attack logic while a cop is running and not
+aiming. Travel logics reach that pass too (the 2026-11-02 play logged
+`logic=travel ... phase=watch_aim`), so a room-heavy test showing no adoptions
+means none were counted, not that `travel` is excluded: the adoption-instant
+facing is always off-target because the adoption starts the turn.
 
 ## Debug Logging (`debug_log`)
 
@@ -211,9 +223,15 @@ Same channel shape as Iter's, so one reader handles both mods:
 - **Alarms** are always on and need no setting. They fire only on a hard
   failure, at most once per name per 60 s and at most 20 per heist:
   `lies_cover_fallback_rate` (more than half of ≥40 cover reservations in a
-  minute fell back) and `lies_suppression_deny_rate` (more than 80% of ≥40
-  suppression checks in a minute were denied). A healthy heist writes **zero**
-  `[LIES-WATCH]` lines.
+  minute fell back) and `lies_suppression_deny_spike` (more than 90 suppression
+  denials in one minute). The spike is absolute, not a rate: nothing in the mod
+  produces the matching "allow" counter, so the old deny/(deny+allow) ratio was
+  1.00 by construction and fired on six of 22 windows in one 22-minute run. The
+  cut is 90 because that same healthy run peaked at 65 denials in a minute at
+  high cop counts: the counter is "distinct cops denied once per episode", so a
+  busy assault wave legitimately reaches the sixties. A healthy heist therefore
+  usually writes **no** `[LIES-WATCH]` line, but it is no longer a claim that it
+  cannot: a 90-plus minute is the shape worth reporting.
 - **Digest** is opt-in: add `"watch_log": true` to
   `mods\saves\LittleIntelligenceEnhancementS.txt` with the game closed. With it
   on, LIES writes a header at heist start and one `[LIES-WATCH] evt=digest`
