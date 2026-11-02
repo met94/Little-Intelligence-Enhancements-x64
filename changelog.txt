@@ -1,3 +1,66 @@
+Revision V8.84_x64 — 2026-11-02
+Close a reported engine crash in the detection pass: a queued detection callback
+could run on a team AI bot that no longer exists.
+- report: player crash on `V8.57_x64` (received 2026-11-02), `Application has
+  crashed: access violation`, script stack `_upd_attention_obj_detection()
+  @mods/LIES/lua/coplogics/coplogicbase.lua:807` ← `clbk()
+  @mods/LIES/lua/teamailogics/teamailogictravel.lua:91` ←
+  `_execute_queued_task()` / `_update_queued_tasks()` (vanilla
+  `lib/managers/enemymanager.lua`). Both mod lines decode against the release
+  commit `4d97be0`: `:807` is the `my_pos` local in the detection pass, `:91` is
+  the `CopLogicBase._upd_attention_obj_detection` call inside
+  `TeamAILogicTravel._upd_enemy_detection`. The pump is vanilla, so a stored
+  queued task fired, not a logic update. `TeamAILogicTravel` exists only in
+  `TeamAIBrain._logics`, so the unit was a crew bot. Access violation = native
+  fault with no Lua message, i.e. a freed unit or movement extension behind the
+  Lua handle, the V8.68 shape (`dev/reports/aim-stale-nav-tracker-crash.md` §2)
+- why a queued task outlived its unit: `EnemyManager:queue_task` appends with no
+  id dedupe, `unqueue_task` removes exactly one entry per id and `has_task`
+  returns a count, so a duplicate id (LIES' own `queue_task` already logs `task
+  queued twice`) leaves one entry behind after a single cancel; the normal
+  destroy route (`CopBrain:pre_destroy` → `set_active(false)` →
+  `set_logic("inactive")` → travel `exit` → `cancel_queued_tasks`) also cannot
+  run if no logic exit happens at all. Nothing on the path checked liveness:
+  travel `_upd_enemy_detection`, the shared detection pass and the vanilla pump
+  all dereference `data.unit` directly; LIES' head of the pass also reads
+  `data.m_pos`, one term more than vanilla's `movement():m_head_pos()`
+- fix (`lua/coplogics/coplogicbase.lua`, first statement of
+  `_upd_attention_obj_detection`): `if not alive(data.unit) or not
+  data.unit:movement() then return 2 end`. `alive()` first is the predicate that
+  stays safe on a destroyed unit (V8.68 §3), and `movement()` is read only once
+  liveness holds. `2` mirrors the function's own default delay (`whisper_mode()
+  and 0 or 2`); a `nil` return would re-schedule immediately, because
+  `CopLogicAttack` uses `delay and data.t + delay`
+- fix (`lua/teamailogics/teamailogictravel.lua`, first statement of
+  `_upd_enemy_detection`): the same guard with a bare `return`. Not redundant:
+  after the shared pass returns, this callback still dereferences the unit
+  (`movement()`, `anim_data()`, objective) and re-queues itself, so guarding only
+  the shared pass would move the fault down the same function. Returning also
+  stops the dead unit from re-queuing
+- deliberately not done: `pcall` around queued callbacks (hides real errors,
+  changes crash output), `EnemyManager` id dedupe or an `unqueue_task` loop
+  (vanilla queue semantics shared by every cop, civilian and bot), a
+  `pre_destroy` cancel hook (the normal path already cancels and it cannot reach
+  a duplicate-id orphan)
+- tests: new `dev/tools/test/detection-dead-unit-guard.test.mjs` (3 tests) pins
+  the guard as the first statement of both callbacks, its position before the
+  `my_pos` deref, the `alive()`-before-`movement()` order and both return
+  values; the full suite is 199/199
+- version: `V8.84_x64` in `mod.txt`, `autoupdate.json`, `README.md`,
+  `menumanager.lua` (`LIES.version`) and `dev/tools/test/compat.test.mjs`, which
+  also pins the newest changelog revision header and keeps the `V8.57_x64`
+  oldest pin; the `VERSION` fixture in `dev/tools/test/door-watch-report.test.mjs`
+  follows the release
+- docs: `dev/reports/detection-dead-unit-crash.md` - trace, root cause, the two
+  orphan mechanisms, the fix, the rejected alternatives, and the falsifier
+- status: static gates green (`dev/reports/static-gates.md`). **No in-game
+  observation** - the reporter cannot supply another session, and the trigger
+  (a destroyed bot with a live queued task) has no local reproduction
+
+Player notes: no gameplay change. A crew bot whose unit is already gone can no
+longer take the game down on its next detection tick; live bots detect exactly
+as before.
+
 Revision V8.83_x64 — 2026-11-01
 Turn the reaction-hold event into debug-only detail: it was 76 % of the whole event channel, while the counters already carry the behaviour.
 - measured volume: one 58 MB SuperBLT log holds 103,445 `[LIES-EVENT]` lines, of which 78,871 are `kind=reaction_hold` (76 %); one 32-minute session alone wrote 54,548 of them, about 28 per second. The event is throttled to one line per unit per second (`menumanager.lua:348`), but every unit whose `verified_t` re-arms after more than 2 s gets a fresh line, so a busy assault with many units keeps the channel saturated even though the per-unit rate looks harmless

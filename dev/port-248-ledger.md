@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-01T18:15:04.369Z
+Generated: 2026-11-02T10:32:42.204Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -505,7 +505,7 @@ No function definitions (hook/overlay file).
 
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | done (c409ba4) | `CopLogicBase._upd_attention_obj_detection` | 531 | 355 | 359 |  |
+| [ ] | **PORT** | done (c409ba4) | `CopLogicBase._upd_attention_obj_detection` | 541 | 355 | 359 |  |
 | [ ] | audit | — | `CopLogicBase.check_sabotage_objective_not_allowed` | 42 | 0 | 0 |  |
 | [ ] | audit | — | `CopLogicBase.on_attention_obj_verified` | 13 | 0 | 0 |  |
 | [ ] | audit | — | `CopLogicBase.pre_destroy` | 5 | 0 | 0 |  |
@@ -827,7 +827,7 @@ No function definitions (hook/overlay file).
 
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
-| [ ] | keep | — | `TeamAILogicTravel._upd_enemy_detection` | 134 | 62 | 62 |  |
+| [ ] | keep | — | `TeamAILogicTravel._upd_enemy_detection` | 143 | 62 | 62 |  |
 | [ ] | keep | — | `TeamAILogicTravel.enter` | 80 | 85 | 85 |  |
 
 ## lua/teamailogics/teamailogicassault.lua

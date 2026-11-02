@@ -290,6 +290,6 @@ None.
 - `lua/teamailogics/teamailogicidle.lua:404` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.wall_stare_task_key, CopLogicIdle._chk_stare_into_wall_1, data, data.t)`
 - `lua/teamailogics/teamailogicidle.lua:533` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicIdle._upd_enemy_detection, data, data.t + delay)`
 - `lua/teamailogics/teamailogictravel.lua:33` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicTravel._upd_enemy_detection, data, data.t)`
-- `lua/teamailogics/teamailogictravel.lua:202` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, key, TeamAILogicTravel._remove_enemy_attention, {`
-- `lua/teamailogics/teamailogictravel.lua:214` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicTravel._upd_enemy_detection, data, data.t + delay)`
+- `lua/teamailogics/teamailogictravel.lua:211` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, key, TeamAILogicTravel._remove_enemy_attention, {`
+- `lua/teamailogics/teamailogictravel.lua:223` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, TeamAILogicTravel._upd_enemy_detection, data, data.t + delay)`
 

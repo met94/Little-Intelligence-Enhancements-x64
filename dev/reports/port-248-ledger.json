@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-11-01T18:15:04.371Z",
+  "generated": "2026-11-02T10:32:42.206Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -4786,7 +4786,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1491
+          "startLine": 1501
         },
         {
           "name": "CopLogicBase._exit",
@@ -4851,7 +4851,7 @@
         {
           "name": "CopLogicBase._upd_attention_obj_detection",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 531,
+          "modLines": 541,
           "oldLines": 355,
           "newLines": 359,
           "modParams": "data, min_reaction, max_reaction",
@@ -4906,7 +4906,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1663
+          "startLine": 1673
         },
         {
           "name": "CopLogicBase.death_clbk",
@@ -4921,7 +4921,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1438
+          "startLine": 1448
         },
         {
           "name": "CopLogicBase.identify_attention_obj_instant",
@@ -4996,7 +4996,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1456
+          "startLine": 1466
         },
         {
           "name": "CopLogicBase.on_objective_unit_damaged",
@@ -8277,7 +8277,7 @@
         {
           "name": "TeamAILogicTravel._upd_enemy_detection",
           "category": "LIES_EDIT_CLEAN",
-          "modLines": 134,
+          "modLines": 143,
           "oldLines": 62,
           "newLines": 62,
           "modParams": "data",

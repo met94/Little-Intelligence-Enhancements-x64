@@ -2057,7 +2057,7 @@
     },
     {
       "file": "lua/teamailogics/teamailogictravel.lua",
-      "line": 202,
+      "line": 211,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -2065,7 +2065,7 @@
     },
     {
       "file": "lua/teamailogics/teamailogictravel.lua",
-      "line": 214,
+      "line": 223,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
