@@ -80,6 +80,15 @@ function TeamAILogicTravel.enter(data, new_logic_name, enter_params)
 end
 
 function TeamAILogicTravel._upd_enemy_detection(data)
+	-- Same queue-lifetime hole as CopLogicBase._upd_attention_obj_detection:
+	-- the rest of this callback also dereferences the unit (`movement()`,
+	-- `anim_data()`, objective), so bail before any of it runs on a destroyed
+	-- bot (V8.57 access violation, coplogicbase.lua:807). Returning also stops
+	-- this unit from re-queuing the detection task.
+	if not alive(data.unit) or not data.unit:movement() then
+		return 2
+	end
+
 	data.t = TimerManager:game():time()
 	local my_data = data.internal_data
 	local max_reaction = nil

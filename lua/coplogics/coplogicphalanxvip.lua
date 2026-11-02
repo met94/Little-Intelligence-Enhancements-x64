@@ -197,3 +197,20 @@ function CopLogicPhalanxVip.do_vip_flee(unit)
 		return
 	end
 end
+
+-- LIES queues the vanilla `CopLogicPhalanxVip.queued_update` from `enter`
+-- above; vanilla's body (`lib/units/enemies/cop/logics/coplogicphalanxvip.lua:135`
+-- @ `e3a8b616`) keeps dereferencing the unit after its detection call, so a
+-- queued copy that outlives the unit reaches vanilla AI code with a freed
+-- object. Vanilla owns the body, so LIES wraps it instead of copying it.
+local phalanx_vip_queued_update = CopLogicPhalanxVip.queued_update
+
+function CopLogicPhalanxVip.queued_update(data)
+	-- Dead unit: same queue-lifetime hole as the detection callbacks (V8.84
+	-- engine-AV fix); live units never take this branch.
+	if not alive(data.unit) or not data.unit:movement() then
+		return
+	end
+
+	return phalanx_vip_queued_update(data)
+end
