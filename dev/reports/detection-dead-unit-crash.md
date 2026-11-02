@@ -117,9 +117,11 @@ if not alive(data.unit) or not data.unit:movement() then
 end
 ```
 
-- `alive()` first is deliberate: it is the predicate that stays safe on a
-  destroyed unit (V8.68 §3), and `movement()` is only read once liveness is
-  established.
+- `alive()` first is deliberate: LIES already treats unit liveness as the
+  validity predicate for engine objects (V8.68 §3, `lies_enemy_tracker`), and
+  `movement()` is only read once liveness holds. `alive()` is itself a native
+  call on the unit handle; the assumption behind it is stated in §5, not proven
+  here.
 - The second guard is not redundant. After `_upd_attention_obj_detection`
   returns, the callback still dereferences the unit (`movement()`,
   `anim_data()`, `objective`) and re-queues itself, so guarding only the shared
@@ -132,6 +134,10 @@ end
 - Live units are unaffected: the guard is false, cost is two native calls per
   detection tick, the same trade-off V8.82 accepted for one `alive()` per unit
   per check.
+- Downed units are unaffected in practice: `TeamAILogicIdle.damage_clbk` exits
+  to `disabled` on `bleedout`/`fatal`/`tase` (`teamailogicidle.lua:327-328` @
+  `e3a8b616`), so travel never runs on a downed bot, and a unit that fails
+  `alive()` has no detection work worth keeping.
 
 Deliberately **not** done, because each is riskier than the bug:
 
@@ -164,12 +170,30 @@ route rather than unit destruction. The next step then is cancelling **all**
 entries for the unit's key at `TeamAIBrain:set_active(false)` (loop on
 `has_task(id)`), not a wider guard.
 
+`alive()` is a native call on the unit handle. The guard assumes a destroyed
+unit's Lua handle still answers it, which is the same assumption V8.68 ships; it
+is not proven by anything in this report. If a fault moves to the guard line
+itself, that assumption is wrong and the guard has to be replaced by a liveness
+list (keys the manager still owns) instead of calling into the unit.
+
 The same hole exists on the other queued detection entries
-(`teamailogicidle:457`, `teamailogicassault:260`, `coplogicidle:1080`,
-`coplogictravel:1021`, `coplogicsniper:123`, `coplogicattack:484`,
-`taserlogicattack:267`, `bosslogicattack:912`). They are left for a follow-up so
-a regression in this release is attributable to one idiom; the shared-pass guard
-already covers their first deref.
+(`teamailogicidle:446`, `teamailogicassault:247`, `coplogicidle:1074`,
+`coplogictravel:1015`, `coplogicsniper:112`, `coplogicattack:478`,
+`taserlogicattack:260`, `bosslogicattack:906`). In a normal session they reach
+the shared pass without dereferencing the unit first:
+`GroupAIStateBase:on_unit_detection_updated` (`groupaistatebase.lua:1034` @
+`e3a8b616`) only reads `unit:movement()` when the group AI's `_draw_enabled`
+debug drawing is on, so the shared guard covers their reachable path. Two
+exceptions stay open and are candidates for the follow-up: that callout while
+AI drawing is enabled, and `CopLogicSniper._upd_enemy_detection`, whose
+`CopLogicAttack._upd_stop_old_action` branch (`coplogicsniper.lua:118-120`) reads
+`data.unit:anim_data()` before the guard when an old action is pending.
+
+`return 2` keeps those callbacks re-queuing at the normal detection cadence for
+a unit that is already gone, instead of stopping them. That is deliberate: the
+sites share the shared pass but not a single callback to return from, and a `nil`
+return would re-schedule them immediately. The travel callback, which owns its
+own re-queue, returns bare and stops.
 
 Player POV: no gameplay change. A bot whose unit is already gone no longer takes
 the session down on its next detection tick; live bots detect exactly as before.

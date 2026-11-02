@@ -26,9 +26,10 @@ could run on a team AI bot that no longer exists.
   `data.m_pos`, one term more than vanilla's `movement():m_head_pos()`
 - fix (`lua/coplogics/coplogicbase.lua`, first statement of
   `_upd_attention_obj_detection`): `if not alive(data.unit) or not
-  data.unit:movement() then return 2 end`. `alive()` first is the predicate that
-  stays safe on a destroyed unit (V8.68 §3), and `movement()` is read only once
-  liveness holds. `2` mirrors the function's own default delay (`whisper_mode()
+  data.unit:movement() then return 2 end`. `alive()` first follows the V8.68
+  liveness predicate and `movement()` is read only once liveness holds; the
+  report records that `alive()` is itself a native call and what would falsify
+  that assumption. `2` mirrors the function's own default delay (`whisper_mode()
   and 0 or 2`); a `nil` return would re-schedule immediately, because
   `CopLogicAttack` uses `delay and data.t + delay`
 - fix (`lua/teamailogics/teamailogictravel.lua`, first statement of
@@ -42,6 +43,12 @@ could run on a team AI bot that no longer exists.
   (vanilla queue semantics shared by every cop, civilian and bot), a
   `pre_destroy` cancel hook (the normal path already cancels and it cannot reach
   a duplicate-id orphan)
+- scope: the other queued detection entries reach the shared guard in a normal
+  session, because `GroupAIStateBase:on_unit_detection_updated` only reads the
+  unit when the group AI's `_draw_enabled` debug drawing is on; two exceptions
+  stay open and are listed in the report - that callout with AI drawing enabled,
+  and `CopLogicSniper._upd_enemy_detection`'s `_upd_stop_old_action` branch,
+  which reads `anim_data()` before the guard when an old action is pending
 - tests: new `dev/tools/test/detection-dead-unit-guard.test.mjs` (3 tests) pins
   the guard as the first statement of both callbacks, its position before the
   `my_pos` deref, the `alive()`-before-`movement()` order and both return
