@@ -15,6 +15,20 @@ the current 64-bit 248.2 game build.
 - **Download:** [GitHub Releases](https://github.com/met94/Little-Intelligence-Enhancements-x64/releases)
 - **Original project:** [fuglore/Little-Intelligence-Enhancements](https://github.com/fuglore/Little-Intelligence-Enhancements)
 
+## Part of the AI suite
+
+This mod is tested as one stack with the rest of our 248.2 AI suite, and is
+intended to be run together with it:
+
+| Mod | Repo | Role |
+| --- | --- | --- |
+| **LIES** (this mod) | [met94/Little-Intelligence-Enhancements-x64](https://github.com/met94/Little-Intelligence-Enhancements-x64) | enemy AI: detection, aim, cover, travel |
+| **Iter** | [met94/payday2-mod-Iter](https://github.com/met94/payday2-mod-Iter) | navigation, coarse search, nav-link queue, level nav fixes |
+| **Keepers** | [met94/payday2-mod-Keepers](https://github.com/met94/payday2-mod-Keepers) | bot orders, revives, jokers |
+| **Monkeepers** | [met94/payday2-mod-Monkeepers](https://github.com/met94/payday2-mod-Monkeepers) | bot bag logistics |
+| **Useful Bots** 2.6.3 (by Hoppip, not part of this set) | [ModWorkshop #31221](https://modworkshop.net/mod/31221) | bot combat and utility; requires HopLib |
+| The Fixes (optional) | - | general game fixes |
+
 ## Features
 
 - **Smarter detection and reaction** — LIES keeps its own attention, aim,
@@ -61,13 +75,6 @@ save folder.
 LIES is a large AI overlay, so the AI mods you pair it with need a defined
 owner per subsystem. These are the combinations validated in this fork.
 
-- **NavFixes — do not run with LIES.** Both modify the same navigation
-  functions with incompatible signatures: NavFixes' 2-argument
-  `find_segment_doors` and 6-argument `_sort_nav_segs_after_pos` silently
-  replace LIES' 3-/7-argument versions, which kills LIES coarse pathing and
-  doorway cover/aim lookups without logging anything. LIES already carries the
-  `register_anim_nav_link` and `remove_obstacle` guards, so NavFixes is not
-  needed.
 - **Iter (full nav) — recommended, Option 1 navigation owner.** Iter owns nav
   congestion, coarse search, and the animated nav-link queue; LIES keeps its
   own squad push coordination (`CopLogicTravel.chk_group_ready_to_move`), which
@@ -150,7 +157,6 @@ These are intentional 248.2 port decisions, not missing files:
 - Dead v5 navigation code and the unused recon-sweep subsystem were removed.
 - Nav-B generated covers are LIES-search-only and opt-in.
 - Marshal marksmen keep the long-standing LIES `CopLogicAttack` mapping.
-- NavFixes must not be installed alongside LIES.
 
 ## Credits
 
