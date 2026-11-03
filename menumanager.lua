@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "V8.84_x64",
+		version = "V8.86_x64",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -525,6 +525,30 @@ if RequiredScript == "lib/managers/menumanager" then
 			-- returned without an outcome.
 			dw_gap = (d.dw_call or 0) - ((d.dw_gate_off or 0) + (d.dw_stale_bail or 0) + (d.dw_outer_gate_skip or 0) + (d.dw_no_my_tracker or 0) + (d.dw_hit or 0) + (d.dw_none or 0)),
 
+			-- watch adoption: the watch position became a cop's attention target
+			-- (fresh or cached), the cached subset, the subset adopted while the
+			-- target was visible, and how far off the facing was (`dot` 1 =
+			-- already facing the doorway, so a low mean means a visible turn)
+			watch_aim_adopted = d.watch_aim_adopted or 0,
+			watch_aim_cached = d.watch_aim_cached or 0,
+			watch_aim_verified = d.watch_aim_verified or 0,
+			watch_aim_dot = self:_avg_sum("watch_aim_dot"),
+			-- The measured subset behind that mean: `_avg_sum` divides by the
+			-- number of `Sum` calls, so this is exactly the samples with a
+			-- measurable facing (`dot=n/a` samples never reach `Sum`). The report
+			-- needs it to weight the mean and to share one denominator with the
+			-- subset counts; weighting by `watch_aim_adopted` would treat an
+			-- unmeasured facing as if it had a value.
+			watch_aim_dot_n = self:_sum_n("watch_aim_dot"),
+			-- Settled facing: the same dot sampled at least 0.4 s after the first
+			-- adoption of an episode, on the next due aim pass, so it says whether
+			-- the cop actually ended up facing the doorway rather than how far off
+			-- it was when the turn started.
+			watch_aim_settled = d.watch_aim_settled or 0,
+			watch_aim_settled_square = d.watch_aim_settled_square or 0,
+			watch_aim_settled_dot = self:_avg_sum("watch_aim_settled_dot"),
+			watch_aim_settled_dot_n = self:_sum_n("watch_aim_settled_dot"),
+
 			-- near-visible probe: how often the vertical fallback ran, and its tallest probe
 			near_vis_probe = d.near_vis_probe or 0,
 			near_vis_h_max = math.floor((self.watch_gauges.near_vis_h or 0) + 0.5),
@@ -574,6 +598,14 @@ if RequiredScript == "lib/managers/menumanager" then
 		end
 
 		return entry.sum / entry.n
+	end
+
+	-- How many `Sum()` calls back a `_avg_sum` figure: the measured subset, as
+	-- opposed to the attempt count a `Count()` counter reports.
+	function LIES:_sum_n(kind)
+		local entry = self.watch_sums and self.watch_sums[kind]
+
+		return entry and entry.n or 0
 	end
 
 	-- Distribution of cache entries by how often they have ever been hit: tells us
@@ -704,13 +736,22 @@ if RequiredScript == "lib/managers/menumanager" then
 			}, t)
 		end
 
-		ratio, total, bad = lies_alarm_ratio(self.watch_counters, self.watch_prev, "suppression_deny", "suppression_allow", 40)
+		-- Suppression. Absolute spike, not a ratio: nothing in the mod ever
+		-- increments the matching allow counter, so the old deny/(deny+allow)
+		-- ratio was 1.00 by construction and fired on six of 22 windows in one
+		-- 22-minute run (65/60/59 denials), burning the 20-alarm budget on a
+		-- healthy play. The counter is meaningful ("distinct cops denied once per
+		-- episode"), so only the alarm changes: a minute with more than 90 denials
+		-- is the shape worth reporting. 90, not 40, because the observed healthy
+		-- maximum of the 2026-11-02 session was 65 at high cop counts - a cut
+		-- under that fires on a normal assault wave and teaches the reader to
+		-- ignore the line.
+		local suppression_deny = lies_delta(self.watch_counters, self.watch_prev, "suppression_deny")
 
-		if ratio and ratio > 0.8 then
-			self:Alarm("lies_suppression_deny_rate", {
-				rate = string.format("%.2f", ratio),
-				deny = bad,
-				total = total
+		if suppression_deny > 90 then
+			self:Alarm("lies_suppression_deny_spike", {
+				deny = suppression_deny,
+				threshold = 90
 			}, t)
 		end
 

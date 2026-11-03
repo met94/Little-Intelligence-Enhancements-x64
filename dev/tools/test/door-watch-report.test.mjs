@@ -25,7 +25,7 @@ import {
   selectSessions
 } from '../door-watch-report.mjs';
 
-const VERSION = 'V8.84_x64';
+const VERSION = 'V8.86_x64';
 const CLI = fileURLToPath(new URL('../door-watch-report.mjs', import.meta.url));
 
 function watch(event, fields = {}) {
@@ -914,3 +914,313 @@ test('--ab applies the session selection to the control log too', () => {
   assert.match(claimOf(earlier, 'cost').evidence, /control session 1 of 2/);
   assert.equal(earlier.verdict, 'PASS');
 });
+
+// The V8.85 link: a digest can prove a watch position was *computed*
+// (`positions`) while saying nothing about whether a cop adopted it. This claim
+// reads the adoption counters, and the facing dot is a mean, not a delta.
+test('watch aim adopted passes when a cop adopted a computed position', () => {
+  const log = [
+    SETUP,
+    header(),
+    digest({ watch_aim_adopted: 3, watch_aim_verified: 0, watch_aim_cached: 1, watch_aim_dot: 0.4 }),
+    digest({ t: 120, watch_aim_adopted: 2, watch_aim_verified: 1, watch_aim_cached: 2, watch_aim_dot: 0.1 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'adopt_log.txt', modVersion: VERSION });
+  const adopted = claimOf(report, 'watchaim');
+
+  assert.equal(adopted.claim, 'watch aim adopted');
+  assert.equal(adopted.result, 'PASS');
+  assert.match(adopted.evidence, /watch_aim_adopted=5/);
+  assert.match(adopted.evidence, /watch_aim_cached=3/);
+  assert.match(adopted.evidence, /watch_aim_verified=1/);
+  // PASS reads the difference, not the raw total: 5 adoptions, 1 made while the
+  // target was visible, 4 while it was unseen.
+  assert.match(adopted.evidence, /adopted_while_unseen=4/);
+  // Weighted by each window's adoptions: (0.4*3 + 0.1*2) / 5 = 0.28, not the
+  // unweighted mean of the two window means (0.25).
+  assert.match(adopted.evidence, /before_dot=0\.28/);
+  assert.equal(report.counters.watch_aim_adopted, 5);
+  assert.equal(report.counters.watch_aim_cached, 3, 'the cached subset is summed like the other counters');
+  // Subset arithmetic: `watch_aim_verified` is counted per adoption pass, so it
+  // can never exceed the adoption total. Pinned as an assertion, not a comment,
+  // because the PASS above is a difference of the two.
+  assert.ok(report.counters.watch_aim_verified <= report.counters.watch_aim_adopted);
+  assert.equal(report.counters.watch_aim_dot, undefined, 'the dot is a mean, never summed');
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('a zero-adoption window does not weigh on the session dot', () => {
+  // `LIES:_avg_sum` prints `watch_aim_dot=0` for a window that counted no
+  // adoption. That 0 is an empty sentinel, not a sample: folding it in as one
+  // would drag the session dot towards "looked at a wall". The contributing
+  // window count is what makes the guard observable — deleting `adopted > 0`
+  // turns this into 3.
+  const aggregate = aggregateDigests([
+    { fields: { watch_aim_adopted: '3', watch_aim_dot: '0.4' } },
+    { fields: { watch_aim_adopted: '2', watch_aim_dot: '0.1' } },
+    { fields: { watch_aim_adopted: '0', watch_aim_dot: '0' } }
+  ]);
+
+  assert.equal(aggregate.watch_aim_dot_windows, 2, 'only windows that counted an adoption contribute');
+  // (0.4*3 + 0.1*2) / 5, unchanged by the empty window.
+  assert.equal(aggregate.watch_aim_dot_avg, 0.28);
+});
+
+test('watch aim adopted is INFO when every adoption had the target visible', () => {
+  // The feature fired (adoptions counted) but never while the target was
+  // unseen: nothing in this run can be attributed to the watch position. Not a
+  // failure, but it must not read as the PASS above.
+  const log = [
+    SETUP,
+    header(),
+    digest({ watch_aim_adopted: 4, watch_aim_cached: 1, watch_aim_verified: 4, watch_aim_dot: 0.8 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'visible_log.txt', modVersion: VERSION });
+  const adopted = claimOf(report, 'watchaim');
+
+  assert.equal(adopted.result, 'INFO');
+  assert.match(adopted.evidence, /watch_aim_adopted=4/);
+  assert.match(adopted.evidence, /watch_aim_verified=4/);
+  assert.match(adopted.evidence, /adopted_while_unseen=0/);
+  assert.match(adopted.evidence, /every adoption was made while the target was visible/);
+  assert.match(adopted.evidence, /never while the target was unseen/);
+  // INFO, so the run's verdict still comes from the other claims.
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('watch aim adopted is INFO when the position was computed but never adopted', () => {
+  const log = [
+    SETUP,
+    header(),
+    digest({ watch_aim_adopted: 0, watch_aim_cached: 0, watch_aim_verified: 0, watch_aim_dot: 0 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'no_adopt_log.txt', modVersion: VERSION });
+  const adopted = claimOf(report, 'watchaim');
+
+  assert.equal(adopted.result, 'INFO');
+  assert.match(adopted.evidence, /watch_aim_adopted=0/);
+  // The claim names what the counters show — no counted adoption — not why the
+  // cop never adopted; a pre-V8.85 log has no `watch_aim_*` field at all, and
+  // that case is named separately below.
+  assert.match(adopted.evidence, /no adoption of a watch position was counted/);
+  // INFO, so the run's verdict still comes from the other claims.
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('watch aim adopted is INFO (not PASS) for a digest without the fields', () => {
+  // Pre-V8.85 builds write no watch_aim_* field: "cannot tell" must not read as
+  // a clean pass, the same rule the near-visible probe claim follows.
+  const log = [SETUP, header(), digest()].join('\n');
+  const report = analyzeLog(log, { file: 'old_log.txt', modVersion: VERSION });
+  const adopted = claimOf(report, 'watchaim');
+
+  assert.equal(adopted.result, 'INFO');
+  assert.match(adopted.evidence, /no watch_aim_\* fields/);
+  assert.match(adopted.evidence, /pre-V8\.84/);
+  assert.equal(report.verdict, 'PASS');
+});
+
+// V8.86: the settled sample is the "does the cop look like it pre-aims" figure.
+// The adoption dot is always off-target because adoption starts the turn, so the
+// report keeps the two numbers apart instead of re-judging the adoption claim.
+test('settled facing passes once a measured follow-up sample was counted', () => {
+  const log = [
+    SETUP,
+    header(),
+    digest({
+      watch_aim_adopted: 3,
+      watch_aim_settled: 2,
+      watch_aim_settled_square: 1,
+      watch_aim_settled_dot: 0.6,
+      watch_aim_settled_dot_n: 2
+    }),
+    digest({
+      t: 120,
+      watch_aim_adopted: 3,
+      watch_aim_settled: 3,
+      watch_aim_settled_square: 2,
+      watch_aim_settled_dot: 0.3,
+      watch_aim_settled_dot_n: 2
+    })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'settled_log.txt', modVersion: VERSION });
+  const settled = claimOf(report, 'settled');
+
+  assert.equal(settled.claim, 'settled facing');
+  assert.equal(settled.result, 'PASS');
+  assert.match(settled.evidence, /watch_aim_settled=5/);
+  // `measured` is the number of dots that could be measured, not the number of
+  // samples: `square` shares that denominator, so the two cannot contradict.
+  assert.match(settled.evidence, /measured=4/);
+  assert.match(settled.evidence, /square=3\/4 \(75%\)/);
+  // Weighted by each window's measured dots, not by its sample count:
+  // (0.6*2 + 0.3*2) / 4 = 0.45, while sample weighting would give 0.42.
+  assert.match(settled.evidence, /dot=0\.45/);
+  assert.equal(report.counters.watch_aim_settled, 5);
+  assert.equal(report.counters.watch_aim_settled_square, 3);
+  assert.equal(report.counters.watch_aim_settled_dot_n, 4);
+  assert.equal(report.counters.watch_aim_settled_dot, undefined, 'the dot is a mean, never summed');
+  // Every subset is inside the adoption total, so the accounting claim holds.
+  assert.equal(claimOf(report, 'aimaccount').result, 'PASS');
+  // The adoption claim keeps its own rules.
+  assert.equal(claimOf(report, 'watchaim').result, 'PASS');
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('settled facing is INFO when the digest has no settled field', () => {
+  // Pre-V8.86 builds write no watch_aim_settled* field: "cannot tell" must not
+  // read as a clean pass, the same rule as the adoption and probe claims.
+  const log = [SETUP, header(), digest({ watch_aim_adopted: 2, watch_aim_dot: 0.3 })].join('\n');
+  const report = analyzeLog(log, { file: 'pre_settled.txt', modVersion: VERSION });
+  const settled = claimOf(report, 'settled');
+
+  assert.equal(settled.result, 'INFO');
+  assert.match(settled.evidence, /no watch_aim_settled\* fields/);
+  assert.match(settled.evidence, /pre-V8\.86/);
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('settled facing is INFO when the field is present but zero', () => {
+  const log = [
+    SETUP,
+    header(),
+    digest({
+      watch_aim_settled: 0,
+      watch_aim_settled_square: 0,
+      watch_aim_settled_dot: 0
+    })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'no_settled.txt', modVersion: VERSION });
+  const settled = claimOf(report, 'settled');
+
+  assert.equal(settled.result, 'INFO');
+  assert.match(settled.evidence, /watch_aim_settled=0/);
+  assert.match(settled.evidence, /square=0\/0 \(n\/a\)/);
+  // No dot was measured, so the figure is not invented as 0.
+  assert.match(settled.evidence, /dot=n\/a/);
+  assert.match(settled.evidence, /no settled sample with a measurable facing was counted/);
+  // A zero-settled window does not weigh on the settled mean.
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('a settled sample with no measurable facing is counted but prints dot=n/a', () => {
+  // The follow-up ran (two samples) and neither could measure a facing: the
+  // sample counter is real evidence, but the facing claim must not PASS on it,
+  // and the dot must read `n/a` instead of a fabricated 0.
+  const log = [
+    SETUP,
+    header(),
+    digest({
+      watch_aim_adopted: 2,
+      watch_aim_settled: 2,
+      watch_aim_settled_square: 0,
+      watch_aim_settled_dot: 0,
+      watch_aim_settled_dot_n: 0
+    })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'no_dot.txt', modVersion: VERSION });
+  const settled = claimOf(report, 'settled');
+
+  assert.equal(settled.result, 'INFO', 'samples alone cannot PASS a facing claim');
+  assert.match(settled.evidence, /watch_aim_settled=2, measured=0/);
+  assert.match(settled.evidence, /square=0\/0 \(n\/a\)/);
+  assert.match(settled.evidence, /dot=n\/a/);
+  assert.doesNotMatch(settled.evidence, /dot=0\b/);
+  // The samples are still inside the adoption total, so the bookkeeping holds.
+  assert.equal(claimOf(report, 'aimaccount').result, 'PASS');
+  assert.equal(report.verdict, 'PASS');
+});
+
+test('a run whose cops all settled facing away is visibly not a success', () => {
+  // PASS is about the measurement; the headline is the result. `square=0/4 (0%)`
+  // is what keeps a fully failed pre-aim from reading like a win.
+  const log = [
+    SETUP,
+    header(),
+    digest({
+      watch_aim_adopted: 4,
+      watch_aim_settled: 4,
+      watch_aim_settled_square: 0,
+      watch_aim_settled_dot: -0.2,
+      watch_aim_settled_dot_n: 4
+    })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'facing_away.txt', modVersion: VERSION });
+  const settled = claimOf(report, 'settled');
+
+  assert.equal(settled.result, 'PASS');
+  assert.match(settled.evidence, /square=0\/4 \(0%\)/);
+  assert.match(settled.evidence, /dot=-0\.2/);
+});
+
+test('settled samples above the adoption total fail the accounting claim, not the facing one', () => {
+  // Impossible in the Lua (a sample is consumed at most once per pending
+  // adoption), so it means the two counter groups came from different states.
+  const log = [
+    SETUP,
+    header(),
+    digest({
+      watch_aim_adopted: 2,
+      watch_aim_settled: 3,
+      watch_aim_settled_square: 2,
+      watch_aim_settled_dot: 0.5,
+      watch_aim_settled_dot_n: 3
+    })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'mismatch.txt', modVersion: VERSION });
+  const accounting = claimOf(report, 'aimaccount');
+
+  assert.equal(accounting.claim, 'aim accounting');
+  assert.equal(accounting.result, 'FAIL');
+  assert.match(accounting.evidence, /impossible state, 3 settled samples from 2 adoptions/);
+  // The facing itself is not in question: the settled claim still judges it.
+  assert.equal(claimOf(report, 'settled').result, 'PASS');
+  assert.equal(report.verdict, 'FAIL');
+});
+
+test('a zero-settled window does not weigh on the settled mean', () => {
+  const aggregate = aggregateDigests([
+    { fields: { watch_aim_settled: '2', watch_aim_settled_dot: '0.6' } },
+    { fields: { watch_aim_settled: '0', watch_aim_settled_dot: '0' } }
+  ]);
+
+  assert.equal(aggregate.watch_aim_settled_dot_windows, 1, 'only windows that counted a sample contribute');
+  assert.equal(aggregate.watch_aim_settled_dot_avg, 0.6);
+});
+
+test('the settled mean weights each window by its measured dots, not its samples', () => {
+  // One measured dot out of two samples in the first window, four out of five in
+  // the second: (1*1 + 0*4) / 5 = 0.2. Weighting by `watch_aim_settled` would
+  // give (1*2 + 0*5) / 7 = 0.29, i.e. the unmeasured samples would decide the
+  // answer.
+  const aggregate = aggregateDigests([
+    { fields: { watch_aim_settled: '2', watch_aim_settled_dot_n: '1', watch_aim_settled_dot: '1' } },
+    { fields: { watch_aim_settled: '5', watch_aim_settled_dot_n: '4', watch_aim_settled_dot: '0' } }
+  ]);
+
+  assert.equal(aggregate.watch_aim_settled_dot_avg, 0.2);
+  assert.equal(aggregate.watch_aim_settled_dot_windows, 2);
+});
+
+test('the adoption mean weights each window by its measured dots too', () => {
+  const aggregate = aggregateDigests([
+    { fields: { watch_aim_adopted: '2', watch_aim_dot_n: '1', watch_aim_dot: '1' } },
+    { fields: { watch_aim_adopted: '5', watch_aim_dot_n: '4', watch_aim_dot: '0' } }
+  ]);
+
+  // (1*1 + 0*4) / 5 = 0.2; weighting by `watch_aim_adopted` would give 2/7.
+  assert.equal(aggregate.watch_aim_dot_avg, 0.2);
+
+  // And the evidence prints `n/a`, not 0, when no adoption had a measurable
+  // facing at all.
+  const log = [
+    SETUP,
+    header(),
+    digest({ watch_aim_adopted: 2, watch_aim_dot: 0, watch_aim_dot_n: 0 })
+  ].join('\n');
+  const report = analyzeLog(log, { file: 'no_adopt_dot.txt', modVersion: VERSION });
+
+  assert.match(claimOf(report, 'watchaim').evidence, /before_dot=n\/a/);
+  assert.equal(claimOf(report, 'watchaim').result, 'PASS');
+});
+

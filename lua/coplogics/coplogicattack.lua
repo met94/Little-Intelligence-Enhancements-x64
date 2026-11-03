@@ -319,9 +319,20 @@ local function lies_upd_expected_pos(data, my_data, time_since_verification)
 
 		LIES:Count("dw_hit")
 
-		-- Trace only a position this call derived; a cached reuse would flood
-		-- the trace channel with the same line.
+		-- Provenance for the caller: `_upd_aim` adopts this position a few lines
+		-- later, and the adoption trace has to say whether the cop aimed at a
+		-- door position or at vanilla's `m_pos + 140`. Every watch return is
+		-- stamped, including a cached reuse: the cop *did* aim at a watch
+		-- position, and leaving the cached arm unstamped is what made a
+		-- room-heavy play read as zero adoptions. The reuse gets its own source
+		-- (`cached`) so the adoption line and `watch_aim_cached` can tell an old
+		-- decision from one derived on this pass.
+		my_data.lies_watch_src = src or "cached"
+		my_data.lies_watch_seg = enemy_seg
+
 		if src then
+			-- The computed-position line stays fresh-only: a cached reuse would
+			-- repeat the same decision on every pass.
 			lies_door_watch_first(src, data, enemy_seg)
 
 			LIES:Trace(data.unit, data, "door_watch", string.format("src=%s seg=%s dis=%d cached=%d height=%d",
@@ -1163,11 +1174,247 @@ local tankboss = {
 	deep_boss = true
 }
 
+-- Distance, in Payday units (~1 cm each), within which the unit's current aim
+-- target still counts as the position a settled sample was stashed for. The
+-- stashed position is a doorway's world position, not the cop's own, so a
+-- re-adoption of the same doorway reproduces it exactly: a cached return hands
+-- back the same Vector3 and a fresh derivation the same door point. Anything the
+-- cop turned to instead - another door, `focus_enemy.verified_pos` - is a
+-- different place in the room, tens of units away. 20 is therefore chosen as a
+-- jitter band for a raycast landing elsewhere on the same door frame, far below
+-- the ~100 units that separate two doorways in a corridor.
+local LIES_SETTLE_TARGET_DIS = 20
+
+-- True when the unit's current aim target is still the position a settled sample
+-- was taken for. `attention_unit` is a Vector3 while the cop aims at a position
+-- (the adoption branch sets it to a copy of the watch position) and the enemy's
+-- `u_key` while it aims at a live target, so anything that is not a Vector3 means
+-- the cop is looking somewhere else now. `type_name` is the engine's own tag for
+-- a Vector3, the same test the save-serialising mods use.
+local function lies_settle_target_held(attention_unit, pos)
+	if type(attention_unit) ~= "userdata" or attention_unit.type_name ~= "Vector3" then
+		return false
+	end
+
+	return mvec3_dis(attention_unit, pos) <= LIES_SETTLE_TARGET_DIS
+end
+
+-- Flat facing dot between the cop's forward vector and the direction to a
+-- target position. Returns nil when either flattened vector has no length, i.e.
+-- when there is no facing to measure: 0 is a real 90-degree miss and must not be
+-- fabricated for an unknown facing, because folding such samples in as 0 would
+-- report a miss that was never measured.
+--
+-- Both vectors are flattened to z = 0: the question is which way the cop looks
+-- along the floor, not whether it aims at the doorway's height. One helper for
+-- both facing samples (`adoption` and `settled`) so the two can never drift.
+local function lies_flat_dot(data, target_pos)
+	local fwd = data.unit:movement():m_fwd()
+
+	if not fwd then
+		return
+	end
+
+	local fwd_flat = temp_vec1
+	local dir_flat = temp_vec2
+
+	mvec3_set(fwd_flat, fwd)
+	mvec3_set_z(fwd_flat, 0)
+
+	local fwd_len = mvec3_norm(fwd_flat)
+
+	mvec3_dir(dir_flat, data.m_pos, target_pos)
+	mvec3_set_z(dir_flat, 0)
+
+	local dir_len = mvec3_norm(dir_flat)
+
+	if fwd_len > 0.001 and dir_len > 0.001 then
+		return mvec3_dot(fwd_flat, dir_flat)
+	end
+end
+
+-- Adoption side of the door watch. The helper above proves a position was
+-- *computed* (`[LIES-TRACE] phase=door_watch`, `dw_*`); this proves the cop then
+-- turned its attention to it. Without it a digest can show `dw_raw_hit > 0`
+-- while nothing says the position became the unit's aim target.
+--
+-- Measured on the 2026-11-02 play (V8.85): travel logics do reach `_upd_aim`
+-- (`logic=travel ... phase=watch_aim`, 2,079 lines in a run), so a cop walking
+-- between rooms can adopt a watch position too. What made a room-clearing test
+-- look inconclusive was the facing sample, not the logic.
+--
+-- `dot` is the flat facing error at the moment of adoption: 1.0 means the cop
+-- already faced the doorway, 0 means it looked at a wall, negative means the
+-- watch position asked for a turn of more than 90 degrees. It is measured at the
+-- instant of adoption, which is always off-target because the adoption *causes*
+-- the turn; the settled sample (`watch_aim_settle`, at least 0.4 s later, on the
+-- next aim pass, with `age` reporting the actual delay) is the "does the cop look
+-- like it pre-aims" figure. `verified` / `nearly` are the enemy's visibility
+-- flags at that instant — an adoption of a doorway position while the target is
+-- *visible* cannot add anything, so the line has to expose it.
+--
+-- Every adoption of a watch position is counted, whether the helper derived the
+-- position on this pass (`src=raw` / `src=expected`) or returned a cached one
+-- (`src=cached`): a cop aiming at a doorway is the feature working either way,
+-- and counting only fresh derivations made `watch_aim_adopted = 0` read as
+-- "never pre-aimed" when it only meant "never derived on the adoption pass".
+-- `watch_aim_cached` keeps the cached subset visible, because a run made only of
+-- cached adoptions says the probe itself did not fire.
+local function lies_watch_aim_trace(data, my_data, focus_enemy, expected_pos)
+	local src = my_data.lies_watch_src
+	local seg = my_data.lies_watch_seg
+
+	LIES:Count("watch_aim_adopted")
+
+	if src == "cached" then
+		LIES:Count("watch_aim_cached")
+	end
+
+	if focus_enemy and (focus_enemy.verified or focus_enemy.nearly_visible) then
+		LIES:Count("watch_aim_verified")
+	end
+
+	-- nil means "no facing this frame", not 0: a dot of 0 is a 90-degree miss
+	-- and would bias the mean if an unknown facing were folded in as one.
+	local dot = lies_flat_dot(data, expected_pos)
+
+	if dot then
+		LIES:Sum("watch_aim_dot", dot)
+	end
+
+	local verified = (focus_enemy and focus_enemy.verified) and 1 or 0
+	local nearly = (focus_enemy and focus_enemy.nearly_visible) and 1 or 0
+	local react = focus_enemy and tostring(focus_enemy.reaction) or "?"
+
+	-- Cheap gate: `Trace` returns immediately when the switch is off, and the
+	-- formatting plus the tracker read below are the expensive part of a
+	-- per-adoption pass. The per-unit window check still lives inside `Trace`,
+	-- so an adoption that passes here can still be throttled there.
+	if LIES.settings.trace then
+		-- The cop's own tracker is the live one (the helper above already bailed
+		-- on a dead enemy), but vanilla dereferences it unguarded too, so a nil
+		-- one is logged as `?` instead of crashing the trace.
+		local my_tracker = data.unit:movement():nav_tracker()
+		local my_seg = my_tracker and my_tracker:nav_segment() or "?"
+
+		LIES:Trace(data.unit, data, "watch_aim", string.format(
+			"src=%s door_seg=%s my_seg=%s dis=%d dot=%s verified=%d nearly=%d react=%s",
+			tostring(src), tostring(seg), tostring(my_seg),
+			math.floor(mvec3_dis(data.m_pos, expected_pos) + 0.5),
+			dot and string.format("%.2f", dot) or "n/a",
+			verified, nearly, react), 1.0)
+	end
+
+	-- Settled-facing follow-up, deliberately outside the trace switch: the
+	-- counters are the evidence and must not depend on the line being written.
+	-- `dot` above is measured at the adoption instant, which is always off-target
+	-- because the adoption itself starts the turn; the follow-up taken on a later
+	-- pass is the "does he look like he pre-aims" figure.
+	--
+	-- Stash only when nothing is pending: the *first* adoption of an episode
+	-- starts the clock. Every aim pass re-adopts (the vanilla reference compare
+	-- above never filters, because `attention_unit` is a fresh copy each time), so
+	-- re-stashing per pass would land the sample 0.4 s after an arbitrary pass
+	-- instead of after the turn request - a cop parked on a doorway would be
+	-- sampled long after it settled and read `dot` ~ 1 by construction.
+	local settle_brain = data.unit:brain()
+	local settle = my_data.lies_watch_settle
+
+	if not settle then
+		-- One table and one scratch Vector3 per unit per logic, reused by every
+		-- later episode: this function runs on the aim pass, so `mvector3.copy`
+		-- plus a fresh table here would allocate on every adoption.
+		settle = { pos = Vector3() }
+		my_data.lies_watch_settle = settle
+	end
+
+	if not settle.t then
+		settle.t = data.t + 0.4
+		mvec3_set(settle.pos, expected_pos)
+		-- Adoption instant and provenance are kept for the `age` field and for
+		-- the logic-change check the consumer makes.
+		settle.t0 = data.t
+		settle.src = src
+		settle.seg = seg
+		settle.logic = settle_brain and settle_brain._current_logic_name
+	end
+end
+
 function CopLogicAttack._upd_aim(data, my_data)
 	LIES:Trace(data.unit, data, "aim", nil, lies_aim_window(data))
 
 	local shoot, aim, expected_pos
 	local focus_enemy = data.attention_obj
+	-- Provenance of `expected_pos` is per pass, never carried over: the
+	-- low-reaction branch sets `expected_pos` from vanilla without touching the
+	-- helper at all, so a stamp left by an earlier pass would make vanilla's
+	-- position look like a watch position. The helper re-stamps both on every
+	-- watch return (a fresh derivation or a cached reuse).
+	my_data.lies_watch_src = nil
+	my_data.lies_watch_seg = nil
+
+	-- Settled facing of the pending watch adoption, sampled at least 0.4 s later:
+	-- the first aim pass that is due after it (passes arrive at the frame rate, so
+	-- `age` is the real delay, not a fixed 0.4 s). The adoption-instant dot
+	-- (`watch_aim_dot`) always looks off-target because the adoption is what
+	-- starts the turn; this follow-up is the actual "did the cop end up looking at
+	-- the doorway" measurement. A pending entry is kept across passes: only the
+	-- first adoption of an episode stashes one, so the sample belongs to the turn
+	-- request, not to the last pass that re-adopted the same position.
+	local settle = my_data.lies_watch_settle
+
+	if settle and settle.t then
+		local settle_brain = data.unit:brain()
+		local settle_logic = settle_brain and settle_brain._current_logic_name
+		local age = data.t - settle.t0
+
+		if settle.logic ~= settle_logic or age < 0 or age > 2 then
+			-- Stale sample (paused frame, level change) or - in principle - a
+			-- logic change. The logic compare is defensive and cannot normally
+			-- fire: the sample lives in `my_data`, which `CopLogicAttack.enter`
+			-- rebuilds from scratch (it copies `attention_unit` and the expected
+			-- position, not `lies_watch_settle`), so a logic switch *orphans* the
+			-- pending sample - it is dropped by never being read again, not by
+			-- this arm, and it is uncounted either way.
+			settle.t = nil
+		elseif focus_enemy and (focus_enemy.verified or focus_enemy.nearly_visible) then
+			-- The cop could see the enemy at sample time, so a turn away from the
+			-- doorway was legitimate: counting that facing as a settled miss
+			-- would under-report the feature. Dropped in silence.
+			settle.t = nil
+		elseif not lies_settle_target_held(my_data.attention_unit, settle.pos) then
+			-- The unit aims at something else now (another position, or an enemy:
+			-- `attention_unit` then holds a `u_key`), so its facing says nothing
+			-- about the doorway this sample was stashed for.
+			settle.t = nil
+		elseif data.t >= settle.t then
+			local dot = lies_flat_dot(data, settle.pos)
+
+			LIES:Count("watch_aim_settled")
+
+			if dot then
+				LIES:Sum("watch_aim_settled_dot", dot)
+			end
+
+			-- 0.7 is a cos(45 degrees) cut, i.e. the cop looks within 45 degrees
+			-- of the doorway: a chosen, untuned threshold, cheap to move if the
+			-- in-game sample disagrees. It is not "facing the enemy's half of the
+			-- room" - it only says the settle went to the doorway rather than
+			-- staying on the wall it started from.
+			if dot and dot >= 0.7 then
+				LIES:Count("watch_aim_settled_square")
+			end
+
+			if LIES.settings.trace then
+				LIES:Trace(data.unit, data, "watch_aim_settle", string.format(
+					"dot=%s age=%.2f src=%s door_seg=%s",
+					dot and string.format("%.2f", dot) or "n/a",
+					age, tostring(settle.src), tostring(settle.seg)), 1.0)
+			end
+
+			settle.t = nil
+		end
+	end
 
 	if focus_enemy and focus_enemy.reaction >= AIAttentionObject.REACT_AIM then
 		local last_sup_t = data.unit:character_damage():last_suppression_t()
@@ -1416,10 +1663,22 @@ function CopLogicAttack._upd_aim(data, my_data)
 
 	if aim or shoot then
 		if expected_pos then
+			-- Vanilla's reference compare, kept verbatim: `my_data.attention_unit`
+			-- is always a fresh `mvector3.copy` (or a `u_key`) on the line below,
+			-- so it is never the same table as `expected_pos` and this test never
+			-- filters. Do not lean on it as a guard — the branch runs on every
+			-- pass that aims.
 			if my_data.attention_unit ~= expected_pos then
 				CopLogicBase._set_attention_on_pos(data, mvector3.copy(expected_pos))
 
 				my_data.attention_unit = mvector3.copy(expected_pos)
+
+				-- One line and two counters per adoption of a watch position,
+				-- fresh or cached. `lies_watch_src` is only set by a watch return,
+				-- so vanilla's position never feeds the counters.
+				if my_data.lies_watch_src then
+					lies_watch_aim_trace(data, my_data, focus_enemy, expected_pos)
+				end
 			end
 		elseif focus_enemy.verified or focus_enemy.nearly_visible then
 			if my_data.attention_unit ~= focus_enemy.u_key then
