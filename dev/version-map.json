@@ -1,0 +1,156 @@
+{
+  "note": "Fork releases use <upstream-base>.<fork-patch>. Upstream 8.57 is the base of every release listed here; the patch counter restarts at 1 on a rebase to a new upstream release. `legacy` is the label that shipped in the GitHub release/tag and in logs before the 2026-11-03 relabel; published artifacts keep it.",
+  "upstreamBase": "8.57",
+  "releases": [
+    {
+      "version": "8.57.30",
+      "legacy": "V8.86_x64",
+      "date": "2026-11-02"
+    },
+    {
+      "version": "8.57.29",
+      "legacy": "V8.85_x64",
+      "date": "2026-11-02"
+    },
+    {
+      "version": "8.57.28",
+      "legacy": "V8.84_x64",
+      "date": "2026-11-02"
+    },
+    {
+      "version": "8.57.27",
+      "legacy": "V8.83_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.26",
+      "legacy": "V8.82_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.25",
+      "legacy": "V8.81_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.24",
+      "legacy": "V8.80_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.23",
+      "legacy": "V8.79_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.22",
+      "legacy": "V8.78_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.21",
+      "legacy": "V8.77_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.20",
+      "legacy": "V8.76_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.19",
+      "legacy": "V8.75_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.18",
+      "legacy": "V8.74_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.17",
+      "legacy": "V8.73_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.16",
+      "legacy": "V8.72_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.15",
+      "legacy": "V8.71_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.14",
+      "legacy": "V8.70_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.13",
+      "legacy": "V8.69_x64",
+      "date": "2026-11-01"
+    },
+    {
+      "version": "8.57.12",
+      "legacy": "V8.68_x64",
+      "date": "2026-10-31"
+    },
+    {
+      "version": "8.57.11",
+      "legacy": "V8.67_x64",
+      "date": "2026-10-31"
+    },
+    {
+      "version": "8.57.10",
+      "legacy": "V8.66_x64",
+      "date": "2026-10-30"
+    },
+    {
+      "version": "8.57.9",
+      "legacy": "V8.65_x64",
+      "date": "2026-10-30"
+    },
+    {
+      "version": "8.57.8",
+      "legacy": "V8.64_x64",
+      "date": "2026-10-29"
+    },
+    {
+      "version": "8.57.7",
+      "legacy": "V8.63_x64",
+      "date": "2026-10-29"
+    },
+    {
+      "version": "8.57.6",
+      "legacy": "V8.62_x64",
+      "date": "2026-10-29"
+    },
+    {
+      "version": "8.57.5",
+      "legacy": "V8.61_x64",
+      "date": "2026-10-26"
+    },
+    {
+      "version": "8.57.4",
+      "legacy": "V8.60_x64",
+      "date": "2026-10-26"
+    },
+    {
+      "version": "8.57.3",
+      "legacy": "V8.59_x64",
+      "date": "2026-10-26"
+    },
+    {
+      "version": "8.57.2",
+      "legacy": "V8.58_x64",
+      "date": "2026-10-25"
+    },
+    {
+      "version": "8.57.1",
+      "legacy": "V8.57_x64",
+      "date": "2026-10-24"
+    }
+  ]
+}

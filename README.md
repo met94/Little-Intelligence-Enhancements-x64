@@ -11,7 +11,7 @@ evaluate, aim, take cover, path, suppress, and coordinate — without replacing
 the game's core combat loop. This fork ports the original LIES V8.57 design to
 the current 64-bit 248.2 game build.
 
-- **Current release:** `V8.86_x64`
+- **Current release:** `8.57.30`
 - **Download:** [GitHub Releases](https://github.com/met94/Little-Intelligence-Enhancements-x64/releases)
 - **Original project:** [fuglore/Little-Intelligence-Enhancements](https://github.com/fuglore/Little-Intelligence-Enhancements)
 
@@ -45,7 +45,7 @@ LIES does **not** require BeardLib. Other AI mods may overlap; see
 
 1. Install SuperBLT if you have not already.
 2. Remove or rename any existing `PAYDAY 2/mods/LIES` folder.
-3. Extract `LIES-V8.58_x64.zip` so the final path is:
+3. Extract `LIES-8.57.30.zip` so the final path is:
    `PAYDAY 2/mods/LIES/mod.txt`
 4. Start the game.
 
@@ -120,8 +120,26 @@ LIES checks the fork's update feed at startup:
 
 `https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json`
 
-If the feed advertises a newer version, the update prompt links to the GitHub
-releases page. The mod does **not** silently download or install updates.
+If the feed advertises a version that differs from the installed one, the update
+prompt links to the GitHub releases page. The comparison is equality, not
+ordering (`menunodegui.lua`), so it cannot tell a newer build from an older one;
+the mod does **not** silently download or install updates.
+
+## Versioning
+
+Versions use `<upstream release>.<fork patch>`:
+
+- `8.57.30` is the 30th fork release built on upstream LIES **8.57**
+  (`4215a39`, 2026-06-06). The patch counter is ours and only ours; upstream
+  numbers are never continued.
+- When upstream ships a new release, the fork's changes are rebased onto it and
+  the patch counter restarts: upstream `8.60` becomes `8.60.1`, then `8.60.2`,
+  and so on. The base of the current release is recorded in
+  `dev/upstream-base.json`, the whole relabeled history in
+  `dev/version-map.json`.
+- Releases published before the 2026-11-03 relabel keep their old labels
+  (`V8.86_x64` = `8.57.30`, mapped in `dev/version-map.json`) in GitHub tags,
+  assets and old logs.
 
 ## Known deviations from the original 246.1 build
 
