@@ -44,8 +44,10 @@ attached to the unit that was running. 8.57.13 adds exactly that.
 
 `LIES:Trace(unit, logic_data, phase, extra)` (`menumanager.lua`):
 
-- default on (`trace = true`, settings file only), because a crash cannot opt in
-  retrospectively; `MENU_OPTIONS.md` documents the switch;
+- default on at the time of this fix (`trace = true`, settings file only), because a
+  crash cannot opt in retrospectively; **changed to opt-in in 8.57.30** - a
+  release build does not write the breadcrumbs unless asked. `MENU_OPTIONS.md`
+  documents the switch;
 - one line per unit per phase per 2.5 s, global cap 25 lines/s, no table
   allocation when a line is suppressed, state cleared on level change with the
   watch channel;

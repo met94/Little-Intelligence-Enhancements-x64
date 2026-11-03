@@ -24,7 +24,7 @@ function CopActionWalk:_init()
 	local action_desc = self._action_desc
 	local common_data = self._common_data
 
-	if self._is_civilian then
+	if self._is_civilian and LIES and LIES.settings and LIES.settings.debug_log then
 		print("common_data ", inspect(common_data))
 	end
 

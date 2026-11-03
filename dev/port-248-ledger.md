@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-03T11:21:28.653Z
+Generated: 2026-11-03T12:29:53.678Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -346,7 +346,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `GroupAIStateBesiege._on_player_slow_pos_rsrv_upd` | 38 | 0 | 0 |  |
 | [ ] | audit | — | `GroupAIStateBesiege._register_escort` | 11 | 0 | 0 |  |
 | [ ] | audit | — | `GroupAIStateBesiege._set_objective_to_phalanx_group_LIES` | 44 | 0 | 0 |  |
-| [ ] | audit | — | `GroupAIStateBesiege._spawn_phalanx_LIES` | 68 | 0 | 0 |  |
+| [ ] | audit | — | `GroupAIStateBesiege._spawn_phalanx_LIES` | 70 | 0 | 0 |  |
 | [ ] | audit | — | `GroupAIStateBesiege._unregister_escort` | 4 | 0 | 0 |  |
 | [ ] | audit | — | `GroupAIStateBesiege._upd_group` | 40 | 0 | 0 |  |
 | [ ] | audit | — | `GroupAIStateBesiege._update_criminal_reveal` | 24 | 0 | 0 |  |
@@ -563,7 +563,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicTravel._get_pos_on_wall` | 73 | 75 | 75 |  |
 | [ ] | keep | — | `CopLogicTravel._on_destination_reached` | 28 | 29 | 29 |  |
 | [ ] | keep | — | `CopLogicTravel._upd_enemy_detection` | 83 | 62 | 62 |  |
-| [ ] | keep | — | `CopLogicTravel._upd_pathing` | 52 | 44 | 44 |  |
+| [ ] | keep | — | `CopLogicTravel._upd_pathing` | 54 | 44 | 44 |  |
 | [ ] | keep | — | `CopLogicTravel._update_cover` | 21 | 28 | 28 |  |
 | [ ] | keep | — | `CopLogicTravel.action_complete_clbk` | 138 | 104 | 104 |  |
 | [ ] | keep | — | `CopLogicTravel.chk_group_ready_to_move` | 81 | 35 | 35 |  |

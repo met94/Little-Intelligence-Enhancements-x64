@@ -33,10 +33,12 @@ if RequiredScript == "lib/managers/menumanager" then
 			-- always on and need no setting; see MENU_OPTIONS.md.
 			watch_log = false,
 			-- Crash breadcrumbs: one [LIES-TRACE] line per unit per phase per
-			-- 2.5 s (global cap 25 lines/s). Native access violations leave no
+			-- 2.5 s (global cap 120 lines/s). Native access violations leave no
 			-- Lua error, so the last trace line is the only record of what the
-			-- crashing unit was doing. Settings file only; see MENU_OPTIONS.md.
-			trace = true,
+			-- crashing unit was doing - but the channel is what makes a routine
+			-- log tens of MB, so a release build keeps it OFF and a crash report
+			-- turns it on first. Settings file only; see MENU_OPTIONS.md.
+			trace = false,
 			-- Path-cache lookup in NavigationManager:search_pos_to_pos. `true` is
 			-- upstream behaviour: before asking the engine, scan the cached paths
 			-- and reuse one whose endpoints are still in a straight walkable line.

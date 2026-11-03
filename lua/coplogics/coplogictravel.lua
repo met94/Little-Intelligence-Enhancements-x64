@@ -427,7 +427,9 @@ function CopLogicTravel._upd_pathing(data, my_data)
 			elseif my_data.path_safely then
 				my_data.path_safely = nil
 			else
-				print("[CopLogicTravel:_upd_pathing] coarse_path failed unsafe", data.unit, my_data.coarse_path_index)
+				if LIES and LIES.settings and LIES.settings.debug_log then
+					print("[CopLogicTravel:_upd_pathing] coarse_path failed unsafe", data.unit, my_data.coarse_path_index)
+				end
 
 				data.path_fail_t = data.t
 

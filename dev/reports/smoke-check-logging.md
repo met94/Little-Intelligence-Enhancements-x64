@@ -129,7 +129,7 @@ The restore is only claimable from a log, so a door-watch test play needs
 - `"watch_log": true` in `mods\saves\LittleIntelligenceEnhancementS.txt` (game
   closed) — required. Without it there is no header and no digest.
 - `"debug_log": true` — optional, for the `[LIES-CHECK]` detail lines.
-- `trace` is on by default and produces the breadcrumbs below.
+- `trace` is opt-in (`"trace": true`) and produces the breadcrumbs below.
 
 What the new lines prove (the 8.57.29 adoption figures were measured on 2026-11-02; the settled-facing rows are new in 8.57.30 and not yet observed):
 

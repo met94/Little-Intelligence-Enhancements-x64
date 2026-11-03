@@ -4597,7 +4597,9 @@ function GroupAIStateBesiege:_spawn_phalanx_LIES()
 				nav_seg = spawn_nav_seg
 			}
 
-			print("Phalanx spawn started!")
+			if LIES and LIES.settings and LIES.settings.debug_log then
+				print("Phalanx spawn started!")
+			end
 
 			self._phalanx_spawn_group = self:_spawn_in_group(spawn_group, spawn_group_type, grp_objective, nil)
 
