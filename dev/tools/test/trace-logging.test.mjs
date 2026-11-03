@@ -40,15 +40,40 @@ const traceBody = () => {
 // was doing is the line written just before the fault. The trace must therefore
 // be cheap, survive level-clock restarts, and keep the failure phases even when
 // the rate cap is saturated.
-test('LIES:Trace throttles per phase and stays opt-outable', () => {
+test('LIES:Trace throttles per phase and is opt-in', () => {
   const body = traceBody();
   const manager = readStripped('menumanager.lua');
 
-  assert.match(manager, /trace = true/, 'trace must default on: a crash cannot opt in afterwards');
-  assert.match(body, /self\.settings\.trace/, 'must be switchable off from the settings file');
+  assert.match(manager, /trace = false/, 'trace must default off: a release build may not write tens of MB unasked');
+  assert.match(body, /self\.settings\.trace/, 'must be switchable on from the settings file');
   assert.match(body, /state\.phases\[phase\]/, 'throttle must be per phase, phases alternate every frame');
   assert.match(body, /t - last < \(window or 2\.5\)/, 'per-phase dedupe window');
   assert.match(body, /\[LIES-TRACE\] v=%s t=%\.2f u=%s tweak=%s logic=%s phase=%s att=%s att_alive=%s att_trk=%s dropped=%d/);
+});
+
+test('inherited upstream debug prints stay behind debug_log', () => {
+  // These three survived the port unchanged and used to write in a release log:
+  // the civilian common_data dump (every civilian walk action), the phalanx
+  // spawn banner and the unsafe coarse-path failure line.
+  const civilian = readStripped('lua/copactions/copactionwalk.lua');
+  const civilianAt = civilian.indexOf('print("common_data ", inspect(common_data))');
+  assert.ok(civilianAt !== -1, 'the inherited civilian print is gone; drop this test with it');
+  const civilianGuard = civilian.lastIndexOf('if', civilianAt);
+  assert.match(
+    civilian.slice(civilianGuard, civilianAt),
+    /self\._is_civilian and LIES[\s\S]*debug_log/,
+    'the civilian common_data dump must need debug_log'
+  );
+
+  const besiege = readStripped('lua/groupaistate/groupaistatebesiege.lua');
+  const besiegeAt = besiege.indexOf('print("Phalanx spawn started!")');
+  assert.ok(besiegeAt !== -1, 'the phalanx banner is gone; drop this test with it');
+  assert.match(besiege.slice(Math.max(0, besiegeAt - 120), besiegeAt), /LIES\.settings\.debug_log/, 'phalanx banner must need debug_log');
+
+  const travel = readStripped('lua/coplogics/coplogictravel.lua');
+  const travelAt = travel.indexOf('coarse_path failed unsafe');
+  assert.ok(travelAt !== -1, 'the coarse-path failure print is gone; drop this test with it');
+  assert.match(travel.slice(Math.max(0, travelAt - 160), travelAt), /LIES\.settings\.debug_log/, 'coarse-path failure print must need debug_log');
 });
 
 test('the trace survives a level clock restart and caps normal lines only', () => {

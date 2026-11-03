@@ -213,6 +213,9 @@ facing is always off-target because the adoption starts the turn.
 ## Debug Logging (`debug_log`)
 
 Writes `[LIES-CHECK]` diagnostic events to the PAYDAY 2 log. Default is OFF.
+It also gates the few inherited upstream debug prints (the civilian
+`common_data` dump on every walk action, the phalanx spawn banner and the unsafe
+coarse-path failure line), so a release log carries none of them.
 Turn it on only while collecting a test log; normal play stays quiet. The
 option affects diagnostics, not AI behaviour.
 
@@ -279,14 +282,14 @@ now leaves evidence behind for the alarm tier.
 
 ## Crash breadcrumbs (`trace`)
 
-On by default, settings file only, no menu entry. A native access violation
+**Off by default**, settings file only, no menu entry. A native access violation
 kills the game without a Lua error, so nothing can be logged *after* the fault;
-the breadcrumbs are what was written *before* it. Add `"trace": false` to
-`mods\saves\LittleIntelligenceEnhancementS.txt` (game closed) to silence them.
-At its 120 lines/s cap this channel is what makes a log tens of MB, so routine
-plays should run `"trace": false` with `"watch_log": true`, and `trace` should
-only be turned on for crash forensics; `reaction_hold` `[LIES-EVENT]` lines also
-need `debug_log` (8.57.27).
+the breadcrumbs are what was written *before* it. Turn it on before you reproduce
+a crash: add `"trace": true` to
+`mods\saves\LittleIntelligenceEnhancementS.txt` (game closed). At its 120 lines/s
+cap this channel is what makes a log tens of MB, which is why a release build
+leaves it off; routine plays should run `"watch_log": true` and keep `trace` off,
+and `reaction_hold` `[LIES-EVENT]` lines also need `debug_log` (8.57.27).
 
 Each line looks like:
 

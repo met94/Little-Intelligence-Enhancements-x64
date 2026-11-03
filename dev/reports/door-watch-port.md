@@ -262,7 +262,7 @@ Settings (game closed), `mods\saves\LittleIntelligenceEnhancementS.txt`:
   digest, and the report verdict is `INCOMPLETE`.
 - `"debug_log": true` — optional; gives the per-event `[LIES-CHECK]` lines
   (`door_raw`, nav guards).
-- `"trace": true` — on by default; gives `[LIES-TRACE] phase=door_watch`.
+- `"trace": true` — opt-in; gives `[LIES-TRACE] phase=door_watch`.
 
 Run A — armed. `door_watch` on, High Performance Mode off, `enemy_reaction_level`
 at 1 (SLOW) so the reaction counters are exercised too. Bank-style heist with
