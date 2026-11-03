@@ -205,20 +205,51 @@ Crash evidence:
 
 `dev\tools\log-scan.mjs <log>` prints setup/FATAL/LIES errors/harness output.
 
-## 8. Release
+## 8. Release and versioning
+
+Version scheme: `<upstream release>.<fork patch>`, e.g. `8.57.30` is the 30th
+fork release on upstream `8.57`. The patch counter is the fork's own and
+restarts at 1 whenever the base moves. Never continue upstream's number: the
+fork used to do that (`V8.58_x64` after upstream `8.57`; see
+`dev/version-map.json`) and the labels then read
+as upstream progress they never had. The relabeled history is
+`dev/version-map.json`; the current base is `dev/upstream-base.json`.
 
 When the port is stable:
 
 1. Update `MENU_OPTIONS.md` for any option behaviour changes.
-2. Bump the version in `menumanager.lua` and add a `changelog.txt` entry
-   (`Revision N:`, newest first, `Player notes:` at the end). `mod.txt` has no
-   version field.
-3. Repoint or disable the LIES auto-updater URL in `menumanager.lua`. It points
-   at the original upstream repo; leaving it active may overwrite the port.
+2. Bump the patch in `mod.txt`, `autoupdate.json`, `menumanager.lua`
+   (`LIES.version`), `README.md` and `dev/upstream-base.json`, then add a
+   `changelog.txt` entry (`Revision <version> — <date>`, newest first, `Player
+   notes:` at the end) and an entry in `dev/version-map.json`. The gates
+   (`dev/tools/test/version-scheme.test.mjs`, `compat.test.mjs`) fail on a
+   mismatch.
+3. Repoint or disable the LIES auto-updater URL in `menumanager.lua` when the
+   fork feed changes. The stock URL points at the original upstream repo and
+   would overwrite the port. The prompt compares labels for equality
+   (`menunodegui.lua`), so any differing label, including an older one, prompts.
 4. Keep `LICENSE` (AGPL-3.0) and publish the modified source if distributing.
-5. Package `dist\LIES` with `dev\build.ps1`; the user deploys.
+5. Package `dist\LIES` with `dev\build.ps1`, then zip it as
+   `LIES-<version>.zip`; the user deploys.
 6. Optionally open a PR/fork upstream; keep the upstream remote for future
    rebases.
+
+### Rebasing onto a new upstream release
+
+Our changes live on top of upstream, so an upstream release is a rebase, not a
+merge:
+
+1. `git fetch origin` and read the new upstream changelog/commits since
+   `upstream-base.json` `baseCommit`.
+2. Import the new upstream tree into a worktree (pristine import commit), then
+   port our delta onto it with the function ledger/workbench exactly like a game
+   update (steps 2-4 above). Do not carry our old file copies over wholesale.
+3. Reset the fork patch to 1: version `<newUpstream>.<1>`; update
+   `upstream-base.json` (`baseVersion`, `baseCommit`, new `rebaseLog` entry) and
+   `dev/version-map.json` (new release row; keep the old rows - old logs and
+   published artifacts still quote them).
+4. Tag the release `v<version>` and publish `LIES-<version>.zip` plus
+   `autoupdate.json`.
 
 ## 9. Known pitfalls
 

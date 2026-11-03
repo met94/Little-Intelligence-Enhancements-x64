@@ -16,7 +16,7 @@ needs a user decision because the fix is a LIES-body edit, not a port.
 
 | Side | Revision | Used for |
 |---|---|---|
-| LIES | this worktree, `22a1f96` (`feat/ai-suite-compat`, V8.81_x64) | every `lua/…:NNN` cite |
+| LIES | this worktree, `22a1f96` (`feat/ai-suite-compat`, 8.57.25) | every `lua/…:NNN` cite |
 | 248.2 vanilla | `e3a8b616` = clone `HEAD`; handout line numbers below are that commit | every `game-data/…:NNN` cite |
 | 246.1 vanilla | `b36f5fbb`, resolved by `tools\pd2fn.ps1 -From 246.1` | only through `pd2fn`, plus `git show b36f5fbb:<path>` for the nav builder |
 | per-patch attribution | `5d84b4be` "247" (2026-08-13) touches this file; `a3180fc0` "Switched to new decompiler" is the 246.1 restyle pivot, `6fafad7` the 248.1 one | the whole 246.1→248.2 delta |
@@ -347,7 +347,7 @@ Assessment:
   `e3a8b616`) — so a group entry does not outlive the unit's unregister.
 - The one read that has already shipped an engine AV in this mod is exactly
   `tracker:nav_segment()` on a freed tracker (`dev/reports/aim-stale-nav-tracker-crash.md`,
-  V8.68). These two functions are the same shape and are reached from the
+  8.57.12). These two functions are the same shape and are reached from the
   group-AI update rather than the movement update, so the safest read is: **not
   proven reachable, not proven safe**. This file already carries the guard the
   author wanted in other places —
@@ -458,7 +458,7 @@ failing tests, ready to be flipped green by the follow-up edit.
 Supersedes the "No Lua edited" paragraph above, which described the read-only
 pass. The audit's two open items were decided as: guard now, dead branch parked.
 
-- **Guards added** (`b4d5b61`, released `V8.82_x64`). Both tracker reads now sit
+- **Guards added** (`b4d5b61`, released `8.57.26`). Both tracker reads now sit
   under the file's own liveness pattern, folded into the existing per-unit
   condition so no indentation or nesting changed:
 

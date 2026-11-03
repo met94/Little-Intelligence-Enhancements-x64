@@ -1,8 +1,8 @@
-# Door watching restored in `_upd_aim` (V8.79)
+# Door watching restored in `_upd_aim` (8.57.23)
 
-Investigation report for the V8.79 door-watch restore. Status: code, tests and
+Investigation report for the 8.57.23 door-watch restore. Status: code, tests and
 static gates are green, and the armed and gated paths **were observed in game on
-2026-11-01** (level `auc`, deployed `V8.79_x64`). §6 is the procedure that
+2026-11-01** (level `auc`, deployed `8.57.23`). §6 is the procedure that
 produced the evidence, `dev/tools/door-watch-report.mjs` is the reader that
 adjudicates it, and §10 records what the two runs showed.
 
@@ -15,7 +15,7 @@ adjudicates it, and §10 records what the two runs showed.
 
 ## 1. What was restored, and why
 
-V8.75 (`bbb30fa`) replaced `CopLogicAttack._upd_aim` with the 248.2 vanilla
+8.57.19 (`bbb30fa`) replaced `CopLogicAttack._upd_aim` with the 248.2 vanilla
 body. That was the fix for the 2026-10-31 freed-nav-tracker crash
 (`dev/reports/aim-stale-nav-tracker-crash.md`), but the replacement body took
 three author behaviours with it, because they lived inline in `_upd_aim`:
@@ -51,12 +51,12 @@ door-watch umbrella.
 | `46a93f2` | 2025-10-22 | fugsystem (8.49 cycle) | The door loop, the cached-position cadence, `_get_expected_pos` and its call sites inside `_upd_aim` |
 | `78dab8a` | 2026-10-23 | met94 | AI-01/AI-02: `_upd_aim` handles raw `Vector3` doors; `find_segment_doors`' default branch returns raw `nav_link_end_pos()`, `center_only` keeps tables. Removes the vanilla phalanx `mvec3_set` type-error route |
 | `4a80b5f` | 2026-10-26 | met94 | The `door_raw` watch counter |
-| `bbb30fa` | V8.75 | fork | Ported `_upd_aim` to the vanilla 248.2 body; blocks #1/#2/#4 stopped running |
+| `bbb30fa` | 8.57.19 | fork | Ported `_upd_aim` to the vanilla 248.2 body; blocks #1/#2/#4 stopped running |
 | `a9bfba0` | 2026-11-01 | this work | `find_segment_doors` returns early instead of indexing a nil nav-link tracker (`fsd_nil_tracker`), and guards `fsd_bad_shape` |
 | `0edc8bc` | 2026-11-01 | this work | The `door_watch` setting (default on) and its menu toggle; honoured only while High Performance Mode is off |
 | `e389d5e` | 2026-11-01 | this work | The restore itself: `lies_upd_expected_pos` helper, per-branch counters, watch-channel fields |
 | `189a053` | 2026-11-01 | this work | Reachability fix: the cached re-test was gated on `not advancing` (copied from the pre-port body at `bbb30fa^:1213`, unreachable here because the only call site runs while advancing, so the watch position was never refreshed or cleared); the probe itself was never gated on advancing. Plus tracker check before the feature gate, author's `expected_pos_path` pre-step, same-segment skip, timing |
-| `10fa632` | 2026-11-01 | this work | V8.79 release commit: `dev/tools/door-watch-report.mjs` and its tests, these docs, release metadata. Follow-up in the same unreleased revision: cadence made real (re-test on the window, no `advancing` gate), cop-tracker guard (`dw_no_my_tracker`, six outcomes), timing sampled once per armed call, `door.x`/`end_pos.x` nil tests, in-code version `V8.79_x64` pinned by `compat.test.mjs`, report tool reads `true`/`false` headers and treats a disarmed run as INCOMPLETE |
+| `10fa632` | 2026-11-01 | this work | 8.57.23 release commit: `dev/tools/door-watch-report.mjs` and its tests, these docs, release metadata. Follow-up in the same unreleased revision: cadence made real (re-test on the window, no `advancing` gate), cop-tracker guard (`dw_no_my_tracker`, six outcomes), timing sampled once per armed call, `door.x`/`end_pos.x` nil tests, in-code version `8.57.23` pinned by `compat.test.mjs`, report tool reads `true`/`false` headers and treats a disarmed run as INCOMPLETE |
 
 ## 3. Shape of the restore
 
@@ -73,7 +73,7 @@ Order inside the helper, and why:
    returns `nil` here → `dw_stale_bail` and no vanilla call. This runs **before**
    the feature gate because vanilla `_get_expected_attention_position`
    (`248.2:1508/1516`) dereferences `attention_obj.nav_tracker` unguarded: with
-   the feature off, handing it a freed tracker is exactly the V8.68 crash.
+   the feature off, handing it a freed tracker is exactly the 8.57.12 crash.
 3. Feature gate `door_watch and not highperformance` → `dw_gate_off`, then
    vanilla.
 4. The cop's own tracker (`data.unit:movement():nav_tracker()`). Vanilla
@@ -157,7 +157,7 @@ per-call decision instead of a code-branch substitution. Recorded in
    reached only while running, and running requires `my_data.advancing` — so the
    re-test never ran, `dw_cached_unsighted` never fired, the cache was never
    cleared and the cop kept aiming at the same stale doorway for the whole
-   engagement. V8.79 keeps the author's cadence (re-test inside the same window
+   engagement. 8.57.23 keeps the author's cadence (re-test inside the same window
    as the probe, then stamp `expected_pos_last_check_t`) and drops the
    `advancing` term: a running cop now re-tests on the next window instead of
    never.
@@ -203,7 +203,7 @@ it. The report tool turns this table into PASS/FAIL
 | the feature was armed | header `door_watch=true highperformance=false` (the reader normalises `true`/`on`/`1` and `false`/`off`/`0`) | the run proved nothing about the feature, and the tool returns INCOMPLETE |
 | the probe produced a position | digest `dw_raw_hit + dw_expected_pos_hit + dw_path_prestep_hit > 0`; `[LIES-WATCH] evt=door_watch_first src=… seg=…` | no run reached the door branch: bad map, no cross-segment loss of sight, or a regression. `dw_path_prestep` does **not** count here: it increments before `_get_expected_pos`, so it proves an attempt, not a position. `[LIES-TRACE] phase=door_watch src=…` is supporting evidence (it names which branch ran for which unit) and never an input to this claim — a run can pass with the trace off |
 | a cop adopted the watch position | digest `watch_aim_adopted - watch_aim_verified > 0`, `watch_aim_cached`, `watch_aim_dot`, `watch_aim_dot_n`; `[LIES-TRACE] phase=watch_aim src=… dot=…` | — (INFO, never FAIL: zero counted adoptions, or every adoption made while the target was visible. The adoption dot is always off-target because the adoption starts the turn) |
-| the cop's settled facing was measured | digest `watch_aim_settled_dot_n > 0` (the measured dots; its `watch_aim_settled` counterpart also counts `dot=n/a` samples), `watch_aim_settled_square`, `watch_aim_settled_dot`; `[LIES-TRACE] phase=watch_aim_settle dot=… age=…` | — (the claim is about the measurement, reported as `square=<n>/<measured> (<pct>%)`: a run where every measured settle faces away reads `0/<n> (0%)`, which is visibly not a success. INFO when no sample had a measurable facing, or a pre-V8.86 digest without the field. A settled sample above the adoption total fails `aim accounting`, not this claim) |
+| the cop's settled facing was measured | digest `watch_aim_settled_dot_n > 0` (the measured dots; its `watch_aim_settled` counterpart also counts `dot=n/a` samples), `watch_aim_settled_square`, `watch_aim_settled_dot`; `[LIES-TRACE] phase=watch_aim_settle dot=… age=…` | — (the claim is about the measurement, reported as `square=<n>/<measured> (<pct>%)`: a run where every measured settle faces away reads `0/<n> (0%)`, which is visibly not a success. INFO when no sample had a measurable facing, or a pre-8.57.30 digest without the field. A settled sample above the adoption total fails `aim accounting`, not this claim) |
 | the gate is honest | with `highperformance=true` or `door_watch=false`: `dw_gate_off + dw_stale_bail + dw_no_my_tracker == dw_call` and every work counter 0; the evidence also prints the stale-bail share | the feature ran while disabled, or a call did not end in a termination |
 | tracker bails | `dw_stale_bail` / `dw_call` share (INFO, printed for armed runs too) | — (an enemy dying between the attention update and the door branch trips the guard; a share near 100 % would mean it is misclassifying live trackers) |
 | outcome accounting | `dw_gap` summed over digests == 0 | a call returned without an outcome: a `return` path lost its counter |
@@ -214,7 +214,7 @@ it. The report tool turns this table into PASS/FAIL
 | reaction level still works | header/digest `react_level` + `react_hold`/`react_allow`, `[LIES-EVENT] kind=reaction_hold level=…` | the delay is inert or firing when it should not |
 | no door alarm | no `evt=alarm name=door_outcome_gap` / `door_contract_violation` | a gap or a contract failure happened in play |
 | the session survived | 0 FATAL, 0 LIES-attributable Lua errors | crash class regression |
-| the near-visible probe merge is live | digest `near_vis_probe > 0` (the vertical fallback ran) plus `near_vis_h_max` (the V8.80 probe height, ≈ 100 at worst case, not the pre-merge 30) | — (this claim never FAILs: PASS when the probe fired, INFO `no near-visible probe fired in these windows` when it did not, INFO `digest has no near_vis_* fields: pre-V8.80 log` when the field is missing — a mis-wired counter cannot read as a clean play) |
+| the near-visible probe merge is live | digest `near_vis_probe > 0` (the vertical fallback ran) plus `near_vis_h_max` (the 8.57.24 probe height, ≈ 100 at worst case, not the pre-merge 30) | — (this claim never FAILs: PASS when the probe fired, INFO `no near-visible probe fired in these windows` when it did not, INFO `digest has no near_vis_* fields: pre-8.57.24 log` when the field is missing — a mis-wired counter cannot read as a clean play) |
 
 Watch digest fields that back the table, by group:
 
@@ -239,8 +239,8 @@ Watch digest fields that back the table, by group:
   `fsd_nil_tracker`, `fsd_nil_end_pos`, `fsd_navlink_seg_ok`,
   `fsd_navlink_seg_mismatch`, `fsd_tracker_created`, `fsd_tracker_destroyed`,
   `fsd_bad_shape` — why the door list shrank, and the `Vector3` contract.
-- `react_hold`, `react_allow`, `react_level` — the V8.78 delay.
-- `near_vis_probe`, `near_vis_h_max` — the V8.80 near-visible probe: the first is
+- `react_hold`, `react_allow`, `react_level` — the 8.57.22 delay.
+- `near_vis_probe`, `near_vis_h_max` — the 8.57.24 near-visible probe: the first is
   a per-window delta and is summed, the second is a high-water gauge and is
   aggregated as a maximum (summing it would report a height no probe used).
 
@@ -252,7 +252,7 @@ leak invariant is the harness test
 ## 6. Test-play procedure
 
 Runs A and B below were executed on 2026-11-01 (level `auc`, deployed
-`V8.79_x64`); §10 is what they showed. Run C — the `--ab` cost control — has not
+`8.57.23`); §10 is what they showed. Run C — the `--ab` cost control — has not
 been run, so the cost figure is still one-sided. Keep the procedure as written
 for the repeat: a longer armed run on the same map as its control.
 
@@ -417,7 +417,7 @@ highperformance`, with the eight deviations in §4 (cadence re-test without the
 tracker guards before the gate, six outcomes, cadence-gated pre-step,
 `dw_path_prestep_hit`, the `_get_expected_pos` dead-branch fix). Retire block #3
 (lateral sight search) and record it as deferred under this umbrella. The
-tracker liveness gates stay ahead of everything, so the crash fix from V8.75 is
+tracker liveness gates stay ahead of everything, so the crash fix from 8.57.19 is
 not reopened.
 
 **Artifacts.**
@@ -429,26 +429,26 @@ not reopened.
   digest fields, `[LIES-TRACE] phase=door_watch`.
 - `189a053` — reachability and tracker-safety fix; `dw_gap` alarm delta
   snapshot when the digest is off.
-- `10fa632` — V8.79 release commit: `dev/tools/door-watch-report.mjs`,
+- `10fa632` — 8.57.23 release commit: `dev/tools/door-watch-report.mjs`,
   `dev/tools/test/door-watch-report.test.mjs`, this report, ledger/status/
   decisions/smoke-check/menu docs, release metadata.
-- Follow-up in the same unreleased V8.79 (the commit that carries this text):
+- Follow-up in the same unreleased 8.57.23 (the commit that carries this text):
   cadence made real, `dw_no_my_tracker`, timing sampled once, explicit nil shape
-  tests (intent, not a behaviour change), in-code `V8.79_x64` pinned by
+  tests (intent, not a behaviour change), in-code `8.57.23` pinned by
   `compat.test.mjs`, report tool header normalisation + disarmed-run INCOMPLETE +
   `dw_path_prestep` demoted to INFO + `--ab` control-unusable branch + exit code
   3.
-- Second follow-up (the same unreleased V8.79): cadence-gated pre-step,
+- Second follow-up (the same unreleased 8.57.23): cadence-gated pre-step,
   `dw_path_prestep_hit` as a position counter, `_get_expected_pos` dead-branch
   fix, report CLI flag values as usage errors and a narrowed read-only `try`,
   UTF-8 gates report.
-- Third follow-up (the same unreleased V8.79): the report splits a log into game
+- Third follow-up (the same unreleased 8.57.23): the report splits a log into game
   sessions (`--session last|all|<n>`, default `last`, `--ab` follows the same
   selection, out-of-range exits 3). A SuperBLT file can hold several plays, so a
   control play used to be summed into the armed play's claim table and made the
   gate claim unjudgeable. Every claim rule and exit code is unchanged.
 - Verification (the commit that carries this text): §10 records the 2026-11-01
-  `auc` plays on deployed `V8.79_x64`, and §7 gains the four questions the
+  `auc` plays on deployed `8.57.23`, and §7 gains the four questions the
   numbers raised. Docs only — no Lua, settings or version change.
 - Tests: `dev/tools/test/door-watch.test.mjs` (source pins),
   `dev/test-harness/test/find_segment_doors.lua` (tracker balance, raw
@@ -459,7 +459,7 @@ not reopened.
   `dev/tools/test/compat.test.mjs` (in-code version pinned to `mod.txt`).
 
 **Verified in game (2026-11-01).** Runs A and B (§10) observed the §5 claims on
-level `auc` with the deployed `V8.79_x64`: watch positions from all three
+level `auc` with the deployed `8.57.23`: watch positions from all three
 sources, `dw_gap=0` on every digest, `fsd_bad_shape=0`, the gate holding with
 every work counter at zero, and both reaction-level paths. Run A lasted about two
 minutes and ended in Iter's follow-unit UAF, fixed out of tree (Iter 200.2); no
@@ -470,7 +470,7 @@ worktree contains no game install, so the raw logs stay outside the repo.
 
 ## 10. Verification (2026-11-01)
 
-First in-game evidence for the restore: deployed build `V8.79_x64`, level `auc`,
+First in-game evidence for the restore: deployed build `8.57.23`, level `auc`,
 `dev/tools/door-watch-report.mjs` as the reader, no `--ab` control. Two plays —
 A armed, B gated — so the cost comparison is still open (§7.9).
 
@@ -496,7 +496,7 @@ at t=60 and t=120.
 
 Claims observed: positions from raw doors, expected position and the armed-path
 pre-step (24 + 37 + 4 = 65); `dw_gap=0`; no `door_outcome_gap` or
-`door_contract_violation` alarm. The SLOW reaction level did what V8.78 intends:
+`door_contract_violation` alarm. The SLOW reaction level did what 8.57.22 intends:
 `react_level=1`, `react_hold=42043`, `react_allow=2713` — the fire hold fired and
 then expired into allowed shots.
 

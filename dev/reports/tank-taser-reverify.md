@@ -11,7 +11,7 @@ trust; each claim is re-read against the current bodies.
 
 | Side | Revision | Notes |
 |---|---|---|
-| LIES | this worktree, `7d83be8` (`feat/ai-suite-compat`, V8.81_x64) | all `lua/…:NNN` cites |
+| LIES | this worktree, `7d83be8` (`feat/ai-suite-compat`, 8.57.25) | all `lua/…:NNN` cites |
 | 248.2 vanilla | `e3a8b616` = clone `HEAD` (verified with `rev-parse HEAD`), so on-disk line numbers are 248.2 | all `game-data/…:NNN` cites |
 | 246.1 vanilla | `b36f5fbb` — the commit `tools\pd2fn.ps1 -From 246.1` resolves from `game-data/manifest.json` | used only through `pd2fn`; no hand-read 246.1 offsets are cited |
 

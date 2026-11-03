@@ -1,10 +1,10 @@
-# LIES V8.69_x64: crash breadcrumbs + dead-enemy guards in the spooc/combat path
+# LIES 8.57.13: crash breadcrumbs + dead-enemy guards in the spooc/combat path
 
 Crash report for 2026-11-01 05:46 (heist `dinner`) and the diagnostic layer added
 in response. Mod Lua, docs and one setting were edited.
 
 - **Game:** 248.2 source (`e3a8b616`), installed build `1.0.0-159028`.
-- **Mod:** V8.68_x64 (deployed) → V8.69_x64.
+- **Mod:** 8.57.12 (deployed) → 8.57.13.
 - **Evidence:** `%LOCALAPPDATA%\PAYDAY 2\crash.txt` (05:46:10),
   `crashlog.txt:3557-3602`, `mods\logs\2026_11_01_log.txt` (691 lines; the
   session ran from 05:43:17 to 05:46:09).
@@ -29,7 +29,7 @@ Player POV: the game closed with no error during an assault, again.
 
 ## 2. What this is not
 
-- Not a recurrence of the V8.67 exit guard or the V8.68 tracker guard: neither
+- Not a recurrence of the 8.57.11 exit guard or the 8.57.12 tracker guard: neither
   path appears in the stack, and `[LIES-WATCH]` shows no `exit_missing_logic`
   alarm for the session.
 - The three crashes are three different sites (travel exit, aim tracker, spooc
@@ -40,7 +40,7 @@ Player POV: the game closed with no error during an assault, again.
 
 An access violation terminates the process: no Lua error, no callback, nothing
 can be written after it. The only useful evidence is what was written *before*,
-attached to the unit that was running. V8.69 adds exactly that.
+attached to the unit that was running. 8.57.13 adds exactly that.
 
 `LIES:Trace(unit, logic_data, phase, extra)` (`menumanager.lua`):
 
@@ -87,7 +87,7 @@ Artifacts:
   dodge liveness guard.
 - `lua/coplogics/specials/spooc/spooclogicattack.lua` — trace + liveness guard.
 - `lua/copextensions/copbrain.lua` — `movement_aim` trace.
-- `MENU_OPTIONS.md` breadcrumb section; `changelog.txt` V8.69; version metadata.
+- `MENU_OPTIONS.md` breadcrumb section; `changelog.txt` 8.57.13; version metadata.
 - `dev/tools/test/trace-logging.test.mjs` — trace contract, every phase, guard
   ordering.
 - Gates: `dev/tools/gates.ps1` (all Node tests, 71/71 Lua compile, freevars, API
@@ -114,7 +114,7 @@ risks, all fixed here:
   for the whole heist; recycled unit keys no longer inherit a stale timestamp.
 - The log line uses `att.u_key` instead of `att_unit:key()`, so the breadcrumb
   itself never calls into the (possibly dead) attention unit.
-- The V8.67 and V8.68 guards now leave breadcrumbs too: `exit_missing_logic` /
+- The 8.57.11 and 8.57.12 guards now leave breadcrumbs too: `exit_missing_logic` /
   `exit_no_fallback` with `wanted=<state>`, and `stale_tracker` when the tracker
   guard refuses a dead enemy's tracker.
 - `movement_aim` was dropped: every branch of `check_upd_aim` immediately emits
@@ -137,7 +137,7 @@ So the crashing unit is a **cloaker in attack logic with a live, verified enemy*
 the fault happens inside `_upd_combat_movement` after `_update_cover`, not in the
 dead-enemy family.
 
-V8.70 therefore instruments the sub-steps of that function (`pose`,
+8.57.14 therefore instruments the sub-steps of that function (`pose`,
 `pose_upd`, `flank`, `cover_path`, `dodge`, `dodge_preemptive`, `move_out`,
 `move_out_lost_test`) and gives the spooc its own `spooc_combat` phase with a
 0.2 s window. Rate cap raised to 60 normal lines/s, with a per-call window

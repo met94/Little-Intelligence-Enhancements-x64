@@ -20,7 +20,7 @@ Method:
 
 Evidence commands are in the appendix.
 
-## 0. Phase 2 delta (2026-10-25, V8.58_x64)
+## 0. Phase 2 delta (2026-10-25, 8.57.2)
 
 Phase 2 makes LIES carry the guards that Keepers/Monkeepers needed in their own
 overrides, so those overrides can be removed in Phase 3/4. It also restores the
@@ -128,7 +128,7 @@ Effect: LIES' idle/bot-search rewrite is inert while Keepers is installed. No or
 fixes this (raising Keepers above 100 would drop Keepers' own idle logic instead). Keep
 Keepers as the owner of `CopLogicIdle`; treat LIES' version as superseded.
 
-**Phase 2 (V8.58_x64):** LIES' `CopLogicIdle.clbk_action_timeout` now carries Keepers'
+**Phase 2 (8.57.2):** LIES' `CopLogicIdle.clbk_action_timeout` now carries Keepers'
 `kpr_done` guard (`... and not data.objective.kpr_done`), and Keepers' target priority is
 `10` so its wrappers keep composing on top of LIES. Phase 3 removes Keepers'
 `queued_update`/`clbk_action_timeout` overrides; the guard LIES adopted is what makes that
@@ -154,7 +154,7 @@ Result: LIES → Monkeepers → Keepers, both wrappers live, and only LIES' near
 The reverse pin (101) would be worse: Monkeepers' `is_obstructed`/`carrydata` wrappers
 would be discarded.
 
-**Phase 2 (V8.58_x64):** LIES' `TeamAILogicIdle.action_complete_clbk` now uses
+**Phase 2 (8.57.2):** LIES' `TeamAILogicIdle.action_complete_clbk` now uses
 `elseif not my_data.action_expired then`, the exact guard Monkeepers' override used
 (`mods\Monkeepers\lua\teamailogicidle.lua:46`). Monkeepers' target priority stays `99`.
 Phase 4 removes its override; `action_expired` is never set by team AI in 248.2, so the
@@ -218,7 +218,7 @@ and re-wrapped after The Fixes loads (`Iter_rewrap_copactionwalk_init` on
 functions Iter does not define — notably `CopLogicTravel.chk_group_ready_to_move` — remain
 LIES-only, which is why LIES squad push coordination still works with Iter full nav.
 
-**Phase 2 (V8.58_x64):** the Navlink Delays multiplier is applied at
+**Phase 2 (8.57.2):** the Navlink Delays multiplier is applied at
 `ElementSpecialObjective:_finalize_values` to nav-link elements only (gated on
 `_is_nav_link()`; a regular SO keeps its vanilla polling interval), i.e. before
 `register_anim_nav_link` runs. Iter's wrapper then re-clamps the value: it

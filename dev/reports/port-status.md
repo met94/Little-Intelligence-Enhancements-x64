@@ -1,6 +1,6 @@
 # LIES 248.2 port — status and backlog
 
-Last updated: 2026-11-01 (after the 248.2 port backlog close-out, V8.83).
+Last updated: 2026-11-01 (after the 248.2 port backlog close-out, 8.57.27).
 
 Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-log.md` (drops), `dev/reports/nav-b-feasibility.md` (Nav-B), `dev/reports/future-updates.md` (next game update).
 
@@ -27,18 +27,18 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   marshal harasser swap).
 - API review triage: 147 known-safe, 5 engine/uncertain, 0 confirmed drift
   (`dev/reports/api-audit-triage.md`).
-- Static gates (V8.82): 185 Node test cases (0 fail), 71/71 LuaJIT syntax,
+- Static gates (8.57.26): 185 Node test cases (0 fail), 71/71 LuaJIT syntax,
   68/68 freevars, ledger (`errors=0`, 580 functions), API audit
   (`hooks=68/68`, `errors=0`, `review=151`). Report:
   `dev/reports/static-gates.md`.
-- Door watching restored (V8.79, `0edc8bc` + `e389d5e` + `189a053`): ledger
+- Door watching restored (8.57.23, `0edc8bc` + `e389d5e` + `189a053`): ledger
   blocks #1/#2/#4 are back as a LIES layer over vanilla
   `_get_expected_attention_position`, gated by
   `door_watch and not highperformance`, plus the `find_segment_doors` guards
   (`a9bfba0`). Report, deviations and the test-play procedure:
   `dev/reports/door-watch-port.md`. Code and static gates are green.
 - Door watch, in-game verification — **done for the armed and gated paths**
-  (2026-11-01, level `auc`, deployed `V8.79_x64`). Armed run: watch positions
+  (2026-11-01, level `auc`, deployed `8.57.23`). Armed run: watch positions
   from all three sources (`dw_raw_hit=24`, `dw_expected_pos_hit=37`,
   `dw_path_prestep_hit=4`), `dw_gap=0` on every digest,
   `fsd_navlink_seg_ok=158` with tracker create/destroy balanced and
@@ -51,7 +51,7 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   about two minutes before that crash, so the cost figure is a lower bound, and
   the `--ab` control has not been run. Evidence: `door-watch-port.md` §10; open
   questions §7.
-- Nav v6 closed (V8.81, `cbc4a29`): the audit-first pass
+- Nav v6 closed (8.57.25, `cbc4a29`): the audit-first pass
   (`dev/reports/nav-v6-remaining-audit.md`) found four of the seven backlog rows
   already satisfied or dead, and merged the three real gaps —
   `register_cover_units`' `get_script_data(nav_tracker, true)` create flag and
@@ -68,13 +68,13 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
   `tasing` nil'd first) and `_chk_play_charge_weapon_sound` (300-unit guard
   `:446`, `math.lerp(15, 30, …)` `:441`, 3000 range) were verified present.
   Report: `dev/reports/tank-taser-reverify.md`.
-- Group smoke/flash grenades closed (V8.82, `b4d5b61` Lua + docs): the audit
+- Group smoke/flash grenades closed (8.57.26, `b4d5b61` Lua + docs): the audit
   (`dev/reports/group-grenade-audit.md`) found the only functional 246.1→248.2
   hunk in both functions already merged (the 247 nav rewrite's `door.x` /
   nav-link-unit form is what LIES tests), shipped the crash-class guard the
   file already uses elsewhere (`u_data.tracker and alive(u_data.tracker)`
   folded into the per-unit condition at `:3934`/`:4099`, protecting the
-  `nav_segment()` reads at `:3935`/`:4100`; the V8.68 tracker-AV shape), and
+  `nav_segment()` reads at `:3935`/`:4100`; the 8.57.12 tracker-AV shape), and
   parked the dead explicit-`detonate_pos` branch as a decision (reviving it
   turns charge flashes/smokes on a camper's last known position — a difficulty
   change, not a port). Test: `dev/tools/test/group-grenade-guards.test.mjs`
@@ -84,7 +84,7 @@ Related: `dev/reports/port-decisions.md` (keep/merge), `dev/reports/port-drop-lo
 
 ## Open — core AI (needs in-game testing)
 
-**Backlog closed (2026-11-01, V8.83).** Every one of the 23 rows that
+**Backlog closed (2026-11-01, 8.57.27).** Every one of the 23 rows that
 `dev/port-248-ledger.md` still marks `**PORT**` now has a record in
 `dev/port-decisions.json` (verdict + reference) and
 `dev/tools/test/port-backlog.test.mjs` keeps it closed: the gates fail when a
@@ -110,9 +110,9 @@ completion tracker, and it must not be read as a backlog pointer.
 | `GroupAIStateBesiege._chk_group_use_smoke_grenade` | same | `b4d5b61`; `dev/reports/group-grenade-audit.md` |
 | `GroupAIStateBesiege._queue_police_upd_task` | already ported (timestamp scheduler) + LIES `_nr_important_cops` | `ab03d52`, re-verified 2026-11-01 |
 | `GroupAIStateBesiege._upd_police_activity` | already ported (early-out + single `_upd_group_spawning`), LIES `_last_upd_t`/`_update_criminal_reveal` kept | `703c9af`/`ab03d52`, re-verified 2026-11-01 |
-| `CopLogicBase._upd_attention_obj_detection` | keep LIES rewrite + 248.2 near-visible probe height | V8.80 (`dev/reports/port-decisions.md`) |
+| `CopLogicBase._upd_attention_obj_detection` | keep LIES rewrite + 248.2 near-visible probe height | 8.57.24 (`dev/reports/port-decisions.md`) |
 | `CopLogicIdle.damage_clbk` | keep LIES + fresh-time inherit | earlier merge |
-| `CopLogicAttack._upd_aim` | 248.2 body + author-behaviour restores + door watch | V8.75/V8.77/V8.78/V8.79 |
+| `CopLogicAttack._upd_aim` | 248.2 body + author-behaviour restores + door watch | 8.57.19/8.57.21/8.57.22/8.57.23 |
 | `CopLogicAttack.action_complete_clbk` | merged (`math.rand` dodge timeout) | `f0370d4`, re-verified 2026-11-01 |
 | `CopLogicAttack.is_available_for_assignment` | merged (`is_suppressed` gate) | earlier merge |
 | `TankCopLogicAttack.update` | keep LIES (inert under the dozer remap) | `dev/reports/tank-taser-reverify.md` |
@@ -125,7 +125,7 @@ What remains is **in-game verification of already shipped behaviour, not
 porting**.
 
 Closed block: the **`NavigationManager` nav-v6 set** in
-`lua/managers/navigationmanager.lua` — **done (V8.81)**. The audit
+`lua/managers/navigationmanager.lua` — **done (8.57.25)**. The audit
 (`dev/reports/nav-v6-remaining-audit.md`) closed four of the seven rows before
 any Lua was written, and the three real gaps landed in `cbc4a29`:
 `register_cover_units`' create flag, and the nav-link `delay_time()` gate in
@@ -150,7 +150,7 @@ latent `old_action_advancing` latch is documented, not fixed;
 plumbing and dropped wind-up focus lock stand as LIES intent (§6), and both
 already-applied taser rows were verified present in the body (§7, §8).
 
-Closed block: the **group smoke/flash grenade checks** — **done (V8.82, docs +
+Closed block: the **group smoke/flash grenade checks** — **done (8.57.26, docs +
 one guard)**. Both ledger `PORT` rows (`dev/port-248-ledger.md:312-313`) were
 the remaining item from `dev/reports/handoff-2026-11-01.md` §7 item 5. The
 audit-first pass (`dev/reports/group-grenade-audit.md`) found the only
@@ -188,8 +188,8 @@ Dossiers in `dev/reports/dossiers/` — all closed, none outstanding:
 
 | Function | Size | Why it matters |
 |---|---:|---|
-| `CopLogicBase._upd_attention_obj_detection` | 531L | Detection core; 248.2 changed fields/flow. **Done** — kept the LIES rewrite, merged only the 248.2 near-visible probe height (V8.80, `c409ba4`; `dev/reports/port-decisions.md` "Near-visible probe height"). In-game feel not yet observed. |
-| `CopLogicAttack._upd_aim` | 560L | Aim/cover/fire; **done** — V8.75 port + V8.77/V8.78 restores, V8.79 door watch (`dev/reports/door-watch-port.md`). |
+| `CopLogicBase._upd_attention_obj_detection` | 531L | Detection core; 248.2 changed fields/flow. **Done** — kept the LIES rewrite, merged only the 248.2 near-visible probe height (8.57.24, `c409ba4`; `dev/reports/port-decisions.md` "Near-visible probe height"). In-game feel not yet observed. |
+| `CopLogicAttack._upd_aim` | 560L | Aim/cover/fire; **done** — 8.57.19 port + 8.57.21/8.57.22 restores, 8.57.23 door watch (`dev/reports/door-watch-port.md`). |
 | `CopLogicAttack.action_complete_clbk` | 101L | Action completion + state transitions. **Done** — merged in `f0370d4` (`math.rand` dodge timeout); re-verified 2026-11-01 that this is the function's only 246.1→248.2 delta and the LIES body carries it (`port-decisions.md` §3). |
 | `CopLogicAttack.is_available_for_assignment` | 51L | Assignment gating. **Done** — merged: 248.2 `data.is_suppressed` gate restored ahead of walk-forbidden/path-fail; LIES 3 s lockout and sabotage gate kept. |
 | `CopLogicIdle.damage_clbk` | 61L | Damage reaction / relocation. **Done** — keep LIES + the staged `data.t = t` fresh-time inherit. |
@@ -206,12 +206,12 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 
 - `set_nav_segment_state`: stringified `tostring(id)` keys; LIES cache invalidation kept.
 - `add_obstacle`: 248.2 nil guard + destroy listener; LIES cache invalidation kept.
-- nav-v6 close-out (V8.81, `cbc4a29`): `register_cover_units` create flag on the
+- nav-v6 close-out (8.57.25, `cbc4a29`): `register_cover_units` create flag on the
   legacy cover-unit branch; nav-link `delay_time()` gate in
   `_execute_coarce_search` and `_sort_nav_segs_after_pos`. `remove_obstacle`
   and `_draw_covers` stay LIES (dead-code / no-reachable-state; see
   `port-decisions.md` "Nav-v6 audit outcome").
-- group smoke/flash grenades (V8.82, `b4d5b61`): tracker liveness guard folded
+- group smoke/flash grenades (8.57.26, `b4d5b61`): tracker liveness guard folded
   into the per-unit condition at `:3934`/`:4099`
   (`u_data.tracker and alive(u_data.tracker)`), matching `:3877`. The
   explicit-`detonate_pos` branch stays dead until an explicit decision — it is
@@ -225,7 +225,7 @@ Policy: port one function at a time; preserve LIES intent; use the dossier's `24
 - `TaserLogicAttack._chk_play_charge_weapon_sound`: restored the 300-unit vertical guard; LIES distance-scaled cooldown and 3000 range kept. Smoke 2026-10-24: 14 allowed, 7 cross-floor blocked.
 - `ShieldLogicAttack.queued_update`: adopted 248.2's reservation split (`set_pos_rsrv` success / `add_pos_rsrv` fallback), kept LIES 70 radius and movement gates. Smoke 2026-10-24: 53 set, 4 fallback, no leak.
 - `CarryData._chk_register_steal_SO`: adopted 248.2's guard order + `_add_body_activation_clbk()`, kept LIES `sabotage`/`sabo_voiceline`; fixed the nil drop-point fall-through so no broken drop objective is registered. Smoke 2026-10-24: 12 registered, 5 expected skips.
-- Keep LIES body (no edit): `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update` (inert fallback — remapped away, see `port-decisions.md` §9), `CopLogicIdle.damage_clbk`. `CopLogicBase._upd_attention_obj_detection` keeps the LIES body but now carries the 248.2 near-visible probe height (V8.80, `c409ba4`).
+- Keep LIES body (no edit): `CopLogicAttack._upd_aim`, `TaserLogicAttack._upd_enemy_detection`, `TaserLogicAttack._cancel_tase_attempt`, `TankCopLogicAttack.update` (inert fallback — remapped away, see `port-decisions.md` §9), `CopLogicIdle.damage_clbk`. `CopLogicBase._upd_attention_obj_detection` keeps the LIES body but now carries the 248.2 near-visible probe height (8.57.24, `c409ba4`).
 - Merge pending: none from the current decisions doc. The parked group-grenade
   `detonate_pos` branch awaits a user decision (see "Decisions applied" above).
 

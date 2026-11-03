@@ -1,6 +1,6 @@
 # Behaviour ledger: what the `CopLogicAttack._upd_aim` port removed
 
-One-line summary: the 248.2 port of `_upd_aim` (`bbb30fa`, V8.75_x64) deleted twelve
+One-line summary: the 248.2 port of `_upd_aim` (`bbb30fa`, 8.57.19) deleted twelve
 behaviour blocks; three are load-bearing and cheap to restore (`_chk_enrage`, the
 hostage safe-weapon swap, the charge abort), one is load-bearing but was **already
 inert since V7.84** because of an operator-precedence mistake (`enemy_reaction_level`
@@ -8,7 +8,7 @@ fire delay), and the rest are either covered by vanilla's expected-position help
 should stay retired.
 
 Analysis only at the time of writing — no code was changed then. The verdict column
-records the restores that followed (V8.77/V8.78) and the V8.79 door-watch restore;
+records the restores that followed (8.57.21/8.57.22) and the 8.57.23 door-watch restore;
 the per-block detail keeps the pre-restore evidence. Report path:
 `dev/reports/aim-port-behaviour-ledger.md`.
 
@@ -63,22 +63,22 @@ Anchor line numbers are for the **current worktree file**
 
 | # | Block (removed) | Provenance (commit / date / author / version) | Author purpose | Setting contract | Vanilla 248.2 equivalent | Tracker-dependent | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1 | Cached-tracker aim path: `nav_segment()`, `obstructed()`, `_nav_segments[seg].pos` height preference | `46a93f2` 2025-10-22 fugsystem (8.49 cycle); `nav_segment` file-wide first `083c856` 2022-04-30 Fuglore; guarded form `f67323c` 2026-10-31 met94 | Aim at last known pos when both units share a segment; otherwise watch the enemy's segment | `highperformance` (off-gate only) | `_get_expected_attention_position`, `coplogicattack.lua:1506-1523` (same-seg `+140` z), `1525-1618` (path/doors) | **Yes** (enemy tracker; guard test forbids `.nav_tracker[.:]`) | **PORT** (segment gate) + **RE-ADD** (height preference, tracker-free substitute; V8.79) |
-| 2 | Door probing: `find_segment_doors(enemy_nav_seg)`, raw-door `with_z(+140)` rays, `door_raw` counter | `46a93f2` 2025-10-22 fugsystem; raw-position branch `78dab8a` 2026-10-23 met94 (AI-01); counter `4a80b5f` 2026-10-26 met94 | Predict the target through a doorway when it is in another segment ("cops never predict a target through a doorway") | `highperformance` (off-gate only) | `_get_expected_attention_position` `1544` `find_segment_doors(..., "_chk_is_right_segment", to_nav_seg)` + door `+140` pick (`1549-1580`) | **Yes** (`enemy_nav_seg`) | **RE-ADD (V8.79)** — the LIES layer watches the enemy segment's doors, including nav-link doors vanilla skips; `door_raw` has a producer again |
+| 1 | Cached-tracker aim path: `nav_segment()`, `obstructed()`, `_nav_segments[seg].pos` height preference | `46a93f2` 2025-10-22 fugsystem (8.49 cycle); `nav_segment` file-wide first `083c856` 2022-04-30 Fuglore; guarded form `f67323c` 2026-10-31 met94 | Aim at last known pos when both units share a segment; otherwise watch the enemy's segment | `highperformance` (off-gate only) | `_get_expected_attention_position`, `coplogicattack.lua:1506-1523` (same-seg `+140` z), `1525-1618` (path/doors) | **Yes** (enemy tracker; guard test forbids `.nav_tracker[.:]`) | **PORT** (segment gate) + **RE-ADD** (height preference, tracker-free substitute; 8.57.23) |
+| 2 | Door probing: `find_segment_doors(enemy_nav_seg)`, raw-door `with_z(+140)` rays, `door_raw` counter | `46a93f2` 2025-10-22 fugsystem; raw-position branch `78dab8a` 2026-10-23 met94 (AI-01); counter `4a80b5f` 2026-10-26 met94 | Predict the target through a doorway when it is in another segment ("cops never predict a target through a doorway") | `highperformance` (off-gate only) | `_get_expected_attention_position` `1544` `find_segment_doors(..., "_chk_is_right_segment", to_nav_seg)` + door `+140` pick (`1549-1580`) | **Yes** (`enemy_nav_seg`) | **RE-ADD (8.57.23)** — the LIES layer watches the enemy segment's doors, including nav-link doors vanilla skips; `door_raw` has a producer again |
 | 3 | Lateral sight search: `find_walls_across_pos`, per-position `ai_vision` rays, writes to `focus_enemy.last_verified_pos/_m_pos/_dis` | `46a93f2` 2025-10-22 fugsystem | Re-authorise aim around cover by finding a nearby position with a clear line to the target's last known position | `highperformance` (off-gate only) | **None** in aim; nearest analogue `find_walls_accross_tracker` at vanilla `coplogicattack.lua:1312`, `coplogictravel.lua:591` | **No** (pure position math) — but it *mutates* shared attention state | **RETIRE** — deferred planned future work under the door-watch umbrella (`dev/reports/door-watch-port.md`) |
-| 4 | Expected-position machinery: `_get_expected_pos`, `my_data.expected_pos*`, `_set_attention_on_pos` | `46a93f2` 2025-10-22 fugsystem (`_set_attention_on_pos` itself from base `083c856` 2022-04-30) | Keep a look position on the nav graph across segments | `highperformance` (off-gate only) | `_get_expected_attention_position` `1506-1618`, `_chk_is_right_segment` `1620`, search kick-off `1613-1616` | **Yes**, but vanilla reads `main_enemy.nav_tracker` (`1508/1516`) and the current body is gated by `CopBrain:check_upd_aim` `copbrain.lua:267-275` | **RE-ADD** (caller restored; no longer dead code) — V8.79 |
+| 4 | Expected-position machinery: `_get_expected_pos`, `my_data.expected_pos*`, `_set_attention_on_pos` | `46a93f2` 2025-10-22 fugsystem (`_set_attention_on_pos` itself from base `083c856` 2022-04-30) | Keep a look position on the nav graph across segments | `highperformance` (off-gate only) | `_get_expected_attention_position` `1506-1618`, `_chk_is_right_segment` `1620`, search kick-off `1613-1616` | **Yes**, but vanilla reads `main_enemy.nav_tracker` (`1508/1516`) and the current body is gated by `CopBrain:check_upd_aim` `copbrain.lua:267-275` | **RE-ADD** (caller restored; no longer dead code) — 8.57.23 |
 | 5 | Charge abort: `try_stop_charge`, aggro/`dis <= 200` condition, `_cancel_charge`, `cover_test_step`, `at_cover_shoot_pos` | `_cancel_charge` fn `cb9f15d` 2022-07-05 Fuglore (4.5); in-aim block + condition `46a93f2` / `997e95e` 2025-10-22 fugsystem | Code comment: "stop the charge, we are not chargers we do not push unless nescessary" | **`enemy_aggro_level`** (default 2; only `MOSH PIT`/4 keeps charging) + `data.tactics.charge`, `has_tag("tank")`, `tankboss` | `_cancel_charge` exists and is called at vanilla `561/873/884/1011`, but vanilla `_upd_aim` (`1051-1200`) has **no** charge handling | **No** | **RE-ADD** at `_upd_aim` line **872**, plus restore `local tankboss = { triad_boss, deep_boss }` above `864` |
 | 6 | Turn-to-shoot concessions: `dmg_t < 5`, `acquire_t < 4` + `weapon_range.close` | `dot<0.7` base `083c856` 2022-04-30 / `cb9f15d` (4.5); `acquire_t` `712387f` 2022-06-20 (v4); `dmg_t` `997e95e` 2025-10-22 fugsystem; `can_turn_to_shoot` `a3b79a1` 2026-01-03 fugsystem (8.5); distance clause `4215a39` 2026-06-06 (8.57) | Do not stop to shoot a target you are running away from — unless you were just damaged or just acquired it at close range | none | Run-direction gate only: vanilla `1068-1071` (`dot < 0.6` → `shoot = false; aim = false`), adopted at current line `883` | **No** | **RE-ADD** inside the existing `dot < 0.6` branch, current lines **883-887** |
 | 7 | Hostage safe weapon: `request_switch_to_safe_weapon(3)` / `request_switch_to_normal_weapon(7)`, `safe_equipped`, `hhtacs` + `hostageblock` chatter | `df5d673` 2023-09-05 Fuglore (**7.35**); restore half `29488f1` 2023-09-06 (**7.36**); `verified_t`/`shooting` window `2080f65` 2023-12-01 (**7.61**) | A cop whose shot is blocked by a hostage drops to its `char_tweak.safe_weapon`, stops firing, and swaps back 7 s later | **`hhtacs`** (default `false`; "Adds LIES-specific AI behaviours") | **None.** `request_switch_to_safe_weapon` does not exist in 248.2 (`Select-String` over the whole game-data tree: no hits). They are LIES `CopBrain` methods, `copbrain.lua:1141` / `1193`; `hostage_blocked` is LIES-only too (`coplogicidle.lua:1465-1510`) | **No** | **RE-ADD** at `_upd_aim` line **872** — both halves together (see §3.7) |
 | 8 | Boss features from aim: `LIESBossLogicAttack._chk_use_throwable`, `CopLogicAttack._chk_enrage` | `_chk_use_throwable` `15c25c6` 2022-10-19 Fuglore (**6**); `_chk_enrage` `102511a` 2022-07-10 Fuglore (**4.6**) | `_chk_enrage`: enrage meter for `char_tweak.enrages` units (tanks/dozers) → `base_damage` buff + "surprised" act + warning chatter. `_chk_use_throwable`: frag for `char_tweak.throwable` units | none directly (`hhtacs` shapes `zeal_heavy_swat` tweaks) | `BossLogicAttack._chk_use_throwable` at vanilla `bosslogicattack.lua:792` (called `730`) — boss-only. `_chk_enrage`: **absent from 248.2** | **No** | `_chk_enrage`: **RE-ADD** at current line **1062** (before `aim_allow_fire`). `_chk_use_throwable`: **RE-ADD** with its `shoot and not safe_equipped and not hostage_blocked` guard |
 | 9 | Reload callout: `chk_say_enemy_chatter(..., "calloutreload")` for `is_local_player` / `anim_data.reload` | `712387f` 2022-06-20 Fuglore (**v4**) | Harass-tactic cops call out that the target is reloading | none (needs `data.tactics.harass`) | **None.** `calloutreload` has no hits in 248.2; the chatter type is LIES data, `groupaitweakdata.lua:4741`, now producer-less | **No**, but a dead-unit hazard (needs the `alive()` gate from `cef3fef`) | **RE-ADD (deferred)**; alternative is **RETIRE** *and* delete `groupaitweakdata.lua:4741` + its `loc` lines |
-| 10 | Reaction-level fire delay: `enemy_reaction_level < 3`, `react_t = 2 / level`, `in_slot(16)`, team gate | gate + `0.7/N` `712387f` 2022-06-20 (v4); `2/N` `6be9cb2` 2023-02-22 (**6.7**); team clause `ab0d5e4` 2024-02-09 Fuglore (**7.84**) | Docs: hold fire for `2 / enemy_reaction_level` seconds after verification ("Reaction Level") | **`enemy_reaction_level`** (default `1`; SLOW/NORMAL/ULTRA-VIOLENCE, `loc/en.txt:41-45`) | **None** (no player-facing reaction pacing; vanilla paces via `focus_enemy.reaction` and suppression `1084`) | **No** | **RE-ADD (fixed)** — `not data.team.id == "criminal1"` made the gate a constant `false` (see §3.10); restored in V8.78 with `not data.is_converted` and a guarded divisor |
+| 10 | Reaction-level fire delay: `enemy_reaction_level < 3`, `react_t = 2 / level`, `in_slot(16)`, team gate | gate + `0.7/N` `712387f` 2022-06-20 (v4); `2/N` `6be9cb2` 2023-02-22 (**6.7**); team clause `ab0d5e4` 2024-02-09 Fuglore (**7.84**) | Docs: hold fire for `2 / enemy_reaction_level` seconds after verification ("Reaction Level") | **`enemy_reaction_level`** (default `1`; SLOW/NORMAL/ULTRA-VIOLENCE, `loc/en.txt:41-45`) | **None** (no player-facing reaction pacing; vanilla paces via `focus_enemy.reaction` and suppression `1084`) | **No** | **RE-ADD (fixed)** — `not data.team.id == "criminal1"` made the gate a constant `false` (see §3.10); restored in 8.57.22 with `not data.is_converted` and a guarded divisor |
 | 11 | Shoot-stop guard: `my_data.start_shoot_t`, 0.5 s hold | `46a93f2` 2025-10-22 fugsystem | Keep the reload decision from flapping when the target flickers in and out of the aim window | none | **None**; vanilla requests `idle`/`reload` immediately (`1033-1050`, current `1033-1050`) | **No** | **RETIRE** (the state it guarded no longer exists: `my_data.shooting` is now the vanilla boolean, set at current `1030`) |
 | 12 | Weapon-range self-heal: 2000/5000/1000 backup + `complained_about_invalid_range` logs | `4215a39` 2026-06-06 fugsystem (**8.57**) | Rebuild `weapon_range` from the equipped weapon when it was unset | none | Not needed: `CopBrain:check_upd_aim` returns early without `internal_data.weapon_range` (`copbrain.lua:248-250`, from `49d4d9e` 2024-01-27 Fuglore **7.81**); vanilla body reads it only at `874` (guarded by that caller) and `895` (nil-checked) | **No** | **RETIRE** (`port-decisions.md:119` already called it "belt-and-braces") |
 
 Counts (12 blocks): **RE-ADD** 8 — block 1's height preference (tracker-free
-substitute), blocks 2 and 4 (V8.79), 5 and 7 unconditional, 6 and 8 with
-conditions, 9 deferred, 10 in corrected form (§3.10, restored in V8.78 as
+substitute), blocks 2 and 4 (8.57.23), 5 and 7 unconditional, 6 and 8 with
+conditions, 9 deferred, 10 in corrected form (§3.10, restored in 8.57.22 as
 **RE-ADD (fixed)**); **PORT** 1 — block 1's segment gate itself, reached through
 vanilla `_get_expected_attention_position`; **RETIRE** 3 — blocks 3, 11, 12
 (block 3 is deferred planned future work under the door-watch umbrella, not
@@ -130,7 +130,7 @@ The height preference has no vanilla counterpart and reads a private manager fie
 bother watching the enemy segment. Verdict: the segment gate is **PORTed already**
 (reached through `_get_expected_attention_position`: the vanilla arm at
 `lua/coplogics/coplogicattack.lua:1371` and the door-watch helper's two vanilla calls at
-`134`/`159`); the height preference is **RE-ADD (tracker-free substitute)** in V8.79. It
+`134`/`159`); the height preference is **RE-ADD (tracker-free substitute)** in 8.57.23. It
 keeps the author's three conditions (`data.m_pos.z >= enemy_z`, `|Δz| < 250`, target
 distance `>= 2000`) but reads Z from `focus_enemy.m_pos` (the attention object's last known
 position, falling back to the cop's own `m_pos.z`) — no `_nav_segments` lookup and no
@@ -172,7 +172,7 @@ with the `+140` sight test applied to `door.end_pos` (`1552-1560`). Vanilla's do
 already the "raw position" shape (AI-02 in the gap audit says 248.2 callers assume
 `Vector3`), so the port inherits AI-01's fix rather than losing it.
 
-Verdict: **RE-ADD (V8.79)**. The restore is a LIES layer *around* the vanilla helper,
+Verdict: **RE-ADD (8.57.23)**. The restore is a LIES layer *around* the vanilla helper,
 gated by `door_watch and not highperformance`, not a method override: the game's
 `lib/units/enemies/boss/logics/bosslogicattack.lua:694` calls the vanilla
 `_get_expected_attention_position` directly (and LIES' own
@@ -222,11 +222,11 @@ LIES code (`coplogicbase.lua:1044/1048/1342`, `copbrain.lua:1379`,
 Recorded as **deferred planned future work** under the door-watch umbrella: if the watch
 layer's write target ever moves off `focus_enemy.last_verified_*` (e.g. a private
 `lies_last_verified_*` field), the lateral search becomes safe to evaluate again. It is not
-part of the V8.79 restore and needs its own play test (`dev/reports/door-watch-port.md` §1).
+part of the 8.57.23 restore and needs its own play test (`dev/reports/door-watch-port.md` §1).
 
 Player POV: cops no longer sidestep to peek around cover to keep a bead on a hidden target;
 they watch the last known position or the likely doorway instead. Not a regression of the
-V8.79 restore — the watch-position layer covers the same outcome.
+8.57.23 restore — the watch-position layer covers the same outcome.
 
 ### 3.4 Expected-position machinery
 
@@ -238,12 +238,12 @@ Vanilla's replacement is `_get_expected_attention_position` (`coplogicattack.lua
 plus `_chk_is_right_segment` (`1620`) and the coarse-path kick-off (`1613-1616`). In the
 current body it is reached at `lua/coplogics/coplogicattack.lua:1371` (the
 `reaction < REACT_AIM` arm) and at `134`/`159` from inside `lies_upd_expected_pos` (the
-feature-off and outer-gate fallbacks). Through V8.78 that was a genuine PORT, not
+feature-off and outer-gate fallbacks). Through 8.57.22 that was a genuine PORT, not
 a retirement: the port's own changelog states it, and the vanilla helper does the same job
 (same segment → `m_pos + 140`; else walk `expected_pos_path` and pick the door towards the
 enemy segment).
 
-V8.79 restores the LIES caller as well (**RE-ADD**, caller restored): the pre-port body's
+8.57.23 restores the LIES caller as well (**RE-ADD**, caller restored): the pre-port body's
 armed-path pre-step (`my_data.expected_pos_path` → `CopLogicAttack._get_expected_pos`) and
 the cross-segment fallback both call it again from `lies_upd_expected_pos`, so
 `_get_expected_pos` is no longer dead code. The pre-port state snapshot below is kept as
@@ -251,7 +251,7 @@ the provenance record:
 
 ```powershell
 Get-ChildItem -Recurse -Filter *.lua lua | Select-String -Pattern '_get_expected_pos\b'
-# before V8.79: coplogicattack.lua:1066 definition only, no caller
+# before 8.57.23: coplogicattack.lua:1066 definition only, no caller
 ```
 
 ```powershell
@@ -270,11 +270,11 @@ re-entries and now read again by the restored pre-step and re-test.
 Residual risk to watch in game: vanilla's helper reads `main_enemy.nav_tracker`
 **without** a liveness check (`1508`, `1516`), and LIES runs the helper from the movement
 update. Two guards stand between that read and a freed tracker: the
-`CopBrain:check_upd_aim` gate (`copbrain.lua:267-275`, V8.75), and — since V8.79 — the
+`CopBrain:check_upd_aim` gate (`copbrain.lua:267-275`, 8.57.19), and — since 8.57.23 — the
 liveness check at the top of `lies_upd_expected_pos`, which runs *before* the feature gate
 so the feature-off path cannot hand a freed tracker to vanilla either
 (`dw_stale_bail`). Vanilla is safe because it only ever calls the helper inside a logic
-update, right after detection. Verdict: **RE-ADD** (V8.79), with the guard order pinned by
+update, right after detection. Verdict: **RE-ADD** (8.57.23), with the guard order pinned by
 `dev/tools/test/door-watch.test.mjs`.
 
 Player POV: cops keep aiming at the doorway or corner the player is expected to reappear
@@ -424,7 +424,7 @@ Get-ChildItem -Recurse -Filter *.lua lua | Select-String -Pattern '_chk_enrage'
 # bosslogicattack.lua:393 CopLogicAttack._chk_enrage(data, focus)
 ```
 
-So the V8.75 changelog line "`BossLogicAttack.upd_aim` still calls both for bosses" is
+So the 8.57.19 changelog line "`BossLogicAttack.upd_aim` still calls both for bosses" is
 **true** — but it hides the real loss. `char_tweak.enrages` is set for **tanks**
 (`charactertweakdata.lua:206: self.tank.enrages = true`), i.e. ordinary bulldozers in the
 attack logic; their enrage meter (5–10 s of sustained close combat → `base_damage` buff,
@@ -452,7 +452,7 @@ this ledger whose data half is still in the tree with no producer:
 ```powershell
 Get-ChildItem -Recurse -Include *.lua,*.txt | Select-String -Pattern 'calloutreload'
 # lua/managers/groupaitweakdata.lua:4741: self.enemy_chatter.calloutreload = {
-# changelog.txt:27 (the V8.75 removal note)
+# changelog.txt:27 (the 8.57.19 removal note)
 Get-ChildItem -Recurse -Filter *.lua game-data\Payday-2-LuaJIT-Complete | Select-String -Pattern 'calloutreload'
 # (no output)
 ```
@@ -504,7 +504,7 @@ tools\luajit\luajit.exe <temp>\prec.lua
 ```
 
 Consequence: from V7.84 (2024-02-09) until the port, the ordinary-cop reaction delay never
-executed. Both statements about it in the V8.75 changelog are therefore off — nothing was
+executed. Both statements about it in the 8.57.19 changelog are therefore off — nothing was
 "removed" from the player's experience, and "scheduled to come back" would be scheduling a
 no-op if copied verbatim.
 
@@ -519,7 +519,7 @@ One more instance of the same precedence mistake exists and is *not* in this led
 `coplogicidle.lua:1575` `if reaction < AIAttentionObject.REACT_COMBAT and not reaction ==
 AIAttentionObject.REACT_ARREST then` — same shape, also constant `false`.
 
-Verdict: **RE-ADD (fixed)** — restored in V8.78_x64 (`lua/coplogics/coplogicattack.lua`,
+Verdict: **RE-ADD (fixed)** — restored in 8.57.22 (`lua/coplogics/coplogicattack.lua`,
 inside `_upd_aim` at `1210-1236`, immediately before the boss-throwable guard/call at
 `1240-1241`). It is a re-derivation, not a re-copy:
 
@@ -626,11 +626,11 @@ Player POV: none; the three "range unset" log lines disappear from the log.
    `dev/reports/port-drop-log.md:128-137` lists `CopLogicAttack._upd_aim` under "Do not drop
    without review (kept LIES bodies)", and `dev/reports/port-decisions.md:119` records
    "**Decision: keep LIES**". Neither document was updated by `bbb30fa`; the replacement is
-   only explained in `changelog.txt` V8.75. The crash justification is sound
+   only explained in `changelog.txt` 8.57.19. The crash justification is sound
    (`dev/reports/aim-stale-nav-tracker-crash.md`), but the two decision records now describe
    a state that no longer exists and should be amended when the re-adds land.
 
-2. **The V8.75 follow-up list is three items; evidence says four, and one of the three is
+2. **The 8.57.19 follow-up list is three items; evidence says four, and one of the three is
    wrong.** The changelog schedules "the hostage safe-weapon swap, the charge abort and the
    `enemy_reaction_level` fire delay". Correct: hostage swap (block 7) and charge abort
    (block 5) are both live features with live contracts. Incorrect: the reaction delay was
@@ -656,7 +656,7 @@ Player POV: none; the three "range unset" log lines disappear from the log.
 
 5. **Vanilla's own tracker read is now on the movement path.** `_get_expected_attention_position`
    reads `main_enemy.nav_tracker` unguarded (`coplogicattack.lua:1508/1516`) and LIES calls
-   it from `check_upd_aim`. The V8.75 liveness gate is the only protection, and it is a
+   it from `check_upd_aim`. The 8.57.19 liveness gate is the only protection, and it is a
    *caller* invariant, not an API guarantee. Worth an explicit smoke assertion
    (`movement_aim_stale` counter) rather than a comment.
 
@@ -683,7 +683,7 @@ Needs in-game verification before shipping, in this order:
    drug lord throw frags, and that the `safe_equipped`/`hostage_blocked` guard does not
    suppress throws permanently once block 7 is live (they interact — this is the one pair
    that must be tested together).
-6. **Reaction delay, corrected form** (block 10) — **done in V8.78_x64**, restored at
+6. **Reaction delay, corrected form** (block 10) — **done in 8.57.22**, restored at
    `_upd_aim` just before the throwable call with `not data.is_converted` and a guarded
    divisor. Still to verify in game: all three values (`SLOW` / `NORMAL` /
    `ULTRA-VIOLENCE`) show different first-shot timing on ordinary cops, and nothing
@@ -695,7 +695,7 @@ Keep retired, and say so in the changelog so the next port does not re-litigate 
 block 3's lateral wall search (deferred under the door-watch umbrella, not deleted),
 block 11's 0.5 s hold, block 12's range self-heal.
 
-Blocks 1, 2 and 4 were restored in V8.79 (`dev/reports/door-watch-port.md`) as a LIES
+Blocks 1, 2 and 4 were restored in 8.57.23 (`dev/reports/door-watch-port.md`) as a LIES
 layer around the vanilla expected-position helper: the height preference is tracker-free
 (`focus_enemy.m_pos`), the door probe uses the 2-arg `find_segment_doors` so nav-link doors
 arrive as raw `Vector3`, and `door_raw` has a producer again. The vanilla helper at
