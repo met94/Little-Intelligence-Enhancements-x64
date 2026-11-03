@@ -986,7 +986,7 @@ end
 local civ_flee_upd_detection = CivilianLogicFlee._upd_detection
 
 function CivilianLogicFlee._upd_detection(data)
-	-- Dead unit: same queue-lifetime hole as the detection callbacks (V8.84
+	-- Dead unit: same queue-lifetime hole as the detection callbacks (8.57.28
 	-- engine-AV fix); live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
 		return

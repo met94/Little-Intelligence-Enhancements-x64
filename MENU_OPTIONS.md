@@ -82,10 +82,10 @@ silenced. Bosses run this block through `CopLogicAttack._upd_aim` and also carry
 their own copy of it in boss logic.
 
 **History:** the option itself dates back to v4, but from LIES 7.84 (2024-02-09)
-until V8.78 its gate read `and not data.team.id == "criminal1"`. Lua parses that
+until 8.57.22 its gate read `and not data.team.id == "criminal1"`. Lua parses that
 as `(not data.team.id) == "criminal1"`, always `false`, so ordinary cops ignored
-the option for every build in between; V8.75 then dropped the block with the aim
-port. V8.78 restores it with the two terms the author meant
+the option for every build in between; 8.57.19 then dropped the block with the aim
+port. 8.57.22 restores it with the two terms the author meant
 (`not data.is_converted` and `not (data.team and data.team.id == "criminal1")`).
 See `dev/reports/aim-port-behaviour-ledger.md` block 10.
 
@@ -98,7 +98,7 @@ See `dev/reports/aim-port-behaviour-ledger.md` block 10.
 ## Navlink Delays (`nav_link_interval`)
 
 Scales the pause a cop spends playing an animated nav-link action (vaulting a
-window, climbing a fence). **This option works as of V8.58_x64** — before that
+window, climbing a fence). **This option works as of 8.57.2** — before that
 it was a menu entry with no effect.
 
 | Value | Effect |
@@ -199,9 +199,9 @@ branch; `[LIES-TRACE] … phase=watch_aim` names the adoption itself (`src`, `do
 `verified`, `nearly`), including an adoption of a cached position (`src=cached`).
 `[LIES-TRACE] … phase=watch_aim_settle` names the follow-up sample at least
 0.4 s later (the first aim pass that is due after the first adoption of an
-episode; V8.86): `dot` is where the aim settled, `age` the actual delay since
+episode; 8.57.30): `dot` is where the aim settled, `age` the actual delay since
 the adoption.
-The V8.85 adoption figures were measured on 2026-11-02; the settled sample is
+The 8.57.29 adoption figures were measured on 2026-11-02; the settled sample is
 not yet observed in game.
 
 Door watching runs inside the attack logic while a cop is running and not
@@ -238,7 +238,7 @@ Same channel shape as Iter's, so one reader handles both mods:
   line per 60 s of play, carrying the per-minute counts for cover
   set/fallback, suppression denies, taser allowed/blocked, bag steal-SO
   registered/skipped/deferred, marshal mapping and civilian follow fallbacks.
-  V8.79 adds three more groups to the same line:
+  8.57.23 adds three more groups to the same line:
   - `dw_*` — door watching: the six outcome counters (`dw_call`,
     `dw_gate_off`, `dw_stale_bail`, `dw_outer_gate_skip`, `dw_no_my_tracker`,
     `dw_hit`, `dw_none`), the derived `dw_gap` (must be 0), the branch
@@ -257,7 +257,7 @@ Same channel shape as Iter's, so one reader handles both mods:
   The counter meanings are also listed under "Door Watching" above.
   The digest is the cheap channel — one header plus one line per minute — so a
   routine play should run `watch_log` on and `trace` off; the per-unit
-  `reaction_hold` `[LIES-EVENT]` line additionally needs `debug_log` (V8.83).
+  `reaction_hold` `[LIES-EVENT]` line additionally needs `debug_log` (8.57.27).
 
 Read a play mechanically — the tool turns the digest into PASS/FAIL claims
 (exit 0 PASS, 1 FAIL, 2 INCOMPLETE — no header or the feature was disarmed — and
@@ -286,7 +286,7 @@ the breadcrumbs are what was written *before* it. Add `"trace": false` to
 At its 120 lines/s cap this channel is what makes a log tens of MB, so routine
 plays should run `"trace": false` with `"watch_log": true`, and `trace` should
 only be turned on for crash forensics; `reaction_hold` `[LIES-EVENT]` lines also
-need `debug_log` (V8.83).
+need `debug_log` (8.57.27).
 
 Each line looks like:
 
@@ -309,8 +309,8 @@ Each line looks like:
 - Failure phases are exempt from the cap because they are the ones a crash
   report cannot be reconstructed without: `combat_no_attention` (no attention
   object at all), `dodge_dead_enemy` / `spooc_dead_enemy` (AI met a dead enemy
-  and skipped it), `stale_tracker` (the V8.68 freed-nav-tracker guard refused a
-  tracker), `exit_missing_logic` / `exit_no_fallback` (the V8.67 logic-state
+  and skipped it), `stale_tracker` (the 8.57.12 freed-nav-tracker guard refused a
+  tracker), `exit_missing_logic` / `exit_no_fallback` (the 8.57.11 logic-state
   guard downgraded an exit). These mean the guard did its job; the game keeps
   running and the line names the unit.
 
@@ -333,14 +333,14 @@ Same switch (`trace`), separate tag, one line per unit and kind per second:
 - `travel_no_objective` - travel ran with no objective: `advancing`, `old_action`, `coarse=index/len`, `cover`.
 - `spooc_start` - cloaker tackle started: `dis`, `reaction`, `cover`.
 - `group_retire` / `group_recon` - group-level retire/recon assignment: `group`, `units`, `area`/`phase`.
-- `reaction_hold` - one line when the reaction-level fire delay arms for a unit: `level`. It needs `debug_log` on top of `trace` (V8.83), because it was 76 % of this channel; the `react_hold` / `react_allow` digest counters cover the same behaviour without it.
+- `reaction_hold` - one line when the reaction-level fire delay arms for a unit: `level`. It needs `debug_log` on top of `trace` (8.57.27), because it was 76 % of this channel; the `react_hold` / `react_allow` digest counters cover the same behaviour without it.
 
 Together they reconstruct the chain: which group event produced which objective change, which logic switch followed, and which exit the unit took. That is the evidence needed when a native fault names only one frame.
 
-## Instant Spawn Groups (`instant_spawn_groups`) - removed in V8.66
+## Instant Spawn Groups (`instant_spawn_groups`) - removed in 8.57.10
 
-The fork exposed an upstream code path as a toggle in V8.60-V8.65 and retired
-the option in V8.66. What it was, and why it is gone:
+The fork exposed an upstream code path as a toggle in 8.57.4-8.57.9 and retired
+the option in 8.57.10. What it was, and why it is gone:
 
 - Upstream LIES **7.1** (`b0207e5`, 2023-04-05) overrode
   `ElementSpawnEnemyGroup:on_executed` and, for `spawn_type == "group"`, added
@@ -384,8 +384,8 @@ and the localization strings remain, and nothing reads them. The ModWorkshop pag
 for V8.57 still advertises "Forced Spawn Delays ... Toggleable", which no longer
 exists - a stale description upstream, not something this port removed.
 
-The fork's own `instant_spawn_groups` switch (V8.60-V8.65) joined the retired
-list in V8.66 - see the section above.
+The fork's own `instant_spawn_groups` switch (8.57.4-8.57.9) joined the retired
+list in 8.57.10 - see the section above.
 
 ## Path-cache lookup (`cache_lookup`)
 

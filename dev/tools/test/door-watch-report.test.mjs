@@ -15,6 +15,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
+  LEGACY_VERSIONS,
   SessionRangeError,
   VALUE_FLAGS,
   analyzeLog,
@@ -25,7 +26,7 @@ import {
   selectSessions
 } from '../door-watch-report.mjs';
 
-const VERSION = 'V8.86_x64';
+const VERSION = '8.57.30';
 const CLI = fileURLToPath(new URL('../door-watch-report.mjs', import.meta.url));
 
 function watch(event, fields = {}) {
@@ -497,16 +498,33 @@ test('a log without the watch header is INCOMPLETE and names the setting', () =>
 });
 
 test('a version mismatch against mod.txt fails', () => {
-  const report = analyzeLog(happyLog, { file: 'happy_log.txt', modVersion: 'V8.78_x64' });
+  const report = analyzeLog(happyLog, { file: 'happy_log.txt', modVersion: '8.57.22' });
 
   assert.equal(claimOf(report, 'version').result, 'FAIL');
   // Built from the fixture version so a release bump does not have to touch this
   // assertion (the log version is what the tool reports back).
   assert.ok(
-    claimOf(report, 'version').evidence.includes(`${VERSION} vs mod.txt V8.78_x64`),
+    claimOf(report, 'version').evidence.includes(`${VERSION} vs mod.txt 8.57.22`),
     claimOf(report, 'version').evidence
   );
   assert.equal(report.verdict, 'FAIL');
+});
+
+test('a log written under a pre-relabel label still matches the current mod.txt', () => {
+  // The fork relabeled every release on 2026-11-03; a log keeps the label its
+  // build shipped with. The label is read from dev/version-map.json so this test
+  // never hardcodes one.
+  const legacyLabel = [...LEGACY_VERSIONS].find(([, version]) => version === VERSION)[0];
+  const legacy = happyLog.replaceAll(`v=${VERSION}`, `v=${legacyLabel}`);
+  const report = analyzeLog(legacy, { file: 'legacy_log.txt', modVersion: VERSION });
+
+  assert.equal(claimOf(report, 'version').result, 'PASS');
+  assert.equal(
+    claimOf(report, 'version').evidence,
+    `log ${legacyLabel} (=${VERSION}) vs mod.txt ${VERSION}`
+  );
+  // The raw label is still reported, so the log stays identifiable.
+  assert.equal(report.version_seen, legacyLabel);
 });
 
 test('--ab prints the control figures and the delta', () => {
@@ -529,7 +547,7 @@ test('--ab prints the control figures and the delta', () => {
 
 test('--ab with a control that has no digest window reports it as unusable', () => {
   // A control log with no `evt=digest` (e.g. watch_log left off) must not be
-  // printed as a set of deltas against zero — those numbers would look like a
+  // printed as a set of deltas against zero â€” those numbers would look like a
   // real cost comparison.
   const control = [SETUP, header({ door_watch: 'false' }), trace('raw')].join('\n');
   const report = analyzeLog(happyLog, { file: 'a.txt', modVersion: VERSION, controlText: control, controlFile: 'b.txt' });
@@ -650,7 +668,7 @@ test('parseLog keeps the per-window fields the digest is judged on', () => {
   assert.equal(aggregate.dw_us_max, 180);
 });
 
-// --- near-visible probe (V8.80 probe height) -------------------------------
+// --- near-visible probe (8.57.24 probe height) -------------------------------
 //
 // The merge in `_nearly_visible_chk` is only observable if the probe fired, and
 // "the digest has no such field" (an older build) must not read as a clean play.
@@ -679,7 +697,7 @@ test('a probe field that never fired is INFO, not a failure', () => {
   assert.equal(report.verdict, 'PASS');
 });
 
-test('a digest without the near_vis_* fields is named as a pre-V8.80 log', () => {
+test('a digest without the near_vis_* fields is named as a pre-8.57.24 log', () => {
   // The build under test is wired for the merge; a log that never mentions it
   // cannot prove anything, so it must be INFO and say why.
   const log = [SETUP, header(), digest()].join('\n');
@@ -687,7 +705,7 @@ test('a digest without the near_vis_* fields is named as a pre-V8.80 log', () =>
   const probe = claimOf(report, 'nearvis');
 
   assert.equal(probe.result, 'INFO');
-  assert.match(probe.evidence, /digest has no near_vis_\* fields: pre-V8\.80 log/);
+  assert.match(probe.evidence, /digest has no near_vis_\* fields: pre-8\.57\.24 log/);
   assert.equal(report.verdict, 'PASS');
 });
 
@@ -724,9 +742,9 @@ test('near_vis_h_max is a high-water gauge, not a summed counter', () => {
 // both as one play was the bug: the armed verdict could never be trusted.
 const twoRunLines = [
   SETUP, // 1
-  header(), // 2 — session 1
+  header(), // 2 â€” session 1
   digest({ t: 60 }), // 3
-  header({ highperformance: 'true', level: 'auc', enemy_reaction_level: 3 }), // 4 — session 2
+  header({ highperformance: 'true', level: 'auc', enemy_reaction_level: 3 }), // 4 â€” session 2
   digest({ // 5
     t: 60,
     level: 'auc',
@@ -822,7 +840,7 @@ test('session all sums both launches, the last header wins and the report says s
   assert.equal(report.armed, false);
   // Merging an armed launch with a gated one cannot pass the gate claim: the
   // summed counters show sub-events next to `dw_gate_off` calls. That is honest
-  // — `all` is for "how much did this file do", not for a verdict.
+  // â€” `all` is for "how much did this file do", not for a verdict.
   assert.equal(claimOf(report, 'gate').result, 'FAIL');
   assert.equal(report.verdict, 'FAIL');
   assert.match(markdown, /Session: all \(merged 2 of 2 sessions; headers at 2, 4\)/);
@@ -915,7 +933,7 @@ test('--ab applies the session selection to the control log too', () => {
   assert.equal(earlier.verdict, 'PASS');
 });
 
-// The V8.85 link: a digest can prove a watch position was *computed*
+// The 8.57.29 link: a digest can prove a watch position was *computed*
 // (`positions`) while saying nothing about whether a cop adopted it. This claim
 // reads the adoption counters, and the facing dot is a mean, not a delta.
 test('watch aim adopted passes when a cop adopted a computed position', () => {
@@ -953,7 +971,7 @@ test('a zero-adoption window does not weigh on the session dot', () => {
   // `LIES:_avg_sum` prints `watch_aim_dot=0` for a window that counted no
   // adoption. That 0 is an empty sentinel, not a sample: folding it in as one
   // would drag the session dot towards "looked at a wall". The contributing
-  // window count is what makes the guard observable — deleting `adopted > 0`
+  // window count is what makes the guard observable â€” deleting `adopted > 0`
   // turns this into 3.
   const aggregate = aggregateDigests([
     { fields: { watch_aim_adopted: '3', watch_aim_dot: '0.4' } },
@@ -999,8 +1017,8 @@ test('watch aim adopted is INFO when the position was computed but never adopted
 
   assert.equal(adopted.result, 'INFO');
   assert.match(adopted.evidence, /watch_aim_adopted=0/);
-  // The claim names what the counters show — no counted adoption — not why the
-  // cop never adopted; a pre-V8.85 log has no `watch_aim_*` field at all, and
+  // The claim names what the counters show â€” no counted adoption â€” not why the
+  // cop never adopted; a pre-8.57.29 log has no `watch_aim_*` field at all, and
   // that case is named separately below.
   assert.match(adopted.evidence, /no adoption of a watch position was counted/);
   // INFO, so the run's verdict still comes from the other claims.
@@ -1008,7 +1026,7 @@ test('watch aim adopted is INFO when the position was computed but never adopted
 });
 
 test('watch aim adopted is INFO (not PASS) for a digest without the fields', () => {
-  // Pre-V8.85 builds write no watch_aim_* field: "cannot tell" must not read as
+  // Pre-8.57.29 builds write no watch_aim_* field: "cannot tell" must not read as
   // a clean pass, the same rule the near-visible probe claim follows.
   const log = [SETUP, header(), digest()].join('\n');
   const report = analyzeLog(log, { file: 'old_log.txt', modVersion: VERSION });
@@ -1016,11 +1034,11 @@ test('watch aim adopted is INFO (not PASS) for a digest without the fields', () 
 
   assert.equal(adopted.result, 'INFO');
   assert.match(adopted.evidence, /no watch_aim_\* fields/);
-  assert.match(adopted.evidence, /pre-V8\.84/);
+  assert.match(adopted.evidence, /pre-8\.57\.28/);
   assert.equal(report.verdict, 'PASS');
 });
 
-// V8.86: the settled sample is the "does the cop look like it pre-aims" figure.
+// 8.57.30: the settled sample is the "does the cop look like it pre-aims" figure.
 // The adoption dot is always off-target because adoption starts the turn, so the
 // report keeps the two numbers apart instead of re-judging the adoption claim.
 test('settled facing passes once a measured follow-up sample was counted', () => {
@@ -1068,7 +1086,7 @@ test('settled facing passes once a measured follow-up sample was counted', () =>
 });
 
 test('settled facing is INFO when the digest has no settled field', () => {
-  // Pre-V8.86 builds write no watch_aim_settled* field: "cannot tell" must not
+  // Pre-8.57.30 builds write no watch_aim_settled* field: "cannot tell" must not
   // read as a clean pass, the same rule as the adoption and probe claims.
   const log = [SETUP, header(), digest({ watch_aim_adopted: 2, watch_aim_dot: 0.3 })].join('\n');
   const report = analyzeLog(log, { file: 'pre_settled.txt', modVersion: VERSION });
@@ -1076,7 +1094,7 @@ test('settled facing is INFO when the digest has no settled field', () => {
 
   assert.equal(settled.result, 'INFO');
   assert.match(settled.evidence, /no watch_aim_settled\* fields/);
-  assert.match(settled.evidence, /pre-V8\.86/);
+  assert.match(settled.evidence, /pre-8\.57\.30/);
   assert.equal(report.verdict, 'PASS');
 });
 

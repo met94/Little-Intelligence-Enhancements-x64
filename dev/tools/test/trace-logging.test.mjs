@@ -79,10 +79,10 @@ test('the crash-prone phases are instrumented', () => {
   assert.match(spooc, /"spooc_dead_enemy"/);
   assert.match(spooc, /LIES:Trace\(data\.unit, data, "spooc_combat", nil, 0\.2\)/, 'the spooc combat step needs a tight window');
   assert.match(spooc, /chk_action_forbidden\("walk"\)[\s\S]{0,200}?"spooc_no_walk"/, 'spooc must not run movement while walking is forbidden');
-  assert.match(base, /"exit_missing_logic" or "exit_no_fallback"|exit_missing_logic"\), "wanted=/, 'the V8.67 exit guard must leave a breadcrumb');
+  assert.match(base, /"exit_missing_logic" or "exit_no_fallback"|exit_missing_logic"\), "wanted=/, 'the 8.57.11 exit guard must leave a breadcrumb');
 });
 
-// Same family as the V8.68 crash: code reading an enemy that died between the
+// Same family as the 8.57.12 crash: code reading an enemy that died between the
 // detection pass and this update.
 test('combat movement and spooc attack never read a dead enemy', () => {
   const attack = readStripped('lua', 'coplogics', 'coplogicattack.lua');

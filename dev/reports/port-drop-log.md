@@ -136,9 +136,9 @@ These remain LIES implementations and are **not** drops:
 - `CopLogicIdle.damage_clbk` (with the 248.2 `data.t = t` fix)
 
 `CopLogicAttack._upd_aim` is no longer in this list: it was ported to the 248.2
-body in V8.75 (commit `bbb30fa`, crash report
+body in 8.57.19 (commit `bbb30fa`, crash report
 `dev/reports/aim-stale-nav-tracker-crash.md`) and five author behaviour blocks
-were restored on top of the vanilla body in V8.77 (blocks 5-9 of
+were restored on top of the vanilla body in 8.57.21 (blocks 5-9 of
 `dev/reports/aim-port-behaviour-ledger.md`). Do not re-add the tracker-derived
 machinery listed in that ledger unless the freed-tracker hazard is solved first.
 

@@ -444,7 +444,7 @@ function TeamAILogicIdle.action_complete_clbk(data, action)
 end
 
 function TeamAILogicIdle._upd_enemy_detection(data)
-	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
+	-- Dead unit: a queued detection callback can outlive it (8.57.28 engine-AV
 	-- fix); live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
 		return 2

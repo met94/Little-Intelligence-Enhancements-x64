@@ -178,7 +178,7 @@ end
 local teamai_disabled_upd_enemy_detection = TeamAILogicDisabled._upd_enemy_detection
 
 function TeamAILogicDisabled._upd_enemy_detection(data)
-	-- Dead unit: same queue-lifetime hole as the detection callbacks (V8.84
+	-- Dead unit: same queue-lifetime hole as the detection callbacks (8.57.28
 	-- engine-AV fix); live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
 		return 2

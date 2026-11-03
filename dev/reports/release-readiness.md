@@ -1,7 +1,9 @@
 # LIES 248.2 — release readiness checklist
 
-Status: `V8.57_x64` published. GitHub release and fork updater feed are live;
-merge to the workspace remains pending explicit approval. Diagnostic logging is
+Status: `8.57.1` published. GitHub release and fork updater feed are live;
+merge to the workspace remains pending explicit approval. The published tag and
+asset keep their pre-relabel name (`V8.57_x64` for `8.57.1`; mapping in
+`dev/version-map.json`); labels below use the current scheme. Diagnostic logging is
 gated behind the Debug Logging option (default OFF).
 
 ## Metadata
@@ -10,8 +12,8 @@ gated behind the Debug Logging option (default OFF).
 |---|---|---|
 | `mod.txt` name | `LIES` | Keep unchanged (dependency key). |
 | `mod.txt` hooks | 68, all targets exist at 248.2 | Verified by API audit. |
-| Version | `V8.57_x64` in `menumanager.lua` and `mod.txt` | Set for release. |
-| `changelog.txt` | present, `Revision V8.57_x64` | Ships in the package. |
+| Version | `8.57.1` in `menumanager.lua` and `mod.txt` | Set for release. |
+| `changelog.txt` | present, `Revision 8.57.1` | Ships in the package. |
 | `MENU_OPTIONS.md` | present, Debug Logging documented | Ships in the package. |
 | License | `LICENSE` = AGPL-3.0 | Keep; publish modified source if distributing. |
 | Remotes | `origin` = upstream; `x64` = `met94/Little-Intelligence-Enhancements-x64` | Push release branch to `x64/main`. |
@@ -24,7 +26,7 @@ gated behind the Debug Logging option (default OFF).
 LIES.update_url = "https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json"
 ```
 
-The fork's `autoupdate.json` advertises `V8.57_x64`. The update prompt links to
+The fork's `autoupdate.json` advertises `8.57.1`. The update prompt links to
 the GitHub releases page. Verify the raw URL returns the JSON after pushing
 `main`.
 
@@ -82,12 +84,12 @@ Current evidence: 55 Node tests, 68/68 hooks, 50/50 hook methods, 0 API errors,
 
 ## Release candidate
 
-- Version: `V8.57_x64`
+- Version: `8.57.1`
 - Build: `dist\LIES` at `331406f`
 - Package: `dist\LIES-V8.57_x64.zip`
 - SHA-256: `CB1195BBC2A276FCDFE32951E12F6236EF33BB7EC7053CCED062575A91E291AF`
 - Release page: `https://github.com/met94/Little-Intelligence-Enhancements-x64/releases/tag/V8.57_x64`
-- Auto-update feed: `https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json` (200; advertises `V8.57_x64`)
+- Auto-update feed: `https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json` (200; advertises `8.57.1`)
 - Published asset: `LIES-V8.57_x64.zip`, 310,739 bytes, matching SHA-256; includes `README.md`
 - Final review: release diff reviewed; 3 release risks (missing remote, 404 feed decode, load-time diagnostic) fixed; static gates 55/55.
 

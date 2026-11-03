@@ -11,9 +11,23 @@ evaluate, aim, take cover, path, suppress, and coordinate — without replacing
 the game's core combat loop. This fork ports the original LIES V8.57 design to
 the current 64-bit 248.2 game build.
 
-- **Current release:** `V8.86_x64`
+- **Current release:** `8.57.30`
 - **Download:** [GitHub Releases](https://github.com/met94/Little-Intelligence-Enhancements-x64/releases)
 - **Original project:** [fuglore/Little-Intelligence-Enhancements](https://github.com/fuglore/Little-Intelligence-Enhancements)
+
+## Part of the AI suite
+
+This mod is tested as one stack with the rest of our 248.2 AI suite, and is
+intended to be run together with it:
+
+| Mod | Repo | Role |
+| --- | --- | --- |
+| **LIES** (this mod) | [met94/Little-Intelligence-Enhancements-x64](https://github.com/met94/Little-Intelligence-Enhancements-x64) | enemy AI: detection, aim, cover, travel |
+| **Iter** | [met94/payday2-mod-Iter](https://github.com/met94/payday2-mod-Iter) | navigation, coarse search, nav-link queue, level nav fixes |
+| **Keepers** | [met94/payday2-mod-Keepers](https://github.com/met94/payday2-mod-Keepers) | bot orders, revives, jokers |
+| **Monkeepers** | [met94/payday2-mod-Monkeepers](https://github.com/met94/payday2-mod-Monkeepers) | bot bag logistics |
+| **Useful Bots** 2.6.3 (by Hoppip, not part of this set) | [ModWorkshop #31221](https://modworkshop.net/mod/31221) | bot combat and utility; requires HopLib |
+| The Fixes (optional) | - | general game fixes |
 
 ## Features
 
@@ -45,7 +59,7 @@ LIES does **not** require BeardLib. Other AI mods may overlap; see
 
 1. Install SuperBLT if you have not already.
 2. Remove or rename any existing `PAYDAY 2/mods/LIES` folder.
-3. Extract `LIES-V8.58_x64.zip` so the final path is:
+3. Extract `LIES-8.57.30.zip` so the final path is:
    `PAYDAY 2/mods/LIES/mod.txt`
 4. Start the game.
 
@@ -61,13 +75,6 @@ save folder.
 LIES is a large AI overlay, so the AI mods you pair it with need a defined
 owner per subsystem. These are the combinations validated in this fork.
 
-- **NavFixes — do not run with LIES.** Both modify the same navigation
-  functions with incompatible signatures: NavFixes' 2-argument
-  `find_segment_doors` and 6-argument `_sort_nav_segs_after_pos` silently
-  replace LIES' 3-/7-argument versions, which kills LIES coarse pathing and
-  doorway cover/aim lookups without logging anything. LIES already carries the
-  `register_anim_nav_link` and `remove_obstacle` guards, so NavFixes is not
-  needed.
 - **Iter (full nav) — recommended, Option 1 navigation owner.** Iter owns nav
   congestion, coarse search, and the animated nav-link queue; LIES keeps its
   own squad push coordination (`CopLogicTravel.chk_group_ready_to_move`), which
@@ -120,8 +127,26 @@ LIES checks the fork's update feed at startup:
 
 `https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json`
 
-If the feed advertises a newer version, the update prompt links to the GitHub
-releases page. The mod does **not** silently download or install updates.
+If the feed advertises a version that differs from the installed one, the update
+prompt links to the GitHub releases page. The comparison is equality, not
+ordering (`menunodegui.lua`), so it cannot tell a newer build from an older one;
+the mod does **not** silently download or install updates.
+
+## Versioning
+
+Versions use `<upstream release>.<fork patch>`:
+
+- `8.57.30` is the 30th fork release built on upstream LIES **8.57**
+  (`4215a39`, 2026-06-06). The patch counter is ours and only ours; upstream
+  numbers are never continued.
+- When upstream ships a new release, the fork's changes are rebased onto it and
+  the patch counter restarts: upstream `8.60` becomes `8.60.1`, then `8.60.2`,
+  and so on. The base of the current release is recorded in
+  `dev/upstream-base.json`, the whole relabeled history in
+  `dev/version-map.json`.
+- Releases published before the 2026-11-03 relabel keep their old labels
+  (`V8.86_x64` = `8.57.30`, mapped in `dev/version-map.json`) in GitHub tags,
+  assets and old logs.
 
 ## Known deviations from the original 246.1 build
 
@@ -132,7 +157,6 @@ These are intentional 248.2 port decisions, not missing files:
 - Dead v5 navigation code and the unused recon-sweep subsystem were removed.
 - Nav-B generated covers are LIES-search-only and opt-in.
 - Marshal marksmen keep the long-standing LIES `CopLogicAttack` mapping.
-- NavFixes must not be installed alongside LIES.
 
 ## Credits
 

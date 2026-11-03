@@ -1,11 +1,11 @@
-# LIES V8.67_x64: crash on `CopLogicBase._exit` with a state the brain does not own
+# LIES 8.57.11: crash on `CopLogicBase._exit` with a state the brain does not own
 
 Crash-fix report for the session of 2026-10-31 (heist `auc`). Mod Lua **was**
 edited (`lua/coplogics/coplogicbase.lua`, version metadata, changelog). All
 other files are unchanged.
 
 - **Game:** 248.2 (`e3a8b616`), installed build `1.0.0-159028`.
-- **Mod:** V8.66_x64 (branch `feat/ai-suite-compat`) → V8.67_x64.
+- **Mod:** 8.57.10 (branch `feat/ai-suite-compat`) → 8.57.11.
 - **Evidence:** `%LOCALAPPDATA%\PAYDAY 2\crash.txt` (07:17:27),
   `crashlog.txt:3441-3451`, `mods\logs\2026_10_31_log.txt`.
 
@@ -120,7 +120,7 @@ Artifacts:
   `lies_logic_exists`, `exit_fallback_name = "idle"`, alarm).
 - `dev/tools/test/exit-guard.test.mjs` — pins the guard and that travel never
   calls `set_logic` directly; `dev/tools/test/compat.test.mjs` — version bump.
-- `changelog.txt` V8.67_x64 entry, `mod.txt`, `autoupdate.json`,
+- `changelog.txt` 8.57.11 entry, `mod.txt`, `autoupdate.json`,
   `menumanager.lua` (`LIES.version`), `README.md`.
 - Gates: `dev/tools/gates.ps1` PASS (79 Node tests, 71/71 Lua compile, freevars
   0 findings, API audit 0 errors), `dev/reports/static-gates.md`.

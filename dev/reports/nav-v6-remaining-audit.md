@@ -9,7 +9,7 @@ in this report were read from the 246.1 restyle pivot `a3180fc` and are labelled
 pivot only), at different line offsets.
 
 Status: **closed** — the three edits this audit lists (P1/P2/P3, "Real gaps and
-implementation order") were merged in `cbc4a29` and released as `V8.81_x64`;
+implementation order") were merged in `cbc4a29` and released as `8.57.25`;
 `dev/tools/test/nav-gates.test.mjs` pins them. Verdicts that were `keep LIES`
 (`remove_obstacle`, `_draw_covers`) and `already merged` (`add_obstacle`,
 `set_nav_segment_state`) stand unchanged. The Iter note in section 2 carries a

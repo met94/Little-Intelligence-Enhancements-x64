@@ -1,10 +1,10 @@
-# LIES V8.68_x64: engine crash in the aim pass (freed enemy nav tracker)
+# LIES 8.57.12: engine crash in the aim pass (freed enemy nav tracker)
 
 Crash-fix report for the session of 2026-10-31 11:03 (heist `red2`). Mod Lua
 **was** edited (`lua/coplogics/coplogicattack.lua`, version metadata, changelog).
 
 - **Game:** 248.2 source (`e3a8b616`), installed build `1.0.0-159028`.
-- **Mod:** V8.67_x64 (deployed, guard from V8.67 present) → V8.68_x64.
+- **Mod:** 8.57.11 (deployed, guard from 8.57.11 present) → 8.57.12.
 - **Evidence:** `%LOCALAPPDATA%\PAYDAY 2\crash.txt` (11:03:51),
   `crashlog.txt:3494-3535`, `crash.dmp`. The 11:03 session's game log was
   truncated by the 11:07 restart, so no `[LIES-WATCH]` digest survives from it.
@@ -103,7 +103,7 @@ Artifacts:
 - `dev/tools/test/aim-tracker-guard.test.mjs` - pins the helper, forbids
   `focus_enemy.nav_tracker` method/field reads elsewhere in the file, pins the
   `_get_expected_pos` guard.
-- `changelog.txt` V8.68_x64, `mod.txt`, `autoupdate.json`, `menumanager.lua`,
+- `changelog.txt` 8.57.12, `mod.txt`, `autoupdate.json`, `menumanager.lua`,
   `README.md`, `dev/tools/test/compat.test.mjs`.
 - Gates: `dev/tools/gates.ps1` (Node tests, 71/71 Lua compile, freevars, API
   audit), `dev/reports/static-gates.md`.

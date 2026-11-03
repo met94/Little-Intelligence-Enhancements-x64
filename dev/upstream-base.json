@@ -1,0 +1,21 @@
+{
+  "note": "The upstream release this fork is rebased onto. `baseVersion` is upstream's own label and is used verbatim as the first two components of every fork version; `patch` is the fork's own counter for that base and restarts at 1 when `baseCommit` changes. Rebase procedure: dev/reports/future-updates.md, 'Release and versioning'.",
+  "upstreamRepository": "https://github.com/fuglore/Little-Intelligence-Enhancements.git",
+  "upstreamBranch": "main",
+  "upstreamRemote": "origin",
+  "baseVersion": "8.57",
+  "baseCommit": "4215a39acfb9dc858fa469a675accb62381757bc",
+  "baseDate": "2026-06-06",
+  "baseSubject": "8.57",
+  "patch": 30,
+  "rebaseLog": [
+    {
+      "baseVersion": "8.57",
+      "baseCommit": "4215a39acfb9dc858fa469a675accb62381757bc",
+      "firstForkVersion": "8.57.1",
+      "legacyFirstForkVersion": "V8.57_x64",
+      "date": "2026-10-24",
+      "note": "initial 248.2 x64 port of upstream 8.57"
+    }
+  ]
+}

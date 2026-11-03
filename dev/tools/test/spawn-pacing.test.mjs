@@ -1,6 +1,6 @@
 // Scripted group spawning: the retired `instant_spawn_groups` switch.
 //
-// History: the fork shipped a toggle in V8.60-V8.65 in front of an upstream
+// History: the fork shipped a toggle in 8.57.4-8.57.9 in front of an upstream
 // LIES 7.1 addition (`b0207e5`) that calls
 //
 //   managers.groupai:state():_perform_group_spawning(spawn_task, true)
@@ -14,7 +14,7 @@
 // calls run in the same frame with the same `self._t`. The only task the extra
 // call could reach was `_spawning_groups[1]` - the oldest queued group, since
 // the new task is appended at the tail - so it could only force an unrelated
-// group. The switch and that extra call were removed in V8.66.
+// group. The switch and that extra call were removed in 8.57.10.
 //
 // `spawn_type == "group_guaranteed"` keeps its forced call: that branch is
 // vanilla's own code.
@@ -88,6 +88,6 @@ test('no other code path reintroduces a forced spawn', () => {
 
 test('the retired switch is documented as removed', () => {
   const doc = read('MENU_OPTIONS.md');
-  assert.match(doc, /Instant Spawn Groups \(`instant_spawn_groups`\) - removed in V8\.66/, 'removal record missing');
+  assert.match(doc, /Instant Spawn Groups \(`instant_spawn_groups`\) - removed in 8\.57\.10/, 'removal record missing');
   assert.doesNotMatch(doc, /restores vanilla pacing and\s+leaves the normal `force_spawn_group` path/, 'stale description survived');
 });

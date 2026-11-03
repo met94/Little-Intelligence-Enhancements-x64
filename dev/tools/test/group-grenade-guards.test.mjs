@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Pins the crash-class guards shipped in V8.82_x64 for the two group grenade
+// Pins the crash-class guards shipped in 8.57.26 for the two group grenade
 // checks, and pins the one shape nobody may "fix" without a recorded decision.
 //
 // Evidence: `dev/reports/group-grenade-audit.md` (sections 4 and 6).
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 //    `u_data.tracker:nav_segment()` with no liveness check, while the same file
 //    guards the same field at `lua/groupaistate/groupaistatebesiege.lua:3877`
 //    (`if u_data.tracker and alive(u_data.tracker) then`). `tracker:nav_segment()`
-//    on a freed tracker is exactly the V8.68 engine-AV shape
+//    on a freed tracker is exactly the 8.57.12 engine-AV shape
 //    (`dev/reports/aim-stale-nav-tracker-crash.md`). The guard is folded into the
 //    enclosing per-unit condition - no extra nesting block - so the eye can read
 //    one condition per unit gate.
@@ -131,7 +131,7 @@ for (const [label, bodyFn] of [
       assert.match(
         read.condition,
         /u_data\.tracker and alive\(u_data\.tracker\)/,
-        `unguarded tracker read: "${read.line.trim()}" would fault on a freed tracker (V8.68 shape)`
+        `unguarded tracker read: "${read.line.trim()}" would fault on a freed tracker (8.57.12 shape)`
       );
     }
   });

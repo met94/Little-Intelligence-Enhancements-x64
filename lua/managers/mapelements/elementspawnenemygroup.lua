@@ -69,7 +69,7 @@ function ElementSpawnEnemyGroup:on_executed(instigator)
 			-- `force` only lifts `_MAX_SIMULTANEOUS_SPAWNS`. So the queued group
 			-- trickles in at the normal rate either way, and the extra call could
 			-- only force `_spawning_groups[1]`, the oldest queued group (the new
-			-- task is appended at the tail) - an unrelated one. Removed in V8.66;
+			-- task is appended at the tail) - an unrelated one. Removed in 8.57.10;
 			-- see MENU_OPTIONS.md.
 			managers.groupai:state():force_spawn_group(spawn_group_data, self._values.preferred_spawn_groups)
 		elseif self._group_data.spawn_type == "group_guaranteed" then

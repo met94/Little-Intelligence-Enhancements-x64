@@ -1,4 +1,4 @@
-# Ruling: `instant_spawn_groups` (fork switch, V8.60-V8.65) — removed
+# Ruling: `instant_spawn_groups` (fork switch, 8.57.4-8.57.9) — removed
 
 Date: 2026-10-30 · Game: PAYDAY 2 248.2 x64 · Source of truth:
 `game-data\Payday-2-LuaJIT-Complete` @ `e3a8b616` (248.2) and the mod worktree
@@ -6,7 +6,7 @@ Date: 2026-10-30 · Game: PAYDAY 2 248.2 x64 · Source of truth:
 
 ## Question
 
-The fork added an **Instant Spawn Groups** toggle (V8.60) in front of an upstream
+The fork added an **Instant Spawn Groups** toggle (8.57.4) in front of an upstream
 LIES call in `ElementSpawnEnemyGroup:on_executed`. Does the toggle actually
 change the game, and should the option stay?
 
@@ -81,7 +81,7 @@ a small, uncapped early burst of some other pending group.
 
 ## Ruling
 
-Remove the switch **and** the `group`-branch forced call (V8.66). The
+Remove the switch **and** the `group`-branch forced call (8.57.10). The
 `spawn_type == "group_guaranteed"` branch keeps its forced call because that
 branch is vanilla's own code, and the `else` branch is untouched. Removed
 artifacts: `settings.instant_spawn_groups` and its comment, the menu entry in

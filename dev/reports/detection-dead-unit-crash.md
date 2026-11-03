@@ -1,6 +1,6 @@
-# LIES V8.84_x64: access violation in the detection pass (queued task on a dead unit)
+# LIES 8.57.28: access violation in the detection pass (queued task on a dead unit)
 
-Crash-fix report for a user report received 2026-11-02 against `V8.57_x64`.
+Crash-fix report for a user report received 2026-11-02 against `8.57.1`.
 Mod Lua **was** edited (`lua/coplogics/coplogicbase.lua`,
 `lua/teamailogics/teamailogictravel.lua`, new static test, version metadata,
 changelog).
@@ -10,7 +10,7 @@ changelog).
   clone (`enemymanager.lua:513/525`), which is expected: shipped-build line
   numbers differ from the decompiled clone (same caveat as
   `exit-missing-logic-crash.md` §1).
-- **Mod:** `V8.57_x64` (`4d97be0`, 2026-10-24 — the 248.2 port) → `V8.84_x64`.
+- **Mod:** `8.57.1` (`4d97be0`, 2026-10-24 — the 248.2 port) → `8.57.28`.
 - **Evidence:** user-supplied script stack, reproduced below. No local `crash.txt`:
   the report came from a player, not this machine, and no further reports are
   available.
@@ -35,7 +35,7 @@ Script stack:
                                             core/lib/setups/coresetup.lua:537
 ```
 
-Both mod frames are exact, because mod files ship as authored. At `V8.57_x64`
+Both mod frames are exact, because mod files ship as authored. At `8.57.1`
 they are:
 
 - `lua/coplogics/coplogicbase.lua:807` — the `my_pos` local inside
@@ -95,7 +95,7 @@ nothing on that path checked liveness:
 
 LIES already treats this class as a crash source: `2a8bbb1` added
 `not alive(data.unit) ... or not data.unit:movement()` to
-`CopLogicIntimidated.queued_update`, and V8.68 gated the cached enemy tracker on
+`CopLogicIntimidated.queued_update`, and 8.57.12 gated the cached enemy tracker on
 `alive(unit)`. The detection callbacks never received the same treatment.
 
 ## 3. Fix
@@ -158,7 +158,7 @@ Vanilla keeps owning each body; LIES only decides whether it runs for a unit tha
 still exists.
 
 - `alive()` first is deliberate: LIES already treats unit liveness as the
-  validity predicate for engine objects (V8.68 §3, `lies_enemy_tracker`), and
+  validity predicate for engine objects (8.57.12 §3, `lies_enemy_tracker`), and
   `movement()` is only read once liveness holds. `alive()` is itself a native
   call on the unit handle; the assumption behind it is stated in §5, not proven
   here.
@@ -176,7 +176,7 @@ still exists.
   pass's own default delay (`whisper_mode() and 0 or 2`). The queued wrappers
   return bare because the queue discards their result.
 - Live units are unaffected: the guard is false, cost is two native calls per
-  detection tick, the same trade-off V8.82 accepted for one `alive()` per unit
+  detection tick, the same trade-off 8.57.26 accepted for one `alive()` per unit
   per check.
 - Downed units are unaffected in practice: `TeamAILogicIdle.damage_clbk` exits
   to `disabled` on `bleedout`/`fatal`/`tase` (`teamailogicidle.lua:327-328` @
@@ -219,7 +219,7 @@ entries for the unit's key at `TeamAIBrain:set_active(false)` (loop on
 `has_task(id)`), not a wider guard.
 
 `alive()` is a native call on the unit handle. The guard assumes a destroyed
-unit's Lua handle still answers it, which is the same assumption V8.68 ships; it
+unit's Lua handle still answers it, which is the same assumption 8.57.12 ships; it
 is not proven by anything in this report. If a fault moves to the guard line
 itself, that assumption is wrong and the guard has to be replaced by a liveness
 list (keys the manager still owns) instead of calling into the unit.
@@ -230,7 +230,7 @@ queues or feeds (flee detection, civ outline detection, disabled-bot detection,
 phalanx VIP update) are gated before their first dereference. The pre-guard reads
 found earlier (`GroupAIStateBase:on_unit_detection_updated` while the group AI's
 `_draw_enabled` debug drawing is on, and `CopLogicSniper`'s
-`CopLogicAttack._upd_stop_old_action` branch, pre-V8.84
+`CopLogicAttack._upd_stop_old_action` branch, pre-8.57.28
 `coplogicsniper.lua:118-120`, now 125-127) sit behind the guard.
 
 What remains is the orphan itself, not the crash: a leaked queued task for a

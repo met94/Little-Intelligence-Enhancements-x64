@@ -7,7 +7,7 @@ local tmp_vec1 = Vector3()
 local civ_idle_outline_detection = CivilianLogicIdle._upd_outline_detection
 
 function CivilianLogicIdle._upd_outline_detection(data)
-	-- Dead unit: same queue-lifetime hole as the detection callbacks (V8.84
+	-- Dead unit: same queue-lifetime hole as the detection callbacks (8.57.28
 	-- engine-AV fix); live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
 		return
@@ -177,7 +177,7 @@ function CivilianLogicIdle.on_new_objective(data, old_objective, params)
 end
 
 function CivilianLogicIdle._upd_detection(data)
-	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
+	-- Dead unit: a queued detection callback can outlive it (8.57.28 engine-AV
 	-- fix); live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
 		return 2
