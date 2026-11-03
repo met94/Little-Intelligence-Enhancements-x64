@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Adjudicate a LIES test play from a SuperBLT log.
 //
-// The door watch restored in V8.79 is only "working" if a log says it ran, so
+// The door watch restored in 8.57.23 is only "working" if a log says it ran, so
 // this turns the [LIES-WATCH] digest, the door_watch trace phase and the
 // fsd_*/react_* counters into PASS/FAIL claims. Design and the counter ->
 // claim mapping: dev/reports/door-watch-port.md.
@@ -41,6 +41,25 @@ import { scanLog } from './log-scan.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const USAGE = 'Usage: node dev/tools/door-watch-report.mjs <log...> [--ab <control-log>] [--mod DIR] [--session last|all|<n>] [--json out.json] [--out out.md]';
+
+// Logs keep the version label the build shipped with, and the fork relabeled
+// every release on 2026-11-03 (`V8.86_x64` -> `8.57.30`, `dev/version-map.json`).
+// The version claim compares canonical versions so an old log is not failed for
+// the label it was written under; the raw label is still printed.
+export const LEGACY_VERSIONS = (() => {
+  try {
+    const raw = JSON.parse(fs.readFileSync(path.join(HERE, '..', 'version-map.json'), 'utf8'));
+
+    return new Map(raw.releases.map(entry => [entry.legacy, entry.version]));
+  } catch {
+    return new Map();
+  }
+})();
+
+export function canonicalVersion(version) {
+  return LEGACY_VERSIONS.get(version) || version;
+}
+
 
 // What the six outcome counters are, and what a "sub-event" is. Every call to
 // `lies_upd_expected_pos` increments exactly one outcome (menumanager.lua
@@ -593,11 +612,18 @@ export function analyzeLog(text, {
   } else if (!modVersion) {
     claim('version', 'version', 'INFO', `log says ${parsed.version}; mod.txt was not found (--mod)`);
   } else {
+    // An old log carries a pre-relabel label for the same build (the mapping is
+    // dev/version-map.json), so compare canonical versions and print both when
+    // they differ. A legacy label from a different release still fails, and an
+    // unknown label never becomes a PASS by accident.
+    const logVersion = canonicalVersion(parsed.version);
+    const label = logVersion === parsed.version ? '' : ` (=${logVersion})`;
+
     claim(
       'version',
       'version',
-      parsed.version === modVersion ? 'PASS' : 'FAIL',
-      `log ${parsed.version} vs mod.txt ${modVersion}`
+      logVersion === canonicalVersion(modVersion) ? 'PASS' : 'FAIL',
+      `log ${parsed.version}${label} vs mod.txt ${modVersion}`
     );
   }
 
@@ -655,7 +681,7 @@ export function analyzeLog(text, {
   // one only runs inside the attack logic while the cop is running and not
   // aiming.
   //
-  // Travel logics do run that pass too: the 2026-11-02 play (V8.85) logged
+  // Travel logics do run that pass too: the 2026-11-02 play (8.57.29) logged
   // `phase=watch_aim` lines with `logic=travel`, so a cop walking between rooms
   // can adopt a watch position. Zero adoptions next to produced positions is
   // therefore not explained by `travel` and is worth reading as "no adoption was
@@ -694,7 +720,7 @@ export function analyzeLog(text, {
       'watchaim',
       'watch aim adopted',
       'INFO',
-      'digest has no watch_aim_* fields: pre-V8.84 log, the adoption was never measured'
+      'digest has no watch_aim_* fields: pre-8.57.28 log, the adoption was never measured'
     );
   } else if (adoptedWhileUnseen > 0) {
     claim('watchaim', 'watch aim adopted', 'PASS', adoptionEvidence);
@@ -722,7 +748,7 @@ export function analyzeLog(text, {
 
   // --- settled facing -----------------------------------------------------
   // The adoption dot is measured at the instant of adoption, which is always
-  // off-target: adopting the position is what starts the turn. V8.86 samples the
+  // off-target: adopting the position is what starts the turn. 8.57.30 samples the
   // same flat dot at least 0.4 s later, on the next due aim pass (`age` in the
   // trace is the real delay), so this claim is the "does the cop look like it
   // pre-aims" figure. `square` is the subset within 45 degrees of the doorway
@@ -734,7 +760,7 @@ export function analyzeLog(text, {
   // (`dot=n/a`), and treating those as a value would make the share and the mean
   // lie in the flattering direction. The sample is still counted - "the
   // follow-up ran" is a real fact - so the count and the measured count are both
-  // printed. A digest from a V8.86 build before `watch_aim_settled_dot_n` existed
+  // printed. A digest from an 8.57.30 build before `watch_aim_settled_dot_n` existed
   // falls back to the sample count.
   const settled = counter(counters, 'watch_aim_settled');
   const settledSquare = counter(counters, 'watch_aim_settled_square');
@@ -760,7 +786,7 @@ export function analyzeLog(text, {
       'settled',
       'settled facing',
       'INFO',
-      'digest has no watch_aim_settled* fields: pre-V8.86 log, the settled facing was never measured'
+      'digest has no watch_aim_settled* fields: pre-8.57.30 log, the settled facing was never measured'
     );
   } else if (settledMeasured > 0) {
     // PASS is about the measurement, and the headline is the result: a run whose
@@ -802,7 +828,7 @@ export function analyzeLog(text, {
       'aimaccount',
       'aim accounting',
       'INFO',
-      'digest has no watch_aim_* fields: pre-V8.85 log, there is nothing to account for'
+      'digest has no watch_aim_* fields: pre-8.57.29 log, there is nothing to account for'
     );
   } else {
     claim(
@@ -816,7 +842,7 @@ export function analyzeLog(text, {
   }
 
   // --- near-visible probe -------------------------------------------------
-  // The V8.80 probe-height merge (`_nearly_visible_chk` in
+  // The 8.57.24 probe-height merge (`_nearly_visible_chk` in
   // `lua/coplogics/coplogicbase.lua`) is only proven by a log that shows the
   // probe firing: `near_vis_probe` counts the vertical fallback (a per-window
   // delta), `near_vis_h_max` is the tallest height it used (a gauge, so the
@@ -827,7 +853,7 @@ export function analyzeLog(text, {
     'near_vis_probe' in digest.fields || 'near_vis_h_max' in digest.fields);
 
   if (!probeFields) {
-    claim('nearvis', 'near-visible probe', 'INFO', 'digest has no near_vis_* fields: pre-V8.80 log');
+    claim('nearvis', 'near-visible probe', 'INFO', 'digest has no near_vis_* fields: pre-8.57.24 log');
   } else if (probeFired > 0) {
     claim(
       'nearvis',
@@ -882,7 +908,7 @@ export function analyzeLog(text, {
     .filter(value => value !== null);
 
   if (!gaps.length) {
-    claim('gaps', 'outcome accounting', 'INFO', 'no dw_gap field in any digest (pre-V8.79 log?)');
+    claim('gaps', 'outcome accounting', 'INFO', 'no dw_gap field in any digest (pre-8.57.23 log?)');
   } else {
     const gapSum = gaps.reduce((sum, value) => sum + value, 0);
 

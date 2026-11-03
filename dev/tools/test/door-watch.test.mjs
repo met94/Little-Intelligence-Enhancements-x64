@@ -470,7 +470,7 @@ test('the reaction block counts held and allowed passes', () => {
   assert.ok(block.indexOf('focus_enemy.lies_react_t = data.t') < eventAt, 'the event fires alongside the arm');
 });
 
-// The V8.79 instrumentation proved a watch position was *computed*; nothing
+// The 8.57.23 instrumentation proved a watch position was *computed*; nothing
 // said a cop then adopted it as its attention target. That is the downstream
 // link these tests pin: one trace phase, one line, three counters.
 test('adopting a watch position is traced at the adoption site', () => {
@@ -679,7 +679,7 @@ test('a cached watch return is traced and counted with src=cached', () => {
   assert.match(managerSource(), /\bwatch_aim_cached = d\.watch_aim_cached or 0/);
 });
 
-// V8.86: the adoption dot is always off-target because adoption starts the turn,
+// 8.57.30: the adoption dot is always off-target because adoption starts the turn,
 // so the settled sample 0.4 s later is the "pre-aims" figure. It is measured at
 // the head of the next aim pass, on the same flat-dot helper.
 test('a due settled sample is counted, traced and cleared at the head of the aim pass', () => {

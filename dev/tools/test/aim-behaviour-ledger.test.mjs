@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Pins the blocks `dev/reports/aim-port-behaviour-ledger.md` marks RE-ADD after the
-// V8.75 port (ledger block numbers are the ones in that report). Removing any of
+// 8.57.19 port (ledger block numbers are the ones in that report). Removing any of
 // these silently drops a behaviour, so they are asserted one by one.
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
