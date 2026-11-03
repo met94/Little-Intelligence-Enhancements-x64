@@ -60,7 +60,7 @@ end
 
 function CopLogicPhalanxMinion.queued_update(data)
 	-- A queued update can outlive its unit; the rest of this body dereferences
-	-- it (V8.84 engine-AV fix). Live units never take this branch.
+	-- it (8.57.28 engine-AV fix). Live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
 		return
 	end

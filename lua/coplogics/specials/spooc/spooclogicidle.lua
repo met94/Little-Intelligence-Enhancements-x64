@@ -1,5 +1,5 @@
 function SpoocLogicIdle._upd_enemy_detection(data)
-	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
+	-- Dead unit: a queued detection callback can outlive it (8.57.28 engine-AV
 	-- fix); live units never take this branch. The return value is a delay.
 	if not alive(data.unit) or not data.unit:movement() then
 		return 2

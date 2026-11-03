@@ -57,7 +57,7 @@ local function lies_enemy_tracker(focus_enemy, data)
 
 	-- The enemy is gone while its attention entry survives: everything the aim,
 	-- cover and charge code would do with this tracker is unsafe, and seeing this
-	-- phase in the breadcrumbs is how the V8.68 crash class gets confirmed.
+	-- phase in the breadcrumbs is how the 8.57.12 crash class gets confirmed.
 	if data and LIES and LIES.Trace then
 		LIES:Trace(data.unit, data, "stale_tracker", nil, lies_trace_window(data))
 	end
@@ -442,7 +442,7 @@ end
 
 function CopLogicAttack.queued_update(data)
 	-- A queued update can outlive its unit; the rest of this body dereferences
-	-- it (V8.84 engine-AV fix). Live units never take this branch.
+	-- it (8.57.28 engine-AV fix). Live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
 		return
 	end
@@ -493,7 +493,7 @@ function CopLogicAttack.damage_clbk(data, damage_info)
 end
 
 function CopLogicAttack._upd_enemy_detection(data, is_synchronous)
-	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
+	-- Dead unit: a queued detection callback can outlive it (8.57.28 engine-AV
 	-- fix); live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
 		return 2
@@ -1238,7 +1238,7 @@ end
 -- turned its attention to it. Without it a digest can show `dw_raw_hit > 0`
 -- while nothing says the position became the unit's aim target.
 --
--- Measured on the 2026-11-02 play (V8.85): travel logics do reach `_upd_aim`
+-- Measured on the 2026-11-02 play (8.57.29): travel logics do reach `_upd_aim`
 -- (`logic=travel ... phase=watch_aim`, 2,079 lines in a run), so a cop walking
 -- between rooms can adopt a watch position too. What made a room-clearing test
 -- look inconclusive was the facing sample, not the logic.

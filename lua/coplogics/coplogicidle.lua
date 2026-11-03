@@ -167,7 +167,7 @@ end
 
 function CopLogicIdle.queued_update(data)
 	-- A queued update can outlive its unit; the rest of this body dereferences
-	-- it (V8.84 engine-AV fix). Live units never take this branch.
+	-- it (8.57.28 engine-AV fix). Live units never take this branch.
 	if not alive(data.unit) or not data.unit:movement() then
 		return
 	end
@@ -1078,7 +1078,7 @@ function CopLogicIdle._check_needs_reload(data, my_data)
 end
 
 function CopLogicIdle._upd_enemy_detection(data)
-	-- Dead unit: a queued detection callback can outlive it (V8.84 engine-AV
+	-- Dead unit: a queued detection callback can outlive it (8.57.28 engine-AV
 	-- fix); live units never take this branch. The return value is a delay.
 	if not alive(data.unit) or not data.unit:movement() then
 		return 2
