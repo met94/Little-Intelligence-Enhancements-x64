@@ -53,37 +53,76 @@ const RULES = [
   },
 ];
 
+// Blank a comment's text but keep its newlines, so reported line numbers stay
+// true. String literals are copied verbatim: a `--[` inside one is not a comment.
 function stripLuaComments(source) {
   let out = '';
   let i = 0;
 
+  const blankTo = (end) => {
+    out += source.slice(i, end).replace(/[^\n]/g, ' ');
+    i = end;
+  };
+
   while (i < source.length) {
+    const ch = source[i];
+
+    if (ch === '"' || ch === "'") {
+      let j = i + 1;
+      while (j < source.length) {
+        if (source[j] === '\\') {
+          j += 2;
+          continue;
+        }
+        if (source[j] === ch) {
+          j += 1;
+          break;
+        }
+        j += 1;
+      }
+      const end = Math.min(j, source.length);
+      out += source.slice(i, end);
+      i = end;
+      continue;
+    }
+
+    if (ch === '[') {
+      const longString = /^\[(=*)\[/.exec(source.slice(i, i + 64));
+
+      if (longString) {
+        const closer = `]${longString[1]}]`;
+        const end = source.indexOf(closer, i + longString[0].length);
+        if (end === -1) throw new Error(`unterminated long string at offset ${i}`);
+        out += source.slice(i, end + closer.length);
+        i = end + closer.length;
+        continue;
+      }
+    }
+
     if (source.startsWith('--', i)) {
-      // `--[=[ ... ]=]` and its nested levels, not just `--[[`.
+      // `--[=[ ... ]=]` and its levels, not just `--[[`.
       const long = /^--\[(=*)\[/.exec(source.slice(i, i + 64));
 
       if (long) {
         const closer = `]${long[1]}]`;
         const end = source.indexOf(closer, i + long[0].length);
         if (end === -1) throw new Error(`unterminated long comment at offset ${i}`);
-        out += source.slice(i, end + closer.length).replace(/[^\n]/g, ' ');
-        i = end + closer.length;
+        blankTo(end + closer.length);
         continue;
       }
 
       const eol = source.indexOf('\n', i);
       if (eol === -1) {
-        out += source.slice(i).replace(/[^\n]/g, ' ');
+        blankTo(source.length);
         break;
       }
 
-      out += source.slice(i, eol).replace(/[^\n]/g, ' ');
-      i = eol;
+      blankTo(eol);
       continue;
     }
 
-    out += source[i];
-    i++;
+    out += ch;
+    i += 1;
   }
 
   return out;
@@ -121,6 +160,15 @@ test('no code treats a possibly-opaque userdata as a table or a Vector3', () => 
   }
 
   assert.deepEqual(findings, [], `elidable userdata shape assumptions:\n${findings.join('\n')}`);
+});
+
+test('the scanner keeps string literals and drops comments', () => {
+  // A `--[` inside a string is not an unterminated comment; a real one throws.
+  assert.equal(stripLuaComments('local s = "--[ not a comment"\n').includes('--['), true);
+  assert.doesNotMatch(stripLuaComments('local a = 1 -- attention_unit.type_name\n'), /type_name/);
+  assert.throws(() => stripLuaComments('--[[ never closed\n'), /unterminated long comment/);
+  // Line numbers survive comment removal.
+  assert.equal(stripLuaComments('a\n-- b\nc').split('\n').length, 3);
 });
 
 test('the aim target comes from the engine record at every former union sink', () => {
