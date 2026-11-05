@@ -1185,18 +1185,44 @@ local tankboss = {
 -- the ~100 units that separate two doorways in a corridor.
 local LIES_SETTLE_TARGET_DIS = 20
 
--- True when the unit's current aim target is still the position a settled sample
--- was taken for. `attention_unit` is a Vector3 while the cop aims at a position
--- (the adoption branch sets it to a copy of the watch position) and the enemy's
--- `u_key` while it aims at a live target, so anything that is not a Vector3 means
--- the cop is looking somewhere else now. `type_name` is the engine's own tag for
--- a Vector3, the same test the save-serialising mods use.
-local function lies_settle_target_held(attention_unit, pos)
-	if type(attention_unit) ~= "userdata" or attention_unit.type_name ~= "Vector3" then
+-- True when the unit's own aim target is still the position a settled sample was
+-- taken for. The engine keeps the aim target as a typed table: `pos` is a
+-- Vector3, `unit`/`u_key` are separate fields, and no target at all is nil - so
+-- reading `pos` answers the question exactly. `CopMovement:attention()` returns
+-- the table the aim was last told to hold, by reference and without allocating,
+-- and the same getter is already used this way in `CopLogicIdle:1007`,
+-- `CopLogicTravel:1075`, `CopLogicArrest:198` and
+-- `CivilianLogicSurrender:344`.
+--
+-- Vanilla's `my_data.attention_unit` mirror must not be read for this: it is an
+-- untyped union of a Vector3 and an enemy `u_key`, and a `u_key` is an opaque
+-- Idstring userdata with no `__index`, so `attention_unit.type_name` raises
+-- "attempt to index local 'attention_unit' (a userdata value)" instead of
+-- answering the question (`dev/reports/watch-settle-attention-unit-type-crash.md`,
+-- taser crash 2026-11-05). The mirror is also behind the engine: the travel
+-- logic sets an attention position without updating it
+-- (`CopLogicTravel:1280/1309`), so every sample this helper keeps is one the
+-- cop's real aim also kept.
+--
+-- `attention.pos` can alias a nav-ray or turn vector the caller mutates after
+-- handing it over, so the 20-unit band can read a moved vector. That is jitter
+-- in the measurement, never a crash: `.pos` is only ever written by
+-- `CopLogicBase._set_attention_on_pos`, with a Vector3.
+local function lies_settle_target_held(data, pos)
+	local movement = data.unit:movement()
+
+	if not movement then
 		return false
 	end
 
-	return mvec3_dis(attention_unit, pos) <= LIES_SETTLE_TARGET_DIS
+	local attention = movement:attention()
+	local aim_pos = attention and attention.pos
+
+	if not aim_pos then
+		return false
+	end
+
+	return mvec3_dis(aim_pos, pos) <= LIES_SETTLE_TARGET_DIS
 end
 
 -- Flat facing dot between the cop's forward vector and the direction to a
@@ -1382,10 +1408,10 @@ function CopLogicAttack._upd_aim(data, my_data)
 			-- doorway was legitimate: counting that facing as a settled miss
 			-- would under-report the feature. Dropped in silence.
 			settle.t = nil
-		elseif not lies_settle_target_held(my_data.attention_unit, settle.pos) then
-			-- The unit aims at something else now (another position, or an enemy:
-			-- `attention_unit` then holds a `u_key`), so its facing says nothing
-			-- about the doorway this sample was stashed for.
+		elseif not lies_settle_target_held(data, settle.pos) then
+			-- The unit aims at something else now (another position, or an enemy,
+			-- i.e. no `pos` in the engine's aim record), so its facing says
+			-- nothing about the doorway this sample was stashed for.
 			settle.t = nil
 		elseif data.t >= settle.t then
 			local dot = lies_flat_dot(data, settle.pos)

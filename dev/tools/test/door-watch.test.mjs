@@ -738,7 +738,7 @@ test('a settled sample is dropped silently when it is stale, the target is visib
   const block = settleBlock(aimBody());
   const staleAt = block.indexOf('if settle.logic ~= settle_logic or age < 0 or age > 2 then');
   const visibleAt = block.indexOf('elseif focus_enemy and (focus_enemy.verified or focus_enemy.nearly_visible) then');
-  const movedAt = block.indexOf('elseif not lies_settle_target_held(my_data.attention_unit, settle.pos) then');
+  const movedAt = block.indexOf('elseif not lies_settle_target_held(data, settle.pos) then');
   const fireAt = block.indexOf('elseif data.t >= settle.t then');
 
   assert.notEqual(staleAt, -1, 'the stale/logic-change drop is missing');
@@ -768,23 +768,27 @@ test('a settled sample is dropped silently when it is stale, the target is visib
   }
 });
 
-test('the target-moved drop compares the adopted position with the live aim target', () => {
+test('the target-moved drop reads the engine aim record, never the attention_unit union', () => {
   const source = attackSource();
-  const body = sliceFunction(source, 'local function lies_settle_target_held(attention_unit, pos)');
+  const body = sliceFunction(source, 'local function lies_settle_target_held(data, pos)');
 
   // 20 units: a jitter band for the same doorway (the stashed position is the
   // doorway's, not the cop's, so a re-adoption reproduces it exactly) and far
   // below the distance that separates two doorways.
   assert.match(source, /local LIES_SETTLE_TARGET_DIS = 20/);
-  // `attention_unit` is a Vector3 while the cop aims at a position and a `u_key`
-  // while it aims at an enemy: anything that is not a Vector3 means the target
-  // moved on.
-  assert.match(
-    body,
-    /if type\(attention_unit\) ~= "userdata" or attention_unit\.type_name ~= "Vector3" then\s*\r?\n\s*return false\s*\r?\n\s*end/
-  );
-  assert.match(body, /return mvec3_dis\(attention_unit, pos\) <= LIES_SETTLE_TARGET_DIS/);
-  assert.equal((body.match(/return/g) || []).length, 2);
+  // `CopMovement:attention()` returns the aim target as a typed table - `pos`
+  // is a Vector3, `unit`/`u_key` are separate fields. `my_data.attention_unit`
+  // is an untyped union of a Vector3 and an enemy `u_key`, and a `u_key` is an
+  // opaque Idstring userdata with no `__index`, so a field read on it raises:
+  // that was the 2026-11-05 taser crash
+  // (dev/reports/watch-settle-attention-unit-type-crash.md).
+  assert.match(body, /local attention = movement:attention\(\)/);
+  assert.match(body, /local aim_pos = attention and attention\.pos/);
+  assert.doesNotMatch(body, /attention_unit/);
+  assert.doesNotMatch(source, /attention_unit\s*\./, 'no field may be read off the attention_unit union');
+  assert.doesNotMatch(source, /type_name/);
+  assert.match(body, /return mvec3_dis\(aim_pos, pos\) <= LIES_SETTLE_TARGET_DIS/);
+  assert.equal((body.match(/return/g) || []).length, 3);
 });
 
 test('the settled sample survives an unknown facing as a count with no dot', () => {
