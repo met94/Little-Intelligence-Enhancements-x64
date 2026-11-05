@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-03T12:29:53.678Z
+Generated: 2026-11-05T14:04:35.201Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -641,7 +641,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `lies_door_watch_first` | 23 | 0 | 0 |  |
 | [ ] | audit | — | `lies_enemy_tracker` | 22 | 0 | 0 |  |
 | [ ] | audit | — | `lies_flat_dot` | 24 | 0 | 0 |  |
-| [ ] | audit | — | `lies_settle_target_held` | 7 | 0 | 0 |  |
+| [ ] | audit | — | `lies_settle_target_held` | 16 | 0 | 0 |  |
 | [ ] | audit | — | `lies_trace_window` | 5 | 0 | 0 |  |
 | [ ] | audit | — | `lies_upd_expected_pos` | 236 | 0 | 0 |  |
 | [ ] | audit | — | `lies_watch_aim_trace` | 79 | 0 | 0 |  |
@@ -738,10 +738,10 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | keep (dev/reports/tank-taser-reverify.md) | `TaserLogicAttack._upd_enemy_detection` | 81 | 74 | 74 |  |
 | [ ] | audit | — | `TaserLogicAttack._chk_wants_to_take_cover` | 37 | 0 | 0 |  |
 | [ ] | keep | — | `TaserLogicAttack._chk_reaction_to_attention_object` | 24 | 21 | 21 |  |
-| [ ] | keep | — | `TaserLogicAttack._upd_aim` | 90 | 141 | 141 |  |
+| [ ] | keep | — | `TaserLogicAttack._upd_aim` | 88 | 141 | 141 |  |
 | [ ] | keep | — | `TaserLogicAttack.action_complete_clbk` | 103 | 39 | 39 |  |
 | [ ] | keep | — | `TaserLogicAttack.enter` | 51 | 52 | 52 |  |
-| [ ] | keep | — | `TaserLogicAttack.queued_update` | 83 | 57 | 57 |  |
+| [ ] | keep | — | `TaserLogicAttack.queued_update` | 85 | 57 | 57 |  |
 
 ## lua/coplogics/specials/spooc/spooclogicattack.lua
 
@@ -770,7 +770,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `LIESBossLogicAttack._chk_use_throwable` | 119 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._confirm_retreat_position_visless` | 14 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._pathing_complete_clbk` | 11 | 0 | 0 |  |
-| [ ] | audit | — | `LIESBossLogicAttack._upd_aim` | 230 | 0 | 0 |  |
+| [ ] | audit | — | `LIESBossLogicAttack._upd_aim` | 234 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._upd_combat_movement` | 208 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._upd_enemy_detection` | 43 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack.action_complete_clbk` | 55 | 0 | 0 |  |

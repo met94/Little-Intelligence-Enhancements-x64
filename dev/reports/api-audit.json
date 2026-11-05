@@ -985,7 +985,7 @@
     },
     {
       "file": "lua/coplogics/boss/bosslogicattack.lua",
-      "line": 950,
+      "line": 954,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1033,7 +1033,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1855,
+      "line": 1881,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1041,7 +1041,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1911,
+      "line": 1937,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1049,7 +1049,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1915,
+      "line": 1941,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1057,7 +1057,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 3410,
+      "line": 3436,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",
@@ -1289,7 +1289,7 @@
     },
     {
       "file": "lua/coplogics/specials/taserlogicattack.lua",
-      "line": 111,
+      "line": 113,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",
@@ -1297,7 +1297,7 @@
     },
     {
       "file": "lua/coplogics/specials/taserlogicattack.lua",
-      "line": 133,
+      "line": 135,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",

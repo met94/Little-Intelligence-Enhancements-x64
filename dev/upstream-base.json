@@ -7,7 +7,7 @@
   "baseCommit": "4215a39acfb9dc858fa469a675accb62381757bc",
   "baseDate": "2026-06-06",
   "baseSubject": "8.57",
-  "patch": 30,
+  "patch": 31,
   "rebaseLog": [
     {
       "baseVersion": "8.57",
