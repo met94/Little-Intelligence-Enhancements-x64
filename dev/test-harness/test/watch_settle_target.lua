@@ -11,6 +11,12 @@
 -- and took the game down. The fix reads the typed aim record the engine keeps
 -- (CopMovement:attention(): `pos` is a Vector3, a unit target has none).
 --
+-- Coverage: against a pre-fix build this file fails at the signature check below
+-- (the old helper took `attention_unit`), which is the gate. The old expression
+-- itself is named by the static pins in dev/tools/test/door-watch.test.mjs and
+-- dev/tools/test/userdata-shape.test.mjs; this file covers the shipped body's
+-- behaviour from there on.
+--
 -- Run from the repo root:
 --   tools\luajit\luajit.exe dev/test-harness/test/watch_settle_target.lua
 -- Optional first argument: another copy of the file, for reproducing a
@@ -30,7 +36,9 @@ local source = read_file(SOURCE)
 source = source:gsub('\r\n', '\n')
 
 -- 1. The shipped 20-unit band and the helper body, sliced out of the real file.
-assert(source:find('local LIES_SETTLE_TARGET_DIS = 20', 1, true), 'the 20-unit band is missing or changed')
+local dis_line = source:match('\nlocal LIES_SETTLE_TARGET_DIS = %d+\n')
+assert(dis_line, 'the 20-unit band is missing or changed')
+dis_line = dis_line:gsub('^\n', '')
 
 local header = '\nlocal function lies_settle_target_held(data, pos)'
 local start = source:find(header, 1, true)
@@ -39,7 +47,10 @@ assert(start, 'lies_settle_target_held(data, pos) is missing from ' .. SOURCE)
 local _, stop = source:find('\nend\n', start + 1, true)
 assert(stop, 'lies_settle_target_held is not terminated')
 
-local body = source:sub(start + 1, stop + #'\nend')
+-- `stop` is the trailing newline of the pattern, so the slice ends there; do not
+-- add the pattern length back or the body swallows the next line.
+local body = source:sub(start + 1, stop)
+assert(body:sub(-4) == 'end\n', 'the helper slice must end on its own `end`')
 
 -- 2. The body must not ask the union's type again, and must ask the engine.
 assert(not body:find('attention_unit', 1, true), 'the helper must not touch the attention_unit union')
@@ -48,19 +59,13 @@ assert(not body:find('type(', 1, true), 'the helper must not type-sniff at all')
 assert(body:find('movement:attention()', 1, true), 'the helper must read CopMovement:attention()')
 assert(body:find('attention.pos', 1, true), 'the helper must read the typed `pos` field')
 
--- 3. Load the shipped body with the two upvalues it needs.
+-- 3. Load the shipped body with the two upvalues it needs; the band comes from
+--    the shipped line, not a copy of its value.
 local mvec3_dis = function(a, b)
   return math.sqrt((a.x - b.x) ^ 2 + (a.y - b.y) ^ 2 + (a.z - b.z) ^ 2)
 end
 
-local chunk = assert(loadstring([[
-local LIES_SETTLE_TARGET_DIS = 20
-local mvec3_dis = ...
-
-]] .. body .. [[
-
-return lies_settle_target_held
-]]))
+local chunk = assert(loadstring(dis_line .. 'local mvec3_dis = ...\n\n' .. body .. '\nreturn lies_settle_target_held\n'))
 
 local held = chunk(mvec3_dis)
 
@@ -105,6 +110,7 @@ assert(held(data_with_attention({ unit = {} }), vec3(0, 0, 0)) == false, 'a unit
 -- 8. A live position is measured against the stashed one with the 20-unit band.
 assert(held(data_with_attention({ pos = vec3(0, 0, 0) }), vec3(5, 0, 0)) == true, '5 units must hold')
 assert(held(data_with_attention({ pos = vec3(0, 0, 0) }), vec3(20, 0, 0)) == true, 'the band edge (20) must hold')
+assert(held(data_with_attention({ pos = vec3(0, 0, 0) }), vec3(20.5, 0, 0)) == false, 'the band is 20, not more')
 assert(held(data_with_attention({ pos = vec3(0, 0, 0) }), vec3(25, 0, 0)) == false, '25 units must drop')
 
 -- 9. A unit without movement cannot answer: dropped, not raised.

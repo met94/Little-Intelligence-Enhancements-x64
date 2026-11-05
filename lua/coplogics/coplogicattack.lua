@@ -1190,9 +1190,10 @@ local LIES_SETTLE_TARGET_DIS = 20
 -- Vector3, `unit`/`u_key` are separate fields, and no target at all is nil - so
 -- reading `pos` answers the question exactly. `CopMovement:attention()` returns
 -- the table the aim was last told to hold, by reference and without allocating,
--- and the same getter is already used this way in `CopLogicIdle:1007`,
--- `CopLogicTravel:1075`, `CopLogicArrest:198` and
--- `CivilianLogicSurrender:344`.
+-- and the same getter is already used this way in
+-- `lua/coplogics/coplogicidle.lua:1007`, `lua/coplogics/coplogictravel.lua:1075`,
+-- `lua/coplogics/coplogicarrest.lua:198` and
+-- `lua/civlogics/civilianlogicsurrender.lua:344` (mod line numbers, not game).
 --
 -- Vanilla's `my_data.attention_unit` mirror must not be read for this: it is an
 -- untyped union of a Vector3 and an enemy `u_key`, and a `u_key` is an opaque
@@ -1206,8 +1207,9 @@ local LIES_SETTLE_TARGET_DIS = 20
 --
 -- `attention.pos` can alias a nav-ray or turn vector the caller mutates after
 -- handing it over, so the 20-unit band can read a moved vector. That is jitter
--- in the measurement, never a crash: `.pos` is only ever written by
--- `CopLogicBase._set_attention_on_pos`, with a Vector3.
+-- in the measurement, never a crash: the three writers of that table -
+-- `CopLogicBase._set_attention_on_pos`, `CopMovement:synch_attention` (network)
+-- and `CopMovement:load` (save restore) - all store a Vector3.
 local function lies_settle_target_held(data, pos)
 	local movement = data.unit:movement()
 

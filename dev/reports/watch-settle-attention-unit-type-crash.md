@@ -68,15 +68,20 @@ through `%s` as the default userdata string, e.g.
 `[ITER-TEST] diag cop key=userdata: 0x0000187c id=2321` - no `__tostring`, and
 the same shape reproduces locally with `newproxy(false)`.
 
-**Why it took three days and a taser.** The sample is dropped before the target
-check in two cases: when it is stale or the logic changed, and when the target
-is `verified`/`nearly_visible` (`coplogicattack.lua:1380`). The `u_key` is left
-behind by exactly that visible-target pass. The crash therefore needs the *next*
-aim pass in which the target is invisible again and the sample is still pending
-(`data.t < settle.t + 2`). The taser reaches `_upd_aim` from its own
-`_upd_aim` (`:261`) and its detection update (`:343`), and its focus moves while
-it is tasing. Changelog 8.57.30 recorded that the settled feature had **zero**
-in-game samples: the first sample it ever took was also its first crash.
+**Why it took three days and a taser.** The settle block sits at the head of
+`CopLogicAttack._upd_aim` and the aim target is written at the end of the same
+pass, so a key written by this function can never coexist with a pending sample:
+the pass that writes it clears the sample through the visible-target arm first
+(`coplogicattack.lua:1380`). The key that does coexist comes from a pass that
+**skips the attack aim entirely** - the taser's tase branch
+(`taserlogicattack.lua:201-204`) sets `my_data.attention_unit = focus_enemy.u_key`
+and the same call later takes the `tase` branch instead of calling
+`CopLogicAttack._upd_aim` (`:251/261`). A later pass that does reach the attack
+aim - the next non-tase pass, or `_upd_enemy_detection`'s `_upd_aim` call at
+`:343` - then runs the sample's target check with the stale key still in the
+mirror, and within the 2 s window (`data.t < settle.t + 2`). Changelog 8.57.30
+recorded that the settled feature had **zero** in-game samples: the first sample
+it ever took was also its first crash.
 
 ## 3. Why `pcall` was rejected
 
@@ -129,20 +134,24 @@ Call site: `elseif not lies_settle_target_held(data, settle.pos) then`.
   shrink, and every kept sample is one the cop's real aim also kept.
 - **Known noise:** `attention.pos` can alias a nav-ray or turn vector the caller
   mutates afterwards (travel 1301-1309, idle 819-827), so the 20-unit band can
-  measure a moved vector. That is jitter in the measurement, never a crash -
-  `.pos` is only ever written by `_set_attention_on_pos`.
+  measure a moved vector. That is jitter in the measurement, never a crash: the
+  three writers of that table - `CopLogicBase._set_attention_on_pos`,
+  `CopMovement:synch_attention` (network, `unitnetworkhandler.lua:1194-1202`) and
+  `CopMovement:load` (save restore, `copmovement.lua:2850`) - all store a Vector3.
 
 ### Companion hardening (same class, other aim sinks)
 
-Verified against the write order: none of these was reachable today, but each
-relied on an invariant that one edit could break, and each fed `mvec3_dir`
-through `_chk_request_action_turn_to_enemy` (`coplogicattack.lua:1972-1977`).
+Reviewed against the write order: none was observed crashing in a live log. One
+is dead code, one is safe by a paired write, and one can still be handed a stale
+key in a path that already crashed on it - so this is a class clean-up, not a
+second crash fix. Each fed `mvec3_dir` through
+`_chk_request_action_turn_to_enemy` (`coplogicattack.lua:2001`).
 
-| site | old expression | why it was safe only by path | now |
+| site | old expression | state before | now |
 | --- | --- | --- | --- |
-| `taserlogicattack.lua:99-108` | `enemy_pos = my_data.attention_unit` when it `~= focus_enemy.u_key` | `queued_update` runs during a tase, and `_upd_enemy_detection` early-returns at `:311` while the tase holds, so the key matches in practice | `attention.pos or focus_enemy.m_pos` |
-| `taserlogicattack.lua:240-249` | same | `:201-204` writes the current key earlier in the same branch | same |
-| `bosslogicattack.lua:433` | `... or my_data.attention_unit` | the look-pos branch at `:413-416` overwrites the union with a copy in the same pass | `attention.pos` |
+| `taserlogicattack.lua:99-108` | `enemy_pos = my_data.attention_unit` when it `~= focus_enemy.u_key` | can hold a previous focus's `u_key` when the attack aim was skipped (a re-focus below `REACT_AIM` never enters the `if aim or shoot` block); that input crashed, it did not mis-turn | `attention.pos or focus_enemy.m_pos` |
+| `taserlogicattack.lua:240-249` | same | safe: `:201-204` writes the current focus's key earlier in the same branch, so the compare cannot select a key | same |
+| `bosslogicattack.lua:433` | `... or my_data.attention_unit` | dead code: `LIESBossLogicAttack._upd_aim` returns the ported body at `:251`; the custom block is unreachable until that return is removed | `attention.pos` |
 
 The outer `my_data.attention_unit` truthiness gates stay as they were: a bare
 existence test cannot raise, and they preserve "no target, no turn".

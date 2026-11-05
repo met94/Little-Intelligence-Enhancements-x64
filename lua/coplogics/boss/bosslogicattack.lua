@@ -429,10 +429,13 @@ function LIESBossLogicAttack._upd_aim(data, my_data)
 		end
 		
 		if data.logic.chk_should_turn(data, my_data) then
-			-- Not `my_data.attention_unit`: that union can hold the enemy `u_key`
-			-- written at 408 this pass, and a key reaching `mvec3_dir` raises
-			-- (`dev/reports/watch-settle-attention-unit-type-crash.md`). The
-			-- engine record holds the same position the look-pos branch stored.
+			-- Currently unreachable: LIESBossLogicAttack._upd_aim returns the
+			-- ported body at 251, so this custom block is dead. It is still made
+			-- safe the same way as the live aim sites, because `my_data` can hold
+			-- the enemy `u_key` written at 408 and a key reaching `mvec3_dir`
+			-- raises (`dev/reports/watch-settle-attention-unit-type-crash.md`).
+			-- The engine record holds the same position the look-pos branch
+			-- stored, so behaviour is unchanged if the body is ever restored.
 			local attention = data.unit:movement():attention()
 			local focus_pos = (focus.verified or focus.nearly_visible) and focus.m_pos or (attention and attention.pos)
 			

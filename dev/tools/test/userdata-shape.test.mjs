@@ -46,7 +46,9 @@ const RULES = [
   },
   {
     id: 'attention_unit taken as a value',
-    pattern: /(?:=|\bor\b)\s*my_data\.attention_unit\b/,
+    // `==`/`~=` comparisons are the safe idiom and must not be caught by the
+    // `=` arm, hence the lookbehind.
+    pattern: /(?<![=~<>])=[ \t]*my_data\.attention_unit\b|\bor\s+my_data\.attention_unit\b/,
     why: 'a Vector3 or a u_key cannot be handed on; ask the engine for the typed field',
   },
 ];
@@ -56,17 +58,25 @@ function stripLuaComments(source) {
   let i = 0;
 
   while (i < source.length) {
-    if (source.startsWith('--[[', i)) {
-      const end = source.indexOf(']]', i + 4);
-      if (end === -1) break;
-      out += source.slice(i, end + 2).replace(/[^\n]/g, ' ');
-      i = end + 2;
-      continue;
-    }
-
     if (source.startsWith('--', i)) {
+      // `--[=[ ... ]=]` and its nested levels, not just `--[[`.
+      const long = /^--\[(=*)\[/.exec(source.slice(i, i + 64));
+
+      if (long) {
+        const closer = `]${long[1]}]`;
+        const end = source.indexOf(closer, i + long[0].length);
+        if (end === -1) throw new Error(`unterminated long comment at offset ${i}`);
+        out += source.slice(i, end + closer.length).replace(/[^\n]/g, ' ');
+        i = end + closer.length;
+        continue;
+      }
+
       const eol = source.indexOf('\n', i);
-      if (eol === -1) break;
+      if (eol === -1) {
+        out += source.slice(i).replace(/[^\n]/g, ' ');
+        break;
+      }
+
       out += source.slice(i, eol).replace(/[^\n]/g, ' ');
       i = eol;
       continue;

@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-05T14:04:35.201Z
+Generated: 2026-11-05T14:30:46.307Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -770,7 +770,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `LIESBossLogicAttack._chk_use_throwable` | 119 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._confirm_retreat_position_visless` | 14 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._pathing_complete_clbk` | 11 | 0 | 0 |  |
-| [ ] | audit | — | `LIESBossLogicAttack._upd_aim` | 234 | 0 | 0 |  |
+| [ ] | audit | — | `LIESBossLogicAttack._upd_aim` | 237 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._upd_combat_movement` | 208 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._upd_enemy_detection` | 43 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack.action_complete_clbk` | 55 | 0 | 0 |  |
