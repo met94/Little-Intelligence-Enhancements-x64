@@ -1,0 +1,128 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Guards the mistake class behind the 2026-11-05 taser crash
+// (dev/reports/watch-settle-attention-unit-type-crash.md): a value that may be
+// an opaque engine userdata - an Idstring `u_key`, `unit:key()`, a nav link - is
+// neither a table nor a vector. `type()` answers "userdata" for every one of
+// them, and an Idstring has no `__index`, so a field read raises
+// "attempt to index ... (a userdata value)" instead of returning nil.
+//
+// Rules, over comment-stripped lua/**/*.lua:
+//   1. no `.type_name` read - the field that crashed;
+//   2. `type(x) == "userdata"` is not accepted as proof of a Vector3 or a table;
+//   3. no field is read off `attention_unit`, the untyped union in the aim path;
+//   4. the union is never taken as a value (`x = my_data.attention_unit`,
+//      `... or my_data.attention_unit`); it is only compared, copied into or
+//      cleared. A consumer that needs the aim target asks the engine:
+//      `data.unit:movement():attention().pos`.
+//
+// A site that genuinely needs a shape probe belongs in ALLOWED with its reason
+// written next to it. The list is empty on purpose: LIES needs no probe.
+
+const root = fileURLToPath(new URL('../../../', import.meta.url));
+const LUA_ROOT = path.join(root, 'lua');
+
+const ALLOWED = new Map();
+
+const RULES = [
+  {
+    id: 'type_name read',
+    pattern: /\.type_name\b/,
+    why: 'an opaque userdata has no __index; read a field of a shape you know instead',
+  },
+  {
+    id: 'type() used as a shape proof',
+    pattern: /type\s*\([^()]*\)\s*[=~]=\s*['"]userdata['"]/,
+    why: 'type() answers "userdata" for a Vector3, an Idstring, a unit and a nav link alike',
+  },
+  {
+    id: 'attention_unit field read',
+    pattern: /attention_unit\s*\./,
+    why: 'the union holds a Vector3 or a u_key; use data.unit:movement():attention().pos',
+  },
+  {
+    id: 'attention_unit taken as a value',
+    pattern: /(?:=|\bor\b)\s*my_data\.attention_unit\b/,
+    why: 'a Vector3 or a u_key cannot be handed on; ask the engine for the typed field',
+  },
+];
+
+function stripLuaComments(source) {
+  let out = '';
+  let i = 0;
+
+  while (i < source.length) {
+    if (source.startsWith('--[[', i)) {
+      const end = source.indexOf(']]', i + 4);
+      if (end === -1) break;
+      out += source.slice(i, end + 2).replace(/[^\n]/g, ' ');
+      i = end + 2;
+      continue;
+    }
+
+    if (source.startsWith('--', i)) {
+      const eol = source.indexOf('\n', i);
+      if (eol === -1) break;
+      out += source.slice(i, eol).replace(/[^\n]/g, ' ');
+      i = eol;
+      continue;
+    }
+
+    out += source[i];
+    i++;
+  }
+
+  return out;
+}
+
+function walk(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walk(full, out);
+    else if (entry.name.endsWith('.lua')) out.push(full);
+  }
+
+  return out;
+}
+
+const luaFiles = () => walk(LUA_ROOT).map((file) => ({
+  rel: path.relative(root, file).replaceAll('\\', '/'),
+  code: stripLuaComments(fs.readFileSync(file, 'utf8')),
+}));
+
+test('no code treats a possibly-opaque userdata as a table or a Vector3', () => {
+  const findings = [];
+
+  for (const { rel, code } of luaFiles()) {
+    code.split(/\r?\n/).forEach((line, index) => {
+      for (const rule of RULES) {
+        if (!rule.pattern.test(line)) continue;
+
+        const key = `${rel}:${index + 1}`;
+        if (ALLOWED.has(key)) continue;
+
+        findings.push(`${key}: ${rule.id}: ${line.trim()} (${rule.why})`);
+      }
+    });
+  }
+
+  assert.deepEqual(findings, [], `elidable userdata shape assumptions:\n${findings.join('\n')}`);
+});
+
+test('the aim target comes from the engine record at every former union sink', () => {
+  const byFile = new Map(luaFiles().map((entry) => [entry.rel, entry.code]));
+
+  const attack = byFile.get('lua/coplogics/coplogicattack.lua');
+  assert.match(attack, /local attention = movement:attention\(\)/);
+  assert.match(attack, /return mvec3_dis\(aim_pos, pos\) <= LIES_SETTLE_TARGET_DIS/);
+
+  const taser = byFile.get('lua/coplogics/specials/taserlogicattack.lua');
+  assert.equal((taser.match(/movement\(\):attention\(\)/g) || []).length, 2, 'both taser turn sites');
+
+  const boss = byFile.get('lua/coplogics/boss/bosslogicattack.lua');
+  assert.match(boss, /movement\(\):attention\(\)/);
+});
