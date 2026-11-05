@@ -429,8 +429,12 @@ function LIESBossLogicAttack._upd_aim(data, my_data)
 		end
 		
 		if data.logic.chk_should_turn(data, my_data) then
-			local focus_pos = nil
-			focus_pos = (focus.verified or focus.nearly_visible) and focus.m_pos or my_data.attention_unit
+			-- Not `my_data.attention_unit`: that union can hold the enemy `u_key`
+			-- written at 408 this pass, and a key reaching `mvec3_dir` raises
+			-- (`dev/reports/watch-settle-attention-unit-type-crash.md`). The
+			-- engine record holds the same position the look-pos branch stored.
+			local attention = data.unit:movement():attention()
+			local focus_pos = (focus.verified or focus.nearly_visible) and focus.m_pos or (attention and attention.pos)
 			
 			if focus_pos then
 				CopLogicAttack._chk_request_action_turn_to_enemy(data, my_data, data.m_pos, focus_pos)

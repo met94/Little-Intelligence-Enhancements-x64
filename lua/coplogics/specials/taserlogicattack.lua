@@ -97,13 +97,15 @@ function TaserLogicAttack.queued_update(data)
 
 	if my_data.tasing_action then
 		if CopLogicAttack.chk_should_turn(data, my_data) and my_data.attention_unit then
-			local enemy_pos
-			
-			if my_data.attention_unit ~= focus_enemy.u_key then
-				enemy_pos = my_data.attention_unit
-			else
-				enemy_pos = focus_enemy.m_pos
-			end
+			-- The turn target comes from the engine's typed aim record, not from
+			-- `my_data.attention_unit`: that field is an untyped union of a
+			-- Vector3 and an enemy `u_key`, and a `u_key` reaching
+			-- `_chk_request_action_turn_to_enemy` ends in `mvec3_dir` and raises
+			-- (`dev/reports/watch-settle-attention-unit-type-crash.md`). A unit
+			-- attention has no `pos`, so the focus's live position is the
+			-- fallback the old else-branch took.
+			local attention = data.unit:movement():attention()
+			local enemy_pos = attention and attention.pos or focus_enemy.m_pos
 
 			CopLogicAttack._chk_request_action_turn_to_enemy(data, my_data, data.m_pos, enemy_pos)
 		end
@@ -238,13 +240,11 @@ function TaserLogicAttack._upd_aim(data, my_data, reaction)
 			end
 			
 			if CopLogicAttack.chk_should_turn(data, my_data) and my_data.attention_unit then
-				local enemy_pos
-				
-				if my_data.attention_unit ~= focus_enemy.u_key then
-					enemy_pos = my_data.attention_unit
-				else
-					enemy_pos = focus_enemy.m_pos
-				end
+				-- Engine aim record, not the `my_data.attention_unit` union: a
+				-- stale enemy `u_key` there is an opaque Idstring and `mvec3_dir`
+				-- raises on it (`dev/reports/watch-settle-attention-unit-type-crash.md`).
+				local attention = data.unit:movement():attention()
+				local enemy_pos = attention and attention.pos or focus_enemy.m_pos
 
 				CopLogicAttack._chk_request_action_turn_to_enemy(data, my_data, data.m_pos, enemy_pos)
 			end
