@@ -582,6 +582,10 @@ if RequiredScript == "lib/managers/menumanager" then
 			-- reaction-level fire delay: held frames vs allowed frames
 			react_hold = d.react_hold or 0,
 			react_allow = d.react_allow or 0,
+			-- Timer (re)arms, and the held passes that actually cleared a fire
+			-- decision (`shoot`), as opposed to idle aim passes.
+			react_arm = d.react_arm or 0,
+			react_blocked = d.react_blocked or 0,
 			react_level = tonumber(self.settings.enemy_reaction_level) or 1
 		}
 

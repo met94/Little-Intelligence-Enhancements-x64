@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-05T14:39:08.328Z
+Generated: 2026-11-06T07:19:30.740Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -66,7 +66,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | — | `LIES.Trace` | 81 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Watch` | 7 | 0 | 0 |  |
-| [ ] | audit | — | `LIES.WatchDigest` | 156 | 0 | 0 |  |
+| [ ] | audit | — | `LIES.WatchDigest` | 160 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.WatchReset` | 17 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.WatchTick` | 113 | 0 | 0 |  |
@@ -625,7 +625,7 @@ No function definitions (hook/overlay file).
 
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | done (bbb30fa) | `CopLogicAttack._upd_aim` | 474 | 195 | 192 |  |
+| [ ] | **PORT** | done (bbb30fa) | `CopLogicAttack._upd_aim` | 487 | 195 | 192 |  |
 | [ ] | **PORT** | done (f0370d4) | `CopLogicAttack.action_complete_clbk` | 101 | 47 | 47 |  |
 | [ ] | **PORT** | done (dev/reports/port-decisions.md) | `CopLogicAttack.is_available_for_assignment` | 60 | 43 | 43 |  |
 | [ ] | audit | — | `CopLogicAttack._check_needs_reload` | 48 | 0 | 0 |  |

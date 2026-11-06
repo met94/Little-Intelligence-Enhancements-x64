@@ -1028,23 +1028,46 @@ export function analyzeLog(text, {
 
   // --- reaction level -----------------------------------------------------
   const holds = counter(counters, 'react_hold');
+  const allows = counter(counters, 'react_allow');
+  const arms = counter(counters, 'react_arm');
+  const blocked = counter(counters, 'react_blocked');
+  const passShare = holds + allows;
+  const share = passShare > 0 ? holds / passShare : null;
+  const shareText = share === null ? 'hold share n/a' : `hold share ${(share * 100).toFixed(1)}%`;
+  // Logs written before the 2026-11-06 instrumentation count holds/allows only.
+  // `react_blocked` is what proves a shot was lost rather than an idle aim pass
+  // being held, so a legacy log keeps the weaker shape instead of failing on a
+  // missing field.
+  const instrumented = parsed.digests.some(digest => 'react_blocked' in digest.fields);
+  const blockedText = instrumented
+    ? `react_arm=${arms}, react_blocked=${blocked}`
+    : 'react_arm/blocked absent (pre-instrumentation log)';
+  const overheld = share !== null && share > 0.8;
 
   if (reactLevel === null || !parsed.digests.length) {
     claim('reaction', 'reaction level', 'INFO', `react_level unknown, react_hold=${holds}`);
   } else if (reactLevel < 3) {
+    const result = !holds ? 'FAIL' : instrumented && !blocked ? 'FAIL' : 'PASS';
+
     claim(
       'reaction',
       'reaction level',
-      holds > 0 ? 'PASS' : 'FAIL',
-      `react_level=${reactLevel} (<3), react_hold=${holds}, react_allow=${counter(counters, 'react_allow')}` +
-        (holds > 0 ? '' : ': no hold counted; check that cops acquired targets during the run')
+      result,
+      `react_level=${reactLevel} (<3), react_hold=${holds}, react_allow=${allows}, ${blockedText}, ${shareText}` +
+        (!holds ? ': no hold counted; check that cops acquired targets during the run' : '') +
+        (instrumented && holds && !blocked
+          ? ': held passes but never suppressed a fire decision; the delay is not pacing any shots'
+          : '') +
+        (result === 'PASS' && overheld
+          ? ': WARN hold share above 80% - the timer may be re-arming on stale verifications'
+          : '')
     );
   } else {
     claim(
       'reaction',
       'reaction level',
       holds === 0 ? 'PASS' : 'FAIL',
-      `react_level=${reactLevel} (>=3), react_hold=${holds}, react_allow=${counter(counters, 'react_allow')}`
+      `react_level=${reactLevel} (>=3), react_hold=${holds}, react_allow=${allows}, ${blockedText}, ${shareText}`
     );
   }
 

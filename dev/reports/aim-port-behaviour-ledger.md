@@ -565,6 +565,21 @@ instance is unrelated (it gates `_chk_play_charge_spooc_sound`,
 `lua/coplogics/specials/spooc/spooclogicattack.lua:340/372`). Needs in-game
 verification at each of the three menu values, as noted above.
 
+**In-game reading and follow-up (2026-11-06).** The first test play at SLOW
+(`dev/reports/door-watch-port.md` §10, 8.57.23) returned
+`react_hold=42043` vs `react_allow=2713`: 94 % of aim passes sat inside the hold
+window. The re-arm rule is the cause — `data.t - verified_t > 2` re-stamps the
+timer on every pass where the target's last verification is stale, including
+while it cannot be seen at all, so an unverified target is held continuously and
+every peek pays the window again. The single-arm reading ("hold fire for `2 / level`
+seconds after verification") therefore understates the effect. The 2026-11-06
+instrumentation (same `8.57.31` tree) keeps the behaviour and adds `react_arm` (one count per timer arm) and `react_blocked` (held
+passes that cleared a real `shoot`) so a play can show whether the hold eats shots
+or only idle aim passes; the reader prints the hold share and warns above 80 %.
+A NORMAL-vs-ULTRA-VIOLENCE A/B on the same heist and difficulty is the next step,
+and a one-arm rework is the fallback if `react_blocked` says real shots are being
+lost in bulk.
+
 Player POV: "Reaction Level" now changes regular SWAT and crew-AI first-shot timing
 as well as the boss pacing — SLOW holds fire for roughly 2 s after verification,
 NORMAL about 1 s, ULTRA-VIOLENCE not at all — while aiming and turning are

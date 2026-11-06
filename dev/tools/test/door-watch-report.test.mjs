@@ -594,6 +594,46 @@ test('reaction level is judged on both sides of the 3 boundary', () => {
   assert.equal(claimOf(fastHeld, 'reaction').result, 'FAIL');
 });
 
+test('reaction level separates a held shot from a held aim pass', () => {
+  const heldShot = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 1 }), digest({ react_hold: 94, react_allow: 6, react_arm: 12, react_blocked: 7 })].join('\n'),
+    { file: 'slow.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(heldShot, 'reaction').result, 'PASS');
+  assert.match(claimOf(heldShot, 'reaction').evidence, /react_arm=12, react_blocked=7/);
+  assert.match(claimOf(heldShot, 'reaction').evidence, /hold share 94\.0%/);
+  // A near-total hold is reported, not silently accepted: it is the signature
+  // of the timer re-arming on stale verifications.
+  assert.match(claimOf(heldShot, 'reaction').evidence, /WARN hold share above 80%/);
+
+  const idleAim = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 1 }), digest({ react_hold: 94, react_allow: 6, react_arm: 12, react_blocked: 0 })].join('\n'),
+    { file: 'slow.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(idleAim, 'reaction').result, 'FAIL');
+  assert.match(claimOf(idleAim, 'reaction').evidence, /never suppressed a fire decision/);
+  assert.match(claimOf(idleAim, 'reaction').evidence, /hold share 94\.0%/, 'the share stays visible on a failed claim');
+
+  const normal = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 2 }), digest({ react_hold: 10, react_allow: 90, react_arm: 4, react_blocked: 2 })].join('\n'),
+    { file: 'normal.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(normal, 'reaction').result, 'PASS');
+  assert.match(claimOf(normal, 'reaction').evidence, /hold share 10\.0%/);
+  assert.doesNotMatch(claimOf(normal, 'reaction').evidence, /WARN/);
+
+  const legacy = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 1 }), digest({ react_hold: 4 })].join('\n'),
+    { file: 'old.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(legacy, 'reaction').result, 'PASS');
+  assert.match(claimOf(legacy, 'reaction').evidence, /pre-instrumentation/);
+});
+
 test('alarms are surfaced by name, and the hard ones fail the run', () => {
   const benign = analyzeLog(
     [SETUP, header(), digest(), watch('alarm', { name: 'lies_cover_fallback_rate', rate: '0.61', fallback: 30, total: 49 })].join('\n'),

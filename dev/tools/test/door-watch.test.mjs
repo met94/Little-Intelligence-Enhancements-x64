@@ -407,6 +407,8 @@ test('the digest reports the door watch, the door list and the reaction hold', (
     'fsd_bad_shape',
     'react_hold',
     'react_allow',
+    'react_arm',
+    'react_blocked',
     'react_level',
   ]) {
     assert.match(manager, new RegExp(`\\b${field} = `), `digest field ${field} is missing`);
@@ -455,6 +457,11 @@ test('the reaction block counts held and allowed passes', () => {
 
   assert.match(block, /LIES:Count\("react_hold"\)/);
   assert.match(block, /LIES:Count\("react_allow"\)/);
+  // The arm counter sits on the re-arm branch, not on every pass.
+  assert.match(block, /focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)/);
+  // The blocked counter is narrower than `react_hold`: it only moves when the
+  // hold clears a fire decision for that pass.
+  assert.match(block, /if shoot then\s*LIES:Count\("react_blocked"\)\s*end\s*shoot = nil/);
   // The event exists but is debug-only: it was 76 % of the event channel.
   assert.match(block, /if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end/);
 

@@ -1810,6 +1810,11 @@ function CopLogicAttack._upd_aim(data, my_data)
 			if not focus_enemy.lies_react_t or not focus_enemy.verified_t or data.t - focus_enemy.verified_t > 2 then
 				focus_enemy.lies_react_t = data.t
 
+				-- One arm per (re)acquisition: a target the unit cannot verify
+				-- re-arms every pass, so arm density is the measure of how much
+				-- of a play this hold actually covers.
+				LIES:Count("react_arm")
+
 				-- The counters are the telemetry; this event is debug-only because it was 76% of the event volume.
 				if LIES.settings.debug_log then
 					LIES:Event("reaction_hold", data.unit, data, { level = level })
@@ -1819,14 +1824,22 @@ function CopLogicAttack._upd_aim(data, my_data)
 			local react_t = 2 / level
 
 			if data.t - focus_enemy.lies_react_t < react_t then
+				-- `shoot` is this pass's fire decision. `react_hold` counts every
+				-- pass in the window, including idle aim passes, so only this
+				-- counter can say a shot was actually suppressed.
+				if shoot then
+					LIES:Count("react_blocked")
+				end
+
 				shoot = nil
 				react_hold = true
 			end
 		end
 
-		-- Exactly one of the two per pass: `react_hold` when the delay swallowed
-		-- `shoot`, `react_allow` when it did not (timer elapsed, or the block is
-		-- exempt / level >= 3).
+		-- Exactly one of the two per pass: `react_hold` when the hold window
+		-- covered this pass, `react_allow` when it did not (timer elapsed, or the
+		-- block is exempt / level >= 3). `react_blocked` above is the narrower
+		-- count: only the passes where that window cleared a real `shoot`.
 		if react_hold then
 			LIES:Count("react_hold")
 		else
