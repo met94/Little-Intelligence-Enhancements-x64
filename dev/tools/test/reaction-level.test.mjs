@@ -15,6 +15,9 @@ test('the four Reaction Level values map to the four delays', () => {
   // player's selection.
   assert.match(manager, /LIES\.reaction_delays = \{ \[1\] = 2, \[2\] = 1, \[3\] = 0\.5, \[4\] = 0 \}/);
   assert.match(manager, /function LIES:ReactionDelay\(\)/);
+  // Lua treats 0 as truthy, so `or 2` does not swallow ULTRA's 0; the fallback
+  // only covers a nil or out-of-range value.
+  assert.match(manager, /return self\.reaction_delays\[value\] or 2/);
 });
 
 test('the menu lists HIGH between NORMAL and ULTRA, in value order', () => {

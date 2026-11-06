@@ -1,5 +1,9 @@
 # LIES door-watch report
 
+> Recorded on 8.57.31, before `react_delay` existed. The reader classifies these
+> digests through the legacy `react_level` path; do not read them as 8.57.32
+> value semantics.
+
 - Log: `C:\Program Files (x86)\Steam\steamapps\common\PAYDAY 2\mods\logs\2026_11_06_log.txt`
 - Session: 2 of 2 (header at line 1560)
 - Mod: `D:\Programowanie\payday\2\v2\.worktrees\LIES-watch-settle-type-crash` (8.57.31)

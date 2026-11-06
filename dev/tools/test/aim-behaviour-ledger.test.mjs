@@ -167,7 +167,10 @@ test('ledger #10: the reaction-level fire delay is restored with a working gate'
   assert.doesNotMatch(aim, /charge_aggro_level/);
   // Private timer, so it cannot stack with the shared `react_t` writes elsewhere.
   assert.match(aim, /local react_seen = focus_enemy\.verified and true or false/);
-  assert.match(aim, /if react_seen and not focus_enemy\.lies_react_seen then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)\s*if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = LIES\.settings\.enemy_reaction_level, delay = react_t \}\)\s*end\s*end\s*focus_enemy\.lies_react_seen = react_seen/);
+  assert.match(aim, /if react_seen then\s*local seen_t = focus_enemy\.lies_react_last_seen_t\s*if not focus_enemy\.lies_react_t or not seen_t or data\.t - seen_t > 2 then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)\s*if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = LIES\.settings\.enemy_reaction_level, delay = react_t \}\)\s*end\s*end\s*focus_enemy\.lies_react_last_seen_t = data\.t\s*end/);
+  // A bare rising edge is not enough: `verified` flickers on a blocked ray, so
+  // the 2 s gap is what keeps a partly covered target from re-arming constantly.
+  assert.doesNotMatch(aim, /lies_react_seen/);
   assert.match(aim, /if focus_enemy\.lies_react_t and data\.t - focus_enemy\.lies_react_t < react_t then\s*if shoot then\s*LIES:Count\("react_blocked"\)\s*end\s*shoot = nil\s*react_hold = true\s*end/);
   // The stale-verification re-arm is what made the hold continuous; it must
   // stay out (2026-11 in-game: react_arm ~= react_hold, 65-76 % held).

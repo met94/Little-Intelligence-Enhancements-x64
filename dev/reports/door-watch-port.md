@@ -472,7 +472,9 @@ worktree contains no game install, so the raw logs stay outside the repo.
 
 First in-game evidence for the restore: deployed build `8.57.23`, level `auc`,
 `dev/tools/door-watch-report.mjs` as the reader, no `--ab` control. Two plays —
-A armed, B gated — so the cost comparison is still open (§7.9).
+A armed, B gated — so the cost comparison is still open (§7.9). Value note: these
+logs predate 8.57.32, so `react_level=3` in them means ULTRA-VIOLENCE (now 4);
+HIGH (0.5 s) did not exist yet.
 
 ### Run A — armed
 

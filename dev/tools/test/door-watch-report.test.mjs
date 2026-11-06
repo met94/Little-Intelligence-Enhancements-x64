@@ -563,7 +563,7 @@ test('--ab with a control that has no digest window reports it as unusable', () 
   assert.equal(report.verdict, 'PASS');
 });
 
-test('reaction level is judged on both sides of the 3 boundary', () => {
+test('legacy logs without react_delay use the old 3 boundary', () => {
   const slow = analyzeLog([SETUP, header({ enemy_reaction_level: 1 }), digest({ react_hold: 4 })].join('\n'), {
     file: 'slow.txt',
     modVersion: VERSION
@@ -632,6 +632,15 @@ test('reaction level separates a held shot from a held aim pass', () => {
 
   assert.equal(claimOf(legacy, 'reaction').result, 'PASS');
   assert.match(claimOf(legacy, 'reaction').evidence, /pre-instrumentation/);
+
+  // A quiet window with a handful of arms cannot prove the delay is inert.
+  const quietWindow = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 3 }), digest({ react_hold: 4, react_allow: 96, react_arm: 2, react_blocked: 0, react_delay: 0.5, react_level: 3 })].join('\n'),
+    { file: 'high.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(quietWindow, 'reaction').result, 'PASS');
+  assert.match(claimOf(quietWindow, 'reaction').evidence, /only 2 arm\(s\) - too few/);
 });
 
 test('reaction level uses react_delay and falls back for old logs', () => {

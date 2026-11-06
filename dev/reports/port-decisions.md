@@ -148,7 +148,12 @@ that ledger marks RE-ADD:
   `(not data.team.id) == "criminal1"`, i.e. constant `false`, so the block is a
   re-derivation rather than a re-copy and needs in-game verification at each
   menu value. Coverfire is exempt because the hold would otherwise silence the
-  suppression fire block 7 exists for;
+  suppression fire block 7 exists for. **Superseded in 8.57.32:** the block now
+  takes the delay from `LIES:ReactionDelay()` (HIGH = 0.5 s added; HIGH took
+  value 3, ULTRA-VIOLENCE moved to 4), arms only after a >2 s gap without
+  verification instead of on every stale pass, and the digest carries
+  `react_delay`; the `level < 3` / `2 / level` form above is history, not the
+  current contract;
 - the watch position comes from `_get_expected_attention_position`, so nothing
   in `_upd_aim` reads `nav_tracker`, `_nav_segments`, `find_segment_doors` or
   `find_walls_across_pos`;

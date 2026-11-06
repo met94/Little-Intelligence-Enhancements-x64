@@ -1804,28 +1804,32 @@ function CopLogicAttack._upd_aim(data, my_data)
 		local react_hold = false
 
 		if react_t > 0 and not data.unit:in_slot(16) and not data.is_converted and not (data.team and data.team.id == "criminal1") and not (data.tactics and data.tactics.provide_coverfire_LIES) then
-			-- One arm per acquisition: a fresh `verified` flag (false -> true) is
-			-- a new engagement. The pre-2026 rule re-armed whenever
-			-- `data.t - verified_t > 2`, i.e. on every pass for any target the
-			-- unit could not see, which made the hold continuous instead of a
-			-- first-shot delay (in-game: react_arm ~= react_hold, 65-76 % of
-			-- passes held, thousands of shots cleared). `verified` is only
-			-- refreshed by the detection update, so it stays true across aim
-			-- passes while the target is in sight and this edge fires once.
+			-- One arm per engagement: re-arm only after a real gap without
+			-- verification. `verified` is re-sampled by the detection update (and
+			-- by coplogicidle's low-performance path), so it flips false whenever
+			-- the visibility ray is blocked; a rising edge alone would re-arm
+			-- ~2x/s for a partly covered target and make the hold continuous
+			-- again. A 2 s gap keeps that flicker from counting as a new
+			-- engagement, while a genuinely re-acquired target - or a new
+			-- attention object, whose fields are nil - arms once.
 			local react_seen = focus_enemy.verified and true or false
 
-			if react_seen and not focus_enemy.lies_react_seen then
-				focus_enemy.lies_react_t = data.t
+			if react_seen then
+				local seen_t = focus_enemy.lies_react_last_seen_t
 
-				LIES:Count("react_arm")
+				if not focus_enemy.lies_react_t or not seen_t or data.t - seen_t > 2 then
+					focus_enemy.lies_react_t = data.t
 
-				-- The counters are the telemetry; this event is debug-only because it was 76% of the event volume.
-				if LIES.settings.debug_log then
-					LIES:Event("reaction_hold", data.unit, data, { level = LIES.settings.enemy_reaction_level, delay = react_t })
+					LIES:Count("react_arm")
+
+					-- The counters are the telemetry; this event is debug-only because it was 76% of the event volume.
+					if LIES.settings.debug_log then
+						LIES:Event("reaction_hold", data.unit, data, { level = LIES.settings.enemy_reaction_level, delay = react_t })
+					end
 				end
-			end
 
-			focus_enemy.lies_react_seen = react_seen
+				focus_enemy.lies_react_last_seen_t = data.t
+			end
 
 			if focus_enemy.lies_react_t and data.t - focus_enemy.lies_react_t < react_t then
 				-- `shoot` is this pass's fire decision. `react_hold` counts every

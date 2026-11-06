@@ -104,15 +104,18 @@ changelog carries that note for players. The delays themselves are one table
 (`LIES.reaction_delays = { [1] = 2, [2] = 1, [3] = 0.5, [4] = 0 }`) behind
 `LIES:ReactionDelay()`; a value of `0` disables the block.
 
-**The hold arms once per acquisition.** `verified` is only refreshed by the
-detection update, so the timer starts on a false→true edge and expires after the
-delay, even if the target is no longer visible on later passes. Re-acquiring you
-after losing sight is a new edge, so the delay applies again — but only once per
-acquisition, not once per aim pass. Before the 2026-11-06 fix the timer re-armed
-on every pass whose verification was older than 2 s
-(`data.t - verified_t > 2`), which made the hold continuous: an in-game NORMAL
-run on Boiling Point read `react_arm ≈ react_hold`, 65–76 % of aim passes held
-and ~850–2 700 cleared fire decisions per minute. After the rework the same
+**The hold arms once per engagement.** A new window starts only when a verified
+target has not been verified for more than 2 s (or on a new attention object),
+and it expires after the delay even if the target becomes unverified again.
+Re-acquiring you after a real gap is a new engagement, so the delay applies
+again — but only once per engagement, not once per aim pass and not on every
+flicker. That gap matters because `verified` is re-sampled about twice a second
+by the detection update and flips false whenever the visibility ray is blocked;
+a bare rising edge would re-arm constantly for a partly covered player. Before
+the 2026-11-06 fix the timer re-armed on every pass whose verification was older
+than 2 s (`data.t - verified_t > 2`), which made the hold continuous: an in-game
+NORMAL run on Boiling Point read `react_arm ≈ react_hold`, 65–76 % of aim passes
+held and ~850–2 700 cleared fire decisions per minute. After the rework the same
 heist read 390 arms and an 11.4 % hold share. ULTRA-VIOLENCE (`delay = 0`) skips
 the block entirely and remains the closest value to vanilla pacing. Coverfire
 stays exempt.

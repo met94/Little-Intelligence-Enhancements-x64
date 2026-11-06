@@ -1059,7 +1059,10 @@ export function analyzeLog(text, {
   if (reactLevel === null || !parsed.digests.length) {
     claim('reaction', 'reaction level', 'INFO', `react_level unknown, react_hold=${holds}`);
   } else if (!delayOff) {
-    const result = !holds ? 'FAIL' : instrumented && !blocked ? 'FAIL' : 'PASS';
+    // A quiet window can hold a few passes without ever clearing a shot; that is
+    // not proof the delay is inert. Require a minimum sample before failing.
+    const tooFewArms = arms < 10;
+    const result = !holds ? 'FAIL' : instrumented && !blocked && !tooFewArms ? 'FAIL' : 'PASS';
 
     claim(
       'reaction',
@@ -1068,7 +1071,9 @@ export function analyzeLog(text, {
       `${delayText} (delay on), react_hold=${holds}, react_allow=${allows}, ${blockedText}, ${shareText}` +
         (!holds ? ': no hold counted; check that cops acquired targets during the run' : '') +
         (instrumented && holds && !blocked
-          ? ': held passes but never suppressed a fire decision; the delay is not pacing any shots'
+          ? tooFewArms
+            ? `: only ${arms} arm(s) - too few to prove a shot was cleared`
+            : ': held passes but never suppressed a fire decision; the delay is not pacing any shots'
           : '') +
         (result === 'PASS' && overheld
           ? ': WARN hold share above 80% - the timer may be re-arming on stale verifications'
