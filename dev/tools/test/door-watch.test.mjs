@@ -457,8 +457,12 @@ test('the reaction block counts held and allowed passes', () => {
 
   assert.match(block, /LIES:Count\("react_hold"\)/);
   assert.match(block, /LIES:Count\("react_allow"\)/);
-  // The arm counter sits on the re-arm branch, not on every pass.
+  // The arm counter sits on the re-acquisition edge, not on every pass.
+  assert.match(block, /local react_seen = focus_enemy\.verified and true or false/);
+  assert.match(block, /if react_seen and not focus_enemy\.lies_react_seen then/);
   assert.match(block, /focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)/);
+  assert.match(block, /focus_enemy\.lies_react_seen = react_seen/);
+  assert.doesNotMatch(block, /data\.t - focus_enemy\.verified_t > 2/);
   // The blocked counter is narrower than `react_hold`: it only moves when the
   // hold clears a fire decision for that pass.
   assert.match(block, /if shoot then\s*LIES:Count\("react_blocked"\)\s*end\s*shoot = nil/);

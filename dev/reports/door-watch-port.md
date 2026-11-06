@@ -505,7 +505,11 @@ fresh and the hold is effectively continuous; a target it can verify pays
 `2 / level` seconds again on each re-acquisition. That pre-instrumentation log
 cannot say how many of those held passes carried a real shot, which is why
 8.57.31 + the 2026-11-06 instrumentation add `react_arm` and `react_blocked`
-(see the field list above).
+(see the field list above). The same change reworks the timer to arm once per
+verified acquisition (a false→true `verified` edge) instead of on every pass with
+a stale verification, so a repeat run should show `react_arm` in the hundreds per
+window rather than the tens of thousands, a much lower hold share, and
+`react_blocked` only on genuine re-acquisitions.
 
 NAV (`find_segment_doors`): `fsd_navlink_seg_ok=158`,
 `fsd_navlink_seg_mismatch=0`, `fsd_tracker_created = fsd_tracker_destroyed =

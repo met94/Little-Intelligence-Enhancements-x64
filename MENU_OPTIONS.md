@@ -95,21 +95,21 @@ See `dev/reports/aim-port-behaviour-ledger.md` block 10.
 | NORMAL | Holds fire ~1 s. |
 | ULTRA-VIOLENCE | No hold; fires as soon as the target is aimable. |
 
-**The hold re-arms, so it is not just "the first second".** The timer is
-re-stamped on every aim pass where the target's last verification is more than
-2 s old (`data.t - verified_t > 2`, including while the target is not visible at
-all). A cop that keeps you verified pays the window once; a cop that has to
-re-acquire you pays it again on every peek, and a combat-reaction target it can
-never verify is held every pass. That is why a heavy-cover play at SLOW/NORMAL
-can look like the enemies barely shoot: the 2026-11-01 SLOW test run counted
-`react_hold=42043` against `react_allow=2713` (94 % of aim passes held, 8.57.23,
-`dev/reports/door-watch-port.md` §10). ULTRA-VIOLENCE is the no-hold control and
-the closest value to vanilla pacing. Coverfire is exempt for exactly this reason
-(`MENU_OPTIONS.md` "Coverfire"); ordinary unverified targets are not.
+**The hold arms once per acquisition.** `verified` is only refreshed by the
+detection update, so the timer starts on a false→true edge and expires
+`2 / level` seconds later, even if the target is no longer visible on later
+passes. Re-acquiring you after losing sight is a new edge, so the delay applies
+again — but only once per acquisition, not once per aim pass. Before the
+2026-11-06 fix the timer re-armed on every pass whose verification was older
+than 2 s (`data.t - verified_t > 2`), which made the hold continuous: an in-game
+NORMAL run on Boiling Point read `react_arm ≈ react_hold`, 65–76 % of aim passes
+held and ~850–2 700 cleared fire decisions per minute. `ULTRA-VIOLENCE`
+(`level >= 3`) skips the block entirely and remains the closest value to vanilla
+pacing. Coverfire stays exempt.
 
 The delay is instrumented so a play can answer "did it eat a shot, or only idle
 aim passes": `react_hold` / `react_allow` count passes inside/outside the window,
-`react_arm` counts timer arms (one per acquisition attempt) and `react_blocked`
+`react_arm` counts timer arms (one per verified acquisition), and `react_blocked`
 counts only the held passes that cleared a real fire decision (`shoot`). The
 reader prints the hold share and warns above 80 %.
 

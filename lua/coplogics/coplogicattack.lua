@@ -1804,15 +1804,19 @@ function CopLogicAttack._upd_aim(data, my_data)
 		local react_hold = false
 
 		if level < 3 and not data.unit:in_slot(16) and not data.is_converted and not (data.team and data.team.id == "criminal1") and not (data.tactics and data.tactics.provide_coverfire_LIES) then
-			-- private timer: the attention object's `react_t` is also written by
-			-- coplogicbase (`608-618`) and spooclogicidle (`30/72/85`), so a shared
-			-- field would let the two delays stack
-			if not focus_enemy.lies_react_t or not focus_enemy.verified_t or data.t - focus_enemy.verified_t > 2 then
+			-- One arm per acquisition: a fresh `verified` flag (false -> true) is
+			-- a new engagement. The pre-2026 rule re-armed whenever
+			-- `data.t - verified_t > 2`, i.e. on every pass for any target the
+			-- unit could not see, which made the hold continuous instead of a
+			-- first-shot delay (in-game: react_arm ~= react_hold, 65-76 % of
+			-- passes held, thousands of shots cleared). `verified` is only
+			-- refreshed by the detection update, so it stays true across aim
+			-- passes while the target is in sight and this edge fires once.
+			local react_seen = focus_enemy.verified and true or false
+
+			if react_seen and not focus_enemy.lies_react_seen then
 				focus_enemy.lies_react_t = data.t
 
-				-- One arm per (re)acquisition: a target the unit cannot verify
-				-- re-arms every pass, so arm density is the measure of how much
-				-- of a play this hold actually covers.
 				LIES:Count("react_arm")
 
 				-- The counters are the telemetry; this event is debug-only because it was 76% of the event volume.
@@ -1821,9 +1825,11 @@ function CopLogicAttack._upd_aim(data, my_data)
 				end
 			end
 
+			focus_enemy.lies_react_seen = react_seen
+
 			local react_t = 2 / level
 
-			if data.t - focus_enemy.lies_react_t < react_t then
+			if focus_enemy.lies_react_t and data.t - focus_enemy.lies_react_t < react_t then
 				-- `shoot` is this pass's fire decision. `react_hold` counts every
 				-- pass in the window, including idle aim passes, so only this
 				-- counter can say a shot was actually suppressed.

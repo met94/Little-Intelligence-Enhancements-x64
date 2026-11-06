@@ -164,8 +164,13 @@ test('ledger #10: the reaction-level fire delay is restored with a working gate'
   assert.doesNotMatch(aim, /charge_aggro_level/);
   // Private timer, so it cannot stack with the shared `react_t` writes elsewhere.
   assert.match(aim, /local react_t = 2 \/ level/);
-  assert.match(aim, /if not focus_enemy\.lies_react_t or not focus_enemy\.verified_t or data\.t - focus_enemy\.verified_t > 2 then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)\s*if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end\s*end/);
-  assert.match(aim, /if data\.t - focus_enemy\.lies_react_t < react_t then\s*if shoot then\s*LIES:Count\("react_blocked"\)\s*end\s*shoot = nil\s*react_hold = true\s*end/);
+  assert.match(aim, /local react_seen = focus_enemy\.verified and true or false/);
+  assert.match(aim, /if react_seen and not focus_enemy\.lies_react_seen then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)\s*if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end\s*end\s*focus_enemy\.lies_react_seen = react_seen/);
+  assert.match(aim, /if focus_enemy\.lies_react_t and data\.t - focus_enemy\.lies_react_t < react_t then\s*if shoot then\s*LIES:Count\("react_blocked"\)\s*end\s*shoot = nil\s*react_hold = true\s*end/);
+  // The stale-verification re-arm is what made the hold continuous; it must
+  // stay out (2026-11 in-game: react_arm ~= react_hold, 65-76 % held).
+  assert.doesNotMatch(aim, /data\.t - focus_enemy\.verified_t > 2/, 'the per-pass verified_t re-arm must stay out');
+  assert.doesNotMatch(aim, /not focus_enemy\.lies_react_t or not focus_enemy\.verified_t/);
   // `react_blocked` counts the passes where the hold cleared a fire decision,
   // which is the only counter that can prove a shot was lost (the pass counters
   // also count idle aim inside the window).
