@@ -1803,9 +1803,12 @@ function CopLogicAttack._upd_aim(data, my_data)
 		local react_t = LIES:ReactionDelay()
 		local react_hold = false
 		-- Verification clock, sampled above the exemption gate: the gap must
-		-- measure verification, not how often this pass reaches the delay block.
-		-- A coverfire stint or a converted/crew exemption would otherwise leave
-		-- a stale stamp and arm a fresh hold the moment the exemption ends.
+		-- measure verification, not how often this attack pass reaches the delay
+		-- block. A coverfire stint or a converted/crew exemption would otherwise
+		-- leave a stale stamp and arm a fresh hold the moment the exemption ends.
+		-- Limitation: the clock is written only while this aim pass runs, so a
+		-- logic that never calls `_upd_aim` (idle, spooc attack) for more than 2 s
+		-- makes the next attack pass count as a new engagement.
 		local react_seen = focus_enemy.verified and true or false
 		local react_last_seen = focus_enemy.lies_react_last_seen_t
 
