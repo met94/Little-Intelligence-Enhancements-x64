@@ -11,7 +11,7 @@ evaluate, aim, take cover, path, suppress, and coordinate — without replacing
 the game's core combat loop. This fork ports the original LIES V8.57 design to
 the current 64-bit 248.2 game build.
 
-- **Current release:** `8.57.30`
+- **Current release:** `8.57.32`
 - **Download:** [GitHub Releases](https://github.com/met94/Little-Intelligence-Enhancements-x64/releases)
 - **Original project:** [fuglore/Little-Intelligence-Enhancements](https://github.com/fuglore/Little-Intelligence-Enhancements)
 
@@ -59,7 +59,7 @@ LIES does **not** require BeardLib. Other AI mods may overlap; see
 
 1. Install SuperBLT if you have not already.
 2. Remove or rename any existing `PAYDAY 2/mods/LIES` folder.
-3. Extract `LIES-8.57.30.zip` so the final path is:
+3. Extract `LIES-8.57.32.zip` so the final path is:
    `PAYDAY 2/mods/LIES/mod.txt`
 4. Start the game.
 
@@ -136,7 +136,7 @@ the mod does **not** silently download or install updates.
 
 Versions use `<upstream release>.<fork patch>`:
 
-- `8.57.30` is the 30th fork release built on upstream LIES **8.57**
+- `8.57.32` is the 32nd fork release built on upstream LIES **8.57**
   (`4215a39`, 2026-06-06). The patch counter is ours and only ours; upstream
   numbers are never continued.
 - When upstream ships a new release, the fork's changes are rebased onto it and

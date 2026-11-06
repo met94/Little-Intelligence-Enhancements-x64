@@ -60,9 +60,9 @@ function functionBody(source, signature) {
   return source.slice(start, next === -1 ? source.length : next);
 }
 
-test('version metadata agrees on 8.57.30', () => {
+test('version metadata agrees on 8.57.32', () => {
   const modTxt = JSON.parse(read('mod.txt').replace(/^\uFEFF/, ''));
-  assert.equal(modTxt.version, '8.57.30');
+  assert.equal(modTxt.version, '8.57.32');
 
   // The in-code version is what every `[LIES-WATCH] v=` and `[LIES-TRACE] v=`
   // line reports, so a release bump that misses it makes a correct run's
@@ -73,18 +73,18 @@ test('version metadata agrees on 8.57.30', () => {
   assert.equal(inCode[1], modTxt.version, 'menumanager.lua LIES.version must equal the mod.txt version');
 
   const feed = JSON.parse(read('autoupdate.json').replace(/^\uFEFF/, ''));
-  assert.equal(feed[0].version, '8.57.30');
+  assert.equal(feed[0].version, '8.57.32');
 
   const readme = read('README.md');
-  assert.match(readme, /\*\*Current release:\*\* `8\.57\.30`/);
+  assert.match(readme, /\*\*Current release:\*\* `8\.57\.32`/);
   // The install step must ship the current package name, not a stale one.
-  assert.match(readme, /Extract `LIES-8\.57\.30\.zip`/);
+  assert.match(readme, /Extract `LIES-8\.57\.32\.zip`/);
 
   const changelog = read('changelog.txt');
   const revisions = [...changelog.matchAll(/^Revision (8\.57\.\d+) \u2014 (\d{4}-\d{2}-\d{2})\r?$/gm)];
   assert.ok(revisions.length > 0, 'changelog has no revision headers');
-  assert.equal(revisions[0][1], '8.57.30');
-  assert.equal(revisions[0][2], '2026-11-02');
+  assert.equal(revisions[0][1], '8.57.32');
+  assert.equal(revisions[0][2], '2026-11-06');
   assert.equal(revisions.at(-1)[1], '8.57.1', 'older revision header was lost');
 });
 

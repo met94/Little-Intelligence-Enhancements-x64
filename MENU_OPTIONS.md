@@ -69,10 +69,10 @@ experimental option until the full hhtacs audit is complete.
 
 ## Reaction Level (`enemy_reaction_level`)
 
-How long a cop holds fire after verifying a target. The delay is `2 / level`
-seconds, so SLOW waits about two seconds before the first shot, NORMAL about one
-second, and ULTRA-VIOLENCE does not wait at all (the delay is off from level 3
-upwards). Cops still aim and turn during the pause — only the shot is held.
+How long a cop holds fire after verifying a target. SLOW waits about two
+seconds before a cop's first shot, NORMAL about one second, HIGH about half a
+second, and ULTRA-VIOLENCE does not wait at all. Cops still aim and turn during
+the pause — only the shot is held.
 
 Exempt: converted criminals (Jokers — one category, caught by both the
 `is_converted` flag and slot 16), crew-AI bots (their `criminal1` team id, since
@@ -87,13 +87,47 @@ as `(not data.team.id) == "criminal1"`, always `false`, so ordinary cops ignored
 the option for every build in between; 8.57.19 then dropped the block with the aim
 port. 8.57.22 restores it with the two terms the author meant
 (`not data.is_converted` and `not (data.team and data.team.id == "criminal1")`).
-See `dev/reports/aim-port-behaviour-ledger.md` block 10.
+8.57.32 adds HIGH, reworks the timer to arm once per acquisition, and moves the
+menu values. See `dev/reports/aim-port-behaviour-ledger.md` block 10.
 
-| Value | Effect |
-|---|---|
-| SLOW | Holds fire ~2 s after verifying a target. |
-| NORMAL | Holds fire ~1 s. |
-| ULTRA-VIOLENCE | No hold; fires as soon as the target is aimable. |
+| Value | Stored | Effect |
+|---|---:|---|
+| SLOW | 1 | Holds fire ~2 s after verifying a target. |
+| NORMAL | 2 | Holds fire ~1 s. |
+| HIGH | 3 | Holds fire ~0.5 s. |
+| ULTRA-VIOLENCE | 4 | No hold; fires as soon as the target is aimable. |
+
+The stored value is the menu index, and 8.57.32 moved it: before that release 3
+was ULTRA-VIOLENCE. There is no save migration, so a profile that had
+ULTRA-VIOLENCE selected now reads HIGH until it is re-selected; the release
+changelog carries that note for players. The delays themselves are one table
+(`LIES.reaction_delays = { [1] = 2, [2] = 1, [3] = 0.5, [4] = 0 }`) behind
+`LIES:ReactionDelay()`; a value of `0` disables the block.
+
+**The hold arms once per engagement.** A new window starts only when a verified
+target has not been verified for more than 2 s (or on a new attention object),
+and it expires after the delay even if the target becomes unverified again.
+Re-acquiring you after a real gap is a new engagement, so the delay applies
+again — but only once per engagement, not once per aim pass and not on every
+flicker. The clock is sampled above the exemption gate, so a coverfire stint
+cannot leave a stale stamp and arm a hold when it ends. That gap matters because
+`verified` is re-sampled about twice a second
+by the detection update and flips false whenever the visibility ray is blocked;
+a bare rising edge would re-arm constantly for a partly covered player. Before
+the 2026-11-06 fix the timer re-armed on every pass whose verification was older
+than 2 s (`data.t - verified_t > 2`), which made the hold continuous: an in-game
+NORMAL run on Boiling Point read `react_arm ≈ react_hold`, 65–76 % of aim passes
+held and ~850–2 700 cleared fire decisions per minute. After the rework the same
+heist read 390 arms and an 11.4 % hold share - measured on the rising-edge build, before this gap rule. The gap rule itself measured 4 633 arms over an 18-window NORMAL run on `glace` (16.7 % hold share), so the bound holds in practice. ULTRA-VIOLENCE (`delay = 0`) skips
+the block entirely and remains the closest value to vanilla pacing. Coverfire
+stays exempt.
+
+The delay is instrumented so a play can answer "did it eat a shot, or only idle
+aim passes": `react_hold` / `react_allow` count passes inside/outside the window,
+`react_arm` counts timer arms (one per verified acquisition), and `react_blocked`
+counts only the held passes that cleared a real fire decision (`shoot`). The
+digest also prints `react_delay` in seconds and the reader warns above an 80 %
+hold share.
 
 ## Navlink Delays (`nav_link_interval`)
 
@@ -255,8 +289,10 @@ Same channel shape as Iter's, so one reader handles both mods:
     doors were accepted (`fsd_navlink_seg_ok`/`_mismatch`), tracker churn
     (`fsd_tracker_created`/`_destroyed`) and the `Vector3` contract
     (`fsd_bad_shape`, must be 0).
-  - `react_*` — `react_hold` / `react_allow` / `react_level`: whether the
-    Reaction Level fire delay actually held frames.
+  - `react_*` - `react_hold` / `react_allow` / `react_arm` / `react_blocked` /
+    `react_level` / `react_delay`: whether the Reaction Level fire delay held
+    frames, how often its timer armed, how many held passes actually cleared a
+    fire decision, and the delay in seconds (0 = ULTRA-VIOLENCE).
   The counter meanings are also listed under "Door Watching" above.
   The digest is the cheap channel — one header plus one line per minute — so a
   routine play should run `watch_log` on and `trace` off; the per-unit

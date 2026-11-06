@@ -1,17 +1,17 @@
 ﻿# LIES 248.2 static gates
 
-Generated: 2026-11-03 12:29:46Z
+Generated: 2026-11-06 10:27:06Z
 
 ## Node tool tests
 
 Result: PASS
 
-ℹ pass 238
+ℹ pass 248
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 310.2571
+ℹ duration_ms 332.4791
 
 ## Test-harness Lua tests
 
@@ -21,6 +21,8 @@ PASS find_segment_doors.lua
   ok: NavigationManager:find_segment_doors contract
 PASS test_commands.lua
   ok: LIES test-harness parser
+PASS watch_settle_target.lua
+  ok: the settled-facing target check reads the engine aim record
 
 ## LuaJIT syntax (runtime files)
 
@@ -40,11 +42,11 @@ Findings: 0
 
 Result: PASS
 
-files=71 functions=588 errors=0 unhooked=3
-MOD_ONLY=222 MOD_ONLY_HOOK=43 LIES_EDIT_CLEAN=294 LIES_EDIT_VANILLA_CHANGED=23 VANISHED_IN_NEW=1 SAME_AS_OLD_VANILLA=3 SAME_AS_NEW_VANILLA=1 SAME_AS_OLD_VANILLA_LOCAL=1
+files=71 functions=589 errors=0 unhooked=3
+MOD_ONLY=223 MOD_ONLY_HOOK=43 LIES_EDIT_CLEAN=294 LIES_EDIT_VANILLA_CHANGED=23 VANISHED_IN_NEW=1 SAME_AS_OLD_VANILLA=3 SAME_AS_NEW_VANILLA=1 SAME_AS_OLD_VANILLA_LOCAL=1
 decisions: done=18 merge=0 keep=5 retire=0 parked=0 undecided=0
-wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-quiet-logging\dev\port-248-ledger.md
-wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-quiet-logging\dev\reports\port-248-ledger.json
+wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-watch-settle-type-crash\dev\port-248-ledger.md
+wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-watch-settle-type-crash\dev\reports\port-248-ledger.json
 
 ## API audit
 

@@ -1185,18 +1185,46 @@ local tankboss = {
 -- the ~100 units that separate two doorways in a corridor.
 local LIES_SETTLE_TARGET_DIS = 20
 
--- True when the unit's current aim target is still the position a settled sample
--- was taken for. `attention_unit` is a Vector3 while the cop aims at a position
--- (the adoption branch sets it to a copy of the watch position) and the enemy's
--- `u_key` while it aims at a live target, so anything that is not a Vector3 means
--- the cop is looking somewhere else now. `type_name` is the engine's own tag for
--- a Vector3, the same test the save-serialising mods use.
-local function lies_settle_target_held(attention_unit, pos)
-	if type(attention_unit) ~= "userdata" or attention_unit.type_name ~= "Vector3" then
+-- True when the unit's own aim target is still the position a settled sample was
+-- taken for. The engine keeps the aim target as a typed table: `pos` is a
+-- Vector3, `unit`/`u_key` are separate fields, and no target at all is nil - so
+-- reading `pos` answers the question exactly. `CopMovement:attention()` returns
+-- the table the aim was last told to hold, by reference and without allocating,
+-- and the same getter is already used this way in
+-- `lua/coplogics/coplogicidle.lua:1007`, `lua/coplogics/coplogictravel.lua:1075`,
+-- `lua/coplogics/coplogicarrest.lua:198` and
+-- `lua/civlogics/civilianlogicsurrender.lua:344` (mod line numbers, not game).
+--
+-- Vanilla's `my_data.attention_unit` mirror must not be read for this: it is an
+-- untyped union of a Vector3 and an enemy `u_key`, and a `u_key` is an opaque
+-- Idstring userdata with no `__index`, so `attention_unit.type_name` raises
+-- "attempt to index local 'attention_unit' (a userdata value)" instead of
+-- answering the question (`dev/reports/watch-settle-attention-unit-type-crash.md`,
+-- taser crash 2026-11-05). The mirror is also behind the engine: the travel
+-- logic sets an attention position without updating it
+-- (`CopLogicTravel:1280/1309`), so every sample this helper keeps is one the
+-- cop's real aim also kept.
+--
+-- `attention.pos` can alias a nav-ray or turn vector the caller mutates after
+-- handing it over, so the 20-unit band can read a moved vector. That is jitter
+-- in the measurement, never a crash: the three writers of that table -
+-- `CopLogicBase._set_attention_on_pos`, `CopMovement:synch_attention` (network)
+-- and `CopMovement:load` (save restore) - all store a Vector3.
+local function lies_settle_target_held(data, pos)
+	local movement = data.unit:movement()
+
+	if not movement then
 		return false
 	end
 
-	return mvec3_dis(attention_unit, pos) <= LIES_SETTLE_TARGET_DIS
+	local attention = movement:attention()
+	local aim_pos = attention and attention.pos
+
+	if not aim_pos then
+		return false
+	end
+
+	return mvec3_dis(aim_pos, pos) <= LIES_SETTLE_TARGET_DIS
 end
 
 -- Flat facing dot between the cop's forward vector and the direction to a
@@ -1382,10 +1410,10 @@ function CopLogicAttack._upd_aim(data, my_data)
 			-- doorway was legitimate: counting that facing as a settled miss
 			-- would under-report the feature. Dropped in silence.
 			settle.t = nil
-		elseif not lies_settle_target_held(my_data.attention_unit, settle.pos) then
-			-- The unit aims at something else now (another position, or an enemy:
-			-- `attention_unit` then holds a `u_key`), so its facing says nothing
-			-- about the doorway this sample was stashed for.
+		elseif not lies_settle_target_held(data, settle.pos) then
+			-- The unit aims at something else now (another position, or an enemy,
+			-- i.e. no `pos` in the engine's aim record), so its facing says
+			-- nothing about the doorway this sample was stashed for.
 			settle.t = nil
 		elseif data.t >= settle.t then
 			local dot = lies_flat_dot(data, settle.pos)
@@ -1772,33 +1800,59 @@ function CopLogicAttack._upd_aim(data, my_data)
 	-- deliberate suppression fire and must win, so that tactic is exempt too.
 	-- Only `shoot` is delayed, never `aim`.
 	if focus_enemy and AIAttentionObject.REACT_COMBAT <= focus_enemy.reaction then
-		local level = math.max(1, tonumber(LIES.settings.enemy_reaction_level) or 1)
+		local react_t = LIES:ReactionDelay()
 		local react_hold = false
+		-- Verification clock, sampled above the exemption gate: the gap must
+		-- measure verification, not how often this attack pass reaches the delay
+		-- block. A coverfire stint or a converted/crew exemption would otherwise
+		-- leave a stale stamp and arm a fresh hold the moment the exemption ends.
+		-- Limitation: the clock is written only while this aim pass runs, so a
+		-- logic that never calls `_upd_aim` (idle, spooc attack) for more than 2 s
+		-- makes the next attack pass count as a new engagement.
+		local react_seen = focus_enemy.verified and true or false
+		local react_last_seen = focus_enemy.lies_react_last_seen_t
 
-		if level < 3 and not data.unit:in_slot(16) and not data.is_converted and not (data.team and data.team.id == "criminal1") and not (data.tactics and data.tactics.provide_coverfire_LIES) then
-			-- private timer: the attention object's `react_t` is also written by
-			-- coplogicbase (`608-618`) and spooclogicidle (`30/72/85`), so a shared
-			-- field would let the two delays stack
-			if not focus_enemy.lies_react_t or not focus_enemy.verified_t or data.t - focus_enemy.verified_t > 2 then
+		if react_seen then
+			focus_enemy.lies_react_last_seen_t = data.t
+		end
+
+		if react_t > 0 and not data.unit:in_slot(16) and not data.is_converted and not (data.team and data.team.id == "criminal1") and not (data.tactics and data.tactics.provide_coverfire_LIES) then
+			-- One arm per engagement: re-arm only after a gap of more than 2 s
+			-- without a verified pass. `verified` is re-sampled by the detection
+			-- update (and by coplogicidle's low-performance path), so it flips
+			-- false whenever the visibility ray is blocked; a bare rising edge
+			-- would re-arm ~2x/s for a partly covered target and make the hold
+			-- continuous again. A target seen again inside the 2 s window is the
+			-- same engagement; a genuine re-acquisition - or a new attention
+			-- object, whose fields are nil - arms once.
+			if react_seen and (not focus_enemy.lies_react_t or not react_last_seen or data.t - react_last_seen > 2) then
 				focus_enemy.lies_react_t = data.t
+
+				LIES:Count("react_arm")
 
 				-- The counters are the telemetry; this event is debug-only because it was 76% of the event volume.
 				if LIES.settings.debug_log then
-					LIES:Event("reaction_hold", data.unit, data, { level = level })
+					LIES:Event("reaction_hold", data.unit, data, { level = LIES.settings.enemy_reaction_level, delay = react_t })
 				end
 			end
 
-			local react_t = 2 / level
+			if focus_enemy.lies_react_t and data.t - focus_enemy.lies_react_t < react_t then
+				-- `shoot` is this pass's fire decision. `react_hold` counts every
+				-- pass in the window, including idle aim passes, so only this
+				-- counter can say a shot was actually suppressed.
+				if shoot then
+					LIES:Count("react_blocked")
+				end
 
-			if data.t - focus_enemy.lies_react_t < react_t then
 				shoot = nil
 				react_hold = true
 			end
 		end
 
-		-- Exactly one of the two per pass: `react_hold` when the delay swallowed
-		-- `shoot`, `react_allow` when it did not (timer elapsed, or the block is
-		-- exempt / level >= 3).
+		-- Exactly one of the two per pass: `react_hold` when the hold window
+		-- covered this pass, `react_allow` when it did not (timer elapsed, or the
+		-- block is exempt / level >= 3). `react_blocked` above is the narrower
+		-- count: only the passes where that window cleared a real `shoot`.
 		if react_hold then
 			LIES:Count("react_hold")
 		else

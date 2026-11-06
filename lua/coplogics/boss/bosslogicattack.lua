@@ -429,8 +429,15 @@ function LIESBossLogicAttack._upd_aim(data, my_data)
 		end
 		
 		if data.logic.chk_should_turn(data, my_data) then
-			local focus_pos = nil
-			focus_pos = (focus.verified or focus.nearly_visible) and focus.m_pos or my_data.attention_unit
+			-- Currently unreachable: LIESBossLogicAttack._upd_aim returns the
+			-- ported body at 251, so this custom block is dead. It is still made
+			-- safe the same way as the live aim sites, because `my_data` can hold
+			-- the enemy `u_key` written at 408 and a key reaching `mvec3_dir`
+			-- raises (`dev/reports/watch-settle-attention-unit-type-crash.md`).
+			-- The engine record holds the same position the look-pos branch
+			-- stored, so behaviour is unchanged if the body is ever restored.
+			local attention = data.unit:movement():attention()
+			local focus_pos = (focus.verified or focus.nearly_visible) and focus.m_pos or (attention and attention.pos)
 			
 			if focus_pos then
 				CopLogicAttack._chk_request_action_turn_to_enemy(data, my_data, data.m_pos, focus_pos)
@@ -454,22 +461,27 @@ function LIESBossLogicAttack._upd_aim(data, my_data)
 	end
 	
 	if reaction and AI_REACT_COMBAT <= reaction then
-		if LIES.settings.enemy_reaction_level < 3 and not data.unit:in_slot(16) then
-			if not focus.react_t then
-				focus.react_t = data.t
+		local react_t = LIES:ReactionDelay()
+
+		local react_seen = focus.verified and true or false
+		local react_last_seen = focus.lies_react_last_seen_t
+
+		if react_seen then
+			focus.lies_react_last_seen_t = data.t
+		end
+
+		if react_t > 0 and not data.unit:in_slot(16) then
+			-- Dead path (LIESBossLogicAttack._upd_aim returns the ported body at
+			-- :251), kept in step with the live cop block: re-arm only after a
+			-- >2 s verification gap, private timer so it cannot stack with
+			-- `focus.react_t`.
+			if react_seen and (not focus.lies_react_t or not react_last_seen or data.t - react_last_seen > 2) then
+				focus.lies_react_t = data.t
 			end
-			
-			if not focus.verified_t or data.t - focus.verified_t > 2 then
-				focus.react_t = data.t
-			end
-		
-			local react_t = 2 / LIES.settings.enemy_reaction_level
-		
-			if shoot then
-				if data.t - focus.react_t < react_t then
-					aim = true
-					shoot = nil
-				end
+
+			if shoot and focus.lies_react_t and data.t - focus.lies_react_t < react_t then
+				aim = true
+				shoot = nil
 			end
 		end
 	end

@@ -26,7 +26,7 @@ import {
   selectSessions
 } from '../door-watch-report.mjs';
 
-const VERSION = '8.57.30';
+const VERSION = '8.57.32';
 const CLI = fileURLToPath(new URL('../door-watch-report.mjs', import.meta.url));
 
 function watch(event, fields = {}) {
@@ -563,7 +563,7 @@ test('--ab with a control that has no digest window reports it as unusable', () 
   assert.equal(report.verdict, 'PASS');
 });
 
-test('reaction level is judged on both sides of the 3 boundary', () => {
+test('legacy logs without react_delay use the old 3 boundary', () => {
   const slow = analyzeLog([SETUP, header({ enemy_reaction_level: 1 }), digest({ react_hold: 4 })].join('\n'), {
     file: 'slow.txt',
     modVersion: VERSION
@@ -592,6 +592,84 @@ test('reaction level is judged on both sides of the 3 boundary', () => {
   });
 
   assert.equal(claimOf(fastHeld, 'reaction').result, 'FAIL');
+});
+
+test('reaction level separates a held shot from a held aim pass', () => {
+  const heldShot = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 1 }), digest({ react_hold: 94, react_allow: 6, react_arm: 12, react_blocked: 7 })].join('\n'),
+    { file: 'slow.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(heldShot, 'reaction').result, 'PASS');
+  assert.match(claimOf(heldShot, 'reaction').evidence, /react_arm=12, react_blocked=7/);
+  assert.match(claimOf(heldShot, 'reaction').evidence, /hold share 94\.0%/);
+  // A near-total hold is reported, not silently accepted: it is the signature
+  // of the timer re-arming on stale verifications.
+  assert.match(claimOf(heldShot, 'reaction').evidence, /WARN hold share above 80%/);
+
+  const idleAim = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 1 }), digest({ react_hold: 94, react_allow: 6, react_arm: 12, react_blocked: 0 })].join('\n'),
+    { file: 'slow.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(idleAim, 'reaction').result, 'FAIL');
+  assert.match(claimOf(idleAim, 'reaction').evidence, /never suppressed a fire decision/);
+  assert.match(claimOf(idleAim, 'reaction').evidence, /hold share 94\.0%/, 'the share stays visible on a failed claim');
+
+  const normal = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 2 }), digest({ react_hold: 10, react_allow: 90, react_arm: 4, react_blocked: 2 })].join('\n'),
+    { file: 'normal.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(normal, 'reaction').result, 'PASS');
+  assert.match(claimOf(normal, 'reaction').evidence, /hold share 10\.0%/);
+  assert.doesNotMatch(claimOf(normal, 'reaction').evidence, /WARN/);
+
+  const legacy = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 1 }), digest({ react_hold: 4 })].join('\n'),
+    { file: 'old.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(legacy, 'reaction').result, 'PASS');
+  assert.match(claimOf(legacy, 'reaction').evidence, /pre-instrumentation/);
+
+  // A quiet window with a handful of arms cannot prove the delay is inert.
+  const quietWindow = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 3 }), digest({ react_hold: 4, react_allow: 96, react_arm: 2, react_blocked: 0, react_delay: 0.5, react_level: 3 })].join('\n'),
+    { file: 'high.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(quietWindow, 'reaction').result, 'PASS');
+  assert.match(claimOf(quietWindow, 'reaction').evidence, /only 2 arm\(s\) - too few/);
+});
+
+test('reaction level uses react_delay and falls back for old logs', () => {
+  const high = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 3 }), digest({ react_hold: 40, react_allow: 60, react_arm: 2, react_blocked: 5, react_delay: 0.5, react_level: 3 })].join('\n'),
+    { file: 'high.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(high, 'reaction').result, 'PASS');
+  assert.match(claimOf(high, 'reaction').evidence, /react_delay=0\.5s/);
+  assert.match(claimOf(high, 'reaction').evidence, /delay on/);
+
+  const ultra = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 4 }), digest({ react_hold: 0, react_allow: 100, react_arm: 0, react_blocked: 0, react_delay: 0, react_level: 4 })].join('\n'),
+    { file: 'ultra.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(ultra, 'reaction').result, 'PASS');
+  assert.match(claimOf(ultra, 'reaction').evidence, /react_delay=0s/);
+  assert.match(claimOf(ultra, 'reaction').evidence, /delay off/);
+
+  // Pre-8.57.32 logs have no react_delay; there, 3 still means ULTRA.
+  const legacy = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 3 }), digest({ react_hold: 0, react_allow: 10 })].join('\n'),
+    { file: 'old.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(legacy, 'reaction').result, 'PASS');
+  assert.match(claimOf(legacy, 'reaction').evidence, /pre-8\.57\.32 log/);
 });
 
 test('alarms are surfaced by name, and the hard ones fail the run', () => {

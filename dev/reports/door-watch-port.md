@@ -211,7 +211,7 @@ it. The report tool turns this table into PASS/FAIL
 | nav-link doors are handled | `fsd_navlink_seg_ok`, `fsd_navlink_seg_mismatch`, `fsd_nil_element`, `fsd_nil_tracker` (INFO only) | — (a map without nav-link doors shows 0) |
 | door positions are `Vector3` | `fsd_bad_shape == 0` | a non-`Vector3` was handed to `mvec3_set`/distance |
 | cost is bounded | `dw_us` average, `dw_us_max`, `dw_ray` per minute | — (INFO; compare with `--ab`) |
-| reaction level still works | header/digest `react_level` + `react_hold`/`react_allow`, `[LIES-EVENT] kind=reaction_hold level=…` | the delay is inert or firing when it should not |
+| reaction level still works | header/digest `react_delay` (seconds), `react_level`, `react_hold`/`react_allow`, `react_arm`/`react_blocked`, `[LIES-EVENT] kind=reaction_hold level=…` | the delay is inert, firing when it should not, or holding passes without ever clearing a fire decision (`react_blocked == 0` on an instrumented log with at least 10 arms; below that the reader PASSes with a "too few arms" note) |
 | no door alarm | no `evt=alarm name=door_outcome_gap` / `door_contract_violation` | a gap or a contract failure happened in play |
 | the session survived | 0 FATAL, 0 LIES-attributable Lua errors | crash class regression |
 | the near-visible probe merge is live | digest `near_vis_probe > 0` (the vertical fallback ran) plus `near_vis_h_max` (the 8.57.24 probe height, ≈ 100 at worst case, not the pre-merge 30) | — (this claim never FAILs: PASS when the probe fired, INFO `no near-visible probe fired in these windows` when it did not, INFO `digest has no near_vis_* fields: pre-8.57.24 log` when the field is missing — a mis-wired counter cannot read as a clean play) |
@@ -239,7 +239,7 @@ Watch digest fields that back the table, by group:
   `fsd_nil_tracker`, `fsd_nil_end_pos`, `fsd_navlink_seg_ok`,
   `fsd_navlink_seg_mismatch`, `fsd_tracker_created`, `fsd_tracker_destroyed`,
   `fsd_bad_shape` — why the door list shrank, and the `Vector3` contract.
-- `react_hold`, `react_allow`, `react_level` — the 8.57.22 delay.
+- `react_hold`, `react_allow`, `react_arm`, `react_blocked`, `react_level`, `react_delay` - the 8.57.22 delay; the first two count passes inside/outside the hold window, the next two count timer arms and the held passes that cleared a real fire decision, and `react_delay` is the hold in seconds (0 = ULTRA-VIOLENCE, authoritative from 8.57.32).
 - `near_vis_probe`, `near_vis_h_max` — the 8.57.24 near-visible probe: the first is
   a per-window delta and is summed, the second is a high-water gauge and is
   aggregated as a maximum (summing it would report a height no probe used).
@@ -472,7 +472,9 @@ worktree contains no game install, so the raw logs stay outside the repo.
 
 First in-game evidence for the restore: deployed build `8.57.23`, level `auc`,
 `dev/tools/door-watch-report.mjs` as the reader, no `--ab` control. Two plays —
-A armed, B gated — so the cost comparison is still open (§7.9).
+A armed, B gated — so the cost comparison is still open (§7.9). Value note: these
+logs predate 8.57.32, so `react_level=3` in them means ULTRA-VIOLENCE (now 4);
+HIGH (0.5 s) did not exist yet.
 
 ### Run A — armed
 
@@ -496,9 +498,22 @@ at t=60 and t=120.
 
 Claims observed: positions from raw doors, expected position and the armed-path
 pre-step (24 + 37 + 4 = 65); `dw_gap=0`; no `door_outcome_gap` or
-`door_contract_violation` alarm. The SLOW reaction level did what 8.57.22 intends:
-`react_level=1`, `react_hold=42043`, `react_allow=2713` — the fire hold fired and
-then expired into allowed shots.
+`door_contract_violation` alarm. The SLOW reaction level did hold fire, but the
+ratio is the finding: `react_level=1`, `react_hold=42043`, `react_allow=2713` —
+**94 % of aim passes sat inside the hold window**, not "fired and then expired
+into allowed shots" (corrected 2026-11-06). The block re-arms on every pass where
+`data.t - verified_t > 2`, so a target the cop cannot verify keeps the timer
+fresh and the hold is effectively continuous; a target it can verify pays
+`2 / level` seconds again on each re-acquisition. That pre-instrumentation log
+cannot say how many of those held passes carried a real shot, which is why
+8.57.32 + the 2026-11-06 instrumentation add `react_arm` and `react_blocked`
+(see the field list above). The same change reworks the timer to arm only after
+a gap of more than 2 s without a verified pass (the verification clock is sampled
+above the exemption gate, so a coverfire stint cannot leave a stale stamp), so a
+repeat run should show `react_arm` in the hundreds per window rather than the tens
+of thousands, a much lower hold share, and `react_blocked` only on genuine
+re-acquisitions. The 390-arm / 11.4 % figures quoted elsewhere were measured on
+the rising-edge build `484af78`; the gap version measured 4 633 arms over an 18-window NORMAL run on `glace` (16.7 % hold share, `dev/reports/react-gap-run.md`).
 
 NAV (`find_segment_doors`): `fsd_navlink_seg_ok=158`,
 `fsd_navlink_seg_mismatch=0`, `fsd_tracker_created = fsd_tracker_destroyed =

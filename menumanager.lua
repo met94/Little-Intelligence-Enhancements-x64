@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "8.57.30",
+		version = "8.57.32",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -49,6 +49,20 @@ if RequiredScript == "lib/managers/menumanager" then
 		}
 	}
 	LIES.update_url = "https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json"
+
+	-- Reaction Level is a menu index, not a rank: HIGH (3) is 0.5 s and
+	-- ULTRA-VIOLENCE (4) is off. Keeping ULTRA at the value it always had would
+	-- have needed a save migration, so the menu values moved instead and the
+	-- changelog tells the player to re-select ULTRA (see MENU_OPTIONS.md).
+	LIES.reaction_delays = { [1] = 2, [2] = 1, [3] = 0.5, [4] = 0 }
+
+	-- Seconds of first-shot delay for the current Reaction Level. `0` means the
+	-- block is off (ULTRA-VIOLENCE); unknown values fall back to SLOW.
+	function LIES:ReactionDelay()
+		local value = tonumber(self.settings and self.settings.enemy_reaction_level)
+
+		return self.reaction_delays[value] or 2
+	end
 
 	TheFixesPreventer = TheFixesPreventer or {}
 	TheFixesPreventer.fix_hostages_not_moving = true
@@ -582,7 +596,15 @@ if RequiredScript == "lib/managers/menumanager" then
 			-- reaction-level fire delay: held frames vs allowed frames
 			react_hold = d.react_hold or 0,
 			react_allow = d.react_allow or 0,
-			react_level = tonumber(self.settings.enemy_reaction_level) or 1
+			-- Timer (re)arms, and the held passes that actually cleared a fire
+			-- decision (`shoot`), as opposed to idle aim passes.
+			react_arm = d.react_arm or 0,
+			react_blocked = d.react_blocked or 0,
+			react_level = tonumber(self.settings.enemy_reaction_level) or 1,
+			-- Seconds of first-shot hold; `0` is ULTRA-VIOLENCE. Readers use this
+			-- instead of range-checking `react_level`, whose values moved in
+			-- 8.57.32 (HIGH took 3, ULTRA moved to 4).
+			react_delay = self:ReactionDelay()
 		}
 
 		self.watch_gauges = {}

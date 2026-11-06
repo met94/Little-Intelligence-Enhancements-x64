@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-03T12:29:53.678Z
+Generated: 2026-11-06T10:27:15.495Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -15,7 +15,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 222 |
+| MOD_ONLY | 223 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -59,6 +59,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | — | `LIES.Gauge` | 11 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Load` | 11 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.LogCheck` | 11 | 0 | 0 |  |
+| [ ] | audit | — | `LIES.ReactionDelay` | 5 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Save` | 8 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.set_update_data` | 19 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Sum` | 17 | 0 | 0 |  |
@@ -66,7 +67,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | — | `LIES.Trace` | 81 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.UseLuaCover` | 3 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Watch` | 7 | 0 | 0 |  |
-| [ ] | audit | — | `LIES.WatchDigest` | 156 | 0 | 0 |  |
+| [ ] | audit | — | `LIES.WatchDigest` | 164 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.WatchReset` | 17 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.WatchTick` | 113 | 0 | 0 |  |
@@ -625,7 +626,7 @@ No function definitions (hook/overlay file).
 
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | done (bbb30fa) | `CopLogicAttack._upd_aim` | 474 | 195 | 192 |  |
+| [ ] | **PORT** | done (bbb30fa) | `CopLogicAttack._upd_aim` | 497 | 195 | 192 |  |
 | [ ] | **PORT** | done (f0370d4) | `CopLogicAttack.action_complete_clbk` | 101 | 47 | 47 |  |
 | [ ] | **PORT** | done (dev/reports/port-decisions.md) | `CopLogicAttack.is_available_for_assignment` | 60 | 43 | 43 |  |
 | [ ] | audit | — | `CopLogicAttack._check_needs_reload` | 48 | 0 | 0 |  |
@@ -641,7 +642,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `lies_door_watch_first` | 23 | 0 | 0 |  |
 | [ ] | audit | — | `lies_enemy_tracker` | 22 | 0 | 0 |  |
 | [ ] | audit | — | `lies_flat_dot` | 24 | 0 | 0 |  |
-| [ ] | audit | — | `lies_settle_target_held` | 7 | 0 | 0 |  |
+| [ ] | audit | — | `lies_settle_target_held` | 16 | 0 | 0 |  |
 | [ ] | audit | — | `lies_trace_window` | 5 | 0 | 0 |  |
 | [ ] | audit | — | `lies_upd_expected_pos` | 236 | 0 | 0 |  |
 | [ ] | audit | — | `lies_watch_aim_trace` | 79 | 0 | 0 |  |
@@ -738,10 +739,10 @@ No function definitions (hook/overlay file).
 | [ ] | **PORT** | keep (dev/reports/tank-taser-reverify.md) | `TaserLogicAttack._upd_enemy_detection` | 81 | 74 | 74 |  |
 | [ ] | audit | — | `TaserLogicAttack._chk_wants_to_take_cover` | 37 | 0 | 0 |  |
 | [ ] | keep | — | `TaserLogicAttack._chk_reaction_to_attention_object` | 24 | 21 | 21 |  |
-| [ ] | keep | — | `TaserLogicAttack._upd_aim` | 90 | 141 | 141 |  |
+| [ ] | keep | — | `TaserLogicAttack._upd_aim` | 88 | 141 | 141 |  |
 | [ ] | keep | — | `TaserLogicAttack.action_complete_clbk` | 103 | 39 | 39 |  |
 | [ ] | keep | — | `TaserLogicAttack.enter` | 51 | 52 | 52 |  |
-| [ ] | keep | — | `TaserLogicAttack.queued_update` | 83 | 57 | 57 |  |
+| [ ] | keep | — | `TaserLogicAttack.queued_update` | 85 | 57 | 57 |  |
 
 ## lua/coplogics/specials/spooc/spooclogicattack.lua
 
@@ -770,7 +771,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `LIESBossLogicAttack._chk_use_throwable` | 119 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._confirm_retreat_position_visless` | 14 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._pathing_complete_clbk` | 11 | 0 | 0 |  |
-| [ ] | audit | — | `LIESBossLogicAttack._upd_aim` | 230 | 0 | 0 |  |
+| [ ] | audit | — | `LIESBossLogicAttack._upd_aim` | 242 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._upd_combat_movement` | 208 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack._upd_enemy_detection` | 43 | 0 | 0 |  |
 | [ ] | audit | — | `LIESBossLogicAttack.action_complete_clbk` | 55 | 0 | 0 |  |

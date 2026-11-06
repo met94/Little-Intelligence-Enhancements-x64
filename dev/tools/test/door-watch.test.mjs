@@ -407,7 +407,10 @@ test('the digest reports the door watch, the door list and the reaction hold', (
     'fsd_bad_shape',
     'react_hold',
     'react_allow',
+    'react_arm',
+    'react_blocked',
     'react_level',
+    'react_delay',
   ]) {
     assert.match(manager, new RegExp(`\\b${field} = `), `digest field ${field} is missing`);
   }
@@ -453,10 +456,26 @@ test('the reaction block counts held and allowed passes', () => {
   const gateEnd = aim.indexOf('\n\tend', gateAt);
   const block = aim.slice(gateAt, gateEnd);
 
+  assert.match(block, /local react_t = LIES:ReactionDelay\(\)/);
+  assert.match(block, /if react_t > 0 and not data\.unit:in_slot\(16\)/);
   assert.match(block, /LIES:Count\("react_hold"\)/);
   assert.match(block, /LIES:Count\("react_allow"\)/);
+  // The arm counter sits on an engagement gap, not on every pass or every
+  // flicker of the sampled `verified` flag, and the clock is sampled above the
+  // exemption gate so a coverfire stint cannot leave a stale stamp.
+  assert.match(block, /local react_seen = focus_enemy\.verified and true or false/);
+  assert.match(block, /local react_last_seen = focus_enemy\.lies_react_last_seen_t/);
+  assert.match(block, /if react_seen then\s*focus_enemy\.lies_react_last_seen_t = data\.t\s*end/);
+  assert.ok(block.indexOf('focus_enemy.lies_react_last_seen_t = data.t') < block.indexOf('if react_t > 0 and not data.unit:in_slot(16)'));
+  assert.match(block, /if react_seen and \(not focus_enemy\.lies_react_t or not react_last_seen or data\.t - react_last_seen > 2\) then/);
+  assert.match(block, /focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)/);
+  assert.doesNotMatch(block, /lies_react_seen\b/);
+  assert.doesNotMatch(block, /data\.t - focus_enemy\.verified_t > 2/);
+  // The blocked counter is narrower than `react_hold`: it only moves when the
+  // hold clears a fire decision for that pass.
+  assert.match(block, /if shoot then\s*LIES:Count\("react_blocked"\)\s*end\s*shoot = nil/);
   // The event exists but is debug-only: it was 76 % of the event channel.
-  assert.match(block, /if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end/);
+  assert.match(block, /if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = LIES\.settings\.enemy_reaction_level, delay = react_t \}\)\s*end/);
 
   // One of each per pass: a single if/else, not one count per condition term.
   const counts = [...block.matchAll(/LIES:Count\("react_(?:hold|allow)"\)/g)];
@@ -738,7 +757,7 @@ test('a settled sample is dropped silently when it is stale, the target is visib
   const block = settleBlock(aimBody());
   const staleAt = block.indexOf('if settle.logic ~= settle_logic or age < 0 or age > 2 then');
   const visibleAt = block.indexOf('elseif focus_enemy and (focus_enemy.verified or focus_enemy.nearly_visible) then');
-  const movedAt = block.indexOf('elseif not lies_settle_target_held(my_data.attention_unit, settle.pos) then');
+  const movedAt = block.indexOf('elseif not lies_settle_target_held(data, settle.pos) then');
   const fireAt = block.indexOf('elseif data.t >= settle.t then');
 
   assert.notEqual(staleAt, -1, 'the stale/logic-change drop is missing');
@@ -768,23 +787,27 @@ test('a settled sample is dropped silently when it is stale, the target is visib
   }
 });
 
-test('the target-moved drop compares the adopted position with the live aim target', () => {
+test('the target-moved drop reads the engine aim record, never the attention_unit union', () => {
   const source = attackSource();
-  const body = sliceFunction(source, 'local function lies_settle_target_held(attention_unit, pos)');
+  const body = sliceFunction(source, 'local function lies_settle_target_held(data, pos)');
 
   // 20 units: a jitter band for the same doorway (the stashed position is the
   // doorway's, not the cop's, so a re-adoption reproduces it exactly) and far
   // below the distance that separates two doorways.
   assert.match(source, /local LIES_SETTLE_TARGET_DIS = 20/);
-  // `attention_unit` is a Vector3 while the cop aims at a position and a `u_key`
-  // while it aims at an enemy: anything that is not a Vector3 means the target
-  // moved on.
-  assert.match(
-    body,
-    /if type\(attention_unit\) ~= "userdata" or attention_unit\.type_name ~= "Vector3" then\s*\r?\n\s*return false\s*\r?\n\s*end/
-  );
-  assert.match(body, /return mvec3_dis\(attention_unit, pos\) <= LIES_SETTLE_TARGET_DIS/);
-  assert.equal((body.match(/return/g) || []).length, 2);
+  // `CopMovement:attention()` returns the aim target as a typed table - `pos`
+  // is a Vector3, `unit`/`u_key` are separate fields. `my_data.attention_unit`
+  // is an untyped union of a Vector3 and an enemy `u_key`, and a `u_key` is an
+  // opaque Idstring userdata with no `__index`, so a field read on it raises:
+  // that was the 2026-11-05 taser crash
+  // (dev/reports/watch-settle-attention-unit-type-crash.md).
+  assert.match(body, /local attention = movement:attention\(\)/);
+  assert.match(body, /local aim_pos = attention and attention\.pos/);
+  assert.doesNotMatch(body, /attention_unit/);
+  assert.doesNotMatch(source, /attention_unit\s*\./, 'no field may be read off the attention_unit union');
+  assert.doesNotMatch(source, /type_name/);
+  assert.match(body, /return mvec3_dis\(aim_pos, pos\) <= LIES_SETTLE_TARGET_DIS/);
+  assert.equal((body.match(/return/g) || []).length, 3);
 });
 
 test('the settled sample survives an unknown facing as a count with no dot', () => {

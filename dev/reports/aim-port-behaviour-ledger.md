@@ -72,7 +72,7 @@ Anchor line numbers are for the **current worktree file**
 | 7 | Hostage safe weapon: `request_switch_to_safe_weapon(3)` / `request_switch_to_normal_weapon(7)`, `safe_equipped`, `hhtacs` + `hostageblock` chatter | `df5d673` 2023-09-05 Fuglore (**7.35**); restore half `29488f1` 2023-09-06 (**7.36**); `verified_t`/`shooting` window `2080f65` 2023-12-01 (**7.61**) | A cop whose shot is blocked by a hostage drops to its `char_tweak.safe_weapon`, stops firing, and swaps back 7 s later | **`hhtacs`** (default `false`; "Adds LIES-specific AI behaviours") | **None.** `request_switch_to_safe_weapon` does not exist in 248.2 (`Select-String` over the whole game-data tree: no hits). They are LIES `CopBrain` methods, `copbrain.lua:1141` / `1193`; `hostage_blocked` is LIES-only too (`coplogicidle.lua:1465-1510`) | **No** | **RE-ADD** at `_upd_aim` line **872** — both halves together (see §3.7) |
 | 8 | Boss features from aim: `LIESBossLogicAttack._chk_use_throwable`, `CopLogicAttack._chk_enrage` | `_chk_use_throwable` `15c25c6` 2022-10-19 Fuglore (**6**); `_chk_enrage` `102511a` 2022-07-10 Fuglore (**4.6**) | `_chk_enrage`: enrage meter for `char_tweak.enrages` units (tanks/dozers) → `base_damage` buff + "surprised" act + warning chatter. `_chk_use_throwable`: frag for `char_tweak.throwable` units | none directly (`hhtacs` shapes `zeal_heavy_swat` tweaks) | `BossLogicAttack._chk_use_throwable` at vanilla `bosslogicattack.lua:792` (called `730`) — boss-only. `_chk_enrage`: **absent from 248.2** | **No** | `_chk_enrage`: **RE-ADD** at current line **1062** (before `aim_allow_fire`). `_chk_use_throwable`: **RE-ADD** with its `shoot and not safe_equipped and not hostage_blocked` guard |
 | 9 | Reload callout: `chk_say_enemy_chatter(..., "calloutreload")` for `is_local_player` / `anim_data.reload` | `712387f` 2022-06-20 Fuglore (**v4**) | Harass-tactic cops call out that the target is reloading | none (needs `data.tactics.harass`) | **None.** `calloutreload` has no hits in 248.2; the chatter type is LIES data, `groupaitweakdata.lua:4741`, now producer-less | **No**, but a dead-unit hazard (needs the `alive()` gate from `cef3fef`) | **RE-ADD (deferred)**; alternative is **RETIRE** *and* delete `groupaitweakdata.lua:4741` + its `loc` lines |
-| 10 | Reaction-level fire delay: `enemy_reaction_level < 3`, `react_t = 2 / level`, `in_slot(16)`, team gate | gate + `0.7/N` `712387f` 2022-06-20 (v4); `2/N` `6be9cb2` 2023-02-22 (**6.7**); team clause `ab0d5e4` 2024-02-09 Fuglore (**7.84**) | Docs: hold fire for `2 / enemy_reaction_level` seconds after verification ("Reaction Level") | **`enemy_reaction_level`** (default `1`; SLOW/NORMAL/ULTRA-VIOLENCE, `loc/en.txt:41-45`) | **None** (no player-facing reaction pacing; vanilla paces via `focus_enemy.reaction` and suppression `1084`) | **No** | **RE-ADD (fixed)** — `not data.team.id == "criminal1"` made the gate a constant `false` (see §3.10); restored in 8.57.22 with `not data.is_converted` and a guarded divisor |
+| 10 | Reaction-level fire delay: `enemy_reaction_level < 3`, `react_t = 2 / level`, `in_slot(16)`, team gate | gate + `0.7/N` `712387f` 2022-06-20 (v4); `2/N` `6be9cb2` 2023-02-22 (**6.7**); team clause `ab0d5e4` 2024-02-09 Fuglore (**7.84**) | Docs: hold fire for `2 / enemy_reaction_level` seconds after verification ("Reaction Level") | **`enemy_reaction_level`** (default `1`; SLOW/NORMAL/ULTRA-VIOLENCE, `loc/en.txt:41-45`) | **None** (no player-facing reaction pacing; vanilla paces via `focus_enemy.reaction` and suppression `1084`) | **No** | **RE-ADD (fixed)** — `not data.team.id == "criminal1"` made the gate a constant `false` (see §3.10); restored in 8.57.22 with `not data.is_converted` and a guarded divisor; reworked 2026-11-06 to arm only after a >2 s verification gap (see 3.10); 8.57.32 adds HIGH (0.5 s) at value 3 and moves ULTRA-VIOLENCE to value 4 |
 | 11 | Shoot-stop guard: `my_data.start_shoot_t`, 0.5 s hold | `46a93f2` 2025-10-22 fugsystem | Keep the reload decision from flapping when the target flickers in and out of the aim window | none | **None**; vanilla requests `idle`/`reload` immediately (`1033-1050`, current `1033-1050`) | **No** | **RETIRE** (the state it guarded no longer exists: `my_data.shooting` is now the vanilla boolean, set at current `1030`) |
 | 12 | Weapon-range self-heal: 2000/5000/1000 backup + `complained_about_invalid_range` logs | `4215a39` 2026-06-06 fugsystem (**8.57**) | Rebuild `weapon_range` from the equipped weapon when it was unset | none | Not needed: `CopBrain:check_upd_aim` returns early without `internal_data.weapon_range` (`copbrain.lua:248-250`, from `49d4d9e` 2024-01-27 Fuglore **7.81**); vanilla body reads it only at `874` (guarded by that caller) and `895` (nil-checked) | **No** | **RETIRE** (`port-decisions.md:119` already called it "belt-and-braces") |
 
@@ -565,9 +565,29 @@ instance is unrelated (it gates `_chk_play_charge_spooc_sound`,
 `lua/coplogics/specials/spooc/spooclogicattack.lua:340/372`). Needs in-game
 verification at each of the three menu values, as noted above.
 
+**In-game reading and follow-up (2026-11-06).** The first test play at SLOW
+(`dev/reports/door-watch-port.md` §10, 8.57.23) returned
+`react_hold=42043` vs `react_allow=2713`: 94 % of aim passes sat inside the hold
+window. The re-arm rule was the cause — `data.t - verified_t > 2` re-stamped the
+timer on every pass where the target's last verification was stale, including
+while it could not be seen at all, so an unverified target was held continuously and
+every peek paid the window again. The instrumentation added on 2026-11-06
+(`react_arm`, `react_blocked`) confirmed it on a NORMAL Boiling Point run:
+`react_arm` tracked `react_hold` (14 k–28 k arms per minute), 65–76 % of passes
+held, and 849–2 728 real fire decisions cleared per minute; the ULTRA run read
+`react_hold=react_arm=react_blocked=0` across 83 k allowed passes. The delay was
+then reworked to arm only after a >2 s gap without verification (the detection update re-samples `verified` about twice a second, so a bare rising edge re-arms on a partly covered target) and it expires even if the target becomes unverified again, so
+the hold is a first-shot delay again instead of a continuous fire ban. (The 390-arm / 11.4 % figures above come from the rising-edge build `484af78`, before this gap rule. The shipped gap rule then measured 4 633 arms over an 18-window NORMAL run on `glace`, 16.7 % hold share; report `dev/reports/react-gap-run.md`.) Coverfire
+and the converted/crew-AI exemptions are unchanged. 8.57.32 also adds HIGH
+(0.5 s) between NORMAL and ULTRA-VIOLENCE: the stored value is the menu index, so
+HIGH took 3 and ULTRA moved to 4 with no save migration (the changelog tells
+players to re-select ULTRA), and the three logics read `LIES:ReactionDelay()`
+(`> 0`) instead of `enemy_reaction_level < 3`; the digest carries `react_delay`
+in seconds so the reader no longer range-checks the value.
+
 Player POV: "Reaction Level" now changes regular SWAT and crew-AI first-shot timing
 as well as the boss pacing — SLOW holds fire for roughly 2 s after verification,
-NORMAL about 1 s, ULTRA-VIOLENCE not at all — while aiming and turning are
+NORMAL about 1 s, HIGH about half a second, ULTRA-VIOLENCE not at all — while aiming and turning are
 unaffected, Jokers are exempt, and cops laying down cover fire keep firing.
 
 ### 3.11 Shoot-stop guard
@@ -685,8 +705,7 @@ Needs in-game verification before shipping, in this order:
    that must be tested together).
 6. **Reaction delay, corrected form** (block 10) — **done in 8.57.22**, restored at
    `_upd_aim` just before the throwable call with `not data.is_converted` and a guarded
-   divisor. Still to verify in game: all three values (`SLOW` / `NORMAL` /
-   `ULTRA-VIOLENCE`) show different first-shot timing on ordinary cops, and nothing
+   divisor. Still to verify in game: all four values (`SLOW` / `NORMAL` / `HIGH` / `ULTRA-VIOLENCE`) show different first-shot timing on ordinary cops, and nothing
    regressed at `enemy_aggro_level` 2 vs 4.
 7. **Reload callout** (block 9): cosmetic; restore it or delete
    `groupaitweakdata.lua:4741`. Do not leave it orphaned.

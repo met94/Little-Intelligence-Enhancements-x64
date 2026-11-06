@@ -1028,23 +1028,63 @@ export function analyzeLog(text, {
 
   // --- reaction level -----------------------------------------------------
   const holds = counter(counters, 'react_hold');
+  const allows = counter(counters, 'react_allow');
+  const arms = counter(counters, 'react_arm');
+  const blocked = counter(counters, 'react_blocked');
+  const passShare = holds + allows;
+  const share = passShare > 0 ? holds / passShare : null;
+  const shareText = share === null ? 'hold share n/a' : `hold share ${(share * 100).toFixed(1)}%`;
+  // Logs written before the 2026-11-06 instrumentation count holds/allows only.
+  // `react_blocked` is what proves a shot was lost rather than an idle aim pass
+  // being held, so a legacy log keeps the weaker shape instead of failing on a
+  // missing field.
+  const instrumented = parsed.digests.some(digest => 'react_blocked' in digest.fields);
+  const blockedText = instrumented
+    ? `react_arm=${arms}, react_blocked=${blocked}`
+    : 'react_arm/blocked absent (pre-instrumentation log)';
+  const overheld = share !== null && share > 0.8;
+
+  // 8.57.32 moved the menu values (HIGH took 3, ULTRA moved to 4), so a range
+  // check on `react_level` cannot say whether the delay is on. The digest now
+  // carries `react_delay` in seconds; only logs without it (pre-8.57.32) fall
+  // back to the old `>= 3` rule, which is correct for those logs because they
+  // had no HIGH.
+  const delays = parsed.digests.map(digest => num(digest.fields.react_delay)).filter(value => value !== null);
+  const reactDelay = delays.length ? delays[delays.length - 1] : null;
+  const delayOff = reactDelay === null ? reactLevel !== null && reactLevel >= 3 : reactDelay === 0;
+  const delayText = reactDelay === null
+    ? `react_level=${reactLevel} (pre-8.57.32 log)`
+    : `react_delay=${reactDelay}s, react_level=${reactLevel}`;
 
   if (reactLevel === null || !parsed.digests.length) {
     claim('reaction', 'reaction level', 'INFO', `react_level unknown, react_hold=${holds}`);
-  } else if (reactLevel < 3) {
+  } else if (!delayOff) {
+    // A quiet window can hold a few passes without ever clearing a shot; that is
+    // not proof the delay is inert. Require a minimum sample before failing.
+    const tooFewArms = arms < 10;
+    const result = !holds ? 'FAIL' : instrumented && !blocked && !tooFewArms ? 'FAIL' : 'PASS';
+
     claim(
       'reaction',
       'reaction level',
-      holds > 0 ? 'PASS' : 'FAIL',
-      `react_level=${reactLevel} (<3), react_hold=${holds}, react_allow=${counter(counters, 'react_allow')}` +
-        (holds > 0 ? '' : ': no hold counted; check that cops acquired targets during the run')
+      result,
+      `${delayText} (delay on), react_hold=${holds}, react_allow=${allows}, ${blockedText}, ${shareText}` +
+        (!holds ? ': no hold counted; check that cops acquired targets during the run' : '') +
+        (instrumented && holds && !blocked
+          ? tooFewArms
+            ? `: only ${arms} arm(s) - too few to prove a shot was cleared`
+            : ': held passes but never suppressed a fire decision; the delay is not pacing any shots'
+          : '') +
+        (result === 'PASS' && overheld
+          ? ': WARN hold share above 80% - the timer may be re-arming on stale verifications'
+          : '')
     );
   } else {
     claim(
       'reaction',
       'reaction level',
       holds === 0 ? 'PASS' : 'FAIL',
-      `react_level=${reactLevel} (>=3), react_hold=${holds}, react_allow=${counter(counters, 'react_allow')}`
+      `${delayText} (delay off), react_hold=${holds}, react_allow=${allows}, ${blockedText}, ${shareText}`
     );
   }
 
