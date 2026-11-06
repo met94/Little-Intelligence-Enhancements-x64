@@ -513,7 +513,7 @@ above the exemption gate, so a coverfire stint cannot leave a stale stamp), so a
 repeat run should show `react_arm` in the hundreds per window rather than the tens
 of thousands, a much lower hold share, and `react_blocked` only on genuine
 re-acquisitions. The 390-arm / 11.4 % figures quoted elsewhere were measured on
-the rising-edge build `484af78`; the gap version is still to be measured.
+the rising-edge build `484af78`; the gap version measured 4 633 arms over an 18-window NORMAL run on `glace` (16.7 % hold share, `dev/reports/react-gap-run.md`).
 
 NAV (`find_segment_doors`): `fsd_navlink_seg_ok=158`,
 `fsd_navlink_seg_mismatch=0`, `fsd_tracker_created = fsd_tracker_destroyed =

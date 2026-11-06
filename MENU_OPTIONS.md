@@ -118,7 +118,7 @@ the 2026-11-06 fix the timer re-armed on every pass whose verification was older
 than 2 s (`data.t - verified_t > 2`), which made the hold continuous: an in-game
 NORMAL run on Boiling Point read `react_arm ≈ react_hold`, 65–76 % of aim passes
 held and ~850–2 700 cleared fire decisions per minute. After the rework the same
-heist read 390 arms and an 11.4 % hold share - measured on the rising-edge build, before this gap rule; the gap version is expected to arm at or below that rate and is still to be measured. ULTRA-VIOLENCE (`delay = 0`) skips
+heist read 390 arms and an 11.4 % hold share - measured on the rising-edge build, before this gap rule. The gap rule itself measured 4 633 arms over an 18-window NORMAL run on `glace` (16.7 % hold share), so the bound holds in practice. ULTRA-VIOLENCE (`delay = 0`) skips
 the block entirely and remains the closest value to vanilla pacing. Coverfire
 stays exempt.
 

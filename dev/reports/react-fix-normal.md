@@ -3,7 +3,8 @@
 > Recorded on 8.57.31, before `react_delay` existed. The reader classifies these
 > digests through the legacy `react_level` path; do not read them as 8.57.32
 > value semantics. The figures also come from the rising-edge build (`484af78`),
-> not from the shipped 2 s verification-gap rule, which is still unmeasured.
+> not from the shipped 2 s verification-gap rule; that rule was measured later
+> in `dev/reports/react-gap-run.md`.
 
 - Log: `C:\Program Files (x86)\Steam\steamapps\common\PAYDAY 2\mods\logs\2026_11_06_log.txt`
 - Session: 2 of 2 (header at line 1560)

@@ -577,7 +577,7 @@ every peek paid the window again. The instrumentation added on 2026-11-06
 held, and 849–2 728 real fire decisions cleared per minute; the ULTRA run read
 `react_hold=react_arm=react_blocked=0` across 83 k allowed passes. The delay was
 then reworked to arm only after a >2 s gap without verification (the detection update re-samples `verified` about twice a second, so a bare rising edge re-arms on a partly covered target) and it expires even if the target becomes unverified again, so
-the hold is a first-shot delay again instead of a continuous fire ban. (The 390-arm / 11.4 % figures above come from the rising-edge build `484af78`, before this gap rule; the shipped rule is still to be measured.) Coverfire
+the hold is a first-shot delay again instead of a continuous fire ban. (The 390-arm / 11.4 % figures above come from the rising-edge build `484af78`, before this gap rule. The shipped gap rule then measured 4 633 arms over an 18-window NORMAL run on `glace`, 16.7 % hold share; report `dev/reports/react-gap-run.md`.) Coverfire
 and the converted/crew-AI exemptions are unchanged. 8.57.32 also adds HIGH
 (0.5 s) between NORMAL and ULTRA-VIOLENCE: the stored value is the menu index, so
 HIGH took 3 and ULTRA moved to 4 with no save migration (the changelog tells
