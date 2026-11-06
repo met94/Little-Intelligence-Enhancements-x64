@@ -1800,10 +1800,10 @@ function CopLogicAttack._upd_aim(data, my_data)
 	-- deliberate suppression fire and must win, so that tactic is exempt too.
 	-- Only `shoot` is delayed, never `aim`.
 	if focus_enemy and AIAttentionObject.REACT_COMBAT <= focus_enemy.reaction then
-		local level = math.max(1, tonumber(LIES.settings.enemy_reaction_level) or 1)
+		local react_t = LIES:ReactionDelay()
 		local react_hold = false
 
-		if level < 3 and not data.unit:in_slot(16) and not data.is_converted and not (data.team and data.team.id == "criminal1") and not (data.tactics and data.tactics.provide_coverfire_LIES) then
+		if react_t > 0 and not data.unit:in_slot(16) and not data.is_converted and not (data.team and data.team.id == "criminal1") and not (data.tactics and data.tactics.provide_coverfire_LIES) then
 			-- One arm per acquisition: a fresh `verified` flag (false -> true) is
 			-- a new engagement. The pre-2026 rule re-armed whenever
 			-- `data.t - verified_t > 2`, i.e. on every pass for any target the
@@ -1821,13 +1821,11 @@ function CopLogicAttack._upd_aim(data, my_data)
 
 				-- The counters are the telemetry; this event is debug-only because it was 76% of the event volume.
 				if LIES.settings.debug_log then
-					LIES:Event("reaction_hold", data.unit, data, { level = level })
+					LIES:Event("reaction_hold", data.unit, data, { level = LIES.settings.enemy_reaction_level, delay = react_t })
 				end
 			end
 
 			focus_enemy.lies_react_seen = react_seen
-
-			local react_t = 2 / level
 
 			if focus_enemy.lies_react_t and data.t - focus_enemy.lies_react_t < react_t then
 				-- `shoot` is this pass's fire decision. `react_hold` counts every

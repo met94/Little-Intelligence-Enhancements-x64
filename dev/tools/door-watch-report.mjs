@@ -1044,16 +1044,28 @@ export function analyzeLog(text, {
     : 'react_arm/blocked absent (pre-instrumentation log)';
   const overheld = share !== null && share > 0.8;
 
+  // 8.57.32 moved the menu values (HIGH took 3, ULTRA moved to 4), so a range
+  // check on `react_level` cannot say whether the delay is on. The digest now
+  // carries `react_delay` in seconds; only logs without it (pre-8.57.32) fall
+  // back to the old `>= 3` rule, which is correct for those logs because they
+  // had no HIGH.
+  const delays = parsed.digests.map(digest => num(digest.fields.react_delay)).filter(value => value !== null);
+  const reactDelay = delays.length ? delays[delays.length - 1] : null;
+  const delayOff = reactDelay === null ? reactLevel !== null && reactLevel >= 3 : reactDelay === 0;
+  const delayText = reactDelay === null
+    ? `react_level=${reactLevel} (pre-8.57.32 log)`
+    : `react_delay=${reactDelay}s, react_level=${reactLevel}`;
+
   if (reactLevel === null || !parsed.digests.length) {
     claim('reaction', 'reaction level', 'INFO', `react_level unknown, react_hold=${holds}`);
-  } else if (reactLevel < 3) {
+  } else if (!delayOff) {
     const result = !holds ? 'FAIL' : instrumented && !blocked ? 'FAIL' : 'PASS';
 
     claim(
       'reaction',
       'reaction level',
       result,
-      `react_level=${reactLevel} (<3), react_hold=${holds}, react_allow=${allows}, ${blockedText}, ${shareText}` +
+      `${delayText} (delay on), react_hold=${holds}, react_allow=${allows}, ${blockedText}, ${shareText}` +
         (!holds ? ': no hold counted; check that cops acquired targets during the run' : '') +
         (instrumented && holds && !blocked
           ? ': held passes but never suppressed a fire decision; the delay is not pacing any shots'
@@ -1067,7 +1079,7 @@ export function analyzeLog(text, {
       'reaction',
       'reaction level',
       holds === 0 ? 'PASS' : 'FAIL',
-      `react_level=${reactLevel} (>=3), react_hold=${holds}, react_allow=${allows}, ${blockedText}, ${shareText}`
+      `${delayText} (delay off), react_hold=${holds}, react_allow=${allows}, ${blockedText}, ${shareText}`
     );
   }
 

@@ -337,7 +337,7 @@ function SpoocLogicAttack._upd_spooc_attack(data, my_data)
 				my_data.attention_unit = focus_enemy.u_key
 			end
 			
-			if LIES.settings.enemy_reaction_level < 3 then
+			if LIES:ReactionDelay() > 0 then
 				SpoocLogicAttack._chk_play_charge_spooc_sound(data, my_data, focus_enemy)
 			end
 
@@ -369,7 +369,7 @@ function SpoocLogicAttack._upd_spooc_attack(data, my_data)
 				my_data.attention_unit = focus_enemy.u_key
 			end
 			
-			if LIES.settings.enemy_reaction_level < 3 then
+			if LIES:ReactionDelay() > 0 then
 				SpoocLogicAttack._chk_play_charge_spooc_sound(data, my_data, focus_enemy)
 			end
 

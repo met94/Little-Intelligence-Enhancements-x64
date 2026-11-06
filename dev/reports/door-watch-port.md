@@ -211,7 +211,7 @@ it. The report tool turns this table into PASS/FAIL
 | nav-link doors are handled | `fsd_navlink_seg_ok`, `fsd_navlink_seg_mismatch`, `fsd_nil_element`, `fsd_nil_tracker` (INFO only) | — (a map without nav-link doors shows 0) |
 | door positions are `Vector3` | `fsd_bad_shape == 0` | a non-`Vector3` was handed to `mvec3_set`/distance |
 | cost is bounded | `dw_us` average, `dw_us_max`, `dw_ray` per minute | — (INFO; compare with `--ab`) |
-| reaction level still works | header/digest `react_level`, `react_hold`/`react_allow`, `react_arm`/`react_blocked`, `[LIES-EVENT] kind=reaction_hold level=…` | the delay is inert, firing when it should not, or holding passes without ever clearing a fire decision (`react_blocked == 0` on an instrumented log) |
+| reaction level still works | header/digest `react_delay` (seconds), `react_level`, `react_hold`/`react_allow`, `react_arm`/`react_blocked`, `[LIES-EVENT] kind=reaction_hold level=…` | the delay is inert, firing when it should not, or holding passes without ever clearing a fire decision (`react_blocked == 0` on an instrumented log) |
 | no door alarm | no `evt=alarm name=door_outcome_gap` / `door_contract_violation` | a gap or a contract failure happened in play |
 | the session survived | 0 FATAL, 0 LIES-attributable Lua errors | crash class regression |
 | the near-visible probe merge is live | digest `near_vis_probe > 0` (the vertical fallback ran) plus `near_vis_h_max` (the 8.57.24 probe height, ≈ 100 at worst case, not the pre-merge 30) | — (this claim never FAILs: PASS when the probe fired, INFO `no near-visible probe fired in these windows` when it did not, INFO `digest has no near_vis_* fields: pre-8.57.24 log` when the field is missing — a mis-wired counter cannot read as a clean play) |
@@ -239,7 +239,7 @@ Watch digest fields that back the table, by group:
   `fsd_nil_tracker`, `fsd_nil_end_pos`, `fsd_navlink_seg_ok`,
   `fsd_navlink_seg_mismatch`, `fsd_tracker_created`, `fsd_tracker_destroyed`,
   `fsd_bad_shape` — why the door list shrank, and the `Vector3` contract.
-- `react_hold`, `react_allow`, `react_arm`, `react_blocked`, `react_level` — the 8.57.22 delay; the first two count passes inside/outside the hold window, the next two count timer arms and the held passes that cleared a real fire decision.
+- `react_hold`, `react_allow`, `react_arm`, `react_blocked`, `react_level`, `react_delay` - the 8.57.22 delay; the first two count passes inside/outside the hold window, the next two count timer arms and the held passes that cleared a real fire decision, and `react_delay` is the hold in seconds (0 = ULTRA-VIOLENCE, authoritative from 8.57.32).
 - `near_vis_probe`, `near_vis_h_max` — the 8.57.24 near-visible probe: the first is
   a per-window delta and is summed, the second is a high-water gauge and is
   aggregated as a maximum (summing it would report a height no probe used).
@@ -504,7 +504,7 @@ into allowed shots" (corrected 2026-11-06). The block re-arms on every pass wher
 fresh and the hold is effectively continuous; a target it can verify pays
 `2 / level` seconds again on each re-acquisition. That pre-instrumentation log
 cannot say how many of those held passes carried a real shot, which is why
-8.57.31 + the 2026-11-06 instrumentation add `react_arm` and `react_blocked`
+8.57.32 + the 2026-11-06 instrumentation add `react_arm` and `react_blocked`
 (see the field list above). The same change reworks the timer to arm once per
 verified acquisition (a false→true `verified` edge) instead of on every pass with
 a stale verification, so a repeat run should show `react_arm` in the hundreds per

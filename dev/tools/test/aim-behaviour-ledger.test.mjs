@@ -153,19 +153,21 @@ test('ledger #10: the reaction-level fire delay is restored with a working gate'
   const aimAllowFireAt = aim.indexOf('CopLogicAttack.aim_allow_fire(');
   const throwableAt = aim.indexOf('LIESBossLogicAttack._chk_use_throwable(');
 
-  // Computed before the gate, clamped, so a nil/zero setting cannot error or divide by zero.
-  assert.match(aim, /local level = math\.max\(1, tonumber\(LIES\.settings\.enemy_reaction_level\) or 1\)/);
-  assert.ok(aim.indexOf('local level = math.max') < aim.indexOf('if level < 3'), 'the level is clamped before the comparison');
-  assert.match(aim, /if level < 3 and not data\.unit:in_slot\(16\) and not data\.is_converted and not \(data\.team and data\.team\.id == "criminal1"\)/);
+  // The delay comes from the menu value through one helper. The values moved
+  // in 8.57.32 (3 = HIGH 0.5 s, 4 = ULTRA off), so no range check lives here.
+  assert.match(aim, /local react_t = LIES:ReactionDelay\(\)/);
+  assert.ok(aim.indexOf('local react_t = LIES:ReactionDelay()') < aim.indexOf('if react_t > 0'), 'the delay is read before the gate');
+  assert.match(aim, /if react_t > 0 and not data\.unit:in_slot\(16\) and not data\.is_converted and not \(data\.team and data\.team\.id == "criminal1"\)/);
+  assert.doesNotMatch(aim, /2 \/ level/, 'the divisor formula must stay out');
+  assert.doesNotMatch(aim, /enemy_reaction_level < 3/, 'the old menu-value range check must stay out');
   // Coverfire is deliberate suppression fire: it must not be silenced by the hold.
   assert.match(aim, /and not \(data\.tactics and data\.tactics\.provide_coverfire_LIES\) then/);
   // The 7.84 operator-precedence bug must not come back.
   assert.doesNotMatch(aim, /not data\.team\.id ==/, 'the constant-false team clause must stay out');
   assert.doesNotMatch(aim, /charge_aggro_level/);
   // Private timer, so it cannot stack with the shared `react_t` writes elsewhere.
-  assert.match(aim, /local react_t = 2 \/ level/);
   assert.match(aim, /local react_seen = focus_enemy\.verified and true or false/);
-  assert.match(aim, /if react_seen and not focus_enemy\.lies_react_seen then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)\s*if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end\s*end\s*focus_enemy\.lies_react_seen = react_seen/);
+  assert.match(aim, /if react_seen and not focus_enemy\.lies_react_seen then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)\s*if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = LIES\.settings\.enemy_reaction_level, delay = react_t \}\)\s*end\s*end\s*focus_enemy\.lies_react_seen = react_seen/);
   assert.match(aim, /if focus_enemy\.lies_react_t and data\.t - focus_enemy\.lies_react_t < react_t then\s*if shoot then\s*LIES:Count\("react_blocked"\)\s*end\s*shoot = nil\s*react_hold = true\s*end/);
   // The stale-verification re-arm is what made the hold continuous; it must
   // stay out (2026-11 in-game: react_arm ~= react_hold, 65-76 % held).
@@ -180,8 +182,8 @@ test('ledger #10: the reaction-level fire delay is restored with a working gate'
   assert.match(aim, /LIES:Count\("react_arm"\)/);
   // The event exists but is debug-only: it was 76 % of the event channel, and
   // the counters above are the telemetry a normal play leaves behind.
-  assert.match(aim, /if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end/);
-  assert.match(aim, /LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)/);
+  assert.match(aim, /if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = LIES\.settings\.enemy_reaction_level, delay = react_t \}\)\s*end/);
+  assert.match(aim, /LIES:Event\("reaction_hold", data\.unit, data, \{ level = LIES\.settings\.enemy_reaction_level, delay = react_t \}\)/);
   const debugGate = /if LIES\.settings\.debug_log then\s*([\s\S]*?)\s*end/.exec(aim);
   assert.ok(debugGate, 'the reaction_hold event must sit behind debug_log');
   assert.doesNotMatch(debugGate[1], /LIES:Count\(/, 'the counters must stay unconditional');
@@ -190,7 +192,7 @@ test('ledger #10: the reaction-level fire delay is restored with a working gate'
   // Placement: inside the `REACT_COMBAT` gate, before the throwable call and the fire decision.
   const gateAt = aim.indexOf('if focus_enemy and AIAttentionObject.REACT_COMBAT <= focus_enemy.reaction then');
   const gateEnd = aim.indexOf('\n\tend', gateAt);
-  const delayAt = aim.indexOf('local level = math.max');
+  const delayAt = aim.indexOf('local react_t = LIES:ReactionDelay()');
   assert.notEqual(gateAt, -1, 'the REACT_COMBAT gate is missing');
   assert.notEqual(gateEnd, -1, 'the REACT_COMBAT gate is unterminated');
   assert.ok(delayAt > gateAt && delayAt < gateEnd, 'the delay sits inside the REACT_COMBAT gate');

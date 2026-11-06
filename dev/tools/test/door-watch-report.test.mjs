@@ -26,7 +26,7 @@ import {
   selectSessions
 } from '../door-watch-report.mjs';
 
-const VERSION = '8.57.31';
+const VERSION = '8.57.32';
 const CLI = fileURLToPath(new URL('../door-watch-report.mjs', import.meta.url));
 
 function watch(event, fields = {}) {
@@ -632,6 +632,35 @@ test('reaction level separates a held shot from a held aim pass', () => {
 
   assert.equal(claimOf(legacy, 'reaction').result, 'PASS');
   assert.match(claimOf(legacy, 'reaction').evidence, /pre-instrumentation/);
+});
+
+test('reaction level uses react_delay and falls back for old logs', () => {
+  const high = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 3 }), digest({ react_hold: 40, react_allow: 60, react_arm: 2, react_blocked: 5, react_delay: 0.5, react_level: 3 })].join('\n'),
+    { file: 'high.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(high, 'reaction').result, 'PASS');
+  assert.match(claimOf(high, 'reaction').evidence, /react_delay=0\.5s/);
+  assert.match(claimOf(high, 'reaction').evidence, /delay on/);
+
+  const ultra = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 4 }), digest({ react_hold: 0, react_allow: 100, react_arm: 0, react_blocked: 0, react_delay: 0, react_level: 4 })].join('\n'),
+    { file: 'ultra.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(ultra, 'reaction').result, 'PASS');
+  assert.match(claimOf(ultra, 'reaction').evidence, /react_delay=0s/);
+  assert.match(claimOf(ultra, 'reaction').evidence, /delay off/);
+
+  // Pre-8.57.32 logs have no react_delay; there, 3 still means ULTRA.
+  const legacy = analyzeLog(
+    [SETUP, header({ enemy_reaction_level: 3 }), digest({ react_hold: 0, react_allow: 10 })].join('\n'),
+    { file: 'old.txt', modVersion: VERSION }
+  );
+
+  assert.equal(claimOf(legacy, 'reaction').result, 'PASS');
+  assert.match(claimOf(legacy, 'reaction').evidence, /pre-8\.57\.32 log/);
 });
 
 test('alarms are surfaced by name, and the hard ones fail the run', () => {

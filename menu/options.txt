@@ -97,6 +97,7 @@
             "items" : [
                 "menu_lies_enemy_reaction_low",
                 "menu_lies_enemy_reaction_normal",
+                "menu_lies_enemy_reaction_high",
                 "menu_lies_enemy_reaction_none"
             ],
             "value" : "enemy_reaction_level"

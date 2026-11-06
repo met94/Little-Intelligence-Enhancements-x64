@@ -410,6 +410,7 @@ test('the digest reports the door watch, the door list and the reaction hold', (
     'react_arm',
     'react_blocked',
     'react_level',
+    'react_delay',
   ]) {
     assert.match(manager, new RegExp(`\\b${field} = `), `digest field ${field} is missing`);
   }
@@ -455,6 +456,8 @@ test('the reaction block counts held and allowed passes', () => {
   const gateEnd = aim.indexOf('\n\tend', gateAt);
   const block = aim.slice(gateAt, gateEnd);
 
+  assert.match(block, /local react_t = LIES:ReactionDelay\(\)/);
+  assert.match(block, /if react_t > 0 and not data\.unit:in_slot\(16\)/);
   assert.match(block, /LIES:Count\("react_hold"\)/);
   assert.match(block, /LIES:Count\("react_allow"\)/);
   // The arm counter sits on the re-acquisition edge, not on every pass.
@@ -467,7 +470,7 @@ test('the reaction block counts held and allowed passes', () => {
   // hold clears a fire decision for that pass.
   assert.match(block, /if shoot then\s*LIES:Count\("react_blocked"\)\s*end\s*shoot = nil/);
   // The event exists but is debug-only: it was 76 % of the event channel.
-  assert.match(block, /if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = level \}\)\s*end/);
+  assert.match(block, /if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = LIES\.settings\.enemy_reaction_level, delay = react_t \}\)\s*end/);
 
   // One of each per pass: a single if/else, not one count per condition term.
   const counts = [...block.matchAll(/LIES:Count\("react_(?:hold|allow)"\)/g)];
