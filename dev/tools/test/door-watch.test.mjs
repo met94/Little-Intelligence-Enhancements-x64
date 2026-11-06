@@ -461,12 +461,14 @@ test('the reaction block counts held and allowed passes', () => {
   assert.match(block, /LIES:Count\("react_hold"\)/);
   assert.match(block, /LIES:Count\("react_allow"\)/);
   // The arm counter sits on an engagement gap, not on every pass or every
-  // flicker of the sampled `verified` flag.
+  // flicker of the sampled `verified` flag, and the clock is sampled above the
+  // exemption gate so a coverfire stint cannot leave a stale stamp.
   assert.match(block, /local react_seen = focus_enemy\.verified and true or false/);
-  assert.match(block, /if react_seen then\s*local seen_t = focus_enemy\.lies_react_last_seen_t/);
-  assert.match(block, /not focus_enemy\.lies_react_t or not seen_t or data\.t - seen_t > 2/);
+  assert.match(block, /local react_last_seen = focus_enemy\.lies_react_last_seen_t/);
+  assert.match(block, /if react_seen then\s*focus_enemy\.lies_react_last_seen_t = data\.t\s*end/);
+  assert.ok(block.indexOf('focus_enemy.lies_react_last_seen_t = data.t') < block.indexOf('if react_t > 0 and not data.unit:in_slot(16)'));
+  assert.match(block, /if react_seen and \(not focus_enemy\.lies_react_t or not react_last_seen or data\.t - react_last_seen > 2\) then/);
   assert.match(block, /focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)/);
-  assert.match(block, /focus_enemy\.lies_react_last_seen_t = data\.t/);
   assert.doesNotMatch(block, /lies_react_seen\b/);
   assert.doesNotMatch(block, /data\.t - focus_enemy\.verified_t > 2/);
   // The blocked counter is narrower than `react_hold`: it only moves when the

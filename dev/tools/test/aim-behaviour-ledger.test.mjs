@@ -166,8 +166,11 @@ test('ledger #10: the reaction-level fire delay is restored with a working gate'
   assert.doesNotMatch(aim, /not data\.team\.id ==/, 'the constant-false team clause must stay out');
   assert.doesNotMatch(aim, /charge_aggro_level/);
   // Private timer, so it cannot stack with the shared `react_t` writes elsewhere.
-  assert.match(aim, /local react_seen = focus_enemy\.verified and true or false/);
-  assert.match(aim, /if react_seen then\s*local seen_t = focus_enemy\.lies_react_last_seen_t\s*if not focus_enemy\.lies_react_t or not seen_t or data\.t - seen_t > 2 then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)\s*if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = LIES\.settings\.enemy_reaction_level, delay = react_t \}\)\s*end\s*end\s*focus_enemy\.lies_react_last_seen_t = data\.t\s*end/);
+  assert.match(aim, /local react_seen = focus_enemy\.verified and true or false\s*local react_last_seen = focus_enemy\.lies_react_last_seen_t\s*if react_seen then\s*focus_enemy\.lies_react_last_seen_t = data\.t\s*end/);
+  // The stamp is refreshed above the exemption gate: the gap must measure
+  // verification, not how often the attack pass reaches the block.
+  assert.ok(aim.indexOf('focus_enemy.lies_react_last_seen_t = data.t') < aim.indexOf('if react_t > 0 and not data.unit:in_slot(16)'), 'the verification clock is sampled before the exemption gate');
+  assert.match(aim, /if react_seen and \(not focus_enemy\.lies_react_t or not react_last_seen or data\.t - react_last_seen > 2\) then\s*focus_enemy\.lies_react_t = data\.t\s*LIES:Count\("react_arm"\)\s*if LIES\.settings\.debug_log then\s*LIES:Event\("reaction_hold", data\.unit, data, \{ level = LIES\.settings\.enemy_reaction_level, delay = react_t \}\)\s*end\s*end/);
   // A bare rising edge is not enough: `verified` flickers on a blocked ray, so
   // the 2 s gap is what keeps a partly covered target from re-arming constantly.
   assert.doesNotMatch(aim, /lies_react_seen/);

@@ -463,21 +463,20 @@ function LIESBossLogicAttack._upd_aim(data, my_data)
 	if reaction and AI_REACT_COMBAT <= reaction then
 		local react_t = LIES:ReactionDelay()
 
+		local react_seen = focus.verified and true or false
+		local react_last_seen = focus.lies_react_last_seen_t
+
+		if react_seen then
+			focus.lies_react_last_seen_t = data.t
+		end
+
 		if react_t > 0 and not data.unit:in_slot(16) then
 			-- Dead path (LIESBossLogicAttack._upd_aim returns the ported body at
 			-- :251), kept in step with the live cop block: re-arm only after a
-			-- 2 s gap without verification, private timer so it cannot stack with
+			-- >2 s verification gap, private timer so it cannot stack with
 			-- `focus.react_t`.
-			local react_seen = focus.verified and true or false
-
-			if react_seen then
-				local seen_t = focus.lies_react_last_seen_t
-
-				if not focus.lies_react_t or not seen_t or data.t - seen_t > 2 then
-					focus.lies_react_t = data.t
-				end
-
-				focus.lies_react_last_seen_t = data.t
+			if react_seen and (not focus.lies_react_t or not react_last_seen or data.t - react_last_seen > 2) then
+				focus.lies_react_t = data.t
 			end
 
 			if shoot and focus.lies_react_t and data.t - focus.lies_react_t < react_t then

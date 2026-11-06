@@ -211,7 +211,7 @@ it. The report tool turns this table into PASS/FAIL
 | nav-link doors are handled | `fsd_navlink_seg_ok`, `fsd_navlink_seg_mismatch`, `fsd_nil_element`, `fsd_nil_tracker` (INFO only) | — (a map without nav-link doors shows 0) |
 | door positions are `Vector3` | `fsd_bad_shape == 0` | a non-`Vector3` was handed to `mvec3_set`/distance |
 | cost is bounded | `dw_us` average, `dw_us_max`, `dw_ray` per minute | — (INFO; compare with `--ab`) |
-| reaction level still works | header/digest `react_delay` (seconds), `react_level`, `react_hold`/`react_allow`, `react_arm`/`react_blocked`, `[LIES-EVENT] kind=reaction_hold level=…` | the delay is inert, firing when it should not, or holding passes without ever clearing a fire decision (`react_blocked == 0` on an instrumented log) |
+| reaction level still works | header/digest `react_delay` (seconds), `react_level`, `react_hold`/`react_allow`, `react_arm`/`react_blocked`, `[LIES-EVENT] kind=reaction_hold level=…` | the delay is inert, firing when it should not, or holding passes without ever clearing a fire decision (`react_blocked == 0` on an instrumented log with at least 10 arms; below that the reader PASSes with a "too few arms" note) |
 | no door alarm | no `evt=alarm name=door_outcome_gap` / `door_contract_violation` | a gap or a contract failure happened in play |
 | the session survived | 0 FATAL, 0 LIES-attributable Lua errors | crash class regression |
 | the near-visible probe merge is live | digest `near_vis_probe > 0` (the vertical fallback ran) plus `near_vis_h_max` (the 8.57.24 probe height, ≈ 100 at worst case, not the pre-merge 30) | — (this claim never FAILs: PASS when the probe fired, INFO `no near-visible probe fired in these windows` when it did not, INFO `digest has no near_vis_* fields: pre-8.57.24 log` when the field is missing — a mis-wired counter cannot read as a clean play) |
@@ -507,11 +507,13 @@ fresh and the hold is effectively continuous; a target it can verify pays
 `2 / level` seconds again on each re-acquisition. That pre-instrumentation log
 cannot say how many of those held passes carried a real shot, which is why
 8.57.32 + the 2026-11-06 instrumentation add `react_arm` and `react_blocked`
-(see the field list above). The same change reworks the timer to arm once per
-verified acquisition (a false→true `verified` edge) instead of on every pass with
-a stale verification, so a repeat run should show `react_arm` in the hundreds per
-window rather than the tens of thousands, a much lower hold share, and
-`react_blocked` only on genuine re-acquisitions.
+(see the field list above). The same change reworks the timer to arm only after
+a gap of more than 2 s without a verified pass (the verification clock is sampled
+above the exemption gate, so a coverfire stint cannot leave a stale stamp), so a
+repeat run should show `react_arm` in the hundreds per window rather than the tens
+of thousands, a much lower hold share, and `react_blocked` only on genuine
+re-acquisitions. The 390-arm / 11.4 % figures quoted elsewhere were measured on
+the rising-edge build `484af78`; the gap version is still to be measured.
 
 NAV (`find_segment_doors`): `fsd_navlink_seg_ok=158`,
 `fsd_navlink_seg_mismatch=0`, `fsd_tracker_created = fsd_tracker_destroyed =
