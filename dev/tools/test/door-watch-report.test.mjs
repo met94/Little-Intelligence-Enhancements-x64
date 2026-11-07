@@ -26,7 +26,7 @@ import {
   selectSessions
 } from '../door-watch-report.mjs';
 
-const VERSION = '8.57.32';
+const VERSION = '8.57.33';
 const CLI = fileURLToPath(new URL('../door-watch-report.mjs', import.meta.url));
 
 function watch(event, fields = {}) {

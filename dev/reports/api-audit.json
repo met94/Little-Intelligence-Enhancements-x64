@@ -8,12 +8,6 @@
       "reason": ""
     },
     {
-      "hook": "lib/managers/menu/menunodegui",
-      "file": "menunodegui.lua",
-      "ok": true,
-      "reason": ""
-    },
-    {
       "hook": "lib/tweak_data/attentiontweakdata",
       "file": "lua/tweak_data/attentiontweakdata.lua",
       "ok": true,
@@ -851,15 +845,6 @@
       "file": "lua/tweak_data/levelstweakdata.lua",
       "ok": true,
       "inherited": false
-    },
-    {
-      "kind": "PostHook",
-      "className": "MenuNodeGui",
-      "method": "_setup_item_rows",
-      "id": "LIES_update",
-      "file": "menunodegui.lua",
-      "ok": true,
-      "inherited": true
     }
   ],
   "findings": [
@@ -1033,7 +1018,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1906,
+      "line": 1909,
       "symbol": "search_coarse",
       "severity": "review",
       "reason": "Start/end validation added at 247",
@@ -1041,7 +1026,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1962,
+      "line": 1965,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1049,7 +1034,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 1966,
+      "line": 1969,
       "symbol": "find_segment_doors",
       "severity": "review",
       "reason": "Returns position vectors, not door tables",
@@ -1057,7 +1042,7 @@
     },
     {
       "file": "lua/coplogics/coplogicattack.lua",
-      "line": 3461,
+      "line": 3464,
       "symbol": "_quad_field",
       "severity": "review",
       "reason": "New engine surface; verify method/arg shapes",

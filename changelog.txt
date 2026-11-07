@@ -7,6 +7,36 @@ GitHub tags and assets keep the old labels, and old logs quote the old label in
 their `v=` field, which `dev/tools/door-watch-report.mjs` resolves through the
 same map.
 
+Revision 8.57.33 — 2026-11-07
+Move the update check to SuperBLT; remove the in-menu poll.
+
+- update detection (2026-11-07): `mod.txt` now declares
+  `"updates": [{ "identifier": "LIES", "host": { "meta":
+  "https://github.com/met94/Little-Intelligence-Enhancements-x64/releases/latest/download/meta.json" } }]`,
+  so LIES appears in SuperBLT's normal update prompt like the rest of the AI
+  suite. Every release from this one must attach a `meta.json` asset
+  (`ident` `LIES`, `version` equal to `mod.txt`, `download_url` to the zip,
+  optional `patchnotes_url`)
+- removed: `LIES.update_url`, `LIES:check_for_updates`, `LIES:set_update_data`
+  (`menumanager.lua`), the `MenuManagerInitialize` call that ran them, and
+  `menunodegui.lua` with its `lib/managers/menu/menunodegui` hook — that file
+  existed only for the "LIES has a new update" QuickMenu prompt
+- compatibility bridge: `autoupdate.json` stays in the repository root, still
+  `ident` `LIES-AI-MOD`, still bumped with each release. Builds older than
+  8.57.33 read it from raw GitHub and keep prompting; it is not shipped in the
+  mod folder
+- no gameplay change; `dev/tools/test/compat.test.mjs` now pins the `updates`
+  block and fails if the removed poll or the old hook comes back
+- version: `8.57.33` in `mod.txt`, `autoupdate.json`, `README.md`,
+  `menumanager.lua` (`LIES.version`), `dev/upstream-base.json` (`patch`),
+  `dev/version-map.json` (`V8.89_x64`), `dev/tools/test/compat.test.mjs` and the
+  `VERSION` fixture in `dev/tools/test/door-watch-report.test.mjs`
+
+Player notes: nothing changes in-game. Updates now show up in SuperBLT's normal
+update prompt instead of a separate in-game message, so you can update LIES the
+same way as the rest of the AI suite. If you are on an older build, the old
+prompt still appears and points you at the same GitHub release.
+
 Revision 8.57.32 — 2026-11-06
 Rework Reaction Level: one hold per acquisition, a new HIGH (0.5 s) value, and counters that can prove a shot was actually held.
 - behaviour (2026-11-06, `lua/coplogics/coplogicattack.lua`): the fire hold re-armed on every aim pass whose target verification was older than 2 s (`data.t - verified_t > 2`), including while the target was not visible at all, so it was continuous rather than a first-shot delay. Measured on Boiling Point (`level=mad`) at NORMAL: `react_arm` tracked `react_hold` (14 024 / 19 405 / 27 844 arms per minute), 65-76 % of aim passes sat in the hold and 849-2 728 real fire decisions were cleared per minute; the ULTRA run read `react_hold=react_arm=react_blocked=0` over 83 281 allowed passes. The timer now arms only when a verified target has not been verified for more than 2 s (a real re-acquisition; the detection update re-samples `verified` about twice a second and flips it on any blocked ray, so a bare rising edge would re-arm constantly for a partly covered player), and it expires even if the target becomes unverified again, so each engagement starts one window. The verification clock is sampled above the exemption gate, so a coverfire stint or a converted/crew exemption cannot leave a stale stamp and arm a hold when it ends; a target seen again inside the 2 s window counts as the same engagement. Coverfire, converted criminals and crew-AI bots stay exempt

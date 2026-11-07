@@ -224,13 +224,15 @@ When the port is stable:
    notes:` at the end) and an entry in `dev/version-map.json`. The gates
    (`dev/tools/test/version-scheme.test.mjs`, `compat.test.mjs`) fail on a
    mismatch.
-3. Repoint or disable the LIES auto-updater URL in `menumanager.lua` when the
-   fork feed changes. The stock URL points at the original upstream repo and
-   would overwrite the port. The prompt compares labels for equality
-   (`menunodegui.lua`), so any differing label, including an older one, prompts.
+3. Keep the `updates` entry in `mod.txt` pointed at this repository's
+   `releases/latest/download/meta.json`, and attach a `meta.json` asset to every
+   release (since 8.57.33 updates go through SuperBLT, not the in-menu prompt).
+   Keep bumping `autoupdate.json` too: that raw-GitHub file is the only update
+   path for builds older than 8.57.33 and is not shipped in the mod folder.
 4. Keep `LICENSE` (AGPL-3.0) and publish the modified source if distributing.
 5. Package `dist\LIES` with `dev\build.ps1`, then zip it as
-   `LIES-<version>.zip`; the user deploys.
+   `LIES-<version>.zip`; attach it and `meta.json` to the release; the user
+   deploys.
 6. Optionally open a PR/fork upstream; keep the upstream remote for future
    rebases.
 
@@ -249,7 +251,7 @@ merge:
    `dev/version-map.json` (new release row; keep the old rows - old logs and
    published artifacts still quote them).
 4. Tag the release `v<version>` and publish `LIES-<version>.zip` plus
-   `autoupdate.json`.
+   `meta.json`; keep `autoupdate.json` bumped for pre-8.57.33 installs.
 
 ## 9. Known pitfalls
 

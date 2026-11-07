@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-11-06T10:27:15.498Z",
+  "generated": "2026-11-07T06:56:33.288Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -20,7 +20,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 694
+          "startLine": 693
         },
         {
           "name": "lies_delta",
@@ -35,7 +35,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 707
+          "startLine": 706
         },
         {
           "name": "lies_level_id",
@@ -50,7 +50,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 439
+          "startLine": 438
         },
         {
           "name": "lies_watch_fields",
@@ -65,7 +65,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 201
+          "startLine": 200
         },
         {
           "name": "LIES._avg_sum",
@@ -80,7 +80,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 617
+          "startLine": 616
         },
         {
           "name": "LIES._cache_hit_histogram",
@@ -95,7 +95,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 637
+          "startLine": 636
         },
         {
           "name": "LIES._count_cache_keys",
@@ -110,7 +110,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 666
+          "startLine": 665
         },
         {
           "name": "LIES._optimize_path",
@@ -125,7 +125,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 883
+          "startLine": 882
         },
         {
           "name": "LIES._path_is_straight_line",
@@ -140,7 +140,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 857
+          "startLine": 856
         },
         {
           "name": "LIES._sum_n",
@@ -155,7 +155,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 629
+          "startLine": 628
         },
         {
           "name": "LIES.Alarm",
@@ -170,22 +170,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 398
-        },
-        {
-          "name": "LIES.check_for_updates",
-          "category": "MOD_ONLY",
-          "modLines": 5,
-          "oldLines": 0,
-          "newLines": 0,
-          "modParams": "",
-          "oldParams": "",
-          "newParams": "",
-          "isLocal": false,
-          "isHook": false,
-          "form": "colon",
-          "note": "",
-          "startLine": 921
+          "startLine": 397
         },
         {
           "name": "LIES.Count",
@@ -200,7 +185,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 162
+          "startLine": 161
         },
         {
           "name": "LIES.Event",
@@ -215,7 +200,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 348
+          "startLine": 347
         },
         {
           "name": "LIES.find_cover_away_from_pos",
@@ -230,7 +215,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 851
+          "startLine": 850
         },
         {
           "name": "LIES.find_cover_from_threat",
@@ -245,7 +230,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 839
+          "startLine": 838
         },
         {
           "name": "LIES.find_cover_in_cone_from_threat_pos_1",
@@ -260,7 +245,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 827
+          "startLine": 826
         },
         {
           "name": "LIES.find_cover_in_nav_seg_3",
@@ -275,7 +260,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 833
+          "startLine": 832
         },
         {
           "name": "LIES.find_cover_near_pos_1",
@@ -290,7 +275,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 845
+          "startLine": 844
         },
         {
           "name": "LIES.Gauge",
@@ -305,7 +290,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 171
+          "startLine": 170
         },
         {
           "name": "LIES.Load",
@@ -320,7 +305,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 118
+          "startLine": 117
         },
         {
           "name": "LIES.LogCheck",
@@ -335,7 +320,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 139
+          "startLine": 138
         },
         {
           "name": "LIES.ReactionDelay",
@@ -350,7 +335,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 61
+          "startLine": 60
         },
         {
           "name": "LIES.Save",
@@ -365,22 +350,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 130
-        },
-        {
-          "name": "LIES.set_update_data",
-          "category": "MOD_ONLY",
-          "modLines": 19,
-          "oldLines": 0,
-          "newLines": 0,
-          "modParams": "json_data",
-          "oldParams": "",
-          "newParams": "",
-          "isLocal": false,
-          "isHook": false,
-          "form": "colon",
-          "note": "",
-          "startLine": 927
+          "startLine": 129
         },
         {
           "name": "LIES.Sum",
@@ -395,7 +365,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 183
+          "startLine": 182
         },
         {
           "name": "LIES.tprint",
@@ -410,7 +380,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 75
+          "startLine": 74
         },
         {
           "name": "LIES.Trace",
@@ -425,7 +395,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 259
+          "startLine": 258
         },
         {
           "name": "LIES.UseLuaCover",
@@ -440,7 +410,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 114
+          "startLine": 113
         },
         {
           "name": "LIES.Watch",
@@ -455,7 +425,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 223
+          "startLine": 222
         },
         {
           "name": "LIES.WatchDigest",
@@ -470,7 +440,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 451
+          "startLine": 450
         },
         {
           "name": "LIES.WatchEnabled",
@@ -485,7 +455,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 219
+          "startLine": 218
         },
         {
           "name": "LIES.WatchReset",
@@ -500,7 +470,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 421
+          "startLine": 420
         },
         {
           "name": "LIES.WatchTick",
@@ -515,37 +485,12 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 711
+          "startLine": 710
         }
       ],
       "errors": [],
       "totals": {
-        "MOD_ONLY": 34
-      }
-    },
-    {
-      "file": "menunodegui.lua",
-      "hook": "lib/managers/menu/menunodegui",
-      "rows": [
-        {
-          "name": "Hooks.PostHook:MenuNodeGui._setup_item_rows:LIES_update",
-          "category": "MOD_ONLY_HOOK",
-          "modLines": 13,
-          "oldLines": 0,
-          "newLines": 0,
-          "modParams": "node, ...",
-          "oldParams": "",
-          "newParams": "",
-          "isLocal": false,
-          "isHook": true,
-          "form": "hook",
-          "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 1
-        }
-      ],
-      "errors": [],
-      "totals": {
-        "MOD_ONLY_HOOK": 1
+        "MOD_ONLY": 32
       }
     },
     {
@@ -6302,7 +6247,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 3143
+          "startLine": 3146
         },
         {
           "name": "CopLogicAttack._cancel_cover_pathing",
@@ -6317,7 +6262,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 3576
+          "startLine": 3579
         },
         {
           "name": "CopLogicAttack._check_needs_reload",
@@ -6347,7 +6292,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 3122
+          "startLine": 3125
         },
         {
           "name": "CopLogicAttack._chk_enrage",
@@ -6362,7 +6307,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2101
+          "startLine": 2104
         },
         {
           "name": "CopLogicAttack._chk_exit_attack_logic",
@@ -6377,7 +6322,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 3527
+          "startLine": 3530
         },
         {
           "name": "CopLogicAttack._chk_request_action_turn_to_enemy",
@@ -6392,7 +6337,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2023
+          "startLine": 2026
         },
         {
           "name": "CopLogicAttack._chk_request_action_walk_to_cover",
@@ -6407,7 +6352,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2973
+          "startLine": 2976
         },
         {
           "name": "CopLogicAttack._chk_request_action_walk_to_cover_offset_pos",
@@ -6422,7 +6367,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2902
+          "startLine": 2905
         },
         {
           "name": "CopLogicAttack._chk_request_action_walk_to_cover_shoot_pos",
@@ -6452,7 +6397,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2539
+          "startLine": 2542
         },
         {
           "name": "CopLogicAttack._chk_start_action_move_out_of_the_way",
@@ -6467,7 +6412,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2477
+          "startLine": 2480
         },
         {
           "name": "CopLogicAttack._chk_wants_to_take_cover",
@@ -6497,7 +6442,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2741
+          "startLine": 2744
         },
         {
           "name": "CopLogicAttack._correct_path_start_pos",
@@ -6512,7 +6457,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2885
+          "startLine": 2888
         },
         {
           "name": "CopLogicAttack._find_charge_pos",
@@ -6527,7 +6472,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2399
+          "startLine": 2402
         },
         {
           "name": "CopLogicAttack._find_flank_pos",
@@ -6542,7 +6487,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2438
+          "startLine": 2441
         },
         {
           "name": "CopLogicAttack._find_friend_pos",
@@ -6557,7 +6502,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 3172
+          "startLine": 3175
         },
         {
           "name": "CopLogicAttack._find_retreat_position",
@@ -6572,7 +6517,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2618
+          "startLine": 2621
         },
         {
           "name": "CopLogicAttack._get_cover_offset_pos",
@@ -6587,7 +6532,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2265
+          "startLine": 2268
         },
         {
           "name": "CopLogicAttack._get_expected_pos",
@@ -6602,7 +6547,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1869
+          "startLine": 1872
         },
         {
           "name": "CopLogicAttack._move_back_into_field_position",
@@ -6617,7 +6562,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2237
+          "startLine": 2240
         },
         {
           "name": "CopLogicAttack._pathing_complete_clbk",
@@ -6647,7 +6592,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2045
+          "startLine": 2048
         },
         {
           "name": "CopLogicAttack._process_pathing_results",
@@ -6662,12 +6607,12 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2323
+          "startLine": 2326
         },
         {
           "name": "CopLogicAttack._upd_aim",
           "category": "LIES_EDIT_VANILLA_CHANGED",
-          "modLines": 497,
+          "modLines": 500,
           "oldLines": 195,
           "newLines": 192,
           "modParams": "data, my_data",
@@ -6722,7 +6667,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2756
+          "startLine": 2759
         },
         {
           "name": "CopLogicAttack._upd_stop_old_action",
@@ -6737,7 +6682,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 3147
+          "startLine": 3150
         },
         {
           "name": "CopLogicAttack._update_cover",
@@ -6752,7 +6697,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 3262
+          "startLine": 3265
         },
         {
           "name": "CopLogicAttack._verify_cover",
@@ -6767,7 +6712,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2307
+          "startLine": 2310
         },
         {
           "name": "CopLogicAttack.action_complete_clbk",
@@ -6782,7 +6727,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2783
+          "startLine": 2786
         },
         {
           "name": "CopLogicAttack.action_taken",
@@ -6812,7 +6757,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2199
+          "startLine": 2202
         },
         {
           "name": "CopLogicAttack.chk_should_turn",
@@ -6872,7 +6817,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 3061
+          "startLine": 3064
         },
         {
           "name": "CopLogicAttack.queue_update",

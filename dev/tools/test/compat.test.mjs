@@ -60,9 +60,9 @@ function functionBody(source, signature) {
   return source.slice(start, next === -1 ? source.length : next);
 }
 
-test('version metadata agrees on 8.57.32', () => {
+test('version metadata agrees on 8.57.33', () => {
   const modTxt = JSON.parse(read('mod.txt').replace(/^\uFEFF/, ''));
-  assert.equal(modTxt.version, '8.57.32');
+  assert.equal(modTxt.version, '8.57.33');
 
   // The in-code version is what every `[LIES-WATCH] v=` and `[LIES-TRACE] v=`
   // line reports, so a release bump that misses it makes a correct run's
@@ -73,19 +73,38 @@ test('version metadata agrees on 8.57.32', () => {
   assert.equal(inCode[1], modTxt.version, 'menumanager.lua LIES.version must equal the mod.txt version');
 
   const feed = JSON.parse(read('autoupdate.json').replace(/^\uFEFF/, ''));
-  assert.equal(feed[0].version, '8.57.32');
+  assert.equal(feed[0].version, '8.57.33');
 
   const readme = read('README.md');
-  assert.match(readme, /\*\*Current release:\*\* `8\.57\.32`/);
+  assert.match(readme, /\*\*Current release:\*\* `8\.57\.33`/);
   // The install step must ship the current package name, not a stale one.
-  assert.match(readme, /Extract `LIES-8\.57\.32\.zip`/);
+  assert.match(readme, /Extract `LIES-8\.57\.33\.zip`/);
 
   const changelog = read('changelog.txt');
   const revisions = [...changelog.matchAll(/^Revision (8\.57\.\d+) \u2014 (\d{4}-\d{2}-\d{2})\r?$/gm)];
   assert.ok(revisions.length > 0, 'changelog has no revision headers');
-  assert.equal(revisions[0][1], '8.57.32');
-  assert.equal(revisions[0][2], '2026-11-06');
+  assert.equal(revisions[0][1], '8.57.33');
+  assert.equal(revisions[0][2], '2026-11-07');
   assert.equal(revisions.at(-1)[1], '8.57.1', 'older revision header was lost');
+});
+
+test('LIES updates through SuperBLT and keeps the legacy feed for old builds', () => {
+  const modTxt = JSON.parse(read('mod.txt').replace(/^\uFEFF/, ''));
+  const lies = (modTxt.updates || []).find((entry) => entry.identifier === 'LIES');
+  assert.ok(lies, 'mod.txt has no LIES updates entry');
+  assert.match(lies.host.meta, /releases\/latest\/download\/meta\.json$/);
+
+  const promptHooks = (modTxt.hooks || []).filter((hook) => hook.hook_id === 'lib/managers/menu/menunodegui');
+  assert.equal(promptHooks.length, 0, 'the menunodegui update-prompt hook must stay removed');
+  assert.equal(fs.existsSync(path.join(root, 'menunodegui.lua')), false, 'menunodegui.lua must stay removed');
+
+  const manager = read('menumanager.lua');
+  assert.doesNotMatch(manager, /update_url|check_for_updates|received_version/, 'the in-menu update poll must stay removed');
+
+  // The raw-GitHub JSON is the only update path for builds older than 8.57.33.
+  const feed = JSON.parse(read('autoupdate.json').replace(/^\uFEFF/, ''));
+  assert.equal(feed[0].ident, 'LIES-AI-MOD');
+  assert.equal(feed[0].version, modTxt.version, 'autoupdate.json must track every release for old builds');
 });
 
 test('LIES still advertises the Navlink Delays menu entry it now implements', () => {

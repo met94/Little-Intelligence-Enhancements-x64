@@ -2,8 +2,8 @@
 
 Target: `e3a8b616`
 
-- hooks: 68/68 ok
-- method checks: 50/50 ok
+- hooks: 67/67 ok
+- method checks: 49/49 ok
 - errors: 0
 - review: 151
 
@@ -12,7 +12,6 @@ Target: `e3a8b616`
 | status | hook | script | note |
 |---|---|---|---|
 | ok | `lib/managers/menumanager` | `menumanager.lua` |  |
-| ok | `lib/managers/menu/menunodegui` | `menunodegui.lua` |  |
 | ok | `lib/tweak_data/attentiontweakdata` | `lua/tweak_data/attentiontweakdata.lua` |  |
 | ok | `lib/tweak_data/weapontweakdata` | `lua/tweak_data/weapontweakdata.lua` |  |
 | ok | `lib/tweak_data/charactertweakdata` | `lua/tweak_data/charactertweakdata.lua` |  |
@@ -133,7 +132,6 @@ Target: `e3a8b616`
 | ok | PostHook | `CharacterTweakData.init` | `lies_fix_nosup` |
 | ok | PostHook | `GroupAITweakData._init_chatter_data` | `lies_chatter` |
 | ok | PostHook | `LevelsTweakData.init` | `lies_fixed_ai_obj` |
-| ok (base) | PostHook | `MenuNodeGui._setup_item_rows` | `LIES_update` |
 
 ## Errors
 
@@ -162,10 +160,10 @@ None.
 - `lua/coplogics/coplogicattack.lua:242` `find_segment_doors` — Returns position vectors, not door tables. `local doors = nav and nav.find_segment_doors and nav:find_segment_doors(enemy_seg)`
 - `lua/coplogics/coplogicattack.lua:467` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.update_queue_id, data.logic.queued_update, data, data.t + (data.important and 0 or 0.2), true)`
 - `lua/coplogics/coplogicattack.lua:544` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `CopLogicBase.queue_task(my_data, my_data.detection_task_key, CopLogicAttack._upd_enemy_detection, data, delay and data.t + delay, data.important and true)`
-- `lua/coplogics/coplogicattack.lua:1906` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
-- `lua/coplogics/coplogicattack.lua:1962` `find_segment_doors` — Returns position vectors, not door tables. `local found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", to_nav_seg), true)`
-- `lua/coplogics/coplogicattack.lua:1966` `find_segment_doors` — Returns position vectors, not door tables. `found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", enemy_seg), true)`
-- `lua/coplogics/coplogicattack.lua:3461` `_quad_field` — New engine surface; verify method/arg shapes. `found_cover = managers.navigation._quad_field:find_cover(search_params)`
+- `lua/coplogics/coplogicattack.lua:1909` `search_coarse` — Start/end validation added at 247. `local coarse_path = managers.navigation:search_coarse(search_params)`
+- `lua/coplogics/coplogicattack.lua:1965` `find_segment_doors` — Returns position vectors, not door tables. `local found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", to_nav_seg), true)`
+- `lua/coplogics/coplogicattack.lua:1969` `find_segment_doors` — Returns position vectors, not door tables. `found_doors = managers.navigation:find_segment_doors(from_nav_seg, callback(CopLogicAttack, CopLogicAttack, "_chk_is_right_segment", enemy_seg), true)`
+- `lua/coplogics/coplogicattack.lua:3464` `_quad_field` — New engine surface; verify method/arg shapes. `found_cover = managers.navigation._quad_field:find_cover(search_params)`
 - `lua/coplogics/coplogicbase.lua:367` `_nav_segments` — Keyed by tostring(id); neighbours are door vectors. `local all_nav_segs = managers.navigation._nav_segments`
 - `lua/coplogics/coplogicbase.lua:521` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `function CopLogicBase.queue_task(internal_data, id, func, data, exec_t, asap)`
 - `lua/coplogics/coplogicbase.lua:552` `queue_task` — No longer executes inline; check EnemyManager/CopLogicBase assumptions. `managers.enemy:queue_task(id, func, data, exec_t, callback(CopLogicBase, CopLogicBase, "on_queued_task", internal_data), asap)`

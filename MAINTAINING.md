@@ -59,7 +59,7 @@ rebases and the counter restarts.
   `V8.86_x64`) to the current scheme (`8.57.1` … `8.57.30`). GitHub tags, old
   assets and old logs keep the old labels, so the report tool resolves version
   strings through that map.
-- GitHub tags are `v<version>` (e.g. `v8.57.32`).
+- GitHub tags are `v<version>` (e.g. `v8.57.33`).
 
 ## Known deviations from the original 246.1 build
 
@@ -71,27 +71,30 @@ Intentional port decisions, not missing files:
 - Generated covers are LIES-search-only and opt-in.
 - Marshal marksmen keep the long-standing LIES `CopLogicAttack` mapping.
 
-## Auto-updater
+## Updates
 
-`LIES.update_url` (`menumanager.lua`) points at
-`https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json`,
-fetched with `dohttpreq`. The JSON is a one-element array with `ident`
-(`LIES-AI-MOD`) and `version`. The prompt compares versions for **equality**
-(not ordering) and links to the GitHub releases page; there is no silent
-download or install.
+Since 8.57.33 LIES updates through SuperBLT: `mod.txt` declares
+`"updates": [{ "identifier": "LIES", "host": { "meta":
+".../releases/latest/download/meta.json" } }]`, and every release must attach a
+`meta.json` asset (`ident` `LIES`, `version` equal to `mod.txt`, `download_url`
+to the zip asset, optional `patchnotes_url`). SuperBLT then shows LIES in its
+normal update prompt and installs it.
 
-`autoupdate.json` is served from raw GitHub and is **not** part of the mod
-folder: `dev/build.ps1` copies an explicit item list that excludes `dev/`,
-`dist/`, `.git/`, `autoupdate.json` and this file.
+The old in-menu poll (`LIES.update_url`, `dohttpreq`, the prompt in
+`menunodegui.lua`) was removed in 8.57.33. **Keep `autoupdate.json`** in the
+repository root and bump it with every release: that raw-GitHub file is the only
+update path builds older than 8.57.33 have, and it is not shipped inside the mod
+folder (the build item list excludes it). Drop it only when those builds have
+aged out.
 
 ## Repository layout
 
 ```text
 lua/        ported game code (hooks into cop, team-AI, civilian, nav, tweak data)
-menu/       SuperBLT options menu definition
+menu/       options menu definition
 loc/        translations
 dev/        port ledgers, reports, build script, gates, test harness
-mod.txt     hooks, version, priority
+mod.txt     hooks, version, priority, updates feed
 ```
 
 ## Gates
@@ -122,9 +125,11 @@ The test harness (`dev/test-harness/`) is dev-only and must never ship.
 3. Run the gates above; all green.
 4. `dev/build.ps1` -> `dist/LIES`; verify the folder has `mod.txt` at its root
    and no `dev/`, `dist/`, `.git`, `autoupdate.json`, `MAINTAINING.md`.
-5. Tag `v<version>`, publish the zip from `dist/`, push `main` to the `x64`
-   remote (keep `origin` = upstream), and confirm the raw `autoupdate.json`
-   advertises the new version.
+5. Tag `v<version>`, publish the zip from `dist/` **and a `meta.json` asset**
+   (`ident` `LIES`, `version`, `download_url` to the zip, optional
+   `patchnotes_url`) on the release, push `main` to the `x64` remote (keep
+   `origin` = upstream), and confirm the raw `autoupdate.json` advertises the
+   new version for pre-8.57.33 installs.
 6. The user deploys into the game; agents never copy mods into the install.
 
 ## Licensing

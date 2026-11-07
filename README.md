@@ -10,7 +10,7 @@ LIES is an enemy-AI overhaul: it rewrites how cops detect, evaluate, aim, take
 cover, path, suppress and coordinate, without replacing the game's core combat
 loop.
 
-- **Current release:** `8.57.32`
+- **Current release:** `8.57.33`
 - **Download:** [GitHub Releases](https://github.com/met94/Little-Intelligence-Enhancements-x64/releases)
 - **Original project:** [fuglore/Little-Intelligence-Enhancements](https://github.com/fuglore/Little-Intelligence-Enhancements)
 
@@ -57,7 +57,7 @@ LIES does **not** require BeardLib.
 
 1. Install SuperBLT if you have not already.
 2. Remove or rename any existing `PAYDAY 2/mods/LIES` folder.
-3. Extract `LIES-8.57.32.zip` so the final path is:
+3. Extract `LIES-8.57.33.zip` so the final path is:
    `PAYDAY 2/mods/LIES/mod.txt`
 4. Start the game and open **Options → Mod Options → Little Intelligence
    EnhancementS Options**.
@@ -101,14 +101,15 @@ Function-level details and the test profiles: [`MAINTAINING.md`](MAINTAINING.md)
 
 ## Updates
 
-LIES checks its update feed at startup and, if the advertised version differs
-from the installed one, shows a prompt that links to the GitHub releases page.
-It never downloads or installs anything by itself, and the comparison cannot
-tell a newer build from an older one — check the release notes before updating.
+LIES updates through SuperBLT, like the rest of the suite: `mod.txt` points
+SuperBLT at the GitHub release feed (`releases/latest/download/meta.json`), so
+the update appears in the normal SuperBLT prompt and can be installed there.
+Builds older than 8.57.33 still check the old in-menu feed and link to the
+GitHub releases page instead; that feed is kept alive for them.
 
 ## Versioning
 
-`<upstream release>.<fork patch>`: `8.57.32` is the 32nd fork release on
+`<upstream release>.<fork patch>`: `8.57.33` is the 33rd fork release on
 upstream LIES 8.57. When upstream ships a new release the fork rebases onto it
 and the patch counter restarts (`8.60.1`, `8.60.2`, …). Releases published
 before 2026-11-03 keep their old `V8.xx_x64` labels; the mapping is in

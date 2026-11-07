@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-06T10:27:15.495Z
+Generated: 2026-11-07T06:56:33.286Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -14,8 +14,8 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | category | count |
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 23 |
-| MOD_ONLY_HOOK | 43 |
-| MOD_ONLY | 223 |
+| MOD_ONLY_HOOK | 42 |
+| MOD_ONLY | 221 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -48,7 +48,6 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | — | `LIES._path_is_straight_line` | 25 | 0 | 0 |  |
 | [ ] | audit | — | `LIES._sum_n` | 5 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Alarm` | 22 | 0 | 0 |  |
-| [ ] | audit | — | `LIES.check_for_updates` | 5 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Count` | 3 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Event` | 49 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.find_cover_away_from_pos` | 5 | 0 | 0 |  |
@@ -61,7 +60,6 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | — | `LIES.LogCheck` | 11 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.ReactionDelay` | 5 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Save` | 8 | 0 | 0 |  |
-| [ ] | audit | — | `LIES.set_update_data` | 19 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Sum` | 17 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.tprint` | 38 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.Trace` | 81 | 0 | 0 |  |
@@ -71,12 +69,6 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 | [ ] | audit | — | `LIES.WatchEnabled` | 3 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.WatchReset` | 17 | 0 | 0 |  |
 | [ ] | audit | — | `LIES.WatchTick` | 113 | 0 | 0 |  |
-
-## menunodegui.lua
-
-| done | status | decision | function | mod L | old L | new L | note |
-|---:|---|---|---|---:|---:|---:|---|
-| [ ] | audit (hook) | — | `Hooks.PostHook:MenuNodeGui._setup_item_rows:LIES_update` | 13 | 0 | 0 | Hooks:PostHook/PreHook callback; audit and port with the hooked method |
 
 ## lua/tweak_data/attentiontweakdata.lua
 
@@ -626,7 +618,7 @@ No function definitions (hook/overlay file).
 
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
-| [ ] | **PORT** | done (bbb30fa) | `CopLogicAttack._upd_aim` | 497 | 195 | 192 |  |
+| [ ] | **PORT** | done (bbb30fa) | `CopLogicAttack._upd_aim` | 500 | 195 | 192 |  |
 | [ ] | **PORT** | done (f0370d4) | `CopLogicAttack.action_complete_clbk` | 101 | 47 | 47 |  |
 | [ ] | **PORT** | done (dev/reports/port-decisions.md) | `CopLogicAttack.is_available_for_assignment` | 60 | 43 | 43 |  |
 | [ ] | audit | — | `CopLogicAttack._check_needs_reload` | 48 | 0 | 0 |  |

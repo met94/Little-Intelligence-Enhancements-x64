@@ -5,7 +5,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "8.57.32",
+		version = "8.57.33",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,
@@ -48,7 +48,6 @@ if RequiredScript == "lib/managers/menumanager" then
 			cache_lookup = true
 		}
 	}
-	LIES.update_url = "https://raw.githubusercontent.com/met94/Little-Intelligence-Enhancements-x64/main/autoupdate.json"
 
 	-- Reaction Level is a menu index, not a rank: HIGH (3) is 0.5 s and
 	-- ULTRA-VIOLENCE (4) is off. Keeping ULTRA at the value it always had would
@@ -918,31 +917,10 @@ if RequiredScript == "lib/managers/menumanager" then
 		return opt_path
 	end
 
-	function LIES:check_for_updates()
-		dohttpreq(self.update_url, function(json_data, http_id)
-			self:set_update_data(json_data)
-		end)
-	end
-	
-	function LIES:set_update_data(json_data)
-		if json_data:is_nil_or_empty() then
-			return
-		end
-		
-		local ok, received_data = pcall(json.decode, json_data)
-
-		if not ok or type(received_data) ~= "table" then
-			return
-		end
-		
-		for _, data in pairs(received_data) do
-			if data.ident == "LIES-AI-MOD" and data.version then
-				LIES.received_version = data.version
-				log("LIES: Received update data.")
-				break
-			end
-		end
-	end
+	-- Updates are handled by SuperBLT through the `updates` entry in mod.txt
+	-- (GitHub releases meta.json). The old in-menu poll and its prompt are gone;
+	-- `autoupdate.json` stays in the repository only as the feed old installs
+	-- still read, and is bumped with every release until they age out.
 	
 	Hooks:Add("LocalizationManagerPostInit", "LocalizationManagerPostInit_LIES", function( loc )
 		loc:load_localization_file( LIES.default_loc_path)
@@ -1116,11 +1094,5 @@ if RequiredScript == "lib/managers/menumanager" then
 
 		--create menus
 		MenuHelper:LoadFromJsonFile(LIES.options_path, LIES, LIES.settings)
-		
-		if not Global.checked_for_updates_lies then
-			log("LIES: Checking for update data.")
-			LIES:check_for_updates()
-			Global.checked_for_updates_lies = true
-		end
 	end)
 end
