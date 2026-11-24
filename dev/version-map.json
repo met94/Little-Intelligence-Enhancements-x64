@@ -3,6 +3,11 @@
   "upstreamBase": "8.57",
   "releases": [
     {
+      "version": "8.57.35",
+      "legacy": "V8.91_x64",
+      "date": "2026-11-24"
+    },
+    {
       "version": "8.57.34",
       "legacy": "V8.90_x64",
       "date": "2026-11-24"

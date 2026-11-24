@@ -1481,6 +1481,14 @@ function CopLogicBase.on_new_objective(data, old_objective)
 	local new_objective = data.objective
 
 	if new_objective and new_objective.follow_unit and not new_objective.destroy_clbk_key then
+		-- The unit can be destroyed before the pointer reaches a new objective
+		-- (the LIES death path calls on_objective_failed first).
+		if not alive(new_objective.follow_unit) then
+			new_objective.follow_unit = nil
+		end
+	end
+
+	if new_objective and new_objective.follow_unit and not new_objective.destroy_clbk_key then
 		local ext_brain = data.unit:brain()
 		local destroy_clbk_key = "objective_" .. new_objective.type .. tostring(data.unit:key())
 		new_objective.destroy_clbk_key = destroy_clbk_key

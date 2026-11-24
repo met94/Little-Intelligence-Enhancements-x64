@@ -4,13 +4,13 @@
 
 # LIES — Little Intelligence EnhancementS
 
-**Updated for PAYDAY 2 248.2 x64 (Diesel 3).**
+**Updated for PAYDAY 2 249 x64 (Diesel 3).**
 
 LIES is an enemy-AI overhaul: it rewrites how cops detect, evaluate, aim, take
 cover, path, suppress and coordinate, without replacing the game's core combat
 loop.
 
-- **Current release:** `8.57.34`
+- **Current release:** `8.57.35`
 - **Download:** [GitHub Releases](https://github.com/met94/Little-Intelligence-Enhancements-x64/releases)
 - **Original project:** [fuglore/Little-Intelligence-Enhancements](https://github.com/fuglore/Little-Intelligence-Enhancements)
 
@@ -47,7 +47,7 @@ Tested as one stack and meant to run with it. One download for all four:
 
 ## Requirements
 
-- PAYDAY 2 **248.2 x64** (Diesel 3)
+- PAYDAY 2 **249 x64** (Diesel 3)
 - [SuperBLT](https://superblt.znix.xyz/) installed and working
 - A clean `mods/LIES` folder (remove older LIES versions before updating)
 
@@ -57,7 +57,7 @@ LIES does **not** require BeardLib.
 
 1. Install SuperBLT if you have not already.
 2. Remove or rename any existing `PAYDAY 2/mods/LIES` folder.
-3. Extract `LIES-8.57.34.zip` so the final path is:
+3. Extract `LIES-8.57.35.zip` so the final path is:
    `PAYDAY 2/mods/LIES/mod.txt`
 4. Start the game and open **Options → Mod Options → Little Intelligence
    EnhancementS Options**.
@@ -109,7 +109,7 @@ GitHub releases page instead; that feed is kept alive for them.
 
 ## Versioning
 
-`<upstream release>.<fork patch>`: `8.57.34` is the 34th fork release on
+`<upstream release>.<fork patch>`: `8.57.35` is the 35th fork release on
 upstream LIES 8.57. When upstream ships a new release the fork rebases onto it
 and the patch counter restarts (`8.60.1`, `8.60.2`, …). Releases published
 before 2026-11-03 keep their old `V8.xx_x64` labels; the mapping is in

@@ -7,6 +7,46 @@ GitHub tags and assets keep the old labels, and old logs quote the old label in
 their `v=` field, which `dev/tools/door-watch-report.mjs` resolves through the
 same map.
 
+Revision 8.57.35 — 2026-11-24
+Game 249 follow-up: stop carrying a dead follow_unit / area-less group objective.
+
+- goal: the free objective that replaces a failed or completed objective kept
+  `grp_objective` and `follow_unit` from the old one, but set `area` only when
+  `pos` existed — and `pos` is deliberately nil while `_enemy_weapons_hot`. A
+  grouped cop still travelling then read `my_objective.area.pos` in
+  `chk_group_ready_to_move` and died with `attempt to index field 'area'`
+  (reported as a Safe House Raid crash after 249, but present since 7.89)
+- reproduced with the rig: forcing `GroupAIStateBase:on_objective_failed` on a
+  grouped, travelling cop in a loud heist produced `type=free`,
+  `grp_objective` set, `area=nil`; the game's own
+  `CopLogicTravel.chk_group_ready_to_move` then raised
+  `lua/coplogics/coplogictravel.lua:515: attempt to index field 'area'`
+  (4/4 cops on the pre-fix build; 0 caught over 15 forced rounds and 16-20
+  grouped cops per round after this change)
+- `groupaistatebase.on_objective_failed`: carry `follow_unit` only when alive;
+  always resolve `nav_seg`/`area` from the unit tracker; drop `grp_objective`
+  when the segment has no area
+- `groupaistatebesiege.on_objective_complete` (both the `trigger_on` followup
+  and the host-default branch): same rule — an objective may not stay
+  group-linked without an area
+- `coplogictravel.chk_group_ready_to_move`: a missing `area` now returns true
+  like the existing per-peer guard instead of indexing it (defense in depth)
+- `coplogicbase.on_new_objective`: do not call `follow_unit:base()` when the
+  unit is already destroyed; clear the pointer instead. This is the native-fault
+  path where the followed unit dies between objective creation and listener
+  registration
+- tests: `tools\pd2session.ps1` forced-failure probe (0 catches after the fix),
+  70 s loud soak with 46 live cops PASS
+- version: `8.57.35` in `mod.txt`, `autoupdate.json`, `README.md`,
+  `menumanager.lua`, `dev/upstream-base.json`, `dev/version-map.json` and the
+  version tests
+
+Player notes: fixes a crash ("attempt to index field 'area'") that could hit
+during loud waves when a squad member's objective failed while it was moving.
+No gameplay change intended; squads still coordinate after a failed objective,
+and a cop whose followed unit is gone simply drops that link instead of
+crashing.
+
 Revision 8.57.34 — 2026-11-24
 Game 249: restore the default logic variant in the copied `CopBrain:post_init`.
 
