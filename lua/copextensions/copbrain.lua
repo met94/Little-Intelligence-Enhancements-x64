@@ -41,7 +41,7 @@ function CopBrain:post_init()
 		LIES:LogCheck("marshal marksman attack=CopLogicAttack", "marshal")
 	end
 
-	self._logics = CopBrain._logic_variants[self._unit:base()._tweak_table]
+	self._logics = self._logic_variants[self._unit:base()._tweak_table] or self._logic_variants[self._default_logic_variant or "security"]
 
 	self:_reset_logic_data()
 

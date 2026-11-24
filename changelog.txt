@@ -7,6 +7,28 @@ GitHub tags and assets keep the old labels, and old logs quote the old label in
 their `v=` field, which `dev/tools/door-watch-report.mjs` resolves through the
 same map.
 
+Revision 8.57.34 — 2026-11-24
+Game 249: restore the default logic variant in the copied `CopBrain:post_init`.
+
+- game 249 removed the per-tweak-table aliases from `CopBrain._logic_variants`
+  (`cop`, `swat`, `fbi_swat`, `heavy_swat`, `biker`, ... roughly 50 names) and
+  replaced them with `_default_logic_variant = "security"`; our copied
+  `post_init` still looked the unit's tweak table up directly, so `_logics` was
+  nil for ordinary cops and civilian variants and `set_init_logic("idle")`
+  died with `attempt to index field '_logics' (a nil value)`
+- fix: `lua/copextensions/copbrain.lua` mirrors 249's lookup
+  (`self._logic_variants[tweak] or self._logic_variants[_default_logic_variant
+  or "security"]`); the 249 `on_reload` already had the fallback, so only the
+  spawn path needed it
+- reported upstream as LIES x64 issues #2/#3 (crash on cop spawn, Hoxton
+  Breakout day 1)
+- version: `8.57.34` in `mod.txt`, `autoupdate.json`, `README.md`,
+  `menumanager.lua`, `dev/upstream-base.json`, `dev/version-map.json` and the
+  version tests
+
+Player notes: fixes the crash after game update 249 when enemies spawn
+("attempt to index field '_logics'"). No gameplay change.
+
 Revision 8.57.33 — 2026-11-07
 Move the update check to SuperBLT; remove the in-menu poll.
 
