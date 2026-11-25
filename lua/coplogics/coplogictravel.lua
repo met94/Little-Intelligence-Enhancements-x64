@@ -1369,7 +1369,7 @@ function CopLogicTravel._determine_destination_occupation(data, objective)
 					radius = objective.radius
 				}
 			else
-				near_pos = CopLogicTravel._get_pos_on_wall(near_pos, 700, nil, nil, nil, data.pos_rsrv_id)
+				near_pos = CopLogicTravel._get_pos_on_wall(near_pos, 700, nil, nil, data.pos_rsrv_id)
 				near_pos = managers.navigation:pad_out_position(near_pos, 4, data.char_tweak.wall_fwd_offset)
 				occupation = {
 					type = "defend",
@@ -1384,7 +1384,7 @@ function CopLogicTravel._determine_destination_occupation(data, objective)
 
 		logic.register_in_group_ai(data.unit)
 
-		local phalanx_circle_pos = logic.calc_initial_phalanx_pos(data, data.m_pos, objective)
+		local phalanx_circle_pos = logic.calc_initial_phalanx_pos(data.m_pos, objective, data)
 		
 		if data.unit:base()._tweak_table == "phalanx_minion" then
 			local rsrv_desc = {
@@ -1394,7 +1394,7 @@ function CopLogicTravel._determine_destination_occupation(data, objective)
 			}
 		
 			if not managers.navigation:is_pos_free(rsrv_desc) then
-				phalanx_circle_pos = CopLogicTravel._get_pos_on_wall(phalanx_circle_pos, 90, nil, nil, nil, data.pos_rsrv_id)
+				phalanx_circle_pos = CopLogicTravel._get_pos_on_wall(phalanx_circle_pos, 90, nil, nil, data.pos_rsrv_id)
 			end
 		end
 		
@@ -1445,7 +1445,7 @@ function CopLogicTravel._determine_destination_occupation(data, objective)
 				max_dist = 450
 			end
 
-			local to_pos = CopLogicTravel._get_pos_on_wall(follow_pos, max_dist, nil, nil, nil, data.pos_rsrv_id)
+			local to_pos = CopLogicTravel._get_pos_on_wall(follow_pos, max_dist, nil, nil, data.pos_rsrv_id)
 			to_pos = managers.navigation:pad_out_position(to_pos, 4, data.char_tweak.wall_fwd_offset)
 			occupation = {
 				type = "defend",
@@ -1944,7 +1944,7 @@ function CopLogicTravel._get_exact_move_pos(data, nav_index)
 
 		if not to_pos then
 			to_pos = coarse_path[nav_index][2] or managers.navigation:find_random_position_in_segment(objective.nav_seg)
-			to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, nil, data.pos_rsrv_id)
+			to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, data.pos_rsrv_id)
 			to_pos = managers.navigation:pad_out_position(to_pos, 4, data.char_tweak.wall_fwd_offset)
 			wants_reservation = true
 		end
@@ -1993,7 +1993,7 @@ function CopLogicTravel._get_exact_move_pos(data, nav_index)
 				to_pos = coarse_path[nav_index][2] or area.pos
 				
 				if not data.cool then
-					to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, nil, data.pos_rsrv_id)
+					to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, data.pos_rsrv_id)
 				end
 			end
 			
@@ -2004,7 +2004,7 @@ function CopLogicTravel._get_exact_move_pos(data, nav_index)
 			}
 			
 			if not managers.navigation:is_pos_free(rsrv_desc) then
-				to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, nil, data.pos_rsrv_id)
+				to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, data.pos_rsrv_id)
 			end
 			
 			wants_reservation = true
