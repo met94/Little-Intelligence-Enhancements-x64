@@ -1186,7 +1186,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 320,
+      "line": 355,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1194,7 +1194,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 509,
+      "line": 544,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1202,7 +1202,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 1407,
+      "line": 1450,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1210,7 +1210,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 1470,
+      "line": 1513,
       "symbol": "_nav_segments",
       "severity": "review",
       "reason": "Keyed by tostring(id); neighbours are door vectors",
@@ -1218,7 +1218,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 2110,
+      "line": 2153,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",

@@ -288,18 +288,53 @@ function CopLogicTravel._chk_start_pathing_to_next_nav_point(data, my_data)
 		return
 	end
 
-	local next_entry = my_data.coarse_path[my_data.coarse_path_index + 1]
+	local path_len = my_data.coarse_path and #my_data.coarse_path or 0
+	local index = my_data.coarse_path_index
 
-	if not next_entry then
-		-- A path replaced by a shorter one can leave the index on or past the last
-		-- point while a walk action is still in flight. That is not an arrival - the
-		-- unit is not there - so drop the path and let the travel logic re-path from
-		-- the unit's actual position. Marking the objective in place here would
-		-- complete a `free` objective the unit never reached.
+	if not index or path_len == 0 then
+		-- No usable path at all (dropped by a reset, or the replacement never
+		-- arrived): drop what is left so the next update starts a fresh coarse path.
+		my_data.coarse_path = nil
+		my_data.coarse_path_index = nil
+		my_data.advance_path = nil
+		my_data.processing_advance_path = nil
+		LIES:Count("travel_index_reset")
+
+		return
+	elseif index == path_len then
+		-- Genuine end of the path: the unit is on the last point. This is arrival,
+		-- not the over-range case - `upd_advance` can reach this helper without its
+		-- own arrival check, and resetting here made a travelling bot re-path in a
+		-- loop instead of finishing the approach (revive diagnostic, Safe House
+		-- Raid: `travel_index_reset` 1 -> 4 while the bot oscillated).
+		LIES:Count("travel_index_end")
+		CopLogicTravel._on_destination_reached(data)
+
+		return
+	elseif index > path_len then
+		-- The path was replaced by a shorter one while a walk action was in flight;
+		-- the unit is not at the destination. Drop the path so the travel logic
+		-- re-paths from the unit's actual position instead of marking the objective
+		-- in place.
 		my_data.coarse_path = nil
 		my_data.coarse_path_index = nil
 		-- The pending advance belonged to the old path; leaving it set makes the
 		-- same action callback call `_chk_begin_advance` with a nil index.
+		my_data.advance_path = nil
+		my_data.processing_advance_path = nil
+		LIES:Count("travel_index_reset")
+
+		return
+	end
+
+	local next_entry = my_data.coarse_path[my_data.coarse_path_index + 1]
+
+	if not next_entry then
+		-- A hole in the middle of the path (end-of-path is handled above, so this
+		-- means the entry is genuinely missing): same recovery as an over-range
+		-- index, because there is nothing to walk towards.
+		my_data.coarse_path = nil
+		my_data.coarse_path_index = nil
 		my_data.advance_path = nil
 		my_data.processing_advance_path = nil
 		LIES:Count("travel_index_reset")
@@ -937,8 +972,16 @@ function CopLogicTravel.upd_advance(data)
 					end
 				end
 			elseif my_data.coarse_path and not my_data.advancing then
-				CopLogicTravel._chk_start_pathing_to_next_nav_point(data, my_data)
-				
+				-- Mirror the arrival branch above: an index at the last point is
+				-- arrival. Calling the next-nav-point helper there made it reset the
+				-- path at every step (`travel_index_reset` 1 -> 4 in the revive run)
+				-- and the unit oscillated instead of finishing the approach.
+				if my_data.coarse_path_index == #my_data.coarse_path then
+					CopLogicTravel._on_destination_reached(data)
+				else
+					CopLogicTravel._chk_start_pathing_to_next_nav_point(data, my_data)
+				end
+
 				if my_data.waiting_for_navlink then
 					if data.attention_obj and AIAttentionObject.REACT_SCARED <= data.attention_obj.reaction and (not my_data.best_cover or not my_data.best_cover[4]) and not unit:anim_data().crouch and (not data.char_tweak.allowed_poses or data.char_tweak.allowed_poses.crouch) then
 						CopLogicAttack._chk_request_action_crouch(data)

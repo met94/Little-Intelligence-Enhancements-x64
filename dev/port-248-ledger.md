@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-25T17:14:29.918Z
+Generated: 2026-11-25T18:16:26.962Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -549,7 +549,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicTravel._chk_close_to_criminal` | 32 | 21 | 21 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_cover_height` | 10 | 17 | 17 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_request_action_walk_to_advance_pos` | 25 | 31 | 31 |  |
-| [ ] | keep | — | `CopLogicTravel._chk_start_pathing_to_next_nav_point` | 135 | 14 | 14 |  |
+| [ ] | keep | — | `CopLogicTravel._chk_start_pathing_to_next_nav_point` | 170 | 14 | 14 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_stop_for_follow_unit` | 108 | 25 | 25 |  |
 | [ ] | keep | — | `CopLogicTravel._determine_destination_occupation` | 200 | 186 | 186 |  |
 | [ ] | keep | — | `CopLogicTravel._find_cover` | 47 | 42 | 42 |  |
@@ -565,7 +565,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicTravel.get_pathing_prio` | 50 | 14 | 14 |  |
 | [ ] | keep | — | `CopLogicTravel.is_available_for_assignment` | 13 | 19 | 19 |  |
 | [ ] | keep | — | `CopLogicTravel.queue_update` | 9 | 5 | 5 |  |
-| [ ] | keep | — | `CopLogicTravel.upd_advance` | 219 | 71 | 71 |  |
+| [ ] | keep | — | `CopLogicTravel.upd_advance` | 227 | 71 | 71 |  |
 
 ## lua/coplogics/coplogicidle.lua
 
