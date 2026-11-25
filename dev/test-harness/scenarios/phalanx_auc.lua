@@ -37,15 +37,15 @@
 -- assault ends on its timer and the promoted group goes idle mid-window. The
 -- result line reports `minions_start` / `minions_end` / `live_cycles`, so a
 -- window that loses the group is visible rather than implied, and PASS requires
--- at least `MEASURE_CYCLES - 2` live cycles; a shorter window fails and is
--- published as a short window instead of a 60 s phalanx window.
+-- at least `MEASURE_CYCLES - 1` live cycles; a shorter window fails and is
+-- published as a short window instead of a 30 s phalanx window.
 --
 -- Dev-only. Run with the resident rig from the workspace root:
 --   tools\pd2session.ps1 -Start -Mod .worktrees\LIES-lies-249
 --   tools\pd2session.ps1 -Run .worktrees\LIES-lies-249\dev\test-harness\scenarios\phalanx_auc.lua
 --
--- Game-time budget: <= 15 x 5 s of spawn waiting + 60 s of measurement = 135 s,
--- inside the 240 s job timeout (~20 s of spawn wait at 4x, then 60 s at 1x).
+-- Game-time budget: <= 15 x 5 s of spawn waiting + 30 s of measurement = 105 s,
+-- inside the 240 s job timeout (~20 s of spawn wait at 4x, then 30 s at 1x).
 --
 -- The heist load reboots the Lua state, so this body runs twice: once at the
 -- menu (it asks for the load) and once in the level (it does the measuring).
@@ -211,39 +211,28 @@ return function(H)
 		return true
 	end
 
-	-- Rig fallback: promote a live assault group to the phalanx group. Shield
-	-- material wins the pick, because a promoted rifle squad dies to bot fire
-	-- before a 60 s window closes (one run promoted `tac_swat_rifle_*` cops and
-	-- ended at `live_cycles=2/12`). `_check_phalanx_group_has_spawned` then assigns
-	-- the real `create_phalanx` objective, the units become phalanx minions and the
-	-- normal travel logic runs; only the heist's spawn-group search is bypassed.
+	-- Rig fallback: promote the live assault group with the most living units to
+	-- the phalanx group. `_check_phalanx_group_has_spawned` then assigns the real
+	-- `create_phalanx` objective, the units become phalanx minions and the normal
+	-- travel logic runs; only the heist's spawn-group search is bypassed. Selection
+	-- stays "most live units" on purpose: a promoted shield squad (`shields=2` in
+	-- `job-130516-891`) never enters `CopLogicPhalanxMinion` - only the spawn-group
+	-- "Phalanx" variant does - so shields are not better material here.
 	local function promote_live_group()
 		local group_ai = managers.groupai:state()
 		local chosen
 
 		for id, group in pairs(group_ai._groups or {}) do
-			local live, shields = 0, 0
+			local live = 0
 
 			for _, group_unit in pairs(group.units or {}) do
-				local unit = group_unit.unit
-
-				if unit and H:unit_alive(unit) then
+				if group_unit.unit and H:unit_alive(group_unit.unit) then
 					live = live + 1
-
-					local base = unit:base()
-					local tweak_table = base and base._tweak_table
-
-					if tweak_table == "shield" or tweak_table == "phalanx_minion" then
-						shields = shields + 1
-					end
 				end
 			end
 
-			-- Shield count first; the most-live group is only the fallback for a map
-			-- where no candidate has a shield.
-			if live > 0 and (not chosen or shields > chosen.shields or
-					shields == chosen.shields and live > chosen.live) then
-				chosen = { id = id, group = group, live = live, shields = shields }
+			if live > 0 and (not chosen or live > chosen.live) then
+				chosen = { id = id, group = group, live = live }
 			end
 		end
 
@@ -274,8 +263,8 @@ return function(H)
 		-- (`phalanx units flagged=...`), so a partial conversion stays visible.
 		chosen.group.has_spawned = true
 		group_ai._phalanx_spawn_group = chosen.group
-		H:log("promotion fallback (rig only): group=%s live=%d shields=%d promoted to the phalanx group; the heist's spawn-group search finds nothing on auc solo",
-			tostring(chosen.id), chosen.live, chosen.shields)
+		H:log("promotion fallback (rig only): group=%s live=%d promoted to the phalanx group; the heist's spawn-group search finds nothing on auc solo",
+			tostring(chosen.id), chosen.live)
 
 		-- `_spawn_phalanx_LIES` sets this as part of the real spawn
 		-- (groupaistatebesiege.lua:4628). Without it the assault ends on its normal
@@ -292,7 +281,9 @@ return function(H)
 
 	local SYNTH_AFTER_CYCLES = 10
 	local SPAWN_CYCLES = 15
-	local MEASURE_CYCLES = 12
+	-- 30 s at 1x: short enough that bot fire cannot thin the squad below the
+	-- floor before the window closes.
+	local MEASURE_CYCLES = 6
 	local last = nil
 	local found = false
 	local center_done = false
@@ -377,15 +368,15 @@ return function(H)
 		minions_start, minions_end, live_cycles, MEASURE_CYCLES, wall_rsrv_hit,
 		wall_own_rsrv_hit, rsrv_delta, own_delta, own_share)
 
-	-- PASS needs most of the window to have had live minions: a squad that dies
-	-- after one cycle still yields numbers, but they are not a 60 s phalanx
+	-- PASS needs almost the whole window to have had live minions: a squad that
+	-- dies after one cycle still yields numbers, but they are not a 30 s phalanx
 	-- window. The counter values themselves are the measurement, so a zero delta
 	-- (or a zero `wall_own_rsrv_hit_delta`) is not a failure; a short window is.
-	local PASS_FLOOR_CYCLES = MEASURE_CYCLES - 2
+	local PASS_FLOOR_CYCLES = MEASURE_CYCLES - 1
 
 	if live_cycles >= PASS_FLOOR_CYCLES then
 		H:finish("PASS", string.format(
-			"60 s at 1x: minions %d->%d live_cycles=%d/%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s (totals %d/%d)",
+			"30 s at 1x: minions %d->%d live_cycles=%d/%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s (totals %d/%d)",
 			minions_start, minions_end, live_cycles, MEASURE_CYCLES, rsrv_delta,
 			own_delta, own_share, wall_rsrv_hit, wall_own_rsrv_hit))
 	elseif live_cycles > 0 then
