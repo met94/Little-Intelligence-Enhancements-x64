@@ -2045,34 +2045,53 @@ function CopLogicTravel.queue_update(data, my_data, delay)
 	CopLogicBase.queue_task(my_data, my_data.upd_task_key, CopLogicTravel.queued_update, data, data.t + delay, data.important and true)
 end
 
--- Probe reservation id for the wall-position counters. It is created lazily and
--- never reserves anything, so excluding it cannot hide a reservation that
--- belongs to somebody else.
-local lies_probe_rsrv_id
-local function lies_probe_rsrv()
-	lies_probe_rsrv_id = lies_probe_rsrv_id or managers.navigation:get_pos_reservation_id()
-
-	return lies_probe_rsrv_id
-end
+-- Radius of the wall/fallback spot check. The reservation filter and both
+-- counter checks must use the same band, or the counterfactual would answer a
+-- different question than the search did.
+local WALL_RSRV_RADIUS = 60
 
 -- Counts a successful `_get_pos_on_wall` result against the unit's own
--- reservation. Only an outer call counts: the recursive retries would otherwise
--- report the same search up to three times.
-local function lies_count_wall_rsrv(pos, pos_rsrv_id, is_outer)
+-- reservation. Only a first-pass call counts: the recursive retries would
+-- otherwise report the same search up to three times.
+--
+-- `recheck_own` is set for the `fail_position` exit, where the point was chosen
+-- up to nine raycasts before the return: a foreign reservation placed meanwhile
+-- would otherwise be read as the unit's own.
+local function lies_count_wall_rsrv(pos, pos_rsrv_id, is_outer, recheck_own)
 	if not is_outer or not pos_rsrv_id or not pos then
+		return
+	end
+
+	if recheck_own and not managers.navigation:is_pos_free({
+			position = pos,
+			radius = WALL_RSRV_RADIUS,
+			filter = pos_rsrv_id
+		}) then
 		return
 	end
 
 	LIES:Count("wall_rsrv_hit")
 
-	-- The point passed `is_pos_free` with the unit's own filter. If it fails
-	-- again when only a fresh, empty id is excluded, the only reservations on it
-	-- belong to the unit itself: pre-8.57.36 those points were rejected.
-	if not managers.navigation:is_pos_free({
-			position = pos,
-			radius = 60,
-			filter = lies_probe_rsrv()
-		}) then
+	-- The point passed `is_pos_free` with the unit's own filter. Allocate a fresh
+	-- id, check the same point against it and release it again: the id belongs to
+	-- nobody and is never left holding a slot, so a failure means the only
+	-- reservations on the point belong to the unit itself (pre-8.57.36 those
+	-- points were rejected). This runs once per counted result, not per raycast.
+	local probe_id = managers.navigation:get_pos_reservation_id()
+
+	if not probe_id then
+		return
+	end
+
+	local is_own = not managers.navigation:is_pos_free({
+		position = pos,
+		radius = WALL_RSRV_RADIUS,
+		filter = probe_id
+	})
+
+	managers.navigation:release_pos_reservation_id(probe_id)
+
+	if is_own then
 		LIES:Count("wall_own_rsrv_hit")
 	end
 end
@@ -2104,7 +2123,7 @@ function CopLogicTravel._get_pos_on_wall(from_pos, max_dist, step_offset, is_rec
 	}
 	local rsrv_desc = {
 		filter = pos_rsrv_id,
-		radius = 60
+		radius = WALL_RSRV_RADIUS
 	}
 	local fail_position = nil
 
@@ -2143,7 +2162,7 @@ function CopLogicTravel._get_pos_on_wall(from_pos, max_dist, step_offset, is_rec
 	managers.navigation:destroy_nav_tracker(from_tracker)
 
 	if fail_position then
-		lies_count_wall_rsrv(fail_position, pos_rsrv_id, is_outer)
+		lies_count_wall_rsrv(fail_position, pos_rsrv_id, is_outer, true)
 
 		return fail_position
 	end

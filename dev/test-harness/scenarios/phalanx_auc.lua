@@ -3,10 +3,11 @@
 --
 -- Why this card exists: 8.57.36 made the `_get_pos_on_wall` reservation filter
 -- live (the 5th argument had been ignored since 7.544). `wall_rsrv_hit` counts
--- every successful wall search made with the unit's own filter,
--- `wall_own_rsrv_hit` the subset whose only reservations belong to the unit
--- itself (points vanilla rejected before 8.57.36). The counters need a phalanx
--- group on the map, because that is where the wall searches are dense.
+-- every successful first-pass wall search made with the unit's own filter (the
+-- recursive retries are not counted), `wall_own_rsrv_hit` the subset whose only
+-- reservations belong to the unit itself (points vanilla rejected before
+-- 8.57.36). The counters need a phalanx group on the map, because that is where
+-- the wall searches are dense.
 --
 -- Two rig facts found by the first run (job-122111-685):
 --   * Under the Hammer's scripted phalanx center did not fire in the rig, so the
@@ -22,12 +23,18 @@
 -- exercises the same production path afterwards: `create_phalanx` objective ->
 -- `CopLogicPhalanxMinion` travel -> wall searches and counters.
 --
+-- Measurement contract: the counters accumulate from level start, so the card
+-- publishes window deltas - the counters are sampled once when the group is
+-- live and every cycle reports both the totals and the delta since that sample.
+-- The window runs at 1x (`speed_down` after the spawn wait, which runs at 4x),
+-- because the harness expects measurement windows at normal speed.
+--
 -- Dev-only. Run with the resident rig from the workspace root:
 --   tools\pd2session.ps1 -Start -Mod .worktrees\LIES-lies-249
 --   tools\pd2session.ps1 -Run .worktrees\LIES-lies-249\dev\test-harness\scenarios\phalanx_auc.lua
 --
 -- Game-time budget: <= 15 x 5 s of spawn waiting + 60 s of measurement = 135 s,
--- which is ~34 s of real time at 4x and well inside the 240 s job timeout.
+-- inside the 240 s job timeout (~20 s of spawn wait at 4x, then 60 s at 1x).
 --
 -- The heist load reboots the Lua state, so this body runs twice: once at the
 -- menu (it asks for the load) and once in the level (it does the measuring).
@@ -61,14 +68,17 @@ return function(H)
 	H:log("force_assault -> %s", tostring(H:force_assault()))
 	H:log("begin_assault_at_player -> %s", tostring(H:begin_assault_at_player("phalanx auc")))
 
-	-- Game time: `H:wait` and the assault clock both use it, so a 5 s cycle costs
-	-- 1.25 s of real time at 4x.
+	-- Game time: `H:wait` and the assault clock both use it, so the spawn wait
+	-- costs 1.25 s of real time per 5 s cycle at 4x. The window is dropped back
+	-- to 1x as soon as the group is live.
 	H:speed_up("phalanx_auc", 4, 900)
 
 	local state = managers.groupai:state()
 	local binding = state._check_spawn_phalanx == state._check_spawn_phalanx_LIES
 	H:log("phalanx binding=%s", binding and "LIES" or "VANILLA")
 
+	-- Live minions only: `phalanx_minions()` keeps dead units in its table until
+	-- the game unregisters them, so counting entries would overstate the group.
 	local function minion_count()
 		local ok, minions = pcall(function()
 			return managers.groupai:state():phalanx_minions()
@@ -80,13 +90,51 @@ return function(H)
 
 		local count = 0
 
-		for _ in pairs(minions) do
-			count = count + 1
+		for _, minion in pairs(minions) do
+			if minion and H:unit_alive(minion) then
+				count = count + 1
+			end
 		end
 
 		return count
 	end
 
+	-- The phalanx flag and the assigned objective, for the record: the promotion
+	-- path is only meaningful if the units really became phalanx minions.
+	local function phalanx_unit_stats()
+		local ok, flagged, with_objective = pcall(function()
+			local minions = managers.groupai:state():phalanx_minions() or {}
+			local flagged, objective = 0, 0
+
+			for _, minion in pairs(minions) do
+				if minion and H:unit_alive(minion) then
+					local base = minion:base()
+
+					if base and base.is_phalanx then
+						flagged = flagged + 1
+					end
+
+					local brain = minion:brain()
+					local objective_data = brain and brain:objective()
+
+					if objective_data and objective_data.type == "phalanx" then
+						objective = objective + 1
+					end
+				end
+			end
+
+			return flagged, objective
+		end)
+
+		if not ok then
+			return 0, 0
+		end
+
+		return flagged, with_objective
+	end
+
+	-- Totals (accumulated since level start) and the window delta helper. The
+	-- published measurement is the delta: the totals also contain the spawn wait.
 	local function counters()
 		local watch = LIES.watch_counters or {}
 
@@ -94,7 +142,7 @@ return function(H)
 	end
 
 	-- One readable snapshot per cycle: the gates the phalanx spawn walks (center,
-	-- assault phase, spawn group, spawned) plus the minion count.
+	-- assault phase, spawn group, spawned) plus the live minion count.
 	local function snapshot(cycle)
 		local group_ai = managers.groupai:state()
 		local assault = group_ai._task_data and group_ai._task_data.assault
@@ -136,7 +184,7 @@ return function(H)
 	-- Under the Hammer normally sets `_phalanx_center_pos` through a scripted
 	-- phalanx special objective (GroupAIStateBase:add_special_objective). That
 	-- event did not fire in the rig, so synthesize the position from the player's
-	-- segment once instead of failing on scenario setup.
+	-- segment instead of failing on scenario setup.
 	local function synthesize_center()
 		local pos = player_field_pos()
 
@@ -197,19 +245,23 @@ return function(H)
 	local MEASURE_CYCLES = 12
 	local last = nil
 	local found = false
+	local center_done = false
+	local promote_done = false
 
 	for cycle = 1, SPAWN_CYCLES do
 		H:wait(5000)
 		last = snapshot(cycle)
 
-		if cycle == SYNTH_AFTER_CYCLES then
-			if not last.center then
-				synthesize_center()
+		-- Both fallbacks are retried every cycle until they succeed: a transient
+		-- empty `_groups` or an unavailable player position must not end the run.
+		if cycle >= SYNTH_AFTER_CYCLES then
+			if not center_done and not last.center then
+				center_done = synthesize_center()
 				last = snapshot(cycle)
 			end
 
-			if not last.spawn_group then
-				promote_live_group()
+			if not promote_done and not last.spawn_group then
+				promote_done = promote_live_group()
 			end
 		end
 
@@ -222,7 +274,7 @@ return function(H)
 
 	if not found then
 		H:finish("FAIL", string.format(
-			"no phalanx minions after %d cycles; last center=%s phase=%s spawn_group=%s spawned=%s minions=%d",
+			"no live phalanx minions after %d cycles; last center=%s phase=%s spawn_group=%s spawned=%s minions=%d",
 			SPAWN_CYCLES, tostring(last and last.center), tostring(last and last.phase),
 			tostring(last and last.spawn_group), tostring(last and last.spawned),
 			last and last.minions or 0))
@@ -230,28 +282,44 @@ return function(H)
 		return
 	end
 
-	-- Measurement window: 60 s of game time (12 x 5 s) with the counters logged
-	-- every cycle, so a read can see when they move instead of only the total.
-	-- The promotion lands at ~50 s, so the whole card stays under 135 s of game
-	-- time.
-	local wall_rsrv_hit, wall_own_rsrv_hit = 0, 0
+	local flagged, with_objective = phalanx_unit_stats()
+	H:log("phalanx units flagged=%d phalanx_objective=%d", flagged, with_objective)
+
+	-- Measurement window at 1x: the harness treats a measurement window as a
+	-- normal-speed window, and the spawn speed-up must not inflate a rate.
+	local speed_ok, speed_err = H:speed_down("phalanx_auc")
+	H:log("speed_down -> %s %s (measurement window at 1x)",
+		tostring(speed_ok), tostring(speed_err or "ok"))
+
+	-- Deltas over the window: everything counted before this sample belongs to the
+	-- spawn wait, not to the window being published.
+	local base_wall_rsrv_hit, base_wall_own_rsrv_hit = counters()
+	H:log("window baseline wall_rsrv_hit=%d wall_own_rsrv_hit=%d",
+		base_wall_rsrv_hit, base_wall_own_rsrv_hit)
+
+	local wall_rsrv_hit, wall_own_rsrv_hit = base_wall_rsrv_hit, base_wall_own_rsrv_hit
 
 	for cycle = 1, MEASURE_CYCLES do
 		H:wait(5000)
 		wall_rsrv_hit, wall_own_rsrv_hit = counters()
-		H:log("measure=%d minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d",
-			cycle, minion_count(), wall_rsrv_hit, wall_own_rsrv_hit)
+		H:log("measure=%d minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d",
+			cycle, minion_count(), wall_rsrv_hit, wall_own_rsrv_hit,
+			wall_rsrv_hit - base_wall_rsrv_hit, wall_own_rsrv_hit - base_wall_own_rsrv_hit)
 	end
 
 	local minions = minion_count()
 	wall_rsrv_hit, wall_own_rsrv_hit = counters()
-	H:log("result minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d",
-		minions, wall_rsrv_hit, wall_own_rsrv_hit)
+
+	local rsrv_delta = wall_rsrv_hit - base_wall_rsrv_hit
+	local own_delta = wall_own_rsrv_hit - base_wall_own_rsrv_hit
+	local own_share = rsrv_delta > 0 and string.format("%.1f %%", own_delta / rsrv_delta * 100) or "n/a"
+	H:log("result minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s",
+		minions, wall_rsrv_hit, wall_own_rsrv_hit, rsrv_delta, own_delta, own_share)
 
 	-- PASS means "the end-to-end path produced a live phalanx group and the
-	-- counters were readable". The counter values are the measurement, and zero
-	-- on `wall_own_rsrv_hit` is a result, not a failure.
+	-- counters were readable". The counter values are the measurement; a delta of
+	-- zero, or `wall_own_rsrv_hit_delta` of zero, is a result and not a failure.
 	H:finish("PASS", string.format(
-		"phalanx minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d after 60 s",
-		minions, wall_rsrv_hit, wall_own_rsrv_hit))
+		"60 s at 1x: minions=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s (totals %d/%d)",
+		minions, rsrv_delta, own_delta, own_share, wall_rsrv_hit, wall_own_rsrv_hit))
 end

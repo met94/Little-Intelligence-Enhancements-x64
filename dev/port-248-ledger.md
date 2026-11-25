@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-25T12:07:42.772Z
+Generated: 2026-11-25T12:36:56.731Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -15,7 +15,7 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 42 |
-| MOD_ONLY | 224 |
+| MOD_ONLY | 223 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
@@ -542,8 +542,7 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `CopLogicTravel.queue_detection_update` | 7 | 0 | 0 |  |
 | [ ] | audit | — | `CopLogicTravel.queued_detection_update` | 16 | 0 | 0 |  |
 | [ ] | audit | — | `CopLogicTravel.update` | 7 | 0 | 0 |  |
-| [ ] | audit | — | `lies_count_wall_rsrv` | 18 | 0 | 0 |  |
-| [ ] | audit | — | `lies_probe_rsrv` | 5 | 0 | 0 |  |
+| [ ] | audit | — | `lies_count_wall_rsrv` | 38 | 0 | 0 |  |
 | [ ] | keep | — | `CopLogicTravel._begin_coarse_pathing` | 30 | 19 | 19 |  |
 | [ ] | keep | — | `CopLogicTravel._check_start_path_ahead` | 57 | 26 | 26 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_begin_advance` | 72 | 36 | 36 |  |

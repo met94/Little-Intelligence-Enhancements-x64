@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-11-25T12:07:42.775Z",
+  "generated": "2026-11-25T12:36:56.734Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -5148,7 +5148,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2172
+          "startLine": 2191
         },
         {
           "name": "CopLogicTravel._check_start_path_ahead",
@@ -5373,7 +5373,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2080
+          "startLine": 2099
         },
         {
           "name": "CopLogicTravel._on_destination_reached",
@@ -5388,7 +5388,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2203
+          "startLine": 2222
         },
         {
           "name": "CopLogicTravel._pathing_complete_clbk",
@@ -5553,7 +5553,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2158
+          "startLine": 2177
         },
         {
           "name": "CopLogicTravel.queue_detection_update",
@@ -5633,38 +5633,23 @@
         {
           "name": "lies_count_wall_rsrv",
           "category": "MOD_ONLY",
-          "modLines": 18,
+          "modLines": 38,
           "oldLines": 0,
           "newLines": 0,
-          "modParams": "pos, pos_rsrv_id, is_outer",
+          "modParams": "pos, pos_rsrv_id, is_outer, recheck_own",
           "oldParams": "",
           "newParams": "",
           "isLocal": true,
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2061
-        },
-        {
-          "name": "lies_probe_rsrv",
-          "category": "MOD_ONLY",
-          "modLines": 5,
-          "oldLines": 0,
-          "newLines": 0,
-          "modParams": "",
-          "oldParams": "",
-          "newParams": "",
-          "isLocal": true,
-          "isHook": false,
-          "form": "decl",
-          "note": "",
-          "startLine": 2052
+          "startLine": 2060
         }
       ],
       "errors": [],
       "totals": {
         "LIES_EDIT_CLEAN": 23,
-        "MOD_ONLY": 12
+        "MOD_ONLY": 11
       }
     },
     {
