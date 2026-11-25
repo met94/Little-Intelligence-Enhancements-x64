@@ -346,7 +346,8 @@ end
 
 -- LIES's private helper: it takes the logic's `data`. The vanilla
 -- TeamAILogicAssault.find_enemy_to_mark helper is deliberately left untouched --
--- it takes the attention-object table instead and uses a different heuristic.
+-- it takes the detected-attention-object table as `enemies` and uses a
+-- different heuristic.
 function TeamAILogicAssault._find_enemy_to_mark_from_data(data)
 	if data.attention_obj and data.attention_obj.unit and alive(data.attention_obj.unit) and data.attention_obj.is_alive then
 		if AIAttentionObject.REACT_COMBAT <= data.attention_obj.reaction and data.attention_obj.verified then
