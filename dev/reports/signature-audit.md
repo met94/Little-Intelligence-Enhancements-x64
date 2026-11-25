@@ -119,9 +119,20 @@ confirmed empirically by vanilla probe `job-112005-417` (session
 `sess-20261125-111846`): with one reservation owned by `id_a` at the player's
 field position, `is_pos_free` returns true for `filter = id_a`, and false for
 `filter = id_b` or `filter = nil`. So `filter` is the owner-exclusion id, and the
-id is per-unit, not per-group. What was *not* measured is how often a cop in
-normal play now picks its own reserved spot instead of a second one; the soak
-only shows the absence of errors.
+id is per-unit, not per-group.
+
+Measured end to end: `job-122351-751` (session `sess-20261125-120902`, `auc`,
+60 s measurement window, 6 live phalanx minions) counted `wall_rsrv_hit=215` and
+`wall_own_rsrv_hit=6` - 2.8 % of the successful outer wall searches settled on a
+position covered only by the unit's own reservation, i.e. on the points the
+pre-8.57.36 nil filter rejected. No Lua error, no crash, and the minion count
+stayed at 6 for the whole window. Caveat, stated because it bounds the claim:
+the heist's own spawn-group search returns nil on `auc` in this rig (no reachable
+Phalanx spawn group, and its `Application:error` is not captured by the BLT log),
+so the card promotes a live assault group to the same `create_phalanx` objective.
+The units then entered `CopLogicPhalanxMinion` (6 flagged, phalanx objectives
+present), so the travel -> calc -> circle path that performs the wall searches is
+the real one; only the heist's spawn-group selection is bypassed.
 
 ## Cross-mod note: Iter truncates `clbk_pathing_results`' trailing argument
 
@@ -192,12 +203,16 @@ after `10:22:16` shows no LIES, phalanx or reservation errors; the only entries
 are pre-existing (`vrplus` boot FATAL, a BeardLib asset warning, `[Updates]`
 meta warnings).
 
-Honest limit: the soak did not spawn a phalanx group (`phalanx_spawn=0`), so the
-shield-wall path was not exercised end to end. The helpers are proven by the
-direct-call probe above, and the call sites by the new pin test. For the
-surrounding AI stack (attack, retreat, travel, nav sort) the soak shows the
-absence of errors over 70 s with those paths live - not per-path coverage, and no
-isolated exercise of any single call site.
+Honest limit: the soak did not spawn a phalanx group (`phalanx_spawn=0`), and
+that gap is now closed by the end-to-end card run above (`job-122351-751`: a
+promoted group, `CopLogicPhalanxMinion` travel and wall searches live, 215/6
+counted). The one part still not exercised is the heist's own phalanx spawn
+route: `_find_spawn_group_near_area` returns nil on `auc` in this rig, so no run
+has yet watched the game select a Phalanx spawn group and hand it to
+`create_phalanx`. For the surrounding AI stack (attack, retreat, travel, nav
+sort) the soak shows the absence of errors over 70 s with those paths live - not
+per-path coverage, and no isolated exercise of any single call site beyond the
+wall-search counters above.
 
 ## How to re-run
 

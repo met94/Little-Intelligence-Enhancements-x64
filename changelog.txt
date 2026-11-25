@@ -62,8 +62,24 @@ Fixed-slot audit: LIES' copied AI functions now keep the game's argument order.
   `job-102445-432` PASS (`alive=49 engaged=15`), log scan shows no LIES,
   phalanx or reservation error; reservation semantics probe `job-112005-417`
   against vanilla `is_pos_free` - true with the reservation's own id, false with
-  another id or no filter. The soak did not spawn a phalanx group, so the
-  helpers are proven by the direct calls and the call sites by the new gate.
+  another id or no filter; end-to-end run `job-122351-751` (session
+  `sess-20261125-120902`, `auc`, 60 s measurement window, 6 live phalanx
+  minions): `wall_rsrv_hit=215`, `wall_own_rsrv_hit=6` - 2.8 % of the successful
+  outer wall searches settled on a position covered only by the unit's own
+  reservation, i.e. on spots the pre-8.57.36 nil filter rejected - with no Lua
+  error, no crash and the minion count steady at 6 for the whole window. The
+  heist's own spawn-group search returns nil on `auc` in the rig (no reachable
+  Phalanx spawn group, and its `Application:error` is not captured by the BLT
+  log), so the dev card promotes a live assault group to the same
+  `create_phalanx` objective; the units entered `CopLogicPhalanxMinion` (6
+  flagged, phalanx objectives present), so the travel -> calc -> circle path
+  that performs the wall searches is the real one.
+- instrumentation: `wall_rsrv_hit` (successful outer `_get_pos_on_wall` searches
+  made with the live filter) and `wall_own_rsrv_hit` (the subset whose only
+  reservations belong to the unit itself, tested against a fresh probe id), both
+  counted through `LIES:Count` so the watch digest reports them; the measurement
+  card is `dev/test-harness/scenarios/phalanx_auc.lua` (spawn a phalanx group or
+  promote one, then sample both counters for 60 s of game time).
 - new gate: `dev/tools/test/signature-compat.test.mjs` pins the eleven audited
   declarations, plus the call-site order and arity of the six functions renamed,
   reordered or with re-aligned call sites in this pass (`_get_pos_on_wall`, both
