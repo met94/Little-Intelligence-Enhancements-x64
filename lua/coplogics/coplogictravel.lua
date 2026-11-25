@@ -251,7 +251,10 @@ function CopLogicTravel._chk_close_to_criminal(data, my_data)
 			if not u_data.status or u_data.status == "electrified" then
 				local u_data_seg = u_data.tracker:nav_segment()
 				
-				if my_area.nav_segs[u_data_seg] then
+				-- `get_area_from_nav_seg_id` can return nil (the nav segment may not be
+				-- mapped to an area yet, e.g. right after a spawn or on a streamed
+				-- segment); the next-area branch still runs in that case.
+				if my_area and my_area.nav_segs[u_data_seg] then
 					my_data.close_to_criminal = true
 					
 					break

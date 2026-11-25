@@ -325,6 +325,35 @@ test('_check_start_path_ahead guards its next entry too', () => {
   );
 });
 
+test('_chk_close_to_criminal guards the area lookup', () => {
+  // Open issue #2 (Safe House Raid MP): `get_area_from_nav_seg_id` can return nil
+  // while the unit's nav segment is not mapped to an area, and the unguarded
+  // `my_area.nav_segs[u_data_seg]` read raised "attempt to index a nil value".
+  // The next-area branch keeps working when `my_area` is nil.
+  const body = funcBody(travelSource(), 'function CopLogicTravel._chk_close_to_criminal(');
+
+  assert.match(
+    body,
+    /if my_area and my_area\.nav_segs\[u_data_seg\] then/,
+    'the own-area read must test my_area first',
+  );
+  assert.match(
+    body,
+    /elseif next_area and next_area\.nav_segs\[u_data_seg\] then/,
+    'the next-area fallback must keep its own guard',
+  );
+
+  // No unguarded `my_area.nav_segs` read anywhere: every occurrence must be
+  // preceded by the `my_area and` guard (the `next_area` symbol is separate).
+  const unguarded = [...body.matchAll(/(?<!my_area and )my_area\.nav_segs\[/g)];
+
+  assert.equal(
+    unguarded.length,
+    0,
+    'an unguarded my_area.nav_segs read remains (it raises when the area lookup returns nil)',
+  );
+});
+
 test('every coarse-path replacement clears the pending jump index', () => {
   // `enter`: both path styles assign a new path/index.
   const enter = enterBody();

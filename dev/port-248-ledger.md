@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-25T18:21:57.225Z
+Generated: 2026-11-25T19:51:55.076Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -546,7 +546,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicTravel._begin_coarse_pathing` | 30 | 19 | 19 |  |
 | [ ] | keep | — | `CopLogicTravel._check_start_path_ahead` | 68 | 26 | 26 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_begin_advance` | 83 | 36 | 36 |  |
-| [ ] | keep | — | `CopLogicTravel._chk_close_to_criminal` | 32 | 21 | 21 |  |
+| [ ] | keep | — | `CopLogicTravel._chk_close_to_criminal` | 35 | 21 | 21 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_cover_height` | 10 | 17 | 17 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_request_action_walk_to_advance_pos` | 25 | 31 | 31 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_start_pathing_to_next_nav_point` | 170 | 14 | 14 |  |
