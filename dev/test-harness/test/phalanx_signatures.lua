@@ -68,18 +68,22 @@ local function reset_spies()
 end
 
 CopLogicTravel = {
-  _get_pos_on_wall = function(from_pos, max_dist, step_offset, is_recurse, pos_rsrv_id)
+  -- Vararg so the recorded arity is the caller's own, not the length of a fixed
+  -- parameter list: a sixth argument passed by the hook file must show up here.
+  _get_pos_on_wall = function(...)
+    local args = { ... }
     local call = {
-      from_pos = from_pos,
-      max_dist = max_dist,
-      step_offset = step_offset,
-      is_recurse = is_recurse,
-      pos_rsrv_id = pos_rsrv_id,
-      arg_count = select('#', from_pos, max_dist, step_offset, is_recurse, pos_rsrv_id)
+      args = args,
+      arg_count = select('#', ...),
+      from_pos = args[1],
+      max_dist = args[2],
+      step_offset = args[3],
+      is_recurse = args[4],
+      pos_rsrv_id = args[5]
     }
     wall_calls[#wall_calls + 1] = call
 
-    return vec3(from_pos.x + 1, from_pos.y, from_pos.z)
+    return vec3(args[1].x + 1, args[1].y, args[1].z)
   end
 }
 
@@ -141,68 +145,102 @@ local function reservation_filter(call)
   return call and call.filter
 end
 
--- 1. Game convention: three arguments, no `data`, so no reservation is checked
---    and the plain circle position comes back.
+-- The circle point the stubs produce: radius 100 at `degrees`, centre at origin.
+local RADIUS = 100
+
+local function circle_point(degrees)
+  local radians = math.rad(degrees)
+
+  return RADIUS * math.cos(radians), RADIUS * math.sin(radians)
+end
+
+local function assert_point(actual, expected_x, expected_y, label)
+  assert(is_vec3(actual), label .. ': expected a Vector3')
+
+  if math.abs(actual.x - expected_x) >= 1e-9 or math.abs(actual.y - expected_y) >= 1e-9 then
+    error(('%s: expected %.6f,%.6f got %s,%s'):format(label, expected_x, expected_y,
+      tostring(actual.x), tostring(actual.y)))
+  end
+end
+
+-- Game convention: three arguments, no `data`, so no reservation is checked
+-- and the plain circle position comes back.
 do
   reset_spies()
   local center = vec3(0, 0, 0)
   local result = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center, 90, 8)
+  local expected_x, expected_y = circle_point(90)
 
-  assert(is_vec3(result), '3-arg _calc_pos_on_phalanx_circle must return a Vector3')
-  assert(math.abs(result.x) < 1e-9 and math.abs(result.y - 100) < 1e-9,
-    'expected the radius-100 point at 90 degrees, got ' .. tostring(result.x) .. ',' .. tostring(result.y))
+  assert_point(result, expected_x, expected_y, '3-arg _calc_pos_on_phalanx_circle')
   assert(#is_pos_free_calls == 0, '3-arg _calc_pos_on_phalanx_circle must not check a reservation')
   assert(#wall_calls == 0, '3-arg _calc_pos_on_phalanx_circle must not search for a wall')
 end
 
--- 2. LIES convention: trailing `data` runs the reservation; an occupied position
---    falls back to _get_pos_on_wall with the id in the fifth (pos_rsrv_id) slot.
+-- LIES convention: trailing `data` runs the reservation; an occupied position
+-- falls back to _get_pos_on_wall with the id in the fifth (pos_rsrv_id) slot.
 do
   reset_spies()
   local center = vec3(0, 0, 0)
   local free_result = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center, 90, 8, { pos_rsrv_id = 7 })
+  local expected_x, expected_y = circle_point(90)
 
   assert(#is_pos_free_calls == 1, 'trailing data must check exactly one reservation')
   assert(reservation_filter(is_pos_free_calls[1]) == 7, 'reservation filter must be data.pos_rsrv_id (7)')
   assert(#wall_calls == 0, 'a free position must not trigger a wall search')
-  assert(is_vec3(free_result), 'a free position must be returned as a Vector3')
+  assert_point(free_result, expected_x, expected_y, 'free position')
 
   reset_spies()
   is_pos_free_result = false
   local occupied_result = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center, 90, 8, { pos_rsrv_id = 7 })
 
   assert(#wall_calls == 1, 'an occupied position must trigger exactly one wall search')
-  assert(wall_calls[1].arg_count == 5, 'wall search must be called with five arguments, got ' .. tostring(wall_calls[1].arg_count))
-  assert(wall_calls[1].pos_rsrv_id == 7, 'pos_rsrv_id must reach the fifth parameter, got ' .. tostring(wall_calls[1].pos_rsrv_id))
+  assert(wall_calls[1].arg_count == 5, 'wall search must be called with five arguments, got '
+    .. tostring(wall_calls[1].arg_count))
+  assert(wall_calls[1].args[6] == nil, 'wall search must not pass a sixth argument')
+  assert(wall_calls[1].pos_rsrv_id == 7, 'pos_rsrv_id must reach the fifth parameter, got '
+    .. tostring(wall_calls[1].pos_rsrv_id))
   assert(wall_calls[1].step_offset == nil and wall_calls[1].is_recurse == nil, 'step_offset/is_recurse must stay nil')
-  assert(is_vec3(occupied_result), 'the wall fallback must return a Vector3')
+  -- The stub's wall answer is the circle point moved 1 unit along x.
+  assert_point(occupied_result, expected_x + 1, expected_y, 'occupied position fallback')
+
+  -- Presence of LIES context, not the presence of an id, decides: a data table
+  -- without pos_rsrv_id still reserves, with a nil filter.
+  reset_spies()
+  local no_id_result = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center, 90, 8, {})
+
+  assert(#is_pos_free_calls == 1, 'trailing data without pos_rsrv_id must still check the reservation')
+  assert(reservation_filter(is_pos_free_calls[1]) == nil, 'a data table without pos_rsrv_id reserves with a nil filter')
+  assert_point(no_id_result, expected_x, expected_y, 'data without pos_rsrv_id')
 end
 
--- 3. Game convention: two arguments set and return objective.pos without any
---    reservation check (the 249 call shape).
+-- Game convention: two arguments set and return objective.pos without any
+-- reservation check (the 249 call shape).
 do
   reset_spies()
   local own_pos = vec3(100, 0, 0)
   local objective = {}
   local result = CopLogicPhalanxMinion.calc_initial_phalanx_pos(own_pos, objective)
+  local expected_x, expected_y = circle_point(45)
 
-  assert(result ~= nil, '2-arg calc_initial_phalanx_pos must return a position')
-  assert(result == objective.pos, '2-arg calc_initial_phalanx_pos must return objective.pos')
-  assert(is_vec3(objective.pos), 'objective.pos must be a Vector3')
   assert(objective.angle == 45, 'objective.angle must come from _get_next_neighbour_angle, got ' .. tostring(objective.angle))
+  assert_point(objective.pos, expected_x, expected_y, '2-arg objective.pos')
+  assert_point(result, expected_x, expected_y, '2-arg return value')
   assert(#is_pos_free_calls == 0, '2-arg calc_initial_phalanx_pos must not check a reservation')
 end
 
--- 4. LIES convention: trailing `data` flows through to the circle helper's
---    reservation block while keeping the game's own_pos/objective order.
+-- LIES convention: trailing `data` flows through to the circle helper's
+-- reservation block while keeping the game's own_pos/objective order.
 do
   reset_spies()
+  is_pos_free_result = false
   local own_pos = vec3(100, 0, 0)
   local objective = {}
   local result = CopLogicPhalanxMinion.calc_initial_phalanx_pos(own_pos, objective, { pos_rsrv_id = 9 })
+  local expected_x, expected_y = circle_point(45)
 
-  assert(is_vec3(result), '3-arg calc_initial_phalanx_pos must return a Vector3')
-  assert(result == objective.pos, '3-arg calc_initial_phalanx_pos must return objective.pos')
+  -- Reserved position is occupied, so the wall fallback moved it 1 along x.
+  assert_point(objective.pos, expected_x + 1, expected_y, '3-arg objective.pos')
+  assert_point(result, expected_x + 1, expected_y, '3-arg return value')
   assert(#is_pos_free_calls == 1, 'trailing data must reach the reservation block')
   assert(reservation_filter(is_pos_free_calls[1]) == 9, 'reservation filter must be data.pos_rsrv_id (9)')
 end

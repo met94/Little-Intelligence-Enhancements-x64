@@ -128,9 +128,10 @@ function CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center_pos, angle, ph
 	local result = center_pos + Vector3(radius):rotate_with(Rotation(angle))
 	result = managers.navigation:clamp_position_to_field(result)
 
-	-- Game argument order; `data` is the LIES-only trailing context. It carries the
-	-- position reservation and is absent on game-convention calls.
-	if data and data.pos_rsrv_id then
+	-- Game argument order; `data` is the LIES-only trailing context. Its presence
+	-- alone runs the position reservation (a nil pos_rsrv_id is a valid filter);
+	-- game-convention calls check nothing because they pass no data at all.
+	if data then
 		local reservation = {
 			radius = 30,
 			position = result,
