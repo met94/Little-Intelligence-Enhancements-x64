@@ -76,9 +76,9 @@ test('version metadata agrees on 8.57.36', () => {
   assert.equal(feed[0].version, '8.57.36');
 
   const readme = read('README.md');
-  assert.match(readme, /\*\*Current release:\*\* `8\.57\.35`/);
+  assert.match(readme, /\*\*Current release:\*\* `8\.57\.36`/);
   // The install step must ship the current package name, not a stale one.
-  assert.match(readme, /Extract `LIES-8\.57\.35\.zip`/);
+  assert.match(readme, /Extract `LIES-8\.57\.36\.zip`/);
 
   const changelog = read('changelog.txt');
   const revisions = [...changelog.matchAll(/^Revision (8\.57\.\d+) \u2014 (\d{4}-\d{2}-\d{2})\r?$/gm)];
