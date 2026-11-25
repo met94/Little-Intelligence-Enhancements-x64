@@ -121,18 +121,26 @@ field position, `is_pos_free` returns true for `filter = id_a`, and false for
 `filter = id_b` or `filter = nil`. So `filter` is the owner-exclusion id, and the
 id is per-unit, not per-group.
 
-Measured end to end: `job-122351-751` (session `sess-20261125-120902`, `auc`,
-60 s measurement window, 6 live phalanx minions) counted `wall_rsrv_hit=215` and
-`wall_own_rsrv_hit=6` - 2.8 % of the successful outer wall searches settled on a
-position covered only by the unit's own reservation, i.e. on the points the
-pre-8.57.36 nil filter rejected. No Lua error, no crash, and the minion count
-stayed at 6 for the whole window. Caveat, stated because it bounds the claim:
-the heist's own spawn-group search returns nil on `auc` in this rig (no reachable
-Phalanx spawn group, and its `Application:error` is not captured by the BLT log),
-so the card promotes a live assault group to the same `create_phalanx` objective.
-The units then entered `CopLogicPhalanxMinion` (6 flagged, phalanx objectives
-present), so the travel -> calc -> circle path that performs the wall searches is
-the real one; only the heist's spawn-group selection is bypassed.
+Measured end to end: the final run is `job-124647-540` (session
+`sess-20261125-123801`, `auc`, promoted group `tac_swat_rifle_flank3` of 5 live
+units, 1x window of 60 s): `wall_rsrv_hit_delta=136`,
+`wall_own_rsrv_hit_delta=11` - 8.1 % of the successful first-pass wall searches
+settled on a position covered only by the unit's own reservation, with totals
+171/12 since level start. No Lua error and no crash. The promoted units were
+killed by bot fire late in the window (`minions_start=4`, `minions_end=0`,
+`live_cycles=10/12`), so the window is a partial-strength phalanx, not a
+full-strength one. Two earlier 1x windows on the same card give
+`job-123920-086` 3.2 % and `job-124319-516` 4.2 %; pooled, 350/19 = 5.4 %.
+Honest spread: 3.2-8.1 % over three windows on one map, one promoted squad per
+run, small n - the 8.1 % is the headline window, not a population rate. Caveat
+on the mechanism: the heist's own spawn-group search returns nil on `auc` in this
+rig (no reachable Phalanx spawn group, and its `Application:error` is not
+captured by the BLT log), so the card promotes a live assault group to the same
+`create_phalanx` objective; the units entered `CopLogicPhalanxMinion`, so the
+travel -> calc -> circle path that performs the wall searches is the real one and
+only the spawn-group selection is bypassed. The first 4x window
+(`job-122351-751`) is superseded - it was an accumulated total, not a window
+delta.
 
 ## Cross-mod note: Iter truncates `clbk_pathing_results`' trailing argument
 
@@ -204,15 +212,19 @@ are pre-existing (`vrplus` boot FATAL, a BeardLib asset warning, `[Updates]`
 meta warnings).
 
 Honest limit: the soak did not spawn a phalanx group (`phalanx_spawn=0`), and
-that gap is now closed by the end-to-end card run above (`job-122351-751`: a
-promoted group, `CopLogicPhalanxMinion` travel and wall searches live, 215/6
-counted). The one part still not exercised is the heist's own phalanx spawn
-route: `_find_spawn_group_near_area` returns nil on `auc` in this rig, so no run
-has yet watched the game select a Phalanx spawn group and hand it to
-`create_phalanx`. For the surrounding AI stack (attack, retreat, travel, nav
-sort) the soak shows the absence of errors over 70 s with those paths live - not
-per-path coverage, and no isolated exercise of any single call site beyond the
-wall-search counters above.
+that gap is now closed for the travel/wall-search path by the card run above: a
+promoted group entered `CopLogicPhalanxMinion` and the counters moved at 1x. Two
+limits remain, and both are recorded rather than papered over. First, the heist's
+own phalanx spawn route is still unexercised - `_find_spawn_group_near_area`
+returns nil on `auc` in this rig, so no run has watched the game select a
+Phalanx spawn group and hand it to `create_phalanx`. Second, the promoted squad
+is only partially converted (a subset of the promoted units takes the objective
+in each run) and it dies to bot fire late in the window (`live_cycles=10/12` in
+the final run), so no window measures a full-strength, fully converted phalanx.
+For the surrounding AI stack (attack, retreat, travel, nav sort) the soak shows
+the absence of errors over 70 s with those paths live - not per-path coverage,
+and no isolated exercise of any single call site beyond the wall-search counters
+above.
 
 ## How to re-run
 
