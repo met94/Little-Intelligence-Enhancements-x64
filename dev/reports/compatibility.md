@@ -43,7 +43,7 @@ nothing at runtime today.
 
 | Mod | Priority (loads) | Shared hook files | Same-function overlap | Who wins | Class | Test profile |
 | --- | --- | --- | --- | --- | --- | --- |
-| **NavFixes** | 0 (after LIES) | `lib/managers/navigationmanager` | `find_segment_doors` (LIES 3-arg vs NF 2-arg), `_sort_nav_segs_after_pos` (LIES 7-arg vs NF 6-arg) | NavFixes | **Hard conflict** — argument shift kills LIES coarse pathing + doorway cover/aim lookup (silent, no crash) | **do-not-run-together** |
+| **NavFixes** | 0 (after LIES) | `lib/managers/navigationmanager` | `find_segment_doors` (LIES 3-arg vs NF 2-arg), `_sort_nav_segs_after_pos` (LIES 7-arg vs NF 6-arg) | NavFixes | **Hard conflict** — NavFixes' bodies drop LIES' extra arguments: coarse pathing loses its cost-aware weight and nav-link gate, doorway cover/aim lookup loses `center_only` (silent, no crash) | **do-not-run-together** |
 | **Keepers** | 0 (after LIES; Phase 3 target `10`) | 19 files (cop*/teamai*/nav/menumanager) | 19 same-name fns; 17 wrap, **2 full replaces** (`CopLogicIdle.queued_update`, `clbk_action_timeout`) | Keepers on the 2 replaces; wraps compose | **Load-order-dependent** (LIES idle rewrite lost on 2 fns) — Phase 2 gave LIES Keepers' `kpr_done` guard, Phase 3 removes the overrides | compatible |
 | **Monkeepers** | 100 → **99 (pinned)** | 6 files | `CopLogicBase.is_obstructed` (wrap), `CarryData:_chk_register_steal_SO` (wrap), `TeamAILogicIdle.action_complete_clbk` (**replace**) | LIES (99 loads after 100) | **Resolved by pinning to 99** — Phase 2 gave LIES Monkeepers' `action_expired` guard, Phase 4 removes the override | compatible **after pinning priority** |
 | **Useful Bots** (+ HopLib 499) | 0 (after LIES) | 18 files | 16 same-name fns; 12 wrap, **4 replaces** (`TeamAILogicBase._get_logic_state_from_reaction`, `TeamAILogicIdle._find_intimidateable_civilians`, `TeamAILogicIdle.intimidate_civilians`, `TeamAILogicAssault.mark_enemy`) | Useful Bots | **Load-order-dependent**, no ordering preserves both (implementation clash); LIES adds no new hooks here (Phase 2 gated guards only) | compatible; choose bot-AI owner |
@@ -75,23 +75,27 @@ installed tree.
 > Post-audit action: LIES now also carries the `register_anim_nav_link` and
 > `remove_obstacle` guards, so it is self-sufficient without NavFixes. Still do
 > **not** run both: NavFixes overwrites `find_segment_doors` and
-> `_sort_nav_segs_after_pos` with incompatible signatures.
+> `_sort_nav_segs_after_pos` with 2-argument / 6-argument bodies that drop LIES'
+> extra arguments (trailing since 8.57.36).
 
-Same file, same two functions, **incompatible signatures**:
+Same file, same two functions, **incompatible bodies**:
 
 | Function | 248.2 vanilla | LIES | NavFixes |
 | --- | --- | --- | --- |
 | `NavigationManager:find_segment_doors` | `(from_seg_id, approve_clbk)` | `(from_seg_id, approve_clbk, center_only)` | `(from_seg_id, approve_clbk)` |
-| `NavigationManager:_sort_nav_segs_after_pos` | `(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)` | `(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)` | `(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)` |
+| `NavigationManager:_sort_nav_segs_after_pos` | `(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)` | `(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg, from_pos)` | `(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)` |
 
 LIES loads first (100), NavFixes second (0), so NavFixes' 6-argument body replaces LIES'
 7-argument body while LIES' own caller still passes 7 arguments:
 
-- LIES `_execute_coarce_search` (overlay, `lua/managers/navigationmanager.lua:2115`) calls
-  `_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ...)`; under NavFixes' body
-  `i_seg` receives a `Vector3`, `all_segs[i_seg]` is `nil`, and NavFixes returns early.
-  `new_segments` is then `nil` — tolerated by `if new_segments then`, so **no error is
-  logged**: coarse path searches simply never expand. Enemies/bots stop finding paths.
+- LIES `_execute_coarce_search` (overlay, `lua/managers/navigationmanager.lua`) calls
+  `_sort_nav_segs_after_pos(to_pos, i_seg, ..., from_pos)` — game order, LIES
+  `from_pos` trailing (since 8.57.36; before that the parameter was inserted
+  second). Under NavFixes' body the first six arguments land in the right slots
+  and the trailing `from_pos` is ignored, so there is no argument shift any more:
+  the cost-aware two-term weight, the `from_pos` term and the nav-link delay gate
+  are simply lost, coarse path searches expand with vanilla weighting, and
+  `new_segments` still comes back (no crash, no logged error).
 - LIES calls `find_segment_doors(seg, nil, true)` in three places
   (`navigationmanager.lua:164,383,907`) and with `center_only=true` for doorway
   aiming (`lua/coplogics/coplogicattack.lua:1398,1402`). NavFixes' body ignores the third
@@ -259,7 +263,7 @@ absorbed **2 of NavFixes' 4 functions**:
 | NavFixes function | In LIES? | Consequence if both installed |
 | --- | --- | --- |
 | `find_segment_doors` | yes (3-arg variant, `if not from_seg` guard) | NavFixes' 2-arg body wins → `center_only` ignored → doorway cover/aim lookup returns no usable entries |
-| `_sort_nav_segs_after_pos` | yes (7-arg variant) | NavFixes' 6-arg body wins → LIES `_execute_coarce_search` gets `nil` → coarse pathing dead |
+| `_sort_nav_segs_after_pos` | yes (7-arg variant, game order + trailing `from_pos` since 8.57.36) | NavFixes' 6-arg body wins → LIES cost-aware weight, `from_pos` term and nav-link delay gate lost → coarse pathing degrades to vanilla quality (no crash) |
 | `register_anim_nav_link` | **no** | disjoint, would work fine alongside |
 | `remove_obstacle` | **no** (LIES only overrides `add_obstacle`) | disjoint, would work fine alongside |
 
@@ -273,14 +277,16 @@ So the real fix is: **absorb the two missing guards into LIES, then drop NavFixe
    3-/7-argument contracts stay consistent.
 
 Interim (before step 1-2): run **LIES without NavFixes**. The two missing guards are
-rare-path fixes (animated nav links, obstacle teardown); the pair as-is actively breaks
-pathing, which is far worse.
+rare-path fixes (animated nav links, obstacle teardown); the pair as-is actively degrades
+pathing and doorway cover, which is worse than not having the extra guards.
 
 Root cause worth recording: LIES' nav overlay is written against a newer `NavigationManager`
 contract (extra `center_only` / `from_pos` parameters, plus its own callers). It is
-internally consistent but **not** signature-compatible with any other overlay of
-`find_segment_doors`/`_sort_nav_segs_after_pos` on 248.2 — a future nav mod would break it
-the same way.
+internally consistent but **not** behaviour-compatible with any other overlay of
+`find_segment_doors`/`_sort_nav_segs_after_pos` on 248.2 — whichever body loads last wins
+and drops LIES' extra argument handling. Since 8.57.36 the leftovers are trailing, so the
+clash is silent feature loss rather than a nil crash; a future nav mod would break it the
+same way.
 
 ## 4. Recommended test profiles
 

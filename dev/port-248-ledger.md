@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-07T06:56:33.286Z
+Generated: 2026-11-25T10:38:36.204Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -15,11 +15,11 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 42 |
-| MOD_ONLY | 221 |
+| MOD_ONLY | 222 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 294 |
+| LIES_EDIT_CLEAN | 293 |
 | SAME_AS_NEW_VANILLA | 1 |
 
 ## By decision
@@ -305,7 +305,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `GroupAIStateBase._set_rescue_state` | 3 | 15 | 15 |  |
 | [ ] | keep | — | `GroupAIStateBase.on_criminal_nav_seg_change` | 41 | 48 | 48 |  |
 | [ ] | keep | — | `GroupAIStateBase.on_nav_link_unregistered` | 16 | 14 | 14 |  |
-| [ ] | keep | — | `GroupAIStateBase.on_objective_failed` | 86 | 51 | 51 |  |
+| [ ] | keep | — | `GroupAIStateBase.on_objective_failed` | 105 | 51 | 51 |  |
 | [ ] | keep | — | `GroupAIStateBase.register_criminal` | 63 | 53 | 53 |  |
 | [ ] | keep | — | `GroupAIStateBase.register_security_camera` | 15 | 3 | 3 |  |
 | [ ] | keep | — | `GroupAIStateBase.report_aggression` | 11 | 9 | 9 |  |
@@ -381,7 +381,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `GroupAIStateBesiege.force_spawn_group` | 29 | 27 | 27 |  |
 | [ ] | keep | — | `GroupAIStateBesiege.is_detection_persistent` | 3 | 3 | 3 |  |
 | [ ] | keep | — | `GroupAIStateBesiege.on_defend_travel_end` | 30 | 13 | 13 |  |
-| [ ] | keep | — | `GroupAIStateBesiege.on_objective_complete` | 130 | 88 | 88 |  |
+| [ ] | keep | — | `GroupAIStateBesiege.on_objective_complete` | 142 | 88 | 88 |  |
 | [ ] | keep | — | `GroupAIStateBesiege.remove_from_surrendered` | 12 | 18 | 18 |  |
 | [ ] | keep | — | `make_dis_id` | 6 | 5 | 5 |  |
 | [ ] | keep (new) | — | `GroupAIStateBesiege.force_end_assault_phase` | 20 | 18 | 20 | matches 248.2 vanilla; no override needed |
@@ -492,7 +492,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicIntimidated.enter` | 62 | 55 | 55 |  |
 | [ ] | keep | — | `CopLogicIntimidated.exit` | 56 | 40 | 40 |  |
 | [ ] | keep | — | `CopLogicIntimidated.on_intimidated` | 68 | 54 | 54 |  |
-| [ ] | keep | — | `CopLogicIntimidated.queued_update` | 20 | 11 | 11 |  |
+| [ ] | keep | — | `CopLogicIntimidated.queued_update` | 21 | 11 | 11 |  |
 | [ ] | keep | — | `CopLogicIntimidated.register_rescue_SO` | 63 | 67 | 67 |  |
 
 ## lua/coplogics/coplogicbase.lua
@@ -522,7 +522,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicBase.identify_attention_obj_instant` | 51 | 51 | 51 |  |
 | [ ] | keep | — | `CopLogicBase.is_obstructed` | 129 | 74 | 74 |  |
 | [ ] | keep | — | `CopLogicBase.on_attention_obj_identified` | 3 | 13 | 13 |  |
-| [ ] | keep | — | `CopLogicBase.on_new_objective` | 34 | 35 | 35 |  |
+| [ ] | keep | — | `CopLogicBase.on_new_objective` | 42 | 35 | 35 |  |
 | [ ] | keep | — | `CopLogicBase.on_objective_unit_damaged` | 16 | 3 | 3 |  |
 | [ ] | keep | — | `CopLogicBase.on_objective_unit_destroyed` | 16 | 12 | 12 |  |
 | [ ] | keep | — | `CopLogicBase.queue_task` | 33 | 21 | 21 |  |
@@ -684,7 +684,7 @@ No function definitions (hook/overlay file).
 
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
-| [ ] | keep | — | `CopLogicPhalanxMinion._calc_pos_on_phalanx_circle` | 17 | 6 | 6 |  |
+| [ ] | keep | — | `CopLogicPhalanxMinion._calc_pos_on_phalanx_circle` | 22 | 6 | 6 |  |
 | [ ] | keep | — | `CopLogicPhalanxMinion._reposition_phalanx` | 53 | 57 | 57 |  |
 | [ ] | keep | — | `CopLogicPhalanxMinion.calc_initial_phalanx_pos` | 15 | 17 | 17 |  |
 | [ ] | keep | — | `CopLogicPhalanxMinion.enter` | 59 | 65 | 65 |  |
@@ -833,11 +833,11 @@ No function definitions (hook/overlay file).
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
 | [ ] | audit | — | `TeamAILogicAssault._chk_wants_to_take_cover` | 13 | 0 | 0 |  |
+| [ ] | audit | — | `TeamAILogicAssault._find_enemy_to_mark_from_data` | 50 | 0 | 0 |  |
 | [ ] | audit | — | `TeamAILogicAssault._on_player_slow_pos_rsrv_upd` | 27 | 0 | 0 |  |
 | [ ] | keep | — | `TeamAILogicAssault._upd_enemy_detection` | 96 | 72 | 72 |  |
 | [ ] | keep | — | `TeamAILogicAssault.action_complete_clbk` | 73 | 40 | 40 |  |
 | [ ] | keep | — | `TeamAILogicAssault.enter` | 41 | 40 | 40 |  |
-| [ ] | keep | — | `TeamAILogicAssault.find_enemy_to_mark` | 50 | 12 | 12 |  |
 | [ ] | keep | — | `TeamAILogicAssault.mark_enemy` | 21 | 25 | 25 |  |
 | [ ] | keep | — | `TeamAILogicAssault.update` | 173 | 68 | 68 |  |
 

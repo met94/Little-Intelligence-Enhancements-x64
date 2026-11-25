@@ -291,6 +291,13 @@ Keep LIES' loop shape, 4-tuple contract and nav-link capture.
 
 ## 3. `_sort_nav_segs_after_pos`
 
+> Snapshot note (8.57.36, 2026-11-25): the signature is now game order with
+> `from_pos` **trailing** (`to_pos, i_seg, ignore_seg, verify_clbk, access_pos,
+> access_neg, from_pos`) - the order changed in 8.57.36. The code block and the
+> "LIES delta vs 248.2" bullets below are re-read at 8.57.36; the summary/backlog
+> tables further below are the audit-time snapshot, and P1-P3 from "Real gaps"
+> all shipped afterwards (`dev/tools/test/nav-gates.test.mjs`).
+
 ### Vanilla delta 246.1 -> 248.2
 
 Signature is unchanged at 6 arguments; the body was restructured:
@@ -343,31 +350,36 @@ dropped v5 room tables is stale.
 
 ### LIES delta vs 248.2
 
-LIES `:2403-2453`, 7 arguments:
+LIES `:2411-2463`, 7 arguments:
 
 ```lua
--- :2403, :2404-2408
-function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)
+-- :2411, :2414-2417
+function NavigationManager:_sort_nav_segs_after_pos(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg, from_pos)
 	local all_segs = self._nav_segments
+	-- vanilla 248.2:1368 gates nav links on one timestamp read per sort.
+	local t = TimerManager:game():time()
 	local seg = all_segs[i_seg]
 	local neighbours = seg.neighbours
 	from_pos = from_pos or seg.pos
 	local found_segs = nil
 ```
 
-- **7th parameter `from_pos`** inserted after `to_pos`, and a two-term weight
-  `mvec3_dis(from_pos, door_pos) + mvec3_dis(door_pos, to_pos)` (`:2423`)  - 
-  A*-style g+h. Deliberate LIES difference; it is what makes the LIES coarse
+- **7th parameter `from_pos` is LIES-only and trailing** (game order first:
+  `to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg, from_pos`).
+  The order changed in 8.57.36 — before that `from_pos` was inserted second,
+  which shifted every later argument for a game-convention caller. A two-term
+  weight `mvec3_dis(from_pos, door_pos) + mvec3_dis(door_pos, to_pos)` (`:2433`)
+  - A*-style g+h. Deliberate LIES difference; it is what makes the LIES coarse
   search cost-aware. Keep.
-- `nav_link` is carried into the segment data (`:2419`, `:2429`) so the 4-tuple
+- `nav_link` is carried into the segment data (`:2429`, `:2439`) so the 4-tuple
   path can name the link it used. Keep.
-- dead nav links are **silently skipped** (`:2417` `alive(door) and ...`) where
+- dead nav links are **silently skipped** (`:2427` `alive(door) and ...`) where
   248.2 `debug_pause`s (`:1366`). Keep - a `debug_pause` in the nav hot path is
   worse than skipping.
-- **no `t`, no `delay_time()` gate** - 246.1@a3180fc:1952 and 248.2:1368 both have
-  `TimerManager:game():time() > i_door:delay_time()` inside the
-  `not is_obstructed` branch; LIES' `:2417` condition is
-  `alive(door) and not door:is_obstructed() and door:check_access(...)`.
+- the nav-link `t > door:delay_time()` gate **is present** (`:2414` hoists one
+  timer read per sort, `:2427` gates on it) - ported from
+  `246.1@a3180fc:1952` / `248.2:1368`,
+  `dev/tools/test/nav-gates.test.mjs` pins both.
 
 Note this function is **not redefined** by Iter, so LIES' 7-argument contract is
 safe there; but Iter's `_execute_coarce_search` replacement never calls it, so the
@@ -375,7 +387,8 @@ gate in it is unreachable while Iter's `nav_search` is on (see section 2), i.e. 
 the default layout. It is only unsafe under NavFixes, which redefines it with 6
 arguments (`compatibility.md`, section 2.1).
 
-**Verdict: `merge: add the nav-link delay gate`.** Do **not** adopt the
+**Verdict: `merge: add the nav-link delay gate` — shipped** (`cbc4a29`,
+2026-11-01; `dev/tools/test/nav-gates.test.mjs` pins it). Do **not** adopt the
 `check_segment` closure: it is pure restructure and would force dropping
 `from_pos` and touching the caller.
 
