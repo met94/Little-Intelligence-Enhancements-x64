@@ -2051,8 +2051,11 @@ end
 local WALL_RSRV_RADIUS = 60
 
 -- Counts a successful `_get_pos_on_wall` result against the unit's own
--- reservation. Only a first-pass call counts: the recursive retries would
--- otherwise report the same search up to three times.
+-- reservation. Only a first-pass call counts: the outer frame returns the
+-- recursive result without counting anything itself, so counting inside the
+-- recursion would not double-report a search - deep-retry successes are simply
+-- not counted. The counter therefore reports first-pass outer successes, which
+-- is a slightly smaller denominator than "every success".
 --
 -- `recheck_own` is set for the `fail_position` exit, where the point was chosen
 -- up to nine raycasts before the return: a foreign reservation placed meanwhile

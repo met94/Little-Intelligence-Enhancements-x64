@@ -122,26 +122,32 @@ field position, `is_pos_free` returns true for `filter = id_a`, and false for
 id is per-unit, not per-group.
 
 Measured end to end: the final run is `job-130821-817` (session
-`sess-20261125-130046`, `auc`, promoted rifle group, 30 s window at 1x, 6
-samples, PASS floor 5/6): `wall_rsrv_hit_delta=77`,
-`wall_own_rsrv_hit_delta=2` - 2.6 % of the successful first-pass wall searches
-settled on a position covered only by the unit's own reservation, with totals
-163/3 since level start. No Lua error and no crash. Scope, stated because it
+`sess-20261125-130046`, `auc`, promoted assault group `tac_tazer_charge1`,
+`live=6`, 30 s window at 1x, 6 samples, PASS floor 5/6):
+`wall_rsrv_hit_delta=77`, `wall_own_rsrv_hit_delta=2` - 2.6 % of the first-pass
+outer wall searches settled on a position covered only by the unit's own
+reservation, with totals 163/3 since level start. No Lua error and no crash.
+Squad facts: `max_minions=3` (1 at window start, 3 mid-window, 0 at the end) and
+`live_cycles=5/6`; the final 5 s cycle added 11 hits and ended with 0 live
+minions, and per-hit attribution is not observable. Scope, stated because it
 bounds every reading: the counters are process-wide - every cop's first-pass
 `_get_pos_on_wall` success increments them, phalanx or not - so the promoted
-squad only raises the density; 11 of the 77 hits accrued in the final sample
-after the squad was dead (`minions_start=1`, `minions_end=0`,
-`live_cycles=5/6`), from other cops. Honest limits: one map, one promoted squad
-per run, partial conversion and bot-fire attrition, and an own-reservation
-sample of two hits (2.6 %), too small to support a rate claim on its own.
-Earlier windows from the card's tuning runs used different card and denominator
-versions (60 s); they are historical and not comparable. Caveat on the
-mechanism: the heist's own spawn-group search returns nil on `auc` in this rig
-(no reachable Phalanx spawn group, and its `Application:error` is not captured by
-the BLT log), so the card promotes a live assault group to the same
-`create_phalanx` objective; the units entered `CopLogicPhalanxMinion`, so the
-travel -> calc -> circle path that performs the wall searches is the real one and
-only the spawn-group selection is bypassed.
+squad only raises the density, and they count first-pass outer successes only,
+so deep-retry successes are uncounted (a small denominator undercount). Honest
+limits: one map, one promoted squad per run, partial conversion and bot-fire
+attrition, and an own-reservation sample of two hits (2.6 %), too small to
+support a rate claim on its own. This run is the published record, captured with
+the card as it stood then; the card was tightened after it (a `max_minions >= 2`
+floor plus restoring `phalanx.minions.min_count` after the window), so the
+figure must not be presented as produced by the final card. Earlier windows from
+the card's tuning runs used different card and denominator versions (60 s); they
+are historical and not comparable. Caveat on the mechanism: the heist's own
+spawn-group search returns nil on `auc` in this rig (no reachable Phalanx spawn
+group, and its `Application:error` is not captured by the BLT log), so the card
+promotes a live assault group to the same `create_phalanx` objective; the units
+entered `CopLogicPhalanxMinion`, so the travel -> calc -> circle path that
+performs the wall searches is the real one and only the spawn-group selection is
+bypassed.
 
 ## Cross-mod note: Iter truncates `clbk_pathing_results`' trailing argument
 
@@ -223,10 +229,10 @@ is only partially converted (a subset of the promoted units takes the objective
 in each run) and bot fire kills it before the window closes (`live_cycles=5/6`,
 `minions_end=0` in the final run), so no window measures a full-strength, fully
 converted phalanx. Third, the counters are map-wide, not phalanx-only: every
-cop's first-pass `_get_pos_on_wall` success counts, and 11 of the final run's 77
-hits arrived after the promoted squad was dead. The figure therefore measures
-the wall-search effect across the map at higher density, not a phalanx-squad
-rate. For the surrounding AI stack (attack, retreat, travel, nav sort) the soak
+cop's first-pass `_get_pos_on_wall` success counts; the final 5 s cycle of the
+published run added 11 hits and ended with 0 live minions, and per-hit
+attribution is not observable. The figure therefore measures the wall-search
+effect across the map at higher density, not a phalanx-squad rate. For the surrounding AI stack (attack, retreat, travel, nav sort) the soak
 shows the absence of errors over 70 s with those paths live - not per-path
 coverage, and no isolated exercise of any single call site beyond the wall-search
 counters above.

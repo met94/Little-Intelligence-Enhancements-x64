@@ -21,11 +21,11 @@
 -- be, and only if it stays empty does the card promote a live assault group to
 -- the phalanx group (`_phalanx_spawn_group`). That is a rig fallback, but it
 -- exercises the same production path afterwards: `create_phalanx` objective ->
--- `CopLogicPhalanxMinion` travel -> wall searches and counters. Only the
--- promotion path also drops `phalanx.minions.min_count` to 1, because a promoted
+-- `CopLogicPhalanxMinion` travel -> wall searches and counters. The promotion
+-- also drops `phalanx.minions.min_count` to 1 while it runs, because a promoted
 -- group can be smaller than a real phalanx squad and `CopLogicPhalanxMinion`
--- disbands at or below that threshold; the normal spawn route keeps the game's
--- value.
+-- disbands at or below that threshold; the original value is restored before the
+-- card finishes, so later cycles and heists see the game's threshold again.
 --
 -- Measurement contract: the counters accumulate from level start, so the card
 -- publishes window deltas - the counters are sampled once when the group is
@@ -35,10 +35,13 @@
 -- promotion bypasses `_spawn_phalanx_LIES`, it also calls
 -- `set_assault_endless(true)` the way that function does - without it the
 -- assault ends on its timer and the promoted group goes idle mid-window. The
--- result line reports `minions_start` / `minions_end` / `live_cycles`, so a
--- window that loses the group is visible rather than implied, and PASS requires
--- at least `MEASURE_CYCLES - 1` live cycles; a shorter window fails and is
--- published as a short window instead of a 30 s phalanx window.
+-- result line reports `minions_start` / `minions_end` / `max_minions` /
+-- `live_cycles`, so a window that loses the group is visible rather than implied.
+-- PASS requires `live_cycles >= MEASURE_CYCLES - 1` **and** `max_minions >= 2`;
+-- a window that sat at one unit or lost the group fails and is published as a
+-- short or thin window. 30 s at 1x reduces bot-fire attrition but does not
+-- remove it: the captured run held 3 minions mid-window, sat on the 5/6 floor
+-- and ended at 0.
 --
 -- Dev-only. Run with the resident rig from the workspace root:
 --   tools\pd2session.ps1 -Start -Mod .worktrees\LIES-lies-249
@@ -211,6 +214,20 @@ return function(H)
 		return true
 	end
 
+	-- `phalanx.minions.min_count` is process-wide tweak data: the promotion lowers it
+	-- for the window, and this puts the game's value back before the card finishes so
+	-- later cycles and heists are unaffected.
+	local min_count_original
+	local function restore_min_count()
+		if not min_count_original then
+			return
+		end
+
+		tweak_data.group_ai.phalanx.minions.min_count = min_count_original
+		H:log("phalanx tweak restored: minions.min_count=%s", tostring(min_count_original))
+		min_count_original = nil
+	end
+
 	-- Rig fallback: promote the live assault group with the most living units to
 	-- the phalanx group. `_check_phalanx_group_has_spawned` then assigns the real
 	-- `create_phalanx` objective, the units become phalanx minions and the normal
@@ -249,14 +266,17 @@ return function(H)
 		end
 
 		-- Rig-only, on the promotion path: a promoted group can be far smaller than
-		-- a real phalanx squad (one run promoted 5 units and only 2 took the
+		-- a real phalanx squad (runs promoted 5-6 units and only a few took the
 		-- objective), and `CopLogicPhalanxMinion.chk_should_breakup` disbands at
 		-- `phalanx_minion_count <= min_count`. The default 4 would break such a
 		-- group up mid-window; 1 keeps any group of two or more together, while a
-		-- lone minion still breaks up as in vanilla. The normal spawn route keeps
-		-- the game's threshold.
+		-- lone minion still breaks up as in vanilla. The original value is restored
+		-- before the card finishes (see `restore_min_count`), so this is a window
+		-- setting, not a process-wide one.
+		min_count_original = min_count_original or tweak_data.group_ai.phalanx.minions.min_count
 		tweak_data.group_ai.phalanx.minions.min_count = 1
-		H:log("phalanx tweak (rig only, promotion path): minions.min_count=1")
+		H:log("phalanx tweak (rig only, promotion path, restored after the window): minions.min_count=1 (was %s)",
+			tostring(min_count_original))
 
 		-- The promoted map is the whole group; how many of those units actually take
 		-- the `create_phalanx` objective is counted once the group is live
@@ -281,8 +301,9 @@ return function(H)
 
 	local SYNTH_AFTER_CYCLES = 10
 	local SPAWN_CYCLES = 15
-	-- 30 s at 1x: short enough that bot fire cannot thin the squad below the
-	-- floor before the window closes.
+	-- 30 s at 1x. The short window reduces bot-fire attrition but does not remove
+	-- it: the captured run held 3 minions mid-window, sat on the 5/6 floor and
+	-- ended at 0 live minions.
 	local MEASURE_CYCLES = 6
 	local last = nil
 	local found = false
@@ -314,6 +335,7 @@ return function(H)
 	end
 
 	if not found then
+		restore_min_count()
 		H:finish("FAIL", string.format(
 			"no live phalanx minions after %d cycles; last center=%s phase=%s spawn_group=%s spawned=%s minions=%d",
 			SPAWN_CYCLES, tostring(last and last.center), tostring(last and last.phase),
@@ -338,6 +360,7 @@ return function(H)
 	-- both ends and how many cycles actually had units to search walls.
 	local minions_start = minion_count()
 	local minions_end = minions_start
+	local max_minions = minions_start
 	local live_cycles = 0
 	local base_wall_rsrv_hit, base_wall_own_rsrv_hit = counters()
 	H:log("window baseline minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d",
@@ -349,13 +372,17 @@ return function(H)
 		H:wait(5000)
 		minions_end = minion_count()
 
+		if minions_end > max_minions then
+			max_minions = minions_end
+		end
+
 		if minions_end > 0 then
 			live_cycles = live_cycles + 1
 		end
 
 		wall_rsrv_hit, wall_own_rsrv_hit = counters()
-		H:log("measure=%d minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d",
-			cycle, minions_end, wall_rsrv_hit, wall_own_rsrv_hit,
+		H:log("measure=%d minions=%d max_minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d",
+			cycle, minions_end, max_minions, wall_rsrv_hit, wall_own_rsrv_hit,
 			wall_rsrv_hit - base_wall_rsrv_hit, wall_own_rsrv_hit - base_wall_own_rsrv_hit)
 	end
 
@@ -364,29 +391,40 @@ return function(H)
 	local rsrv_delta = wall_rsrv_hit - base_wall_rsrv_hit
 	local own_delta = wall_own_rsrv_hit - base_wall_own_rsrv_hit
 	local own_share = rsrv_delta > 0 and string.format("%.1f %%", own_delta / rsrv_delta * 100) or "n/a"
-	H:log("result minions_start=%d minions_end=%d live_cycles=%d/%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s",
-		minions_start, minions_end, live_cycles, MEASURE_CYCLES, wall_rsrv_hit,
-		wall_own_rsrv_hit, rsrv_delta, own_delta, own_share)
+	H:log("result minions_start=%d minions_end=%d max_minions=%d live_cycles=%d/%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s",
+		minions_start, minions_end, max_minions, live_cycles, MEASURE_CYCLES,
+		wall_rsrv_hit, wall_own_rsrv_hit, rsrv_delta, own_delta, own_share)
 
-	-- PASS needs almost the whole window to have had live minions: a squad that
-	-- dies after one cycle still yields numbers, but they are not a 30 s phalanx
-	-- window. The counter values themselves are the measurement, so a zero delta
-	-- (or a zero `wall_own_rsrv_hit_delta`) is not a failure; a short window is.
+	-- PASS needs the window to have held a real group for almost all of it: a
+	-- squad that sits at one unit or dies after a cycle still yields numbers, but
+	-- they are not a 30 s phalanx window. The counter values themselves are the
+	-- measurement, so a zero delta (or a zero `wall_own_rsrv_hit_delta`) is not a
+	-- failure; a short or thin window is.
 	local PASS_FLOOR_CYCLES = MEASURE_CYCLES - 1
+	local MIN_MAX_MINIONS = 2
+	local long_enough = live_cycles >= PASS_FLOOR_CYCLES
+	local big_enough = max_minions >= MIN_MAX_MINIONS
 
-	if live_cycles >= PASS_FLOOR_CYCLES then
+	restore_min_count()
+
+	if long_enough and big_enough then
 		H:finish("PASS", string.format(
-			"30 s at 1x: minions %d->%d live_cycles=%d/%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s (totals %d/%d)",
-			minions_start, minions_end, live_cycles, MEASURE_CYCLES, rsrv_delta,
-			own_delta, own_share, wall_rsrv_hit, wall_own_rsrv_hit))
-	elseif live_cycles > 0 then
+			"30 s at 1x: minions %d->%d max=%d live_cycles=%d/%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s (totals %d/%d)",
+			minions_start, minions_end, max_minions, live_cycles, MEASURE_CYCLES,
+			rsrv_delta, own_delta, own_share, wall_rsrv_hit, wall_own_rsrv_hit))
+	elseif not long_enough and live_cycles > 0 then
 		H:finish("FAIL", string.format(
-			"short window: live_cycles=%d/%d (floor %d) minions %d->%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s",
-			live_cycles, MEASURE_CYCLES, PASS_FLOOR_CYCLES, minions_start,
-			minions_end, rsrv_delta, own_delta, own_share))
+			"short window: live_cycles=%d/%d (floor %d) max_minions=%d minions %d->%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s",
+			live_cycles, MEASURE_CYCLES, PASS_FLOOR_CYCLES, max_minions,
+			minions_start, minions_end, rsrv_delta, own_delta, own_share))
+	elseif not big_enough then
+		H:finish("FAIL", string.format(
+			"thin window: max_minions=%d (need %d) live_cycles=%d/%d minions %d->%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s",
+			max_minions, MIN_MAX_MINIONS, live_cycles, MEASURE_CYCLES,
+			minions_start, minions_end, rsrv_delta, own_delta, own_share))
 	else
 		H:finish("FAIL", string.format(
-			"window saw no live phalanx minions (minions %d->%d, live_cycles=0/%d); wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d",
-			minions_start, minions_end, MEASURE_CYCLES, rsrv_delta, own_delta))
+			"window saw no live phalanx minions (minions %d->%d, max_minions=%d, live_cycles=0/%d); wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d",
+			minions_start, minions_end, max_minions, MEASURE_CYCLES, rsrv_delta, own_delta))
 	end
 end
