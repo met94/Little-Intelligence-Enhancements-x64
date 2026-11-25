@@ -201,23 +201,25 @@ indices).
 
 ### LIES delta vs 248.2
 
-LIES `:2292-2401` is the 246.1 shape with nav-link extensions:
+LIES `:2296-2409` is the 246.1 shape with nav-link extensions:
 
-- `local i = 0` / `while true` / `if i == 500` (`:2294-2303`) - **not** the
-  `for i = 1, 500` restructure, and no hoisted `t`;
-- `local all_nav_segments = self._nav_segments` **inside** the loop (`:2310`);
+- `local i = 0` / `while true` / `if i == 500` (`:2300-2309`) - **not** the
+  `for i = 1, 500` restructure; the one-per-search `t` is hoisted at `:2298-2299`
+  (restored 2026-11-01 in `cbc4a29`, with the gate below);
+- `local all_nav_segments = self._nav_segments` **inside** the loop (`:2316`);
 - entry detection keeps the *last* usable nav link instead of breaking at the
-  first match, and drops the delay gate:
+  first match (`:2322-2332`), and the delay gate is present in the `elseif`
+  (`:2328`):
 
 ```lua
--- lua/managers/navigationmanager.lua:2316-2326
+-- lua/managers/navigationmanager.lua:2322-2332
 			for _, i_door in ipairs(neighbours[search_data.end_i_seg]) do
 				if i_door.x then
 					entry_found = true
 					nav_link_element = nil
 
 					break
-				elseif i_door:check_access(search_data.access_pos, search_data.access_neg) and not i_door:is_obstructed() then
+				elseif t > i_door:delay_time() and i_door:check_access(search_data.access_pos, search_data.access_neg) and not i_door:is_obstructed() then
 					entry_found = true
 					nav_link_element = i_door
 				end
@@ -225,8 +227,8 @@ LIES `:2292-2401` is the 246.1 shape with nav-link extensions:
 ```
 
 - path entries are 4-tuples `{i_seg, pos, nav_link, multiple_nav_links}`
-  (`:2332-2359`) where 248.2 returns 2-tuples `{i_seg, pos}` (`:1268-1289`);
-  `has_multiple_navlink_elements` is declared (`:2314`) and never assigned, so
+  (`:2334-2369`) where 248.2 returns 2-tuples `{i_seg, pos}` (`:1268-1289`);
+  `has_multiple_navlink_elements` is declared (`:2320`) and never assigned, so
   `[4]` is always nil (already filed as AI-06 in `core-ai-gap-audit.md`);
 - LIES adds `not i_door:is_obstructed()` to the entry test (248.2 has only
   delay+access);
@@ -235,13 +237,14 @@ LIES `:2292-2401` is the 246.1 shape with nav-link extensions:
   results_callback/verify_clbk/access_pos/access_neg` (248.2:1477-1494), all of
   which LIES's body reads. The first queue entry is `{i_seg = start_i_seg}`
   with **no `pos`** (248.2:1489-1491), which is why LIES passes a possibly-nil
-  `from_pos` and guards it in `_sort_nav_segs_after_pos` (`:2407`).
+  `from_pos` and guards it in `_sort_nav_segs_after_pos` (`:2417`).
 
-**Missing 248.2-family construct: the nav-link `delay_time()` gate.** It exists
-in *both* baselines - `246.1@a3180fc:1829`
-(`TimerManager:game():time() > i_door:delay_time()`) and 248.2:1257
-(`t > door:delay_time()`) - and LIES has neither. This is not a "248.2 fix";
-it is a construct LIES dropped relative to 246.1.
+**The nav-link `delay_time()` gate.** It exists in *both* baselines -
+`246.1@a3180fc:1829` (`TimerManager:game():time() > i_door:delay_time()`) and
+248.2:1257 (`t > door:delay_time()`) - and LIES now has it too: the original
+audit found it dropped relative to 246.1 (not a "248.2 fix"), and it was
+restored on 2026-11-01 in `cbc4a29` together with the `t` hoist. Live at
+`:2328`, pinned by `dev/tools/test/nav-gates.test.mjs`.
 
 **Is the loop restructure worth porting?** No on its own (equivalence + two
 hoists). The `t` hoist is only needed *because* the delay gate wants one
@@ -286,8 +289,9 @@ so LIES' body - and with it the restored gate - is unreachable while
 performance change *inside* the Iter replacement, not a third participant in the
 LIES/Iter interaction.
 
-**Verdict: `merge: add the nav-link delay gate`** (`local t` + one condition).
-Keep LIES' loop shape, 4-tuple contract and nav-link capture.
+**Verdict: `merge: add the nav-link delay gate` - shipped** (`cbc4a29`,
+2026-11-01; `local t` + one condition). Keep LIES' loop shape, 4-tuple contract
+and nav-link capture.
 
 ## 3. `_sort_nav_segs_after_pos`
 
@@ -689,8 +693,8 @@ the tracker and `cover[1]` as the position
 | Function | Vanilla delta 246.1 -> 248.2 | LIES gap | Verdict | Risk | Testable |
 | --- | --- | --- | --- | --- | --- |
 | `register_cover_units` | drop dead `_rooms` local; covers pushed unconditionally (was debug-only); `mvec3_copy` alias; `get_script_data(nav_tracker, true)` | one token: `get_script_data(nav_tracker)` at `:551` lacks the create flag (248.2:849) | **merge: 1 token** | low - legacy cover-unit branch only (`get_cover_data()` nil); `location_script_data` may be nil -> Lua error at `:553` | yes (body-slice assertion) |
-| `_execute_coarce_search` | `while true`+`i==500` -> `for i = 1,500`; hoist `t`, `all_nav_segments`, `to_search`; `door.x` instead of `type()==number` | keeps 246.1 loop; **missing nav-link `delay_time()` gate** (present in 246.1@a3180fc:1829 and 248.2:1257); 4-tuple path vs 2-tuple (deliberate, AI-06); `[4]` never set | **merge: delay gate** | medium - nav-link userdata call (`delay_time`) in the path-expansion hot loop; no trackers/cover structs; engine pointer class unchanged (LIES already calls `is_obstructed`/`check_access` on the same object). Dead when Iter `nav_search` is on | yes |
-| `_sort_nav_segs_after_pos` | 6-arg signature kept; `all_doors`/`all_rooms` removed -> Vector3 doors; `check_segment` closure; single `t`; one-term weight | 7-arg LIES variant with two-term weight + `nav_link` (deliberate); **missing `delay_time()` gate** (246.1@a3180fc:1952, 248.2:1368); dead links skipped instead of `debug_pause` (deliberate) | **merge: delay gate** (same commit as above) | medium - same userdata class; no trackers; `found_segs` contract unchanged. Dead too while Iter's search owns the only call site | yes |
+| `_execute_coarce_search` | `while true`+`i==500` -> `for i = 1,500`; hoist `t`, `all_nav_segments`, `to_search`; `door.x` instead of `type()==number` | keeps 246.1 loop; **nav-link `delay_time()` gate present** (`cbc4a29`, live `:2328`); 4-tuple path vs 2-tuple (deliberate, AI-06); `[4]` never set | **merged: delay gate** | medium - nav-link userdata call (`delay_time`) in the path-expansion hot loop; no trackers/cover structs; engine pointer class unchanged (LIES already calls `is_obstructed`/`check_access` on the same object). Dead when Iter `nav_search` is on | yes |
+| `_sort_nav_segs_after_pos` | 6-arg signature kept; `all_doors`/`all_rooms` removed -> Vector3 doors; `check_segment` closure; single `t`; one-term weight | 7-arg LIES variant with two-term weight + `nav_link` (deliberate); **`delay_time()` gate present** (`cbc4a29`, live `:2427`; 246.1@a3180fc:1952, 248.2:1368); dead links skipped instead of `debug_pause` (deliberate) | **merged: delay gate** (same commit as above) | medium - same userdata class; no trackers; `found_segs` contract unchanged. Dead too while Iter's search owns the only call site | yes |
 | `remove_obstacle` | nil guard + destroy-listener removal + index-based `temp_array` + unconditional `remove_obstacle(obstacle_obj)` | all three already-merged pieces present; missing only `remove_obstacle(obstacle_obj)` (248.2:2030); LIES *adds* id removal for dead units (248.2 leaks there) | **keep LIES** (optional parity line) | low - `_obstacles` bookkeeping is complete (`:1581-1587`), `on_simulation_ended` sweeps ids (248.2:1722-1752) | yes (weak) |
 | `_draw_covers` | index aliases, `mvec3_set/add` into `temp_vec*`, `tracker:m_position`, `mrot_set_look_at`; pure restyle + alloc reduction | 246.1-shape body **plus** obstructed/disabled colour branch; LIES' call site is commented out (`:1250`) | **keep LIES** | none - debug-only, never called in-game | n/a |
 | `add_obstacle` | nil guard; destroy listener; `id` in table; duplicate debug guard removed | none - both pieces present (`:1543-1557`, `:1583-1587`); LIES keeps the removed duplicate guard (safer) | **already merged** | none | yes |
@@ -698,11 +702,16 @@ the tracker and `cover[1]` as the position
 
 ## Real gaps and implementation order
 
-Only two constructs need work, three edits in all: a one-token **behavioural**
+> Shipped: all three edits below landed in `cbc4a29` (2026-11-01) - the create
+> flag in `register_cover_units`, and the delay gate in both nav searches
+> (`dev/tools/test/nav-gates.test.mjs` pins the gate and the flag). The items
+> are kept as the audit-time plan and their player-POV notes.
+
+Only two constructs needed work, three edits in all: a one-token **behavioural**
 fix in `register_cover_units` (the create flag decides whether the script-data
 extension exists - a filled table versus a nil index, not a restyle), and one
 construct LIES dropped that both baselines still have, in two sibling functions.
-The two delay-gate edits should ship as one commit because they share the
+The two delay-gate edits shipped as one commit because they share the
 `TimerManager` timestamp.
 
 1. **P1 - `register_cover_units` create flag** (`:551`): `get_script_data(nav_tracker, true)`.

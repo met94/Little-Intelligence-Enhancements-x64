@@ -38,9 +38,9 @@ Fixed-slot audit: LIES' copied AI functions now keep the game's argument order.
 - problem: the phalanx helpers copied from the game kept a leading LIES `data`
   argument, so the game's own two-argument
   `calc_initial_phalanx_pos(own_pos, objective)` call delivered a `Vector3` in
-  the `data` slot and `nil` as `objective` - a Phalanx (shield-wall) minion died
-  on the first `objective.angle` read. The same leading- or inserted-argument
-  shape existed in three more copies (`_find_retreat_position`,
+  the `data` slot and `nil` as `objective` - a Phalanx (shield-wall) minion
+  errored out on the first `objective.angle` read. The same leading- or
+  inserted-argument shape existed in three more copies (`_find_retreat_position`,
   `_sort_nav_segs_after_pos`, `queued_update`), and all twelve
   `_get_pos_on_wall` calls passed a stray sixth argument that kept its position
   reservation filter dead since 7.544.
@@ -61,8 +61,11 @@ Fixed-slot audit: LIES' copied AI functions now keep the game's argument order.
   phalanx or reservation error. The soak did not spawn a phalanx group, so the
   helpers are proven by the direct calls and the call sites by the new gate.
 - new gate: `dev/tools/test/signature-compat.test.mjs` pins the eleven audited
-  declarations and every call site's argument order/arity across `lua/**/*.lua`;
-  a positional drift fails it.
+  declarations, plus the call-site order and arity of the six functions whose
+  argument order changed in this pass (`_get_pos_on_wall`, both phalanx helpers,
+  `_find_retreat_position`, `_sort_nav_segs_after_pos`,
+  `_find_enemy_to_mark_from_data`), across `lua/**/*.lua`; a positional drift
+  fails it.
 - tests: the two 8.57.36 fixtures the load-once guard invalidated were repaired
   - the `find_segment_doors` harness test now stubs the guard's `ModPath` /
   `RequiredScript` globals, and `compat.test.mjs` pins the README to 8.57.36

@@ -97,10 +97,10 @@ LIES loads first (100), NavFixes second (0), so NavFixes' 6-argument body replac
   are simply lost, coarse path searches expand with vanilla weighting, and
   `new_segments` still comes back (no crash, no logged error).
 - LIES calls `find_segment_doors(seg, nil, true)` in three places
-  (`navigationmanager.lua:164,383,907`) and with `center_only=true` for doorway
-  aiming (`lua/coplogics/coplogicattack.lua:1398,1402`). NavFixes' body ignores the third
+  (`navigationmanager.lua`, `:271`, `:490`, `:1015`) and with `center_only=true`
+  for doorway aiming (`lua/coplogics/coplogicattack.lua:1968,1972`). NavFixes' body ignores the third
   argument and returns raw door entries; LIES' consumers read `door.center` /
-  `door.end_pos` (`navigationmanager.lua:708`, `coplogicattack.lua:~1398-1415`) and get
+  `door.end_pos` (`navigationmanager.lua:281,284`, `coplogicattack.lua:1996-2007`) and get
   `nil` — doorway cover generation and the aim wall-peek path silently degrade.
 
 Both are *silent* failures: nothing in the log points at the mod pair, which makes this

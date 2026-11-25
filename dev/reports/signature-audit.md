@@ -26,8 +26,15 @@ bump for this pass).
 - A LIES function whose *meaning* diverges from the game's (different input, a
   different heuristic) is renamed private instead of sharing the vanilla name.
 
-`dev/tools/test/signature-compat.test.mjs` enforces this convention on the
-definitions and on every call site; see "How to re-run".
+`dev/tools/test/signature-compat.test.mjs` pins all eleven declarations. It
+also pins call-site order and arity for the six families whose call sites changed
+in this pass - `_get_pos_on_wall`, `calc_initial_phalanx_pos`,
+`_calc_pos_on_phalanx_circle`, `_find_retreat_position`,
+`_sort_nav_segs_after_pos` and `_find_enemy_to_mark_from_data` - across
+`lua/**/*.lua`. The other five (`queued_update`, `clbk_pathing_results`,
+`_peek_for_pos_sideways`, the two grenade checks, `find_segment_doors`) are
+declaration-only pins: their call sites are game- or mod-owned and were already
+correct, so only the declaration guards them against a future re-copy.
 
 ## The twelve audit entries
 
@@ -36,7 +43,7 @@ coverage. Status is at 8.57.36 (all fixed/decided).
 
 | # | Function | Game 249 | LIES 8.57.36 | Decision |
 | --- | --- | --- | --- | --- |
-| 1 | `CopLogicPhalanxMinion.calc_initial_phalanx_pos` | `(own_pos, objective)` | `(own_pos, objective, data)` | **Fixed — confirmed crash.** Was `(data, own_pos, objective)` |
+| 1 | `CopLogicPhalanxMinion.calc_initial_phalanx_pos` | `(own_pos, objective)` | `(own_pos, objective, data)` | **Fixed — confirmed crash.** Was `(data, own_pos, objective)`; reproduced pre-fix on the rig, probe `job-081716-304` (`sess-20261125-081438`): `attempt to index local 'objective' (a nil value)` |
 | 2 | `CopLogicPhalanxMinion._calc_pos_on_phalanx_circle` | `(center_pos, angle, phalanx_minion_count)` | `(center_pos, angle, phalanx_minion_count, data)` | **Fixed — same pattern.** Was `(data, …)`; proven by direct call |
 | 3 | `CopLogicAttack._find_retreat_position` | `(from_pos, threat_pos, threat_head_pos, threat_tracker, max_dist, vis_required)` | same + trailing `data` | **Fixed.** Was leading `data` (7 params). LIES callers pass `data`; the game caller sits in a LIES-overridden function, so the shift was latent, not harmless |
 | 4 | `NavigationManager:_sort_nav_segs_after_pos` | `(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)` | same + trailing `from_pos` | **Fixed.** Was `(to_pos, from_pos, i_seg, …)` — an *inserted* second parameter. LIES caller is `_execute_coarce_search`; the game caller is `navigationmanager.lua:1306` |
@@ -98,9 +105,15 @@ call sites:
 Player-visible effect: a cop or shield picking a wall/fallback position now
 skips spots reserved by its own group, so Phalanx (shield-wall) formations and
 cover/fallback movement can differ slightly from 8.57.35. Nothing else changes
-in gameplay. This is recorded in `changelog.txt` under 8.57.36 and was validated
-on the rig (below), because turning a filter on is a behaviour change even when
-the code it enables was always the intent.
+in gameplay. This is recorded in `changelog.txt` under 8.57.36.
+
+What is actually verified: the arity alignment (id in the 5th slot) is pinned by
+`signature-compat.test.mjs`, and the 70 s soak shows no LIES, phalanx or
+reservation error with the aligned calls live. The filter's runtime effect was
+not isolated on the rig - no cited job filtered on `is_pos_free`/`rsrv_desc.filter`
+or observed a cop skipping its own reserved spot - so "the filter is live" is a
+code-reading fact, not a measured behaviour. Turning a filter on is still a real
+behaviour change, which is why it is called out in the changelog's player notes.
 
 ## Verification
 
@@ -151,9 +164,10 @@ meta warnings).
 
 Honest limit: the soak did not spawn a phalanx group (`phalanx_spawn=0`), so the
 shield-wall path was not exercised end to end. The helpers are proven by the
-direct-call probe above, and the call sites by the new pin test; the soak covers
-the surrounding AI stack (attack, retreat, travel, nav sort) that the other ten
-entries touch.
+direct-call probe above, and the call sites by the new pin test. For the
+surrounding AI stack (attack, retreat, travel, nav sort) the soak shows the
+absence of errors over 70 s with those paths live - not per-path coverage, and no
+isolated exercise of any single call site.
 
 ## How to re-run
 

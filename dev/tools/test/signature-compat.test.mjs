@@ -39,9 +39,11 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8');
 
-// Comment stripping that respects strings and long brackets, because several
-// call sites sit next to explanatory `--` comments and a naive pass would
-// either cut code at a `--` inside a string or count commented-out calls.
+// Comment stripping that respects strings and long brackets (any level, for both
+// string literals and `--[==[` block comments), because several call sites sit
+// next to explanatory `--` comments and a naive pass would cut code at a `--`
+// inside a string or count commented-out calls. Removed block comments keep
+// their newlines so line numbers in failure messages stay correct.
 function stripLuaComments(source) {
   let out = '';
   let i = 0;
@@ -79,11 +81,20 @@ function stripLuaComments(source) {
     }
 
     if (source.startsWith('--', i)) {
-      if (source.startsWith('--[[', i)) {
-        const end = source.indexOf(']]', i + 4);
-        i = end === -1 ? source.length : end + 2;
+      // Lua block comment: `--[[ ... ]]` or `--[=[ ... ]=]` (any level). Drop
+      // the text but keep one newline per removed newline, so line numbers in
+      // failure messages still point at the right source line.
+      const opener = /^--\[(=*)\[/.exec(source.slice(i));
+      if (opener) {
+        const close = ']' + opener[1] + ']';
+        const end = source.indexOf(close, i + opener[0].length);
+        const stop = end === -1 ? source.length : end + close.length;
+        const removed = source.slice(i, stop);
+        out += '\n'.repeat((removed.match(/\n/g) || []).length);
+        i = stop;
         continue;
       }
+      // Line comment: the `\n` itself is copied by the main loop.
       while (i < source.length && source[i] !== '\n') i++;
       continue;
     }
@@ -346,7 +357,8 @@ test('the phalanx helpers are called with their LIES context last', () => {
   const initial = allCallSites('calc_initial_phalanx_pos');
 
   // The game's own two-argument call (PhalanxVip) must keep working, so the two
-  // LIES callers can only append `data`.
+  // LIES callers can only append `data`. The exact call strings above fix every
+  // argument, so a leading `data` cannot pass.
   assert.deepEqual(
     initial.map((site) => `${site.file}: ${site.args.join(', ')}`).sort(),
     [
@@ -355,14 +367,6 @@ test('the phalanx helpers are called with their LIES context last', () => {
       'lua/coplogics/coplogictravel.lua: data.m_pos, objective, data',
     ].sort()
   );
-
-  for (const site of initial) {
-    assert.notEqual(
-      site.args[0],
-      'data',
-      `${site.where}: a leading data argument hands the game Vector3 in the data slot and nil as objective`
-    );
-  }
 
   const circle = allCallSites('_calc_pos_on_phalanx_circle');
 
@@ -374,14 +378,6 @@ test('the phalanx helpers are called with their LIES context last', () => {
       'lua/coplogics/coplogicphalanxvip.lua: center_pos, angle_to_move_to, phalanx_minion_count, unit:brain()._logic_data',
     ].sort()
   );
-
-  for (const site of circle) {
-    assert.equal(site.args.length, 4, `${site.where}: the game's 3 arguments plus the trailing LIES context`);
-    assert.ok(
-      ['data', 'unit:brain()._logic_data'].includes(site.args[3]),
-      `${site.where}: the LIES context is the trailing 4th argument, not a prefix`
-    );
-  }
 });
 
 test('the retreat and nav-sort call sites pass their context last', () => {
