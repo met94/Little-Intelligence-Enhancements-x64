@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-11-25T11:27:22.705Z",
+  "generated": "2026-11-25T12:07:42.775Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -5148,7 +5148,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2136
+          "startLine": 2172
         },
         {
           "name": "CopLogicTravel._check_start_path_ahead",
@@ -5363,7 +5363,7 @@
         {
           "name": "CopLogicTravel._get_pos_on_wall",
           "category": "LIES_EDIT_CLEAN",
-          "modLines": 73,
+          "modLines": 77,
           "oldLines": 75,
           "newLines": 75,
           "modParams": "from_pos, max_dist, step_offset, is_recurse, pos_rsrv_id",
@@ -5373,7 +5373,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2048
+          "startLine": 2080
         },
         {
           "name": "CopLogicTravel._on_destination_reached",
@@ -5388,7 +5388,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2167
+          "startLine": 2203
         },
         {
           "name": "CopLogicTravel._pathing_complete_clbk",
@@ -5553,7 +5553,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2122
+          "startLine": 2158
         },
         {
           "name": "CopLogicTravel.queue_detection_update",
@@ -5629,12 +5629,42 @@
           "form": "decl",
           "note": "",
           "startLine": 177
+        },
+        {
+          "name": "lies_count_wall_rsrv",
+          "category": "MOD_ONLY",
+          "modLines": 18,
+          "oldLines": 0,
+          "newLines": 0,
+          "modParams": "pos, pos_rsrv_id, is_outer",
+          "oldParams": "",
+          "newParams": "",
+          "isLocal": true,
+          "isHook": false,
+          "form": "decl",
+          "note": "",
+          "startLine": 2061
+        },
+        {
+          "name": "lies_probe_rsrv",
+          "category": "MOD_ONLY",
+          "modLines": 5,
+          "oldLines": 0,
+          "newLines": 0,
+          "modParams": "",
+          "oldParams": "",
+          "newParams": "",
+          "isLocal": true,
+          "isHook": false,
+          "form": "decl",
+          "note": "",
+          "startLine": 2052
         }
       ],
       "errors": [],
       "totals": {
         "LIES_EDIT_CLEAN": 23,
-        "MOD_ONLY": 10
+        "MOD_ONLY": 12
       }
     },
     {

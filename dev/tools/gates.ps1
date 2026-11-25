@@ -118,6 +118,12 @@ $auditOk = ($hooksOk -eq $hooksTotal) -and ($auditErrors -le $baseline)
 $auditBody = $auditOut.Trim() + "`nBaseline errors: $baseline (current: $auditErrors)"
 Add-Section 'API audit' $auditBody $auditOk
 
-$lines | Set-Content -LiteralPath $Report -Encoding utf8
+# Native output arrives CRLF through Out-String, and `-split "`n"` keeps the
+# `\r` on every captured line, which Set-Content turns into `<CR><CR><LF>` on a
+# body's last line and leaves mixed endings elsewhere. Write one CR-free text
+# with LF endings instead (the node-generated reports under dev\reports are LF
+# too), so `git diff --check` stays clean. BOM kept: the report always had one.
+$text = (($lines -join "`n") -replace "`r", '') + "`n"
+[System.IO.File]::WriteAllText($Report, $text, [System.Text.UTF8Encoding]::new($true))
 Write-Host ("wrote " + $Report)
 if ($failed) { exit 1 }

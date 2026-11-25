@@ -2045,7 +2045,40 @@ function CopLogicTravel.queue_update(data, my_data, delay)
 	CopLogicBase.queue_task(my_data, my_data.upd_task_key, CopLogicTravel.queued_update, data, data.t + delay, data.important and true)
 end
 
+-- Probe reservation id for the wall-position counters. It is created lazily and
+-- never reserves anything, so excluding it cannot hide a reservation that
+-- belongs to somebody else.
+local lies_probe_rsrv_id
+local function lies_probe_rsrv()
+	lies_probe_rsrv_id = lies_probe_rsrv_id or managers.navigation:get_pos_reservation_id()
+
+	return lies_probe_rsrv_id
+end
+
+-- Counts a successful `_get_pos_on_wall` result against the unit's own
+-- reservation. Only an outer call counts: the recursive retries would otherwise
+-- report the same search up to three times.
+local function lies_count_wall_rsrv(pos, pos_rsrv_id, is_outer)
+	if not is_outer or not pos_rsrv_id or not pos then
+		return
+	end
+
+	LIES:Count("wall_rsrv_hit")
+
+	-- The point passed `is_pos_free` with the unit's own filter. If it fails
+	-- again when only a fresh, empty id is excluded, the only reservations on it
+	-- belong to the unit itself: pre-8.57.36 those points were rejected.
+	if not managers.navigation:is_pos_free({
+			position = pos,
+			radius = 60,
+			filter = lies_probe_rsrv()
+		}) then
+		LIES:Count("wall_own_rsrv_hit")
+	end
+end
+
 function CopLogicTravel._get_pos_on_wall(from_pos, max_dist, step_offset, is_recurse, pos_rsrv_id)
+	local is_outer = is_recurse == nil
 	local is_recurse = is_recurse or 2
 	local nav_manager = managers.navigation
 	local nr_rays = 9
@@ -2089,6 +2122,7 @@ function CopLogicTravel._get_pos_on_wall(from_pos, max_dist, step_offset, is_rec
 
 			if is_free then
 				managers.navigation:destroy_nav_tracker(from_tracker)
+				lies_count_wall_rsrv(ray_params.trace[1], pos_rsrv_id, is_outer)
 
 				return ray_params.trace[1]
 			end
@@ -2109,6 +2143,8 @@ function CopLogicTravel._get_pos_on_wall(from_pos, max_dist, step_offset, is_rec
 	managers.navigation:destroy_nav_tracker(from_tracker)
 
 	if fail_position then
+		lies_count_wall_rsrv(fail_position, pos_rsrv_id, is_outer)
+
 		return fail_position
 	end
 
