@@ -152,7 +152,7 @@ lost.
 `powershell -File dev\tools\gates.ps1` — all sections PASS, exit 0
 (`dev/reports/static-gates.md`):
 
-- Node tool tests — PASS (`pass 255`, `fail 0`; includes the new pin test, 5
+- Node tool tests — PASS (`pass 256`, `fail 0`; includes the new pin test, 5
   tests)
 - Test-harness Lua tests — PASS (`find_segment_doors.lua`,
   `phalanx_signatures.lua`, `test_commands.lua`, `watch_settle_target.lua`)

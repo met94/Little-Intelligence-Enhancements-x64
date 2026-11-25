@@ -157,7 +157,8 @@ end
 -- Centre z is carried through the circle math unchanged (`rotate_with` keeps z
 -- and `clamp_position_to_field` is stubbed to identity). Default 0 so the
 -- origin-centred cases stay exact, but any case with a raised centre must pass
--- its z explicitly - a dropped or 2D-only implementation then fails here.
+-- its z explicitly - a dropped or zeroed result z then fails here. (Rotating
+-- only the offset stays z=0 by construction and is not what this pins.)
 local function assert_point(actual, expected_x, expected_y, label, expected_z)
   assert(is_vec3(actual), label .. ': expected a Vector3')
 
