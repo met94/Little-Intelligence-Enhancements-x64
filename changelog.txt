@@ -74,6 +74,10 @@ Fixed-slot audit: LIES' copied AI functions now keep the game's argument order.
   stubs the guard's `ModPath` / `RequiredScript` globals); the version bump left
   `compat.test.mjs` pinning the README to 8.57.35 (it now expects 8.57.36);
   `phalanx_signatures.lua` is new in this revision, not a repair
+- version map: the map no longer invents legacy labels for post-relabel releases
+  (8.57.31 and newer keep `legacy: null`); only 8.57.1-8.57.30 keep the
+  `V8.57_x64`-`V8.86_x64` labels their artifacts really shipped, and the version
+  tests now fail if a post-relabel entry gets one
 
 Player notes: LIES + Keepers/Iter/Monkeepers/Useful Bots keeps the intended load
 order, so those mods' bot orders, path-ahead and team-AI changes actually apply

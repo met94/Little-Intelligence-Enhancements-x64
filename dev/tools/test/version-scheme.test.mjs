@@ -59,22 +59,26 @@ test('version-map.json lists every fork release exactly once, newest first', () 
     assert.match(entry.date, /^\d{4}-\d{2}-\d{2}$/, 'release date');
     assert.ok(!Number.isNaN(Date.parse(entry.date)), `release ${entry.version} has an unparsable date`);
     // A release from before the relabel must carry the label it really shipped,
-    // because a log of that build quotes it. A release published after it
-    // shipped no label at all, so null is the honest value there; a label is
-    // only allowed when it is a real one, never filler for the sequence.
+    // because a log of that build quotes it. A release published after it shipped
+    // no label at all, so its `legacy` is null; inventing one to keep the
+    // sequence contiguous is exactly what this test exists to stop.
     if (entry.date < RELABEL_DATE) {
       assert.match(entry.legacy ?? '', /^V\d+\.\d+_x64$/,
         `release ${entry.version} predates the relabel, so it must keep its label`);
     } else {
-      assert.ok(entry.legacy === null || /^V\d+\.\d+_x64$/.test(entry.legacy),
-        `release ${entry.version} must spell an absent label as null`);
+      assert.equal(entry.legacy, null,
+        `release ${entry.version} is post-relabel, so it shipped no legacy label`);
     }
   }
 
   // Contiguity and uniqueness describe the labels that really shipped: the
   // post-relabel releases have none, so they are skipped rather than given an
-  // invented label to keep the sequence whole.
+  // invented label to keep the sequence whole. The labelled set is therefore
+  // exactly the pre-relabel releases, V8.86_x64 (=8.57.30) down to V8.57_x64.
   const labelled = releases.filter(entry => entry.legacy);
+
+  assert.deepEqual(labelled, releases.filter(entry => entry.date < RELABEL_DATE),
+    'only a pre-relabel release may carry a legacy label');
   const legacyMinors = labelled.map((entry) => {
     const match = entry.legacy.match(/^V8\.(\d{2})_x64$/);
 
