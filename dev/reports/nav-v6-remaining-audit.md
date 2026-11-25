@@ -100,59 +100,62 @@ Four deltas, one behavioural:
 
 ### LIES delta vs 248.2
 
-LIES `:454-585`; the 248.2 construct that matters is present:
+LIES `:457-589`; the 248.2 construct that matters is present:
 
 ```lua
--- lua/managers/navigationmanager.lua:513-516
+-- lua/managers/navigationmanager.lua:516-519
 			t_ins(location_script_data.covers, cover)
 			t_ins(covers, cover)
 			
 			self:destroy_nav_tracker(navseg_tracker)
 
--- :550
+-- :553
 			t_ins(covers, cover)
 ```
 
 Both pushes are unconditional, so **LIES does not depend on the debug gate**  - 
 that part of the 248.2 change is already merged, and LIES could not have worked
-otherwise (`self._covers` is read by LIES' own `find_cover_*_LUA` at `:1924`,
-`:2019`, `:2118`). For the record `self._debug = IS_PC and Application:production_build()`
+otherwise (`self._covers` is read by LIES' own `find_cover_*_LUA` at `:1925`,
+`:2020`, `:2119`). For the record `self._debug = IS_PC and Application:production_build()`
 (248.2:89) is not reliably false on retail, and Iter forces it true around its
 own call anyway (`mods/Iter/lua/navigationmanager.lua:107-108`).
 
 Deliberate LIES differences (keep):
 
 - rejects covers with `nav_tracker:lost()` / no nav segment / no segment `pos`
-  and destroys the tracker (`:471-482`), and rejects covers failing
-  `generate_cover_fwd` + `check_cover_close_to_wall` (`:499-505`). 248.2 accepts
+  and destroys the tracker (`:474-485`), and rejects covers failing
+  `generate_cover_fwd` + `check_cover_close_to_wall` (`:502-508`). 248.2 accepts
   every cover;
 - `location_script_data` is fetched from a **separate tracker at the segment
-  centre** (`:491-492`, `:507`), then that tracker is destroyed (`:516`), so
+  centre** (`:494-495`, `:510`), then that tracker is destroyed (`:519`), so
   covers are filed on the segment's script data, not on the cover's own
   tracker (248.2:807 files on `nav_tracker`);
 - `door_cache` memoises `find_segment_doors(seg_id, nil, true)` per segment
-  (`:465`, `:484-489`);
-- tail work 248.2 does not have: `_change_funcs()` (`:574`), Nav-B cover
-  generation scheduling (`:576-582`), delayed `_do_nav_fixes` (`:584`).
+  (`:468`, `:487-492`);
+- tail work 248.2 does not have: `_change_funcs()` (`:578`), Nav-B cover
+  generation scheduling (`:580-586`), delayed `_do_nav_fixes` (`:588`).
 
-**Remaining gap: the missing `true` at `:551`.**
+**Merged: the create flag at `:555`.** The audit found this branch calling
+`get_script_data(nav_tracker)` without 248.2's create flag; the one-token fix
+shipped in `cbc4a29` and is live now:
 
 ```lua
--- lua/managers/navigationmanager.lua:551-557
-			local location_script_data = self._quad_field:get_script_data(nav_tracker)
+-- lua/managers/navigationmanager.lua:555-559
+			local location_script_data = self._quad_field:get_script_data(nav_tracker, true)
 
 			if not location_script_data.covers then
 				location_script_data.covers = {}
 			end
 ```
 
-If the engine returns `nil` for a tracker without script data, `:553` is a Lua
-index-nil error inside `register_cover_units` - cover registration aborts for
-that map. 248.2:849 is the same call with `, true`. This branch only runs when
-`managers.worlddefinition:get_cover_data()` returns nil (legacy unit-based
-covers), which is why it has never shown up in testing.
+Without the flag the engine can return `nil` for a tracker without script data,
+and the `.covers` write is a Lua index-nil error inside `register_cover_units` -
+cover registration aborts for that map. 248.2:849 is the same call with `, true`.
+This branch only runs when `managers.worlddefinition:get_cover_data()` returns nil
+(legacy unit-based covers), which is why it has never shown up in testing.
 
-**Verdict: `merge: add the 248.2 create flag to the cover-unit branch`.**
+**Verdict: `merged: the 248.2 create flag is in place`** (`cbc4a29`, live
+`:555`; `dev/tools/test/nav-gates.test.mjs` pins the call).
 
 ## 2. `_execute_coarce_search`
 
@@ -264,9 +267,11 @@ defaults, LIES' body is dead. Iter's replacement is a separate Dijkstra
 (`potential_paths` + string path keys + `itr_coarse_cache`,
 `itr_execute_coarce_search` at `navigationmanager.lua:1901`), so the only
 interaction is (a) total replacement of the function and (b)
-`set_nav_segment_state` clearing `itr_coarse_cache` (see section 7). The delay-gate
-gap therefore only matters for the **LIES-only profile** or Iter with
-`nav_search` off.
+`set_nav_segment_state` clearing `itr_coarse_cache` (see section 7). With the
+gate restored (`cbc4a29`) it is live wherever LIES' body runs - the LIES-only
+profile and Iter with `nav_search` off - and with Iter's search on that body,
+gate included, is replaced wholesale, so there is no LIES-side gap in either
+profile.
 
 **Correction to the first version of this note (2026-11-01, after `cbc4a29`).**
 The paragraph above was first written against the stale `master` checkout of
@@ -692,7 +697,7 @@ the tracker and `cover[1]` as the position
 
 | Function | Vanilla delta 246.1 -> 248.2 | LIES gap | Verdict | Risk | Testable |
 | --- | --- | --- | --- | --- | --- |
-| `register_cover_units` | drop dead `_rooms` local; covers pushed unconditionally (was debug-only); `mvec3_copy` alias; `get_script_data(nav_tracker, true)` | one token: `get_script_data(nav_tracker)` at `:551` lacks the create flag (248.2:849) | **merge: 1 token** | low - legacy cover-unit branch only (`get_cover_data()` nil); `location_script_data` may be nil -> Lua error at `:553` | yes (body-slice assertion) |
+| `register_cover_units` | drop dead `_rooms` local; covers pushed unconditionally (was debug-only); `mvec3_copy` alias; `get_script_data(nav_tracker, true)` | none - create flag present (`:555`, `cbc4a29`; was `get_script_data(nav_tracker)` at the audit-time `:551`) | **merged: 1 token** | low - legacy cover-unit branch only (`get_cover_data()` nil); the flag keeps `location_script_data` non-nil | yes (body-slice assertion) |
 | `_execute_coarce_search` | `while true`+`i==500` -> `for i = 1,500`; hoist `t`, `all_nav_segments`, `to_search`; `door.x` instead of `type()==number` | keeps 246.1 loop; **nav-link `delay_time()` gate present** (`cbc4a29`, live `:2328`); 4-tuple path vs 2-tuple (deliberate, AI-06); `[4]` never set | **merged: delay gate** | medium - nav-link userdata call (`delay_time`) in the path-expansion hot loop; no trackers/cover structs; engine pointer class unchanged (LIES already calls `is_obstructed`/`check_access` on the same object). Dead when Iter `nav_search` is on | yes |
 | `_sort_nav_segs_after_pos` | 6-arg signature kept; `all_doors`/`all_rooms` removed -> Vector3 doors; `check_segment` closure; single `t`; one-term weight | 7-arg LIES variant with two-term weight + `nav_link` (deliberate); **`delay_time()` gate present** (`cbc4a29`, live `:2427`; 246.1@a3180fc:1952, 248.2:1368); dead links skipped instead of `debug_pause` (deliberate) | **merged: delay gate** (same commit as above) | medium - same userdata class; no trackers; `found_segs` contract unchanged. Dead too while Iter's search owns the only call site | yes |
 | `remove_obstacle` | nil guard + destroy-listener removal + index-based `temp_array` + unconditional `remove_obstacle(obstacle_obj)` | all three already-merged pieces present; missing only `remove_obstacle(obstacle_obj)` (248.2:2030); LIES *adds* id removal for dead units (248.2 leaks there) | **keep LIES** (optional parity line) | low - `_obstacles` bookkeeping is complete (`:1581-1587`), `on_simulation_ended` sweeps ids (248.2:1722-1752) | yes (weak) |
@@ -705,7 +710,8 @@ the tracker and `cover[1]` as the position
 > Shipped: all three edits below landed in `cbc4a29` (2026-11-01) - the create
 > flag in `register_cover_units`, and the delay gate in both nav searches
 > (`dev/tools/test/nav-gates.test.mjs` pins the gate and the flag). The items
-> are kept as the audit-time plan and their player-POV notes.
+> are kept as the audit-time plan and their player-POV notes; each anchor now
+> carries the live line first and the audit-time line in brackets.
 
 Only two constructs needed work, three edits in all: a one-token **behavioural**
 fix in `register_cover_units` (the create flag decides whether the script-data
@@ -714,20 +720,22 @@ construct LIES dropped that both baselines still have, in two sibling functions.
 The two delay-gate edits shipped as one commit because they share the
 `TimerManager` timestamp.
 
-1. **P1 - `register_cover_units` create flag** (`:551`): `get_script_data(nav_tracker, true)`.
+1. **P1 - `register_cover_units` create flag** (`:555`; audit-time `:551`): `get_script_data(nav_tracker, true)`.
    One token, no callers to update.
    *Player POV: no visible change in normal play; removes a Lua error and a
    silent loss of every cover on the rare map that ships legacy cover units
    instead of `cover_data`, i.e. AI there keeps using cover instead of standing
    in the open.*
-2. **P2 - nav-link delay gate in `_sort_nav_segs_after_pos`** (`:2404`, `:2417`):
+2. **P2 - nav-link delay gate in `_sort_nav_segs_after_pos`** (live `:2414` `t` hoist,
+   gate `:2427`; audit-time `:2404`, `:2417`):
    add `local t = TimerManager:game():time()` next to `local all_segs = ...` and
    extend the third branch to `alive(door) and not door:is_obstructed() and t > door:delay_time() and door:check_access(access_pos, access_neg)`.
    *Player POV: with LIES' own search (no Iter, or Iter's nav search off), cops
    stop committing to a ladder/door nav link during the second or two it is
    still unusable, so fewer "walk to a door, stop, re-path" stalls when a door
    opens or closes mid-path.*
-3. **P3 - the same gate in `_execute_coarce_search`** (`:2294-2303`, `:2322`):
+3. **P3 - the same gate in `_execute_coarce_search`** (live loop `:2300-2309`, gate
+   `:2328`; audit-time `:2294-2303`, `:2322`):
    hoist `local t = TimerManager:game():time()` before the loop and extend the
    entry test to
    `t > i_door:delay_time() and i_door:check_access(...) and not i_door:is_obstructed()`.

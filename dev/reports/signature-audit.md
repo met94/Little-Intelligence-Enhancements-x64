@@ -26,12 +26,14 @@ bump for this pass).
 - A LIES function whose *meaning* diverges from the game's (different input, a
   different heuristic) is renamed private instead of sharing the vanilla name.
 
-`dev/tools/test/signature-compat.test.mjs` pins all eleven declarations. It
-also pins call-site order and arity for the six families whose call sites changed
-in this pass - `_get_pos_on_wall`, `calc_initial_phalanx_pos`,
+`dev/tools/test/signature-compat.test.mjs` pins eleven declarations - the table
+entries except #6, which is the renamed helper and is pinned by its own test
+(`_find_enemy_to_mark_from_data(data)` plus both of its call sites). It also
+pins call-site order and arity for the six families that were renamed or
+reordered in this pass - `_get_pos_on_wall`, `calc_initial_phalanx_pos`,
 `_calc_pos_on_phalanx_circle`, `_find_retreat_position`,
 `_sort_nav_segs_after_pos` and `_find_enemy_to_mark_from_data` - across
-`lua/**/*.lua`. The other five (`queued_update`, `clbk_pathing_results`,
+`lua/**/*.lua`. The other six entries (`queued_update`, `clbk_pathing_results`,
 `_peek_for_pos_sideways`, the two grenade checks, `find_segment_doors`) are
 declaration-only pins: their call sites are game- or mod-owned and were already
 correct, so only the declaration guards them against a future re-copy.
@@ -114,6 +116,26 @@ not isolated on the rig - no cited job filtered on `is_pos_free`/`rsrv_desc.filt
 or observed a cop skipping its own reserved spot - so "the filter is live" is a
 code-reading fact, not a measured behaviour. Turning a filter on is still a real
 behaviour change, which is why it is called out in the changelog's player notes.
+
+## Cross-mod note: Iter truncates `clbk_pathing_results`' trailing argument
+
+Iter 205.4 wraps this function with a fixed two-parameter signature
+(`.worktrees\Iter-suite-guard\lua\copbrain.lua:136`, same at
+`mods\Iter\lua\copbrain.lua:136`, active by default with `path_extender = true`):
+
+```lua
+function CopBrain:clbk_pathing_results(search_id, path)
+```
+
+A third `do_not_cache` argument is dropped at the wrapper, and the wrapper
+forwards only `(self, search_id, path)` to the original as well. Latent, not
+live: the game registers two-argument callbacks only (249 `copbrain.lua:435`,
+`:452`, `:471`, `:490`) and LIES never passes a third argument at its own
+registration sites (`lua/copextensions/copbrain.lua:937`, `:963`, `:993`), so
+`do_not_cache` is always falsy today. If LIES ever uses it, Iter's wrapper must
+forward varargs (`function CopBrain:clbk_pathing_results(search_id, path, ...)`
+and `itr_original_...(self, search_id, path, ...)`) or the flag is silently
+lost.
 
 ## Verification
 
