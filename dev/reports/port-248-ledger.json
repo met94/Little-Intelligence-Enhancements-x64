@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-11-25T18:16:26.965Z",
+  "generated": "2026-11-25T18:21:57.227Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -5148,7 +5148,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2302
+          "startLine": 2317
         },
         {
           "name": "CopLogicTravel._check_start_path_ahead",
@@ -5223,7 +5223,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2135
+          "startLine": 2150
         },
         {
           "name": "CopLogicTravel._chk_focus_on_undetected_criminal",
@@ -5313,7 +5313,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1838
+          "startLine": 1853
         },
         {
           "name": "CopLogicTravel._determine_destination_occupation",
@@ -5343,7 +5343,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1947
+          "startLine": 1962
         },
         {
           "name": "CopLogicTravel._get_exact_move_pos",
@@ -5358,7 +5358,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1995
+          "startLine": 2010
         },
         {
           "name": "CopLogicTravel._get_pos_on_wall",
@@ -5373,7 +5373,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2210
+          "startLine": 2225
         },
         {
           "name": "CopLogicTravel._on_destination_reached",
@@ -5388,7 +5388,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2333
+          "startLine": 2348
         },
         {
           "name": "CopLogicTravel._pathing_complete_clbk",
@@ -5483,7 +5483,7 @@
         {
           "name": "CopLogicTravel.action_complete_clbk",
           "category": "LIES_EDIT_CLEAN",
-          "modLines": 154,
+          "modLines": 169,
           "oldLines": 104,
           "newLines": 104,
           "modParams": "data, action",
@@ -5553,7 +5553,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2288
+          "startLine": 2303
         },
         {
           "name": "CopLogicTravel.queue_detection_update",
@@ -5583,7 +5583,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2146
+          "startLine": 2161
         },
         {
           "name": "CopLogicTravel.queued_detection_update",
@@ -5643,7 +5643,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2173
+          "startLine": 2188
         }
       ],
       "errors": [],

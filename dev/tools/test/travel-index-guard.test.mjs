@@ -28,8 +28,11 @@ import { fileURLToPath } from 'node:url';
 //    objective the unit never reached.
 //
 // Pinned here:
-// 1. The reset in `action_complete_clbk` (both ends out of range), with the
-//    counter, and no clamp to an end value.
+// 1. The walk-completion increment in `action_complete_clbk`: vanilla behaviour
+//    is "increment, then clamp an over-range result to `#path`" (arrival). Only a
+//    stale `going_to_index` from a shorter replacement path, or a missing/empty
+//    path, is a reset. Dropping the path on a normal completion is what made the
+//    revive bot loop (every loop logged `idx=3 len=2 going=nil`).
 // 2. The cover-wait length read is nil-safe (`path_len`), because the reset can
 //    run before it.
 // 3. The three-way branch in `_chk_start_pathing_to_next_nav_point` (empty ->
@@ -90,34 +93,51 @@ const RESET_COUNTER = 'LIES:Count("travel_index_reset")';
 const PATH_NIL = 'my_data.coarse_path = nil';
 const INDEX_NIL = 'my_data.coarse_path_index = nil';
 
-test('the out-of-range clamp resets the path instead of clamping to an end', () => {
+test('walk completion clamps at the last point and resets only stale or broken indexes', () => {
   const body = resetBody();
-  const guardAt = body.indexOf('if my_data.coarse_path_index > path_len or my_data.coarse_path_index < 1 then');
+  const targetAt = body.indexOf('local target = my_data.going_to_index or (my_data.coarse_path_index + 1)');
+  const brokenAt = body.indexOf('if path_len == 0 or target < 1 then');
+  const overAt = body.indexOf('elseif target > path_len then');
+  const jumpAt = body.indexOf('if my_data.going_to_index then', overAt);
+  const clampAt = body.indexOf('my_data.coarse_path_index = path_len', overAt);
 
-  assert.notEqual(guardAt, -1, 'the out-of-range test must use both bounds against path_len');
+  assert.notEqual(targetAt, -1, 'the completion target must come from going_to_index or the next index');
+  assert.notEqual(brokenAt, -1, 'the broken-path branch is missing');
+  assert.notEqual(overAt, -1, 'the over-range branch is missing');
+  assert.notEqual(jumpAt, -1, 'the stale-jump test is missing');
+  assert.notEqual(clampAt, -1, 'the vanilla clamp at the last point is missing');
+  assert.ok(targetAt < brokenAt && brokenAt < overAt && overAt < clampAt, 'branch order must be broken -> over-range -> clamp');
 
-  const block = body.slice(guardAt, body.indexOf('end', body.indexOf(RESET_COUNTER, guardAt)));
+  // Normal completion at the last point is arrival (vanilla clamps to #path):
+  // it must not drop the path or count a reset.
+  const clampBranch = body.slice(clampAt, body.indexOf('end', clampAt) + 3);
 
-  assert.ok(block.includes(PATH_NIL), 'the reset must drop coarse_path');
-  assert.ok(block.includes(INDEX_NIL), 'the reset must drop coarse_path_index');
-  assert.ok(block.includes(RESET_COUNTER), 'the reset must count travel_index_reset');
-
-  // A clamp to an end value would mark a position the unit is not standing on.
-  assert.doesNotMatch(
-    body,
-    /my_data\.coarse_path_index = #my_data\.coarse_path\b/,
-    'the clamp must not assign #coarse_path (that fakes an arrival position)',
-  );
+  assert.ok(!clampBranch.includes(PATH_NIL), 'the clamp must keep the path');
+  assert.ok(!clampBranch.includes(RESET_COUNTER), 'the clamp is not a reset');
   assert.doesNotMatch(
     body,
     /my_data\.coarse_path_index = my_data\.coarse_path_index - 1/,
     'the old subtract-one clamp must not come back',
   );
-  assert.doesNotMatch(
-    body,
-    /travel_index_clamped/,
-    'the counter is the reset event (travel_index_reset), not a clamped index',
+  assert.doesNotMatch(body, /travel_index_clamped/, 'the counter is travel_index_reset / travel_index_end');
+
+  // A stale jump index (path replaced by a shorter one) is still a reset, and so
+  // is a missing/empty path or an impossible target.
+  const jumpBranch = body.slice(jumpAt, body.indexOf('else', jumpAt));
+
+  assert.ok(jumpBranch.includes(PATH_NIL), 'a stale jump must drop coarse_path');
+  assert.ok(jumpBranch.includes(INDEX_NIL), 'a stale jump must drop coarse_path_index');
+  assert.ok(jumpBranch.includes(RESET_COUNTER), 'a stale jump must count travel_index_reset');
+  assert.ok(jumpBranch.includes('my_data.advance_path = nil'), 'a stale jump must clear advance_path');
+  assert.ok(
+    jumpBranch.includes('my_data.processing_advance_path = nil'),
+    'a stale jump must clear processing_advance_path',
   );
+
+  const brokenBranch = body.slice(brokenAt, overAt);
+
+  assert.ok(brokenBranch.includes(PATH_NIL), 'a broken path must drop coarse_path');
+  assert.ok(brokenBranch.includes(RESET_COUNTER), 'a broken path must count travel_index_reset');
 });
 
 test('the cover-wait length read tolerates a nil path', () => {

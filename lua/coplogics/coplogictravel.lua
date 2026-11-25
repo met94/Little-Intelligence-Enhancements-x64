@@ -1688,19 +1688,17 @@ function CopLogicTravel.action_complete_clbk(data, action)
 
 	if action_type == "walk" then
 		if action:expired() and not my_data.starting_advance_action and my_data.coarse_path_index and not my_data.has_old_action and not my_data.old_action_advancing and my_data.advancing then
-			if my_data.going_to_index then
-				my_data.coarse_path_index = my_data.going_to_index
-			else
-				my_data.coarse_path_index = my_data.coarse_path_index + 1
-			end
-
+			-- Vanilla increments the index when the walk completes and clamps an
+			-- over-range result to the last point (`index > #path -> index = #path`),
+			-- which `upd_advance` then reads as arrival. Only a stale jump from a path
+			-- that was replaced by a shorter one is a reset: dropping the path on a
+			-- normal completion made a travelling bot re-path at the last point
+			-- forever (revive diagnostic: every loop `idx=3 len=2 going=nil`).
 			local path_len = my_data.coarse_path and #my_data.coarse_path or 0
+			local target = my_data.going_to_index or (my_data.coarse_path_index + 1)
 
-			if my_data.coarse_path_index > path_len or my_data.coarse_path_index < 1 then
-				-- An index outside the (possibly replaced, shorter) path is not an
-				-- arrival: the unit is not there. Drop the path so the travel logic
-				-- re-paths from the unit's actual position instead of marking the
-				-- objective in place.
+			if path_len == 0 or target < 1 then
+				-- Genuinely broken: no usable path, or an impossible index.
 				my_data.coarse_path = nil
 				my_data.coarse_path_index = nil
 				-- A pending advance belongs to the dropped path; keeping it makes
@@ -1709,6 +1707,23 @@ function CopLogicTravel.action_complete_clbk(data, action)
 				my_data.advance_path = nil
 				my_data.processing_advance_path = nil
 				LIES:Count("travel_index_reset")
+			elseif target > path_len then
+				if my_data.going_to_index then
+					-- Stale jump index from a path that was replaced by a shorter one:
+					-- the unit is not there, so re-path from its actual position.
+					my_data.coarse_path = nil
+					my_data.coarse_path_index = nil
+					my_data.advance_path = nil
+					my_data.processing_advance_path = nil
+					LIES:Count("travel_index_reset")
+				else
+					-- Normal completion at the last point: clamp like vanilla; the
+					-- arrival branch handles the rest. This is not a reset, so it does
+					-- not count `travel_index_reset`.
+					my_data.coarse_path_index = path_len
+				end
+			else
+				my_data.coarse_path_index = target
 			end
 		end
 

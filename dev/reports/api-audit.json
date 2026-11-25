@@ -1218,7 +1218,7 @@
     },
     {
       "file": "lua/coplogics/coplogictravel.lua",
-      "line": 2153,
+      "line": 2168,
       "symbol": "queue_task",
       "severity": "review",
       "reason": "No longer executes inline; check EnemyManager/CopLogicBase assumptions",

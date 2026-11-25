@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-25T18:16:26.962Z
+Generated: 2026-11-25T18:21:57.225Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -559,7 +559,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicTravel._upd_enemy_detection` | 83 | 62 | 62 |  |
 | [ ] | keep | — | `CopLogicTravel._upd_pathing` | 57 | 44 | 44 |  |
 | [ ] | keep | — | `CopLogicTravel._update_cover` | 21 | 28 | 28 |  |
-| [ ] | keep | — | `CopLogicTravel.action_complete_clbk` | 154 | 104 | 104 |  |
+| [ ] | keep | — | `CopLogicTravel.action_complete_clbk` | 169 | 104 | 104 |  |
 | [ ] | keep | — | `CopLogicTravel.chk_group_ready_to_move` | 81 | 35 | 35 |  |
 | [ ] | keep | — | `CopLogicTravel.enter` | 165 | 150 | 150 |  |
 | [ ] | keep | — | `CopLogicTravel.get_pathing_prio` | 50 | 14 | 14 |  |
