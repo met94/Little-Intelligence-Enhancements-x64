@@ -131,7 +131,11 @@ function CopLogicIntimidated.register_rescue_SO(ignore_this, data)
 	managers.groupai:state():register_rescueable_hostage(data.unit, nil)
 end
 
-function CopLogicIntimidated.queued_update(data)
+-- Two registration shapes: LIES's queue_task passes `data` directly (so it
+-- arrives as `rubbish`), while the game's add_to_surrendered callback passes
+-- `(rubbish, data)`. Accept both.
+function CopLogicIntimidated.queued_update(rubbish, data)
+	data = data or rubbish
 	local my_data = data.internal_data
 	data.t = TimerManager:game():time()
 

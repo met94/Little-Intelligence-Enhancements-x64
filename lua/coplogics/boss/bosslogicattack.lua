@@ -528,14 +528,14 @@ function LIESBossLogicAttack._upd_combat_movement(data, my_data)
 					local threat_head_pos = focus_enemy.m_head_pos
 					local max_walk_dis = 400
 					local vis_required = nil
-					local retreat_to, is_fail = CopLogicAttack._find_retreat_position(data, from_pos, focus_enemy.m_pos, threat_head_pos, threat_tracker, max_walk_dis, nil)
+					local retreat_to, is_fail = CopLogicAttack._find_retreat_position(from_pos, focus_enemy.m_pos, threat_head_pos, threat_tracker, max_walk_dis, nil, data)
 
 					if retreat_to then
 						local to_pos = retreat_to
 						local second_retreat_pos, retry_is_fail
 						
 						if is_fail then
-							second_retreat_pos, retry_is_fail = CopLogicAttack._find_retreat_position(data, retreat_to, focus_enemy.m_pos, threat_head_pos, threat_tracker, max_walk_dis, vis_required)
+							second_retreat_pos, retry_is_fail = CopLogicAttack._find_retreat_position(retreat_to, focus_enemy.m_pos, threat_head_pos, threat_tracker, max_walk_dis, vis_required, data)
 							
 							to_pos = second_retreat_pos
 						end

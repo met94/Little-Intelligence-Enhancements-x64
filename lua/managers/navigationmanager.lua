@@ -2371,7 +2371,7 @@ function NavigationManager:_execute_coarce_search(search_data)
 		
 		local from_pos = next_search_seg.pos
 		local to_pos = search_data.to_pos
-		local new_segments = self:_sort_nav_segs_after_pos(to_pos, from_pos, next_search_i_seg, search_data.discovered_seg, search_data.verify_clbk, search_data.access_pos, search_data.access_neg)
+		local new_segments = self:_sort_nav_segs_after_pos(to_pos, next_search_i_seg, search_data.discovered_seg, search_data.verify_clbk, search_data.access_pos, search_data.access_neg, from_pos)
 
 		if new_segments then
 			if search_data.access_pos then
@@ -2406,7 +2406,9 @@ function NavigationManager:_execute_coarce_search(search_data)
 	end
 end
 
-function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)
+-- Game parameter order; `from_pos` is a LIES-only optional trailing argument used
+-- for the weight. Game-convention callers omit it and fall back to seg.pos.
+function NavigationManager:_sort_nav_segs_after_pos(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg, from_pos)
 	local all_segs = self._nav_segments
 	-- vanilla 248.2:1368 gates nav links on one timestamp read per sort.
 	local t = TimerManager:game():time()
