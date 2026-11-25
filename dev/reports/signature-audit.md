@@ -30,7 +30,8 @@ bump for this pass).
 entries except #6, which is the renamed helper and is pinned by its own test
 (`_find_enemy_to_mark_from_data(data)` plus both of its call sites). It also
 pins call-site order and arity for the six families that were renamed or
-reordered in this pass - `_get_pos_on_wall`, `calc_initial_phalanx_pos`,
+reordered in this pass, or whose call sites were re-aligned - `_get_pos_on_wall`,
+`calc_initial_phalanx_pos`,
 `_calc_pos_on_phalanx_circle`, `_find_retreat_position`,
 `_sort_nav_segs_after_pos` and `_find_enemy_to_mark_from_data` - across
 `lua/**/*.lua`. The other six entries (`queued_update`, `clbk_pathing_results`,
@@ -119,9 +120,11 @@ behaviour change, which is why it is called out in the changelog's player notes.
 
 ## Cross-mod note: Iter truncates `clbk_pathing_results`' trailing argument
 
-Iter 205.4 wraps this function with a fixed two-parameter signature
-(`.worktrees\Iter-suite-guard\lua\copbrain.lua:136`, same at
-`mods\Iter\lua\copbrain.lua:136`, active by default with `path_extender = true`):
+Iter wraps this function with a fixed two-parameter signature, in both trees
+that exist in this workspace: 205.4 at
+`.worktrees\Iter-suite-guard\lua\copbrain.lua:136` and 205.3 at
+`mods\Iter\lua\copbrain.lua:136`. The wrapper is active by default
+(`path_extender = true`):
 
 ```lua
 function CopBrain:clbk_pathing_results(search_id, path)

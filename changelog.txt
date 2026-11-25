@@ -61,9 +61,9 @@ Fixed-slot audit: LIES' copied AI functions now keep the game's argument order.
   phalanx or reservation error. The soak did not spawn a phalanx group, so the
   helpers are proven by the direct calls and the call sites by the new gate.
 - new gate: `dev/tools/test/signature-compat.test.mjs` pins the eleven audited
-  declarations, plus the call-site order and arity of the six functions renamed
-  or reordered in this pass (`_get_pos_on_wall`, both phalanx helpers,
-  `_find_retreat_position`, `_sort_nav_segs_after_pos`,
+  declarations, plus the call-site order and arity of the six functions renamed,
+  reordered or with re-aligned call sites in this pass (`_get_pos_on_wall`, both
+  phalanx helpers, `_find_retreat_position`, `_sort_nav_segs_after_pos`,
   `_find_enemy_to_mark_from_data`), across `lua/**/*.lua`; a positional drift
   fails it.
 - tests: the two 8.57.36 fixtures the load-once guard invalidated were repaired
