@@ -211,25 +211,39 @@ return function(H)
 		return true
 	end
 
-	-- Rig fallback: promote the live assault group with the most living units to
-	-- the phalanx group. `_check_phalanx_group_has_spawned` then assigns the real
-	-- `create_phalanx` objective, the units become phalanx minions and the normal
-	-- travel logic runs; only the heist's spawn-group search is bypassed.
+	-- Rig fallback: promote a live assault group to the phalanx group. Shield
+	-- material wins the pick, because a promoted rifle squad dies to bot fire
+	-- before a 60 s window closes (one run promoted `tac_swat_rifle_*` cops and
+	-- ended at `live_cycles=2/12`). `_check_phalanx_group_has_spawned` then assigns
+	-- the real `create_phalanx` objective, the units become phalanx minions and the
+	-- normal travel logic runs; only the heist's spawn-group search is bypassed.
 	local function promote_live_group()
 		local group_ai = managers.groupai:state()
 		local chosen
 
 		for id, group in pairs(group_ai._groups or {}) do
-			local live = 0
+			local live, shields = 0, 0
 
 			for _, group_unit in pairs(group.units or {}) do
-				if group_unit.unit and H:unit_alive(group_unit.unit) then
+				local unit = group_unit.unit
+
+				if unit and H:unit_alive(unit) then
 					live = live + 1
+
+					local base = unit:base()
+					local tweak_table = base and base._tweak_table
+
+					if tweak_table == "shield" or tweak_table == "phalanx_minion" then
+						shields = shields + 1
+					end
 				end
 			end
 
-			if live > 0 and (not chosen or live > chosen.live) then
-				chosen = { id = id, group = group, live = live }
+			-- Shield count first; the most-live group is only the fallback for a map
+			-- where no candidate has a shield.
+			if live > 0 and (not chosen or shields > chosen.shields or
+					shields == chosen.shields and live > chosen.live) then
+				chosen = { id = id, group = group, live = live, shields = shields }
 			end
 		end
 
@@ -260,8 +274,8 @@ return function(H)
 		-- (`phalanx units flagged=...`), so a partial conversion stays visible.
 		chosen.group.has_spawned = true
 		group_ai._phalanx_spawn_group = chosen.group
-		H:log("promotion fallback (rig only): group=%s live=%d promoted to the phalanx group; the heist's spawn-group search finds nothing on auc solo",
-			tostring(chosen.id), chosen.live)
+		H:log("promotion fallback (rig only): group=%s live=%d shields=%d promoted to the phalanx group; the heist's spawn-group search finds nothing on auc solo",
+			tostring(chosen.id), chosen.live, chosen.shields)
 
 		-- `_spawn_phalanx_LIES` sets this as part of the real spawn
 		-- (groupaistatebesiege.lua:4628). Without it the assault ends on its normal
