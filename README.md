@@ -41,7 +41,7 @@ Tested as one stack and meant to run with it. One download for all four:
 - **HHTACS / Spicy Tactics** — optional aggressive spawn groups, tactics and
   group-level pressure. Off by default.
 - **Group AI repairs** — assault, recon, HRT, drill sabotage, reenforce and
-  retreat behaviour preserved and fixed for 248.2.
+  retreat behaviour preserved and fixed for 248.2-249.
 - **Periphery fixes** — camera line-of-sight, team-AI hold/revive, civilian
   follow, drill tracker, mission-element and difficulty guards.
 

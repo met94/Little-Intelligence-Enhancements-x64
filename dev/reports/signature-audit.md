@@ -98,25 +98,30 @@ call sites:
 - Every LIES call site passed **six** arguments —
   `(pos, 700, nil, nil, nil, data.pos_rsrv_id)` — with the id in the ignored 6th
   slot. The function therefore always ran with `pos_rsrv_id = nil`,
-  `rsrv_desc.filter = nil`, and picked wall/fallback positions without regard to
-  its own reservation.
+  `rsrv_desc.filter = nil`. `filter` is the owner-exclusion id, so with a nil
+  filter the unit's own reservation counted as occupied and the wall/fallback
+  search treated its own spot as blocked.
 - All twelve LIES call sites are aligned to the 5-argument form. Two
   game-convention callers stay at two arguments
   (`shieldlogicattack.lua:368`, `coplogicidle.lua:2085`) and the internal retry
   recursion passes the id through.
 
 Player-visible effect: a cop or shield picking a wall/fallback position now
-skips spots reserved by its own group, so Phalanx (shield-wall) formations and
+ignores its own (per-unit) reservation, so it may settle on the spot it already
+reserved instead of picking a second one. Phalanx (shield-wall) formations and
 cover/fallback movement can differ slightly from 8.57.35. Nothing else changes
 in gameplay. This is recorded in `changelog.txt` under 8.57.36.
 
 What is actually verified: the arity alignment (id in the 5th slot) is pinned by
 `signature-compat.test.mjs`, and the 70 s soak shows no LIES, phalanx or
-reservation error with the aligned calls live. The filter's runtime effect was
-not isolated on the rig - no cited job filtered on `is_pos_free`/`rsrv_desc.filter`
-or observed a cop skipping its own reserved spot - so "the filter is live" is a
-code-reading fact, not a measured behaviour. Turning a filter on is still a real
-behaviour change, which is why it is called out in the changelog's player notes.
+reservation error with the aligned calls live. The filter's *meaning* is
+confirmed empirically by vanilla probe `job-112005-417` (session
+`sess-20261125-111846`): with one reservation owned by `id_a` at the player's
+field position, `is_pos_free` returns true for `filter = id_a`, and false for
+`filter = id_b` or `filter = nil`. So `filter` is the owner-exclusion id, and the
+id is per-unit, not per-group. What was *not* measured is how often a cop in
+normal play now picks its own reserved spot instead of a second one; the soak
+only shows the absence of errors.
 
 ## Cross-mod note: Iter truncates `clbk_pathing_results`' trailing argument
 
@@ -199,7 +204,7 @@ isolated exercise of any single call site.
 ```powershell
 powershell -File dev\tools\gates.ps1
 node --test dev/tools/test/signature-compat.test.mjs
-node dev/tools/fn-ledger.mjs --mod . --out dev\port-248-ledger.md
+node dev/tools/fn-ledger.mjs --mod . --out dev\port-248-ledger.md --json dev\reports\port-248-ledger.json
 ```
 
 ## When porting a game body

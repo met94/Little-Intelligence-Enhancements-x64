@@ -232,11 +232,6 @@ function GroupAIStateBase:on_objective_failed(unit, objective)
 				new_objective.grp_objective = nil
 			end
 
-			if new_objective.pos then
-				new_objective.nav_seg = nav_seg
-				new_objective.area = area
-			end
-			
 			if objective and not self._enemy_weapons_hot and unit:movement():cool() and (not objective.action or table.contains(ElementSpecialObjective._stealth_idles, objective.action.variant)) then
 				new_objective.followup_SO = objective and objective.followup_SO
 				local variant = ElementSpecialObjective._stealth_idles_no_loop[math.random(#ElementSpecialObjective._stealth_idles_no_loop)]

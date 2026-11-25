@@ -154,12 +154,19 @@ local function circle_point(degrees)
   return RADIUS * math.cos(radians), RADIUS * math.sin(radians)
 end
 
-local function assert_point(actual, expected_x, expected_y, label)
+-- Centre z is carried through the circle math unchanged (`rotate_with` keeps z
+-- and `clamp_position_to_field` is stubbed to identity). Default 0 so the
+-- origin-centred cases stay exact, but any case with a raised centre must pass
+-- its z explicitly - a dropped or 2D-only implementation then fails here.
+local function assert_point(actual, expected_x, expected_y, label, expected_z)
   assert(is_vec3(actual), label .. ': expected a Vector3')
 
-  if math.abs(actual.x - expected_x) >= 1e-9 or math.abs(actual.y - expected_y) >= 1e-9 then
-    error(('%s: expected %.6f,%.6f got %s,%s'):format(label, expected_x, expected_y,
-      tostring(actual.x), tostring(actual.y)))
+  local want_z = expected_z or 0
+
+  if math.abs(actual.x - expected_x) >= 1e-9 or math.abs(actual.y - expected_y) >= 1e-9
+    or math.abs(actual.z - want_z) >= 1e-9 then
+    error(('%s: expected %.6f,%.6f,%.6f got %s,%s,%s'):format(label, expected_x, expected_y, want_z,
+      tostring(actual.x), tostring(actual.y), tostring(actual.z)))
   end
 end
 
@@ -174,6 +181,18 @@ do
   assert_point(result, expected_x, expected_y, '3-arg _calc_pos_on_phalanx_circle')
   assert(#is_pos_free_calls == 0, '3-arg _calc_pos_on_phalanx_circle must not check a reservation')
   assert(#wall_calls == 0, '3-arg _calc_pos_on_phalanx_circle must not search for a wall')
+end
+
+-- z regression guard: the same game-convention call from a centre at z=40 must
+-- return z=40. The fixtures above are all z=0, so without this case a 2D-only
+-- rotation or a dropped z would pass every other assertion in this file.
+do
+  reset_spies()
+  local center = vec3(0, 0, 40)
+  local result = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center, 90, 8)
+  local expected_x, expected_y = circle_point(90)
+
+  assert_point(result, expected_x, expected_y, 'raised centre z', 40)
 end
 
 -- LIES convention: trailing `data` runs the reservation; an occupied position
