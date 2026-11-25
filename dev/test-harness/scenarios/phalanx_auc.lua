@@ -27,7 +27,12 @@
 -- publishes window deltas - the counters are sampled once when the group is
 -- live and every cycle reports both the totals and the delta since that sample.
 -- The window runs at 1x (`speed_down` after the spawn wait, which runs at 4x),
--- because the harness expects measurement windows at normal speed.
+-- because the harness expects measurement windows at normal speed. Because the
+-- promotion bypasses `_spawn_phalanx_LIES`, it also calls
+-- `set_assault_endless(true)` the way that function does - without it the
+-- assault ends on its timer and the promoted group goes idle mid-window. The
+-- result line still reports `minions_start` / `minions_end` / `live_cycles`, so a
+-- window that loses the group is visible rather than implied.
 --
 -- Dev-only. Run with the resident rig from the workspace root:
 --   tools\pd2session.ps1 -Start -Mod .worktrees\LIES-lies-249
@@ -237,6 +242,16 @@ return function(H)
 		H:log("promotion fallback (rig only): group=%s live=%d promoted to the phalanx group; the heist's spawn-group search finds nothing on auc solo",
 			tostring(chosen.id), chosen.live)
 
+		-- `_spawn_phalanx_LIES` sets this as part of the real spawn
+		-- (groupaistatebesiege.lua:4628). Without it the assault ends on its normal
+		-- timer, the cops go idle and the promoted group breaks up mid-window, so
+		-- the wall searches stop.
+		local endless_ok, endless_err = pcall(function()
+			managers.groupai:state():set_assault_endless(true)
+		end)
+		H:log("set_assault_endless -> %s %s (as _spawn_phalanx_LIES does)",
+			tostring(endless_ok), tostring(endless_err or "ok"))
+
 		return true
 	end
 
@@ -292,34 +307,53 @@ return function(H)
 		tostring(speed_ok), tostring(speed_err or "ok"))
 
 	-- Deltas over the window: everything counted before this sample belongs to the
-	-- spawn wait, not to the window being published.
+	-- spawn wait, not to the window being published. The live-minion bookkeeping
+	-- keeps a window honest if the group still breaks up: the record then shows
+	-- both ends and how many cycles actually had units to search walls.
+	local minions_start = minion_count()
+	local minions_end = minions_start
+	local live_cycles = 0
 	local base_wall_rsrv_hit, base_wall_own_rsrv_hit = counters()
-	H:log("window baseline wall_rsrv_hit=%d wall_own_rsrv_hit=%d",
-		base_wall_rsrv_hit, base_wall_own_rsrv_hit)
+	H:log("window baseline minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d",
+		minions_start, base_wall_rsrv_hit, base_wall_own_rsrv_hit)
 
 	local wall_rsrv_hit, wall_own_rsrv_hit = base_wall_rsrv_hit, base_wall_own_rsrv_hit
 
 	for cycle = 1, MEASURE_CYCLES do
 		H:wait(5000)
+		minions_end = minion_count()
+
+		if minions_end > 0 then
+			live_cycles = live_cycles + 1
+		end
+
 		wall_rsrv_hit, wall_own_rsrv_hit = counters()
 		H:log("measure=%d minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d",
-			cycle, minion_count(), wall_rsrv_hit, wall_own_rsrv_hit,
+			cycle, minions_end, wall_rsrv_hit, wall_own_rsrv_hit,
 			wall_rsrv_hit - base_wall_rsrv_hit, wall_own_rsrv_hit - base_wall_own_rsrv_hit)
 	end
 
-	local minions = minion_count()
 	wall_rsrv_hit, wall_own_rsrv_hit = counters()
 
 	local rsrv_delta = wall_rsrv_hit - base_wall_rsrv_hit
 	local own_delta = wall_own_rsrv_hit - base_wall_own_rsrv_hit
 	local own_share = rsrv_delta > 0 and string.format("%.1f %%", own_delta / rsrv_delta * 100) or "n/a"
-	H:log("result minions=%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s",
-		minions, wall_rsrv_hit, wall_own_rsrv_hit, rsrv_delta, own_delta, own_share)
+	H:log("result minions_start=%d minions_end=%d live_cycles=%d/%d wall_rsrv_hit=%d wall_own_rsrv_hit=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s",
+		minions_start, minions_end, live_cycles, MEASURE_CYCLES, wall_rsrv_hit,
+		wall_own_rsrv_hit, rsrv_delta, own_delta, own_share)
 
-	-- PASS means "the end-to-end path produced a live phalanx group and the
-	-- counters were readable". The counter values are the measurement; a delta of
-	-- zero, or `wall_own_rsrv_hit_delta` of zero, is a result and not a failure.
-	H:finish("PASS", string.format(
-		"60 s at 1x: minions=%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s (totals %d/%d)",
-		minions, rsrv_delta, own_delta, own_share, wall_rsrv_hit, wall_own_rsrv_hit))
+	-- PASS needs the window to have actually seen live minions: the counter values
+	-- themselves are the measurement, and a zero delta (or a zero
+	-- `wall_own_rsrv_hit_delta`) is a result, not a failure. A window that lost the
+	-- whole group is reported as such instead of passing on a stale group size.
+	if live_cycles > 0 then
+		H:finish("PASS", string.format(
+			"60 s at 1x: minions %d->%d live_cycles=%d/%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s (totals %d/%d)",
+			minions_start, minions_end, live_cycles, MEASURE_CYCLES, rsrv_delta,
+			own_delta, own_share, wall_rsrv_hit, wall_own_rsrv_hit))
+	else
+		H:finish("FAIL", string.format(
+			"window saw no live phalanx minions (minions %d->%d, live_cycles=0/%d); wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d",
+			minions_start, minions_end, MEASURE_CYCLES, rsrv_delta, own_delta))
+	end
 end
