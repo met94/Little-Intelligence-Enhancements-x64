@@ -21,7 +21,10 @@
 -- be, and only if it stays empty does the card promote a live assault group to
 -- the phalanx group (`_phalanx_spawn_group`). That is a rig fallback, but it
 -- exercises the same production path afterwards: `create_phalanx` objective ->
--- `CopLogicPhalanxMinion` travel -> wall searches and counters.
+-- `CopLogicPhalanxMinion` travel -> wall searches and counters. The tuning also
+-- drops `phalanx.minions.min_count` to 1 - rig-only - because a promoted group
+-- can be smaller than a real phalanx squad and `CopLogicPhalanxMinion` disbands
+-- at or below that threshold, which would end the window early.
 --
 -- Measurement contract: the counters accumulate from level start, so the card
 -- publishes window deltas - the counters are sampled once when the group is
@@ -68,7 +71,14 @@ return function(H)
 	phalanx_tweak.spawn_chance.start = 1
 	phalanx_tweak.spawn_chance.max = 1
 	phalanx_tweak.check_spawn_intervall = 2
-	H:log("phalanx tweak: spawn_chance.start=1 max=1 check_spawn_intervall=2")
+	-- Rig-only: a promoted group can be far smaller than a real phalanx squad
+	-- (the run that exposed this promoted 5 units and only 2 took the objective),
+	-- and `CopLogicPhalanxMinion.chk_should_breakup` disbands at
+	-- `phalanx_minion_count <= min_count`. The default 4 would break such a group
+	-- up mid-window; 1 keeps any group of two or more together, while a lone
+	-- minion still breaks up as in vanilla.
+	phalanx_tweak.minions.min_count = 1
+	H:log("phalanx tweak: spawn_chance.start=1 max=1 check_spawn_intervall=2 minions.min_count=1")
 
 	H:log("force_assault -> %s", tostring(H:force_assault()))
 	H:log("begin_assault_at_player -> %s", tostring(H:begin_assault_at_player("phalanx auc")))
@@ -237,6 +247,9 @@ return function(H)
 			return false
 		end
 
+		-- The promoted map is the whole group; how many of those units actually take
+		-- the `create_phalanx` objective is counted once the group is live
+		-- (`phalanx units flagged=...`), so a partial conversion stays visible.
 		chosen.group.has_spawned = true
 		group_ai._phalanx_spawn_group = chosen.group
 		H:log("promotion fallback (rig only): group=%s live=%d promoted to the phalanx group; the heist's spawn-group search finds nothing on auc solo",
