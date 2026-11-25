@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local mvec3_set = mvector3.set
 local mvec3_z = mvector3.z
 local mvec3_set_z = mvector3.set_z

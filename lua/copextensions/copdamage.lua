@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local orig_func = CopDamage.damage_explosion
 
 function CopDamage:damage_explosion(attack_data)

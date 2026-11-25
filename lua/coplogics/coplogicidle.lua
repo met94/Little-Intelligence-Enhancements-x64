@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local AI_REACT_IDLE = AIAttentionObject.REACT_IDLE
 local AI_REACT_SCARED = AIAttentionObject.REACT_SCARED
 local AI_REACT_AIM = AIAttentionObject.REACT_AIM

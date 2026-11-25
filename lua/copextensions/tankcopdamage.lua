@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 Hooks:PostHook(TankCopDamage, "seq_clbk_vizor_shatter", "lies_tankvisorbroken", function(self)
 	if self._unit:character_damage():dead() or not LIES.settings.hhtacs then
 		return

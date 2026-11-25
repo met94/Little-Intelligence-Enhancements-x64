@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 Hooks:PostHook(Drill, "on_sabotage_SO_completed", "lies_drilljammedvoiceline", function(self, saboteur)
 	if saboteur then
 		if self.is_drill then

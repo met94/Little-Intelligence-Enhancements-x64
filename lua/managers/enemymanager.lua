@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 -- LIES 248.2 port: EnemyManager overrides removed.
 --
 -- Game 247+ replaced delayed-clbk corpse/shield disposal with timer fields

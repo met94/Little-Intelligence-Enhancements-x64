@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 Hooks:PostHook(CopMovement, "_upd_actions", "lies_actions", function(self, t)	
 	if not Network:is_server() then
 		return

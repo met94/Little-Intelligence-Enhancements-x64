@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local tmp_vec1 = Vector3()
 local tmp_vec2 = Vector3()
 

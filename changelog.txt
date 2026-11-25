@@ -7,6 +7,39 @@ GitHub tags and assets keep the old labels, and old logs quote the old label in
 their `v=` field, which `dev/tools/door-watch-report.mjs` resolves through the
 same map.
 
+Revision 8.57.36 — 2026-11-25
+Restore the AI-suite load order: every hook script now carries the load-once guard.
+
+- problem: SuperBLT runs a hooked file's scripts several times per Lua state
+  (once per require of the hooked file). LIES's 67 hook scripts had no
+  re-entry guard, so they re-applied on every pass and silently overwrote the
+  guarded wrappers of Iter, Keepers, Monkeepers and Useful Bots. Reproduced on
+  the test rig: `CopLogicTravel._determine_destination_occupation`,
+  `get_pathing_prio`, `TeamAIMovement.set_cool` and others resolved to LIES even
+  though Keepers loads after LIES and is meant to own them.
+- fix: all hook scripts listed in `mod.txt` now start with the suite's standard
+  guard (`local key = ModPath .. '\t' .. RequiredScript; if _G[key] then return
+  else _G[key] = true end`). Priority order holds again: LIES 100 →
+  Monkeepers 99 → Iter 40 → Keepers 10 → Useful Bots 0 → The Fixes -10.
+- verification: owner matrix after the change — `coplogictravel` owned by
+  Keepers, Iter's `upd_advance` hook active, `teamaimovement` by Keepers, LIES
+  keeps only the functions it alone overrides; 70 s loud soak with LIES + Iter
+  + Keepers + Monkeepers + Goonmod, Useful Bots and The Fixes live: PASS
+  (55 cops, 11 engaged).
+- the change exposed one dormant Iter assumption (`clbk_pathing_results`
+  indexing `pathing_results` after a logic switch); fixed in Iter 205.4, not in
+  this revision.
+- new gate: `dev/tools/test/hook-guards.test.mjs` fails if any hook script loses
+  the guard.
+- version: `8.57.36` in `mod.txt`, `autoupdate.json`, `README.md`,
+  `menumanager.lua`, `dev/upstream-base.json`, `dev/version-map.json` and the
+  version tests
+
+Player notes: fixes silent AI-suite incompatibilities. With LIES + Keepers/Iter/
+Monkeepers/Useful Bots installed, those mods' wrappers were being overwritten
+by LIES instead of wrapping it; bot orders, path-ahead and team-AI changes now
+actually apply. No direct gameplay change from LIES itself.
+
 Revision 8.57.35 — 2026-11-24
 Game 249 follow-up: stop carrying a dead follow_unit / area-less group objective.
 

@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 core:module("CoreWorldDefinition")
 core:import("CoreUnit")
 core:import("CoreMath")

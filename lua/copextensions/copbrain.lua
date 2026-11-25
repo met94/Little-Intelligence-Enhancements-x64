@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 CopBrain._logic_variants.marshal_marksman.attack = CopLogicAttack
 
 CopBrain._logic_variants.triad_boss.attack = LIESBossLogicAttack

@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 function SkirmishTweakData:setup_hhtacs()
 	if self._hhtacs then
 		return

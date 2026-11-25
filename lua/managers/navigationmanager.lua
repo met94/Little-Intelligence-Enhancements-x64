@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local mvec3_n_equal = mvector3.not_equal
 local mvec3_set = mvector3.set
 local mvec3_set_st = mvector3.set_static

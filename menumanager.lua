@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 if RequiredScript == "lib/managers/menumanager" then
 	_G.LIES = {
 		mod_path = ModPath,
@@ -5,7 +8,7 @@ if RequiredScript == "lib/managers/menumanager" then
 		save_path = SavePath .. "LittleIntelligenceEnhancementS.txt",
 		default_loc_path = ModPath .. "loc/en.txt",
 		options_path = ModPath .. "menu/options.txt",
-		version = "8.57.35",
+		version = "8.57.36",
 		settings = {
 			lua_cover = false,
 			jokerhurts = false,

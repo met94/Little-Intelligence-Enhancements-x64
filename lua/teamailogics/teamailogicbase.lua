@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 TeamAILogicBase._current_att_objs = {}
 
 function TeamAILogicBase._get_logic_state_from_reaction(data, reaction)

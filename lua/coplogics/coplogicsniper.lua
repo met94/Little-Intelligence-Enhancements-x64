@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local tmp_vec1 = Vector3()
 
 function CopLogicSniper.enter(data, new_logic_name, enter_params)

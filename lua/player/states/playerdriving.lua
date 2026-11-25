@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 Hooks:PostHook(PlayerDriving, "update", "lies_fix_vehicle", function(self, t, dt)
 	if self._vehicle == nil then
 		return

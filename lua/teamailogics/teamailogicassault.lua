@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 TeamAILogicAssault._COVER_CHK_INTERVAL = 0.2
 
 function TeamAILogicAssault.enter(data, new_logic_name, enter_params)

@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 Hooks:PostHook(AttentionTweakData, "init", "lies_fix_badaimobjs", function(self)
 	self.settings.prop_civ_ene_ntl = {
 		uncover_range = 500,
