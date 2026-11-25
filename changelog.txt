@@ -9,6 +9,7 @@ same map.
 
 Revision 8.57.36 — 2026-11-25
 Restore the AI-suite load order: every hook script now carries the load-once guard.
+Fixed-slot audit: LIES' copied AI functions now keep the game's argument order.
 
 - problem: SuperBLT runs a hooked file's scripts several times per Lua state
   (once per require of the hooked file). LIES's 67 hook scripts had no
@@ -34,11 +35,45 @@ Restore the AI-suite load order: every hook script now carries the load-once gua
 - version: `8.57.36` in `mod.txt`, `autoupdate.json`, `README.md`,
   `menumanager.lua`, `dev/upstream-base.json`, `dev/version-map.json` and the
   version tests
+- problem: the phalanx helpers copied from the game kept a leading LIES `data`
+  argument, so the game's own two-argument
+  `calc_initial_phalanx_pos(own_pos, objective)` call delivered a `Vector3` in
+  the `data` slot and `nil` as `objective` - a Phalanx (shield-wall) minion died
+  on the first `objective.angle` read. The same leading- or inserted-argument
+  shape existed in three more copies (`_find_retreat_position`,
+  `_sort_nav_segs_after_pos`, `queued_update`), and all twelve
+  `_get_pos_on_wall` calls passed a stray sixth argument that kept its position
+  reservation filter dead since 7.544.
+- fix: game parameter order everywhere, LIES-only context as optional trailing
+  arguments; the phalanx helpers' `data`-nil paths are guarded, so
+  game-convention callers (two arguments) run without the reservation block;
+  `TeamAILogicAssault.find_enemy_to_mark` no longer shadows the vanilla symbol
+  (LIES' variant is `_find_enemy_to_mark_from_data`, a different input and
+  heuristic); the twelve `_get_pos_on_wall` calls pass the id in the 5th slot,
+  so the reservation filter is live - cops and shields no longer pick a
+  wall/fallback position their own group has reserved.
+- verification: rig `job-102406-554` direct calls - both phalanx helpers return
+  a `Vector3` under either convention, and the full circle path agrees
+  (`angle=144 pos=Vector3(400, -600, 47.5)`); owner matrix `job-102426-750`
+  unchanged (Keepers keeps `coplogictravel` and `teamaimovement`, Iter's
+  `upd_advance` hook active, LIES keeps its own functions); 70 s loud soak
+  `job-102445-432` PASS (`alive=49 engaged=15`), log scan shows no LIES,
+  phalanx or reservation error. The soak did not spawn a phalanx group, so the
+  helpers are proven by the direct calls and the call sites by the new gate.
+- new gate: `dev/tools/test/signature-compat.test.mjs` pins the eleven audited
+  declarations and every call site's argument order/arity across `lua/**/*.lua`;
+  a positional drift fails it.
+- tests: the two 8.57.36 fixtures the load-once guard invalidated were repaired
+  - the `find_segment_doors` harness test now stubs the guard's `ModPath` /
+  `RequiredScript` globals, and `compat.test.mjs` pins the README to 8.57.36
 
-Player notes: fixes silent AI-suite incompatibilities. With LIES + Keepers/Iter/
-Monkeepers/Useful Bots installed, those mods' wrappers were being overwritten
-by LIES instead of wrapping it; bot orders, path-ahead and team-AI changes now
-actually apply. No direct gameplay change from LIES itself.
+Player notes: LIES + Keepers/Iter/Monkeepers/Useful Bots keeps the intended load
+order, so those mods' bot orders, path-ahead and team-AI changes actually apply
+instead of being overwritten. Fixes the Phalanx (shield-wall) crash, where a
+minion could fail with a Lua error while being asked for its wall position.
+Cops and shields also account for their own position reservation when picking
+wall and fallback positions now, so shield-wall and cover movement can differ
+slightly. No other gameplay change.
 
 Revision 8.57.35 — 2026-11-24
 Game 249 follow-up: stop carrying a dead follow_unit / area-less group objective.
