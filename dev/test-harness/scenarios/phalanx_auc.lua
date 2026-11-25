@@ -21,10 +21,11 @@
 -- be, and only if it stays empty does the card promote a live assault group to
 -- the phalanx group (`_phalanx_spawn_group`). That is a rig fallback, but it
 -- exercises the same production path afterwards: `create_phalanx` objective ->
--- `CopLogicPhalanxMinion` travel -> wall searches and counters. The tuning also
--- drops `phalanx.minions.min_count` to 1 - rig-only - because a promoted group
--- can be smaller than a real phalanx squad and `CopLogicPhalanxMinion` disbands
--- at or below that threshold, which would end the window early.
+-- `CopLogicPhalanxMinion` travel -> wall searches and counters. Only the
+-- promotion path also drops `phalanx.minions.min_count` to 1, because a promoted
+-- group can be smaller than a real phalanx squad and `CopLogicPhalanxMinion`
+-- disbands at or below that threshold; the normal spawn route keeps the game's
+-- value.
 --
 -- Measurement contract: the counters accumulate from level start, so the card
 -- publishes window deltas - the counters are sampled once when the group is
@@ -34,8 +35,10 @@
 -- promotion bypasses `_spawn_phalanx_LIES`, it also calls
 -- `set_assault_endless(true)` the way that function does - without it the
 -- assault ends on its timer and the promoted group goes idle mid-window. The
--- result line still reports `minions_start` / `minions_end` / `live_cycles`, so a
--- window that loses the group is visible rather than implied.
+-- result line reports `minions_start` / `minions_end` / `live_cycles`, so a
+-- window that loses the group is visible rather than implied, and PASS requires
+-- at least `MEASURE_CYCLES - 2` live cycles; a shorter window fails and is
+-- published as a short window instead of a 60 s phalanx window.
 --
 -- Dev-only. Run with the resident rig from the workspace root:
 --   tools\pd2session.ps1 -Start -Mod .worktrees\LIES-lies-249
@@ -66,19 +69,14 @@ return function(H)
 
 	-- Deterministic spawn: first chance is 100%, the ceiling is the same, and the
 	-- check runs every 2 s instead of every 120 s. `chance_increase_intervall` is
-	-- irrelevant once start == max.
+	-- irrelevant once start == max. The breakup threshold is not tuned here: it
+	-- belongs to the promotion fallback (see `promote_live_group`), so the normal
+	-- spawn route keeps vanilla's behaviour.
 	local phalanx_tweak = tweak_data.group_ai.phalanx
 	phalanx_tweak.spawn_chance.start = 1
 	phalanx_tweak.spawn_chance.max = 1
 	phalanx_tweak.check_spawn_intervall = 2
-	-- Rig-only: a promoted group can be far smaller than a real phalanx squad
-	-- (the run that exposed this promoted 5 units and only 2 took the objective),
-	-- and `CopLogicPhalanxMinion.chk_should_breakup` disbands at
-	-- `phalanx_minion_count <= min_count`. The default 4 would break such a group
-	-- up mid-window; 1 keeps any group of two or more together, while a lone
-	-- minion still breaks up as in vanilla.
-	phalanx_tweak.minions.min_count = 1
-	H:log("phalanx tweak: spawn_chance.start=1 max=1 check_spawn_intervall=2 minions.min_count=1")
+	H:log("phalanx tweak: spawn_chance.start=1 max=1 check_spawn_intervall=2")
 
 	H:log("force_assault -> %s", tostring(H:force_assault()))
 	H:log("begin_assault_at_player -> %s", tostring(H:begin_assault_at_player("phalanx auc")))
@@ -247,6 +245,16 @@ return function(H)
 			return false
 		end
 
+		-- Rig-only, on the promotion path: a promoted group can be far smaller than
+		-- a real phalanx squad (one run promoted 5 units and only 2 took the
+		-- objective), and `CopLogicPhalanxMinion.chk_should_breakup` disbands at
+		-- `phalanx_minion_count <= min_count`. The default 4 would break such a
+		-- group up mid-window; 1 keeps any group of two or more together, while a
+		-- lone minion still breaks up as in vanilla. The normal spawn route keeps
+		-- the game's threshold.
+		tweak_data.group_ai.phalanx.minions.min_count = 1
+		H:log("phalanx tweak (rig only, promotion path): minions.min_count=1")
+
 		-- The promoted map is the whole group; how many of those units actually take
 		-- the `create_phalanx` objective is counted once the group is live
 		-- (`phalanx units flagged=...`), so a partial conversion stays visible.
@@ -355,15 +363,22 @@ return function(H)
 		minions_start, minions_end, live_cycles, MEASURE_CYCLES, wall_rsrv_hit,
 		wall_own_rsrv_hit, rsrv_delta, own_delta, own_share)
 
-	-- PASS needs the window to have actually seen live minions: the counter values
-	-- themselves are the measurement, and a zero delta (or a zero
-	-- `wall_own_rsrv_hit_delta`) is a result, not a failure. A window that lost the
-	-- whole group is reported as such instead of passing on a stale group size.
-	if live_cycles > 0 then
+	-- PASS needs most of the window to have had live minions: a squad that dies
+	-- after one cycle still yields numbers, but they are not a 60 s phalanx
+	-- window. The counter values themselves are the measurement, so a zero delta
+	-- (or a zero `wall_own_rsrv_hit_delta`) is not a failure; a short window is.
+	local PASS_FLOOR_CYCLES = MEASURE_CYCLES - 2
+
+	if live_cycles >= PASS_FLOOR_CYCLES then
 		H:finish("PASS", string.format(
 			"60 s at 1x: minions %d->%d live_cycles=%d/%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s (totals %d/%d)",
 			minions_start, minions_end, live_cycles, MEASURE_CYCLES, rsrv_delta,
 			own_delta, own_share, wall_rsrv_hit, wall_own_rsrv_hit))
+	elseif live_cycles > 0 then
+		H:finish("FAIL", string.format(
+			"short window: live_cycles=%d/%d (floor %d) minions %d->%d wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d own_share=%s",
+			live_cycles, MEASURE_CYCLES, PASS_FLOOR_CYCLES, minions_start,
+			minions_end, rsrv_delta, own_delta, own_share))
 	else
 		H:finish("FAIL", string.format(
 			"window saw no live phalanx minions (minions %d->%d, live_cycles=0/%d); wall_rsrv_hit_delta=%d wall_own_rsrv_hit_delta=%d",

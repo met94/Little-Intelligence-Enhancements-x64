@@ -2056,11 +2056,15 @@ local WALL_RSRV_RADIUS = 60
 --
 -- `recheck_own` is set for the `fail_position` exit, where the point was chosen
 -- up to nine raycasts before the return: a foreign reservation placed meanwhile
--- would otherwise be read as the unit's own.
+-- would otherwise be read as the unit's own. The count always happens first, so
+-- such a search stays in the denominator and only loses the own-hit
+-- classification.
 local function lies_count_wall_rsrv(pos, pos_rsrv_id, is_outer, recheck_own)
 	if not is_outer or not pos_rsrv_id or not pos then
 		return
 	end
+
+	LIES:Count("wall_rsrv_hit")
 
 	if recheck_own and not managers.navigation:is_pos_free({
 			position = pos,
@@ -2070,8 +2074,6 @@ local function lies_count_wall_rsrv(pos, pos_rsrv_id, is_outer, recheck_own)
 		return
 	end
 
-	LIES:Count("wall_rsrv_hit")
-
 	-- The point passed `is_pos_free` with the unit's own filter. Allocate a fresh
 	-- id, check the same point against it and release it again: the id belongs to
 	-- nobody and is never left holding a slot, so a failure means the only
@@ -2079,10 +2081,8 @@ local function lies_count_wall_rsrv(pos, pos_rsrv_id, is_outer, recheck_own)
 	-- points were rejected). This runs once per counted result, not per raycast.
 	local probe_id = managers.navigation:get_pos_reservation_id()
 
-	if not probe_id then
-		return
-	end
-
+	-- `get_pos_reservation_id` always returns the lowest free index, so the
+	-- classification cannot be skipped for lack of an id.
 	local is_own = not managers.navigation:is_pos_free({
 		position = pos,
 		radius = WALL_RSRV_RADIUS,
