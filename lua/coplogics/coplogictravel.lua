@@ -136,10 +136,15 @@ function CopLogicTravel.enter(data, new_logic_name, enter_params)
 
 			my_data.coarse_path = path
 			my_data.coarse_path_index = CopLogicTravel.complete_coarse_path(data, my_data, path)
+			-- A replaced path can be shorter; a pending jump index from the old path
+			-- must not survive it (the walk action may still be running, so
+			-- `advancing` stays).
+			my_data.going_to_index = nil
 		elseif path_style == "coarse_complete" then
 			my_data.coarse_path_index = 1
 			my_data.coarse_path = deep_clone(objective.path_data)
 			my_data.coarse_path_index = CopLogicTravel.complete_coarse_path(data, my_data, my_data.coarse_path)
+			my_data.going_to_index = nil
 		end
 	end
 
@@ -283,7 +288,26 @@ function CopLogicTravel._chk_start_pathing_to_next_nav_point(data, my_data)
 		return
 	end
 
-	local nav_link = my_data.coarse_path[my_data.coarse_path_index + 1][3] --this is checking for the nav link
+	local next_entry = my_data.coarse_path[my_data.coarse_path_index + 1]
+
+	if not next_entry then
+		-- A path replaced by a shorter one can leave the index on or past the last
+		-- point while a walk action is still in flight. That is not an arrival - the
+		-- unit is not there - so drop the path and let the travel logic re-path from
+		-- the unit's actual position. Marking the objective in place here would
+		-- complete a `free` objective the unit never reached.
+		my_data.coarse_path = nil
+		my_data.coarse_path_index = nil
+		-- The pending advance belonged to the old path; leaving it set makes the
+		-- same action callback call `_chk_begin_advance` with a nil index.
+		my_data.advance_path = nil
+		my_data.processing_advance_path = nil
+		LIES:Count("travel_index_reset")
+
+		return
+	end
+
+	local nav_link = next_entry[3] --this is checking for the nav link
 	
 	if nav_link and alive(my_data.coarse_path[my_data.coarse_path_index + 1][3]) then --check if the navlink is alive
 		if nav_link:delay_time() > data.t then --check the delay
@@ -427,6 +451,9 @@ function CopLogicTravel._upd_pathing(data, my_data)
 			if path ~= "failed" then
 				my_data.coarse_path = path
 				my_data.coarse_path_index = 1
+				-- The new path can be shorter than the old one; drop a pending jump
+				-- index (the running walk action keeps `advancing`).
+				my_data.going_to_index = nil
 			elseif my_data.path_safely then
 				my_data.path_safely = nil
 			else
@@ -453,13 +480,24 @@ function CopLogicTravel._check_start_path_ahead(data)
 
 	local objective = data.objective
 	local coarse_path = my_data.coarse_path
+
+	if not coarse_path or not my_data.going_to_index then
+		return
+	end
+
 	local next_index = my_data.going_to_index + 1
 	local total_nav_points = #coarse_path
 
 	if next_index > total_nav_points then
 		return
 	end
-	
+
+	local next_entry = coarse_path[next_index]
+
+	if not next_entry then
+		return
+	end
+
 	local nav_link = my_data.coarse_path[next_index][3]
 	
 	if nav_link and alive(my_data.coarse_path[next_index][3]) then
@@ -585,6 +623,17 @@ function CopLogicTravel.chk_group_ready_to_move(data, my_data)
 end
 
 function CopLogicTravel._chk_begin_advance(data, my_data)
+	-- The coarse path (and its index) can be dropped by the travel-index reset;
+	-- the pending advance then belongs to a path that no longer exists. Bail before
+	-- any arithmetic on `coarse_path_index` and clear the stale advance so the next
+	-- update starts a fresh coarse path.
+	if not my_data.coarse_path or not my_data.coarse_path_index then
+		my_data.advance_path = nil
+		my_data.processing_advance_path = nil
+
+		return
+	end
+
 	if data.unit:movement():chk_action_forbidden("walk") then
 		return
 	end
@@ -827,7 +876,7 @@ function CopLogicTravel.upd_advance(data)
 		if objective then --gotta add a stop check here due to pathing complete clbk causing small amounts of discord when paired with action complete clbk due to function ordering here
 			if objective.nav_seg or objective.type == "follow" then
 				if my_data.coarse_path then
-					if my_data.coarse_path_index == #my_data.coarse_path then
+					if my_data.coarse_path_index >= #my_data.coarse_path then
 						CopLogicTravel._on_destination_reached(data)
 					end
 				end
@@ -853,7 +902,7 @@ function CopLogicTravel.upd_advance(data)
 		if objective then --gotta add a stop check here due to pathing complete clbk causing small amounts of discord when paired with action complete clbk due to function ordering here
 			if objective.nav_seg or objective.type == "follow" then
 				if my_data.coarse_path then
-					if my_data.coarse_path_index == #my_data.coarse_path then
+					if my_data.coarse_path_index >= #my_data.coarse_path then
 						CopLogicTravel._on_destination_reached(data)
 					end
 				end
@@ -901,7 +950,7 @@ function CopLogicTravel.upd_advance(data)
 		if objective then
 			if objective.nav_seg or objective.type == "follow" then
 				if my_data.coarse_path then
-					if my_data.coarse_path_index == #my_data.coarse_path then
+					if my_data.coarse_path_index >= #my_data.coarse_path then
 						CopLogicTravel._on_destination_reached(data)
 					else
 						CopLogicTravel._chk_start_pathing_to_next_nav_point(data, my_data)
@@ -1602,8 +1651,21 @@ function CopLogicTravel.action_complete_clbk(data, action)
 				my_data.coarse_path_index = my_data.coarse_path_index + 1
 			end
 
-			if my_data.coarse_path_index > #my_data.coarse_path then
-				my_data.coarse_path_index = my_data.coarse_path_index - 1
+			local path_len = my_data.coarse_path and #my_data.coarse_path or 0
+
+			if my_data.coarse_path_index > path_len or my_data.coarse_path_index < 1 then
+				-- An index outside the (possibly replaced, shorter) path is not an
+				-- arrival: the unit is not there. Drop the path so the travel logic
+				-- re-paths from the unit's actual position instead of marking the
+				-- objective in place.
+				my_data.coarse_path = nil
+				my_data.coarse_path_index = nil
+				-- A pending advance belongs to the dropped path; keeping it makes
+				-- the following `upd_advance` enter `_chk_begin_advance` with a nil
+				-- index (crash at `coarse_path_index + 1`).
+				my_data.advance_path = nil
+				my_data.processing_advance_path = nil
+				LIES:Count("travel_index_reset")
 			end
 		end
 
@@ -1627,7 +1689,10 @@ function CopLogicTravel.action_complete_clbk(data, action)
 				
 				if not data.objective.forced and LIES.settings.enemy_aggro_level < 3 then
 					if data.attention_obj and AIAttentionObject.REACT_COMBAT <= data.attention_obj.reaction or data.is_suppressed then
-						local cover_wait_time = my_data.coarse_path_index == #my_data.coarse_path - 1 and 0.3 or 0.6 + 0.4 * math.random()
+						-- The path may have been dropped by the index reset above this
+						-- block, so the length read has to tolerate nil.
+						local path_len = my_data.coarse_path and #my_data.coarse_path or 0
+						local cover_wait_time = my_data.coarse_path_index == path_len - 1 and 0.3 or 0.6 + 0.4 * math.random()
 						
 						my_data.cover_leave_t = data.t + cover_wait_time
 					end
