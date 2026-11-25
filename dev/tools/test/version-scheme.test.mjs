@@ -27,6 +27,11 @@ const map = readJson('dev', 'version-map.json');
 const modTxt = readJson('mod.txt');
 const releases = map.releases;
 
+// The fork relabeled its scheme on this day (`V8.86_x64` -> `8.57.30`): every
+// release dated before it shipped a `V8.<n>_x64` label, and a release published
+// on or after it never did, so its `legacy` is null.
+const RELABEL_DATE = '2026-11-03';
+
 test('the fork version is <upstream-base>.<fork-patch>', () => {
   assert.match(modTxt.version, /^\d+\.\d+\.\d+$/, 'no V prefix and no _x64 suffix');
   assert.equal(map.upstreamBase, base.baseVersion, 'version-map upstreamBase must match upstream-base.json');
@@ -48,17 +53,39 @@ test('upstream-base.json records a real base commit and the first fork release',
 test('version-map.json lists every fork release exactly once, newest first', () => {
   assert.equal(releases.length, base.patch, 'one map entry per fork release');
   for (let i = 0; i < releases.length; i++) {
+    const entry = releases[i];
     const expected = `${base.baseVersion}.${releases.length - i}`;
-    assert.equal(releases[i].version, expected, `release ${i} out of order`);
-    assert.match(releases[i].legacy, /^V\d+\.\d+_x64$/, 'legacy label shape');
-    assert.match(releases[i].date, /^\d{4}-\d{2}-\d{2}$/, 'release date');
-    assert.ok(!Number.isNaN(Date.parse(releases[i].date)), `release ${releases[i].version} has an unparsable date`);
+    assert.equal(entry.version, expected, `release ${i} out of order`);
+    assert.match(entry.date, /^\d{4}-\d{2}-\d{2}$/, 'release date');
+    assert.ok(!Number.isNaN(Date.parse(entry.date)), `release ${entry.version} has an unparsable date`);
+    // A release from before the relabel must carry the label it really shipped,
+    // because a log of that build quotes it. A release published after it
+    // shipped no label at all, so null is the honest value there; a label is
+    // only allowed when it is a real one, never filler for the sequence.
+    if (entry.date < RELABEL_DATE) {
+      assert.match(entry.legacy ?? '', /^V\d+\.\d+_x64$/,
+        `release ${entry.version} predates the relabel, so it must keep its label`);
+    } else {
+      assert.ok(entry.legacy === null || /^V\d+\.\d+_x64$/.test(entry.legacy),
+        `release ${entry.version} must spell an absent label as null`);
+    }
   }
-  const legacyMinors = releases.map(entry => Number(entry.legacy.match(/^V8\.(\d{2})_x64$/)[1]));
+
+  // Contiguity and uniqueness describe the labels that really shipped: the
+  // post-relabel releases have none, so they are skipped rather than given an
+  // invented label to keep the sequence whole.
+  const labelled = releases.filter(entry => entry.legacy);
+  const legacyMinors = labelled.map((entry) => {
+    const match = entry.legacy.match(/^V8\.(\d{2})_x64$/);
+
+    assert.ok(match, `legacy label ${entry.legacy} is not a V8 label`);
+    return Number(match[1]);
+  });
+
   legacyMinors.forEach((minor, i) => {
     if (i > 0) assert.equal(minor, legacyMinors[i - 1] - 1, 'legacy labels must be contiguous');
   });
-  assert.equal(new Set(releases.map(entry => entry.legacy)).size, releases.length, 'legacy labels must be unique');
+  assert.equal(new Set(labelled.map(entry => entry.legacy)).size, labelled.length, 'legacy labels must be unique');
 });
 
 test('the changelog carries one anchored header per mapped release', () => {
@@ -103,8 +130,16 @@ test('legacy labels survive only where they are evidence', () => {
   assert.deepEqual(offenders, [], 'legacy labels left behind');
 });
 
-test('the report tool resolves a pre-relabel log to the current release', () => {
-  assert.equal(LEGACY_VERSIONS.size, releases.length, 'the tool must load the whole map');
+test('the report tool resolves a pre-relabel log to the release that wrote it', () => {
+  // Only the releases that really shipped a label may appear in the lookup: a
+  // null legacy must be skipped, not turned into a map key the string
+  // `undefined`/`null` would resolve through.
+  const labelled = releases.filter(entry => entry.legacy);
+
+  assert.equal(LEGACY_VERSIONS.size, labelled.length,
+    'the tool must load every real legacy label and nothing else');
+  assert.ok(!LEGACY_VERSIONS.has(null) && !LEGACY_VERSIONS.has(undefined),
+    'an absent legacy must not become a map key');
   assert.equal(canonicalVersion('V8.86_x64'), '8.57.30');
   assert.equal(canonicalVersion('V8.57_x64'), '8.57.1');
   // Unknown labels are returned unchanged, so a future format cannot map by accident.
