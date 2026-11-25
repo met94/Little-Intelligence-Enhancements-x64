@@ -62,31 +62,30 @@ Fixed-slot audit: LIES' copied AI functions now keep the game's argument order.
   `job-102445-432` PASS (`alive=49 engaged=15`), log scan shows no LIES,
   phalanx or reservation error; reservation semantics probe `job-112005-417`
   against vanilla `is_pos_free` - true with the reservation's own id, false with
-  another id or no filter; end-to-end run `job-124647-540` (session
-  `sess-20261125-123801`, `auc`, promoted group `tac_swat_rifle_flank3` of 5 live
-  units, 1x window of 60 s): `wall_rsrv_hit_delta=136`,
-  `wall_own_rsrv_hit_delta=11` - 8.1 % of the successful first-pass wall
-  searches settled on a position covered only by the unit's own reservation,
-  i.e. on spots the pre-8.57.36 nil filter rejected (totals 171/12 since level
-  start); no Lua error and no crash. The promoted units were killed by bot fire
-  late in the window (`minions_start=4`, `minions_end=0`, `live_cycles=10/12`),
-  so this is a partial-strength window, not a full phalanx. Two earlier 1x
-  windows on the same card read 3.2 % and 4.2 % (`job-123920-086`,
-  `job-124319-516`; pooled 5.4 %), so the honest spread is 3.2-8.1 % on one map,
-  with one promoted squad per run and small n. The first 4x window
-  (`job-122351-751`) is superseded: it was an accumulated total, not a window
-  delta. The heist's own spawn-group search returns nil on `auc` in the rig (no
-  reachable Phalanx spawn group, and its `Application:error` is not captured by
-  the BLT log), so the dev card promotes a live assault group to the same
-  `create_phalanx` objective; the units entered `CopLogicPhalanxMinion`, so the
-  travel -> calc -> circle path that performs the wall searches is the real one.
+  another id or no filter; end-to-end run `job-130821-817` (session
+  `sess-20261125-130046`, `auc`, promoted rifle group, 30 s window at 1x, 6
+  samples, PASS floor 5/6): `wall_rsrv_hit_delta=77`,
+  `wall_own_rsrv_hit_delta=2` - 2.6 % of the successful first-pass wall searches
+  settled on a position covered only by the unit's own reservation, i.e. on spots
+  the pre-8.57.36 nil filter rejected (totals 163/3 since level start); no Lua
+  error and no crash. Scope: the counters are process-wide - every cop's
+  first-pass `_get_pos_on_wall` success increments them, not only phalanx units,
+  so the promoted squad only raises the density; 11 of the 77 hits accrued in the
+  final sample after the squad was dead (`minions_start=1`, `minions_end=0`,
+  `live_cycles=5/6`), from other cops. The heist's own spawn-group search returns
+  nil on `auc` in the rig (no reachable Phalanx spawn group, and its
+  `Application:error` is not captured by the BLT log), so the dev card promotes a
+  live assault group to the same `create_phalanx` objective; the units entered
+  `CopLogicPhalanxMinion`, so the travel -> calc -> circle path that performs the
+  wall searches is the real one. Earlier windows from the card's tuning runs
+  (60 s, different denominators) are historical and not comparable rates.
 - instrumentation: `wall_rsrv_hit` (successful first-pass `_get_pos_on_wall`
   searches made with the live reservation filter) and `wall_own_rsrv_hit` (the
   subset whose only reservations belong to the unit itself, tested against a
   freshly allocated probe id), both counted through `LIES:Count` so the watch
   digest reports them; the measurement card is
   `dev/test-harness/scenarios/phalanx_auc.lua` (spawn a phalanx group or promote
-  one, then sample both counters over a 1x window).
+  one, then sample both counters over a 30 s 1x window, 6 samples, PASS floor 5).
 - new gate: `dev/tools/test/signature-compat.test.mjs` pins the eleven audited
   declarations, plus the call-site order and arity of the six functions renamed,
   reordered or with re-aligned call sites in this pass (`_get_pos_on_wall`, both
