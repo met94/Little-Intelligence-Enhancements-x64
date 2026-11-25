@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-11-25T10:38:36.206Z",
+  "generated": "2026-11-25T11:27:22.705Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -2207,7 +2207,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 409
+          "startLine": 404
         },
         {
           "name": "GroupAIStateBase._get_balancing_multiplier_hhtacs",
@@ -2252,7 +2252,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 603
+          "startLine": 598
         },
         {
           "name": "GroupAIStateBase._set_rescue_state",
@@ -2267,7 +2267,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 405
+          "startLine": 400
         },
         {
           "name": "GroupAIStateBase.on_criminal_nav_seg_change",
@@ -2282,7 +2282,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 363
+          "startLine": 358
         },
         {
           "name": "GroupAIStateBase.on_nav_link_unregistered",
@@ -2302,7 +2302,7 @@
         {
           "name": "GroupAIStateBase.on_objective_failed",
           "category": "LIES_EDIT_CLEAN",
-          "modLines": 105,
+          "modLines": 100,
           "oldLines": 51,
           "newLines": 51,
           "modParams": "unit, objective",
@@ -2357,7 +2357,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 674
+          "startLine": 669
         },
         {
           "name": "GroupAIStateBase.register_active_drill",
@@ -2372,7 +2372,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 663
+          "startLine": 658
         },
         {
           "name": "GroupAIStateBase.register_boss",
@@ -2387,7 +2387,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 552
+          "startLine": 547
         },
         {
           "name": "GroupAIStateBase.register_criminal",
@@ -2402,7 +2402,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 299
+          "startLine": 294
         },
         {
           "name": "GroupAIStateBase.register_security_camera",
@@ -2417,7 +2417,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 503
+          "startLine": 498
         },
         {
           "name": "GroupAIStateBase.report_aggression",
@@ -2432,7 +2432,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 287
+          "startLine": 282
         },
         {
           "name": "GroupAIStateBase.rescueable_hostages",
@@ -2447,7 +2447,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 531
+          "startLine": 526
         },
         {
           "name": "GroupAIStateBase.set_importance_weight",
@@ -2477,7 +2477,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 669
+          "startLine": 664
         },
         {
           "name": "GroupAIStateBase.unregister_AI_attention_object",
@@ -2492,7 +2492,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 810
+          "startLine": 805
         },
         {
           "name": "GroupAIStateBase.unregister_boss",
@@ -2507,7 +2507,7 @@
           "isHook": false,
           "form": "colon",
           "note": "",
-          "startLine": 563
+          "startLine": 558
         },
         {
           "name": "Hooks.PostHook:GroupAIStateBase._clbk_switch_enemies_to_not_cool:lies_switch_tweaks_for_guards",
@@ -2522,7 +2522,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 519
+          "startLine": 514
         },
         {
           "name": "Hooks.PostHook:GroupAIStateBase._remove_group_member:lies_frienddead",
@@ -2537,7 +2537,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 579
+          "startLine": 574
         },
         {
           "name": "Hooks.PostHook:GroupAIStateBase.on_enemy_unregistered:lies_unregister_boss",
@@ -2552,7 +2552,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 569
+          "startLine": 564
         },
         {
           "name": "Hooks.PostHook:GroupAIStateBase.register_rescueable_hostage:lies_hrt_reg",
@@ -2567,7 +2567,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 535
+          "startLine": 530
         },
         {
           "name": "Hooks.PostHook:GroupAIStateBase.unregister_rescueable_hostage:lies_hrt_unreg",
@@ -2582,7 +2582,7 @@
           "isHook": true,
           "form": "hook",
           "note": "Hooks:PostHook/PreHook callback; audit and port with the hooked method",
-          "startLine": 546
+          "startLine": 541
         }
       ],
       "errors": [],

@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-25T10:38:36.204Z
+Generated: 2026-11-25T11:27:22.703Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -305,7 +305,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `GroupAIStateBase._set_rescue_state` | 3 | 15 | 15 |  |
 | [ ] | keep | — | `GroupAIStateBase.on_criminal_nav_seg_change` | 41 | 48 | 48 |  |
 | [ ] | keep | — | `GroupAIStateBase.on_nav_link_unregistered` | 16 | 14 | 14 |  |
-| [ ] | keep | — | `GroupAIStateBase.on_objective_failed` | 105 | 51 | 51 |  |
+| [ ] | keep | — | `GroupAIStateBase.on_objective_failed` | 100 | 51 | 51 |  |
 | [ ] | keep | — | `GroupAIStateBase.register_criminal` | 63 | 53 | 53 |  |
 | [ ] | keep | — | `GroupAIStateBase.register_security_camera` | 15 | 3 | 3 |  |
 | [ ] | keep | — | `GroupAIStateBase.report_aggression` | 11 | 9 | 9 |  |
