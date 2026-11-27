@@ -1,7 +1,7 @@
 {
   "oldRev": "a3180fc",
   "newRev": "e3a8b616",
-  "generated": "2026-11-25T19:51:55.078Z",
+  "generated": "2026-11-27T11:53:01.649Z",
   "files": [
     {
       "file": "menumanager.lua",
@@ -5148,7 +5148,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2320
+          "startLine": 2328
         },
         {
           "name": "CopLogicTravel._check_start_path_ahead",
@@ -5208,7 +5208,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1049
+          "startLine": 1057
         },
         {
           "name": "CopLogicTravel._chk_cover_height",
@@ -5223,7 +5223,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2153
+          "startLine": 2161
         },
         {
           "name": "CopLogicTravel._chk_focus_on_undetected_criminal",
@@ -5238,7 +5238,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1205
+          "startLine": 1213
         },
         {
           "name": "CopLogicTravel._chk_report_in",
@@ -5253,7 +5253,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1075
+          "startLine": 1083
         },
         {
           "name": "CopLogicTravel._chk_request_action_walk_to_advance_pos",
@@ -5283,7 +5283,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1087
+          "startLine": 1095
         },
         {
           "name": "CopLogicTravel._chk_start_pathing_to_next_nav_point",
@@ -5313,7 +5313,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1856
+          "startLine": 1864
         },
         {
           "name": "CopLogicTravel._determine_destination_occupation",
@@ -5328,7 +5328,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1434
+          "startLine": 1442
         },
         {
           "name": "CopLogicTravel._find_cover",
@@ -5343,7 +5343,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1965
+          "startLine": 1973
         },
         {
           "name": "CopLogicTravel._get_exact_move_pos",
@@ -5358,7 +5358,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2013
+          "startLine": 2021
         },
         {
           "name": "CopLogicTravel._get_pos_on_wall",
@@ -5373,7 +5373,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2228
+          "startLine": 2236
         },
         {
           "name": "CopLogicTravel._on_destination_reached",
@@ -5388,7 +5388,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2351
+          "startLine": 2359
         },
         {
           "name": "CopLogicTravel._pathing_complete_clbk",
@@ -5418,7 +5418,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1121
+          "startLine": 1129
         },
         {
           "name": "CopLogicTravel._upd_focus_on_undetected_criminal",
@@ -5433,7 +5433,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1260
+          "startLine": 1268
         },
         {
           "name": "CopLogicTravel._upd_pathing",
@@ -5493,7 +5493,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1686
+          "startLine": 1694
         },
         {
           "name": "CopLogicTravel.chk_group_ready_to_move",
@@ -5538,7 +5538,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 1635
+          "startLine": 1643
         },
         {
           "name": "CopLogicTravel.is_available_for_assignment",
@@ -5553,7 +5553,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2306
+          "startLine": 2314
         },
         {
           "name": "CopLogicTravel.queue_detection_update",
@@ -5583,7 +5583,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2164
+          "startLine": 2172
         },
         {
           "name": "CopLogicTravel.queued_detection_update",
@@ -5603,7 +5603,7 @@
         {
           "name": "CopLogicTravel.upd_advance",
           "category": "LIES_EDIT_CLEAN",
-          "modLines": 227,
+          "modLines": 235,
           "oldLines": 71,
           "newLines": 71,
           "modParams": "data",
@@ -5643,7 +5643,7 @@
           "isHook": false,
           "form": "decl",
           "note": "",
-          "startLine": 2191
+          "startLine": 2199
         }
       ],
       "errors": [],

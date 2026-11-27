@@ -867,6 +867,14 @@ function CopLogicTravel.upd_advance(data)
 	end
 
 	if my_data.warp_pos then
+		if not objective then
+			local wanted_state = data.logic._get_logic_state_from_reaction(data) or "idle"
+
+			CopLogicBase._exit(data.unit, wanted_state)
+
+			return
+		end
+
 		local action_desc = {
 			body_part = 1,
 			type = "warp",

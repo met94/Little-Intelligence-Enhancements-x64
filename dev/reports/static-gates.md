@@ -1,6 +1,6 @@
 ﻿# LIES 248.2 static gates
 
-Generated: 2026-11-25 19:51:47Z
+Generated: 2026-11-27 11:52:53Z
 
 ## Node tool tests
 
@@ -11,7 +11,7 @@ Result: PASS
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 335.2949
+ℹ duration_ms 307.3479
 
 ## Test-harness Lua tests
 
@@ -23,6 +23,8 @@ PASS phalanx_signatures.lua
   ok: CopLogicPhalanxMinion phalanx helper signatures
 PASS test_commands.lua
   ok: LIES test-harness parser
+PASS test_coplogictravel_warp_nil_objective.lua
+  ok: warp nil-objective guard (7 checks)
 PASS watch_settle_target.lua
   ok: the settled-facing target check reads the engine aim record
 

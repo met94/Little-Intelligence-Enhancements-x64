@@ -33,6 +33,15 @@ Fixed-slot audit: LIES' copied AI functions now keep the game's argument order.
 - new gate: `dev/tools/test/hook-guards.test.mjs` fails if any hook script loses
   the guard, and fails if one hook id maps to more than one script (the guard key
   is the hook id, so the second file would return before doing anything).
+- warp guard: `upd_advance` read `objective.pos`/`objective.rot` before the
+  warp branch's own `if objective then` check, so a warp-style travel objective
+  cleared mid-logic crashed on that read (same class as the follow-unit nil
+  deref; not observed on the rig, found while auditing the 249.1 suite smoke).
+  The branch now exits through `CopLogicBase._exit` on a nil objective before
+  building the warp action; a live warp objective and a refused action request
+  take the old paths. `dev/test-harness/test/test_coplogictravel_warp_nil_objective.lua`
+  pins all three cases offline (fails at `:873` before the guard), and
+  `exit-guard.test.mjs` now expects the eleventh travel exit
 - version: `8.57.36` in `mod.txt`, `autoupdate.json`, `README.md`,
   `menumanager.lua`, `dev/upstream-base.json`, `dev/version-map.json` and the
   version tests
