@@ -21,10 +21,10 @@ Tested as one stack and meant to run with it. One download for all four:
 
 | Mod | Repo | Role |
 | --- | --- | --- |
-| **LIES** (this mod) | [met94/Little-Intelligence-Enhancements-x64](https://github.com/met94/Little-Intelligence-Enhancements-x64) | enemy AI: detection, aim, cover, travel |
-| **Iter** | [met94/payday2-mod-Iter](https://github.com/met94/payday2-mod-Iter) | navigation, coarse search, nav-link queue, level nav fixes |
-| **Keepers** | [met94/payday2-mod-Keepers](https://github.com/met94/payday2-mod-Keepers) | bot orders, revives, jokers |
-| **Monkeepers** | [met94/payday2-mod-Monkeepers](https://github.com/met94/payday2-mod-Monkeepers) | bot bag logistics |
+| **LIES** (this mod) | [met94/Little-Intelligence-Enhancements-x64](https://github.com/met94/Little-Intelligence-Enhancements-x64) | enemy AI |
+| **Iter** | [met94/payday2-mod-Iter](https://github.com/met94/payday2-mod-Iter) | navigation and pathing |
+| **Keepers** | [met94/payday2-mod-Keepers](https://github.com/met94/payday2-mod-Keepers) | bot orders and revives |
+| **Monkeepers** | [met94/payday2-mod-Monkeepers](https://github.com/met94/payday2-mod-Monkeepers) | bot bag handling |
 | **Useful Bots** 2.6.4 + HopLib 2.1.2 (by Hoppip, not part of this set) | [ModWorkshop #31221](https://modworkshop.net/mod/31221) | bot combat and utility |
 | The Fixes (optional) | [ModWorkshop #23732](https://modworkshop.net/mod/23732) | general game fixes |
 
@@ -32,18 +32,18 @@ Tested as one stack and meant to run with it. One download for all four:
 
 - **Smarter detection and reaction** — cops see, lose track of and re-acquire
   you plausibly instead of always knowing where you are.
-- **Custom navigation** — door handling, LIES' own cover search, and optional
-  runtime cover generation for maps with sparse cover.
+- **Cleaner door and cover handling** — better door use, its own cover search,
+  and optional generated cover on maps with too little.
 - **Better cover use** — cops evaluate cover against the threat instead of
   taking the first available slot.
-- **Special unit handling** — shields, tasers, tanks and phalanx units get
+- **Special units** — shields, tasers, tanks and phalanx units get
   LIES-compatible logic where it helps.
 - **HHTACS / Spicy Tactics** — optional aggressive spawn groups, tactics and
   group-level pressure. Off by default.
-- **Group AI repairs** — assault, recon, HRT, drill sabotage, reenforce and
-  retreat behaviour preserved and fixed for 248.2-249.
-- **Periphery fixes** — camera line-of-sight, team-AI hold/revive, civilian
-  follow, drill tracker, mission-element and difficulty guards.
+- **Group AI fixes** — assault, recon, drills, reinforcements and retreats keep
+  working on 249.
+- **Smaller fixes** — camera line-of-sight, bot hold/revive, civilian follow,
+  drill tracking, and a few mission and difficulty guards.
 
 ## Requirements
 
@@ -91,8 +91,8 @@ owner per subsystem. These combinations are validated:
 - **Monkeepers** — compatible. Bot bag logistics run alongside LIES.
 - **Useful Bots** — compatible; it owns bot intimidation, marking and target
   priority, and is left untouched.
-- **The Fixes** — compatible and optional; it loads last and owns the cop
-  walk-action initialisation in the full stack.
+- **The Fixes** — optional; it patches narrow game bugs and works alongside the
+  suite.
 
 If you run several AI mods, install them all and leave their priorities alone —
 the order ships inside each mod and is what makes them cooperate.
@@ -119,7 +119,7 @@ before 2026-11-03 keep their old `V8.xx_x64` labels; the mapping is in
 
 - **Original LIES author and AI design:** [fugsystem](https://github.com/fuglore)
   — [Little-Intelligence-Enhancements](https://github.com/fuglore/Little-Intelligence-Enhancements)
-- **248.2 x64 port and maintenance:** [met94](https://github.com/met94)
+- **x64 port and maintenance:** [met94](https://github.com/met94)
 - **Decompiled PAYDAY 2 Lua reference:** [steam-test1/Payday-2-LuaJIT-Complete](https://github.com/steam-test1/Payday-2-LuaJIT-Complete)
 - **SuperBLT and the PAYDAY 2 modding community**
 
