@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local AI_REACT_IDLE = AIAttentionObject.REACT_IDLE
 local AI_REACT_SCARED = AIAttentionObject.REACT_SCARED
 local AI_REACT_AIM = AIAttentionObject.REACT_AIM
@@ -318,7 +321,7 @@ function CopLogicIdle._chk_start_action_move_out_of_the_way(data, my_data)
 	}
 
 	if not managers.navigation:is_pos_free(reservation) then
-		local to_pos = CopLogicTravel._get_pos_on_wall(my_tracker:position(), 500, nil, nil, nil, data.pos_rsrv_id)
+		local to_pos = CopLogicTravel._get_pos_on_wall(my_tracker:position(), 500, nil, nil, data.pos_rsrv_id)
 
 		if to_pos then
 			local path = {

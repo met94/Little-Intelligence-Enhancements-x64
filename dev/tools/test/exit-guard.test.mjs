@@ -80,5 +80,7 @@ test('every LIES travel exit goes through the guard, never straight to set_logic
   const travel = stripLuaComments(read('lua', 'coplogics', 'coplogictravel.lua'));
 
   assert.equal((travel.match(/unit:brain\(\):set_logic\(/g) || []).length, 0);
-  assert.equal((travel.match(/CopLogicBase\._exit\(/g) || []).length, 10, 'travel exit sites changed');
+  // 10 exits in the 8.57.36 travel body plus the warp nil-objective exit added
+  // when upd_advance stopped reading objective.pos before its own nil check.
+  assert.equal((travel.match(/CopLogicBase\._exit\(/g) || []).length, 11, 'travel exit sites changed');
 });

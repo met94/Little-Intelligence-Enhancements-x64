@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 GroupAIStateBase._nr_important_cops = 12 --gets divided in groupaistatebesiege if theres more than 1 player
 
 local math_up = math.UP
@@ -199,22 +202,36 @@ function GroupAIStateBase:on_objective_failed(unit, objective)
 
 	if unit:brain():objective() == objective then
 		if valid_and_alive then
+			local follow_unit = objective and objective.follow_unit
+
+			if follow_unit and not alive(follow_unit) then
+				follow_unit = nil
+			end
+
 			new_objective = {
 				is_default = true,
 				scan = true,
 				type = "free",
-				follow_unit = objective and objective.follow_unit,
+				follow_unit = follow_unit,
 				no_arrest = objective and objective.no_arrest,
 				grp_objective = objective and objective.grp_objective,
 				attitude = objective and objective.attitude or objective and objective.grp_objective and objective.grp_objective.attitude,
 				pos = objective and not self._enemy_weapons_hot and (objective.pos or mvector3.copy(unit:movement():m_pos()))
 			}
-			
-			if new_objective.pos then
-				new_objective.nav_seg = unit:movement():nav_tracker():nav_segment()
-				new_objective.area = self:get_area_from_nav_seg_id(new_objective.nav_seg)
+
+			local nav_seg = unit:movement():nav_tracker():nav_segment()
+			local area = self:get_area_from_nav_seg_id(nav_seg)
+
+			-- `chk_group_ready_to_move` reads `objective.area` even while
+			-- weapons-hot (where `pos` is deliberately nil), so the free
+			-- objective must carry one whenever it keeps `grp_objective`.
+			new_objective.nav_seg = nav_seg
+			new_objective.area = area
+
+			if not area then
+				new_objective.grp_objective = nil
 			end
-			
+
 			if objective and not self._enemy_weapons_hot and unit:movement():cool() and (not objective.action or table.contains(ElementSpecialObjective._stealth_idles, objective.action.variant)) then
 				new_objective.followup_SO = objective and objective.followup_SO
 				local variant = ElementSpecialObjective._stealth_idles_no_loop[math.random(#ElementSpecialObjective._stealth_idles_no_loop)]

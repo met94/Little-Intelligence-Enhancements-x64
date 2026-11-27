@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local mvec3_dis_sq = mvector3.distance_sq
 local mvec3_dir = mvector3.direction
 local mvec3_set_z = mvector3.set_z
@@ -1546,6 +1549,16 @@ function GroupAIStateBesiege:on_objective_complete(unit, objective)
 				interrupt_dis = objective.interrupt_dis,
 				interrupt_health = objective.interrupt_health
 			}
+
+			local seg = unit:movement():nav_tracker():nav_segment()
+			local area = self:get_area_from_nav_seg_id(seg)
+
+			new_objective.nav_seg = seg
+			new_objective.area = area
+
+			if not area then
+				new_objective.grp_objective = nil
+			end
 		end
 	elseif objective.followup_SO then
 		local current_SO_element = objective.followup_SO
@@ -1599,10 +1612,12 @@ function GroupAIStateBesiege:on_objective_complete(unit, objective)
 				attitude = objective.attitude or objective.grp_objective and objective.grp_objective.attitude,
 				pos = not self._enemy_weapons_hot and (objective.pos or mvector3.copy(unit:movement():m_pos()))			
 			}
-			
-			if new_objective.pos then
-				new_objective.nav_seg = seg
-				new_objective.area = area_data
+
+			new_objective.nav_seg = seg
+			new_objective.area = area_data
+
+			if not area_data then
+				new_objective.grp_objective = nil
 			end
 
 			if not self._enemy_weapons_hot and unit:movement():cool() and (not objective.action or table.contains(ElementSpecialObjective._stealth_idles, objective.action.variant)) then

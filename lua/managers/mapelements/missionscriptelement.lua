@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local nav_fixes_on_executed = {
 	wwh = { --alaskan deal traincar doors fix
 		[100944] = function (self)

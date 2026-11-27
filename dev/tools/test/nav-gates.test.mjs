@@ -28,8 +28,9 @@ import { fileURLToPath } from 'node:url';
 //
 // Deliberate LIES constructs this test also guards: the 4-tuple path with
 // `is_obstructed()` in `_execute_coarce_search` (AI-06), the 7-argument
-// `_sort_nav_segs_after_pos` signature, its two-term A*-style weight, and the
-// 246.1 loop/found_segs shapes. A stray 248.2 restyle would drop those.
+// `_sort_nav_segs_after_pos` signature (game order, LIES `from_pos` trailing),
+// its two-term A*-style weight, and the 246.1 loop/found_segs shapes. A stray
+// 248.2 restyle would drop those.
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8');
@@ -75,7 +76,7 @@ const coarseBody = () => funcBody(navSource(), 'function NavigationManager:_exec
 const sortBody = () =>
   funcBody(
     navSource(),
-    'function NavigationManager:_sort_nav_segs_after_pos(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg)'
+    'function NavigationManager:_sort_nav_segs_after_pos(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg, from_pos)'
   );
 
 // Every source line carrying a marker; condition ordering is positional inside
@@ -190,8 +191,8 @@ test('_sort_nav_segs_after_pos keeps its 7-argument signature and two-term weigh
 
   assert.match(
     body,
-    /^function NavigationManager:_sort_nav_segs_after_pos\(to_pos, from_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg\)/,
-    'the extra from_pos parameter is LIES contract, never a 248.2 6-arg signature'
+    /^function NavigationManager:_sort_nav_segs_after_pos\(to_pos, i_seg, ignore_seg, verify_clbk, access_pos, access_neg, from_pos\)/,
+    'the trailing from_pos parameter is LIES contract, never a 248.2 6-arg signature'
   );
 
   assert.match(

@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 function CopLogicPhalanxMinion.enter(data, new_logic_name, enter_params)
 	CopLogicBase.enter(data, new_logic_name, enter_params)
 
@@ -49,7 +52,7 @@ function CopLogicPhalanxMinion.enter(data, new_logic_name, enter_params)
 
 	my_data.weapon_range = data.char_tweak.weapon[data.unit:inventory():equipped_unit():base():weapon_tweak_data().usage].range
 
-	CopLogicPhalanxMinion.calc_initial_phalanx_pos(data, data.m_pos, objective)
+	CopLogicPhalanxMinion.calc_initial_phalanx_pos(data.m_pos, objective, data)
 	data.unit:brain():set_update_enabled_state(false)
 	CopLogicPhalanxMinion._perform_objective_action(data, my_data, objective)
 
@@ -120,25 +123,32 @@ function CopLogicPhalanxMinion.is_available_for_assignment(data, objective)
 	return false
 end
 
-function CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(data, center_pos, angle, phalanx_minion_count)
+function CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center_pos, angle, phalanx_minion_count, data)
 	local radius = CopLogicPhalanxMinion._calc_phalanx_circle_radius(phalanx_minion_count)
 	local result = center_pos + Vector3(radius):rotate_with(Rotation(angle))
 	result = managers.navigation:clamp_position_to_field(result)
-	
-	local reservation = {
-		radius = 30,
-		position = result,
-		filter = data.pos_rsrv_id
-	}
 
-	if not managers.navigation:is_pos_free(reservation) then
-		result = CopLogicTravel._get_pos_on_wall(result, 90, nil, nil, nil, data.pos_rsrv_id)
+	-- Game argument order; `data` is the LIES-only trailing context. Its presence
+	-- alone runs the position reservation (a nil pos_rsrv_id is a valid filter);
+	-- game-convention calls check nothing because they pass no data at all.
+	if data then
+		local reservation = {
+			radius = 30,
+			position = result,
+			filter = data.pos_rsrv_id
+		}
+
+		if not managers.navigation:is_pos_free(reservation) then
+			result = CopLogicTravel._get_pos_on_wall(result, 90, nil, nil, data.pos_rsrv_id)
+		end
 	end
 
 	return result
 end
 
-function CopLogicPhalanxMinion.calc_initial_phalanx_pos(data, own_pos, objective)
+-- Game parameter order; `data` is optional and trailing so game-convention
+-- callers (two arguments) keep working and skip the reservation block.
+function CopLogicPhalanxMinion.calc_initial_phalanx_pos(own_pos, objective, data)
 	if not objective.angle then
 		local center_pos = managers.groupai:state()._phalanx_center_pos
 		local phalanx_current_minion_count = managers.groupai:state():get_phalanx_minion_count()
@@ -147,7 +157,7 @@ function CopLogicPhalanxMinion.calc_initial_phalanx_pos(data, own_pos, objective
 		fixed_angle = (fixed_angle + 180) % 360
 		local angle_to_move_to = CopLogicPhalanxMinion._get_next_neighbour_angle(phalanx_current_minion_count - 1, total_minion_amount, fixed_angle)
 		objective.angle = angle_to_move_to
-		objective.pos = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(data, center_pos, angle_to_move_to, total_minion_amount)
+		objective.pos = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center_pos, angle_to_move_to, total_minion_amount, data)
 		objective.in_place = nil
 	end
 
@@ -200,7 +210,7 @@ function CopLogicPhalanxMinion._reposition_phalanx(fixed_angle)
 			local phalanx_objective = unit:brain():objective()
 			phalanx_objective.type = "phalanx"
 			phalanx_objective.angle = angle_to_move_to
-			phalanx_objective.pos = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(unit:brain()._logic_data, center_pos, angle_to_move_to, phalanx_minion_count)
+			phalanx_objective.pos = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center_pos, angle_to_move_to, phalanx_minion_count, unit:brain()._logic_data)
 			phalanx_objective.in_place = nil
 
 			unit:brain():set_objective(phalanx_objective)

@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 function TeamAILogicDisabled._consider_surrender(data, my_data)
 	my_data.stay_cool_chk_t = TimerManager:game():time()
 	local my_health_ratio = data.unit:character_damage():health_ratio()

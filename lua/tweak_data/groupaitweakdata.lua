@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 function GroupAITweakData:_LIES_setup()
 	if self._LIES_fix then
 		return

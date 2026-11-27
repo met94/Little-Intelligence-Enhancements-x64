@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 function CopLogicPhalanxVip.enter(data, new_logic_name, enter_params)
 	CopLogicBase.enter(data, new_logic_name, enter_params)
 
@@ -149,7 +152,7 @@ function CopLogicPhalanxVip._reposition_VIP_team()
 			local phalanx_objective = unit:brain():objective()
 			phalanx_objective.type = "phalanx"
 			phalanx_objective.angle = angle_to_move_to
-			phalanx_objective.pos = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(unit:brain()._logic_data, center_pos, angle_to_move_to, phalanx_minion_count)
+			phalanx_objective.pos = CopLogicPhalanxMinion._calc_pos_on_phalanx_circle(center_pos, angle_to_move_to, phalanx_minion_count, unit:brain()._logic_data)
 			phalanx_objective.in_place = nil
 
 			unit:brain():set_objective(phalanx_objective)

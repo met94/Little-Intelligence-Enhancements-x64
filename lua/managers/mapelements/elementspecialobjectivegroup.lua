@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 function ElementSpecialObjectiveGroup:choose_followup_SO(unit, skip_element_ids)
 	if skip_element_ids and skip_element_ids[self._id] then
 		--log("uh...")

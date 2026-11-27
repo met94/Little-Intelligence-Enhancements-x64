@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local tmp_vec1 = Vector3()
 local tmp_vec2 = Vector3()
 
@@ -128,7 +131,13 @@ function CopLogicIntimidated.register_rescue_SO(ignore_this, data)
 	managers.groupai:state():register_rescueable_hostage(data.unit, nil)
 end
 
-function CopLogicIntimidated.queued_update(data)
+-- Two call shapes: LIES's queue_task passes `data` directly (so it arrives as
+-- `rubbish`). The vanilla add_to_surrendered shape (`rubbish` plus the
+-- registration data) cannot reach this cow logic today -- LIES's enter replaces
+-- vanilla's and registers no such callback -- but the fallback keeps the vanilla
+-- convention in case that callback is ever registered again.
+function CopLogicIntimidated.queued_update(rubbish, data)
+	data = data or rubbish
 	local my_data = data.internal_data
 	data.t = TimerManager:game():time()
 

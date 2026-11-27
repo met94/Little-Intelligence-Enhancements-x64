@@ -26,7 +26,7 @@ import {
   selectSessions
 } from '../door-watch-report.mjs';
 
-const VERSION = '8.57.33';
+const VERSION = '8.57.36';
 const CLI = fileURLToPath(new URL('../door-watch-report.mjs', import.meta.url));
 
 function watch(event, fields = {}) {
@@ -510,18 +510,24 @@ test('a version mismatch against mod.txt fails', () => {
   assert.equal(report.verdict, 'FAIL');
 });
 
-test('a log written under a pre-relabel label still matches the current mod.txt', () => {
+test('a log written under a pre-relabel label still matches its own release', () => {
   // The fork relabeled every release on 2026-11-03; a log keeps the label its
-  // build shipped with. The label is read from dev/version-map.json so this test
-  // never hardcodes one.
-  const legacyLabel = [...LEGACY_VERSIONS].find(([, version]) => version === VERSION)[0];
+  // build shipped with. Releases published after the relabel never shipped one
+  // (`legacy: null`), so this reads the newest label that really exists out of
+  // dev/version-map.json and compares against that release instead of the
+  // current `mod.txt` version: neither the label nor the release is hardcoded.
+  const [legacyLabel, released] = [...LEGACY_VERSIONS][0];
+
+  assert.ok(legacyLabel && released, 'version-map.json must still carry a real legacy label');
+  assert.notEqual(released, VERSION, 'the current release shipped no label, so it cannot be the one with a mapping');
+
   const legacy = happyLog.replaceAll(`v=${VERSION}`, `v=${legacyLabel}`);
-  const report = analyzeLog(legacy, { file: 'legacy_log.txt', modVersion: VERSION });
+  const report = analyzeLog(legacy, { file: 'legacy_log.txt', modVersion: released });
 
   assert.equal(claimOf(report, 'version').result, 'PASS');
   assert.equal(
     claimOf(report, 'version').evidence,
-    `log ${legacyLabel} (=${VERSION}) vs mod.txt ${VERSION}`
+    `log ${legacyLabel} (=${released}) vs mod.txt ${released}`
   );
   // The raw label is still reported, so the log stays identifiable.
   assert.equal(report.version_seen, legacyLabel);

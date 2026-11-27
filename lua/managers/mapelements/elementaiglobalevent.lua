@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local blocked_hunts = {
 	gallery = {
 		[100352] = true

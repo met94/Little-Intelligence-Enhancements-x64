@@ -62,6 +62,10 @@ LIES = {
   end
 }
 
+-- Load-time globals of the 8.57.36 load-once guard on every hook script.
+ModPath = 'find_segment_doors'
+RequiredScript = 'lib/managers/navigationmanager'
+
 dofile('lua/managers/navigationmanager.lua')
 
 local function count(kind)

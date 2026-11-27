@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 function CharacterAttentionObject:_chk_update_registered_state()
 	return
 end

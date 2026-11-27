@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 TeamAILogicAssault._COVER_CHK_INTERVAL = 0.2
 
 function TeamAILogicAssault.enter(data, new_logic_name, enter_params)
@@ -324,7 +327,7 @@ function TeamAILogicAssault._upd_enemy_detection(data, is_synchronous)
 	end
 
 	if data.attention_obj and (not TeamAILogicAssault._mark_special_chk_t or TeamAILogicAssault._mark_special_chk_t + 0.2 < data.t) and (not TeamAILogicAssault._mark_special_t or TeamAILogicAssault._mark_special_t + 6 < data.t) and not my_data.acting and not data.unit:sound():speaking() then
-		local nmy = TeamAILogicAssault.find_enemy_to_mark(data)
+		local nmy = TeamAILogicAssault._find_enemy_to_mark_from_data(data)
 		TeamAILogicAssault._mark_special_chk_t = data.t
 
 		if nmy then
@@ -341,7 +344,11 @@ function TeamAILogicAssault._upd_enemy_detection(data, is_synchronous)
 	end
 end
 
-function TeamAILogicAssault.find_enemy_to_mark(data)
+-- LIES's private helper: it takes the logic's `data`. The vanilla
+-- TeamAILogicAssault.find_enemy_to_mark helper is deliberately left untouched --
+-- it takes the detected-attention-object table as `enemies` and uses a
+-- different heuristic.
+function TeamAILogicAssault._find_enemy_to_mark_from_data(data)
 	if data.attention_obj and data.attention_obj.unit and alive(data.attention_obj.unit) and data.attention_obj.is_alive then
 		if AIAttentionObject.REACT_COMBAT <= data.attention_obj.reaction and data.attention_obj.verified then
 			local my_head_pos = data.unit:movement():m_head_pos()
@@ -470,7 +477,7 @@ function TeamAILogicAssault.action_complete_clbk(data, action)
 		end
 		
 		if data.attention_obj and (not TeamAILogicAssault._mark_special_t or TeamAILogicAssault._mark_special_t + 6 < data.t) and not my_data.acting and not data.unit:sound():speaking() then
-			local nmy = TeamAILogicAssault.find_enemy_to_mark(data)
+			local nmy = TeamAILogicAssault._find_enemy_to_mark_from_data(data)
 			TeamAILogicAssault._mark_special_chk_t = data.t
 
 			if nmy then

@@ -1,6 +1,6 @@
 # LIES 248.2 port — function ledger
 
-Generated: 2026-11-07T06:56:33.286Z
+Generated: 2026-11-27T11:53:01.646Z
 Old baseline: `a3180fc`  Target: `e3a8b616`
 
 Status is the source classification, i.e. the *proposed* action, generated from the code. `PORT` = port LIES intent onto 248.2; `audit` = LIES-only, check API calls; `delete` = stale 246.1 copy; `keep` = no port work; `drop/rewrite` = target function gone; `BLOCKED` = parse failure. Status never records completion.
@@ -15,11 +15,11 @@ Scope: top-level function definitions only. Nested helpers are folded into their
 |---|---:|
 | LIES_EDIT_VANILLA_CHANGED | 23 |
 | MOD_ONLY_HOOK | 42 |
-| MOD_ONLY | 221 |
+| MOD_ONLY | 223 |
 | VANISHED_IN_NEW | 1 |
 | SAME_AS_OLD_VANILLA | 3 |
 | SAME_AS_OLD_VANILLA_LOCAL | 1 |
-| LIES_EDIT_CLEAN | 294 |
+| LIES_EDIT_CLEAN | 293 |
 | SAME_AS_NEW_VANILLA | 1 |
 
 ## By decision
@@ -305,7 +305,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `GroupAIStateBase._set_rescue_state` | 3 | 15 | 15 |  |
 | [ ] | keep | — | `GroupAIStateBase.on_criminal_nav_seg_change` | 41 | 48 | 48 |  |
 | [ ] | keep | — | `GroupAIStateBase.on_nav_link_unregistered` | 16 | 14 | 14 |  |
-| [ ] | keep | — | `GroupAIStateBase.on_objective_failed` | 86 | 51 | 51 |  |
+| [ ] | keep | — | `GroupAIStateBase.on_objective_failed` | 100 | 51 | 51 |  |
 | [ ] | keep | — | `GroupAIStateBase.register_criminal` | 63 | 53 | 53 |  |
 | [ ] | keep | — | `GroupAIStateBase.register_security_camera` | 15 | 3 | 3 |  |
 | [ ] | keep | — | `GroupAIStateBase.report_aggression` | 11 | 9 | 9 |  |
@@ -381,7 +381,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `GroupAIStateBesiege.force_spawn_group` | 29 | 27 | 27 |  |
 | [ ] | keep | — | `GroupAIStateBesiege.is_detection_persistent` | 3 | 3 | 3 |  |
 | [ ] | keep | — | `GroupAIStateBesiege.on_defend_travel_end` | 30 | 13 | 13 |  |
-| [ ] | keep | — | `GroupAIStateBesiege.on_objective_complete` | 130 | 88 | 88 |  |
+| [ ] | keep | — | `GroupAIStateBesiege.on_objective_complete` | 142 | 88 | 88 |  |
 | [ ] | keep | — | `GroupAIStateBesiege.remove_from_surrendered` | 12 | 18 | 18 |  |
 | [ ] | keep | — | `make_dis_id` | 6 | 5 | 5 |  |
 | [ ] | keep (new) | — | `GroupAIStateBesiege.force_end_assault_phase` | 20 | 18 | 20 | matches 248.2 vanilla; no override needed |
@@ -492,7 +492,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicIntimidated.enter` | 62 | 55 | 55 |  |
 | [ ] | keep | — | `CopLogicIntimidated.exit` | 56 | 40 | 40 |  |
 | [ ] | keep | — | `CopLogicIntimidated.on_intimidated` | 68 | 54 | 54 |  |
-| [ ] | keep | — | `CopLogicIntimidated.queued_update` | 20 | 11 | 11 |  |
+| [ ] | keep | — | `CopLogicIntimidated.queued_update` | 21 | 11 | 11 |  |
 | [ ] | keep | — | `CopLogicIntimidated.register_rescue_SO` | 63 | 67 | 67 |  |
 
 ## lua/coplogics/coplogicbase.lua
@@ -522,7 +522,7 @@ No function definitions (hook/overlay file).
 | [ ] | keep | — | `CopLogicBase.identify_attention_obj_instant` | 51 | 51 | 51 |  |
 | [ ] | keep | — | `CopLogicBase.is_obstructed` | 129 | 74 | 74 |  |
 | [ ] | keep | — | `CopLogicBase.on_attention_obj_identified` | 3 | 13 | 13 |  |
-| [ ] | keep | — | `CopLogicBase.on_new_objective` | 34 | 35 | 35 |  |
+| [ ] | keep | — | `CopLogicBase.on_new_objective` | 42 | 35 | 35 |  |
 | [ ] | keep | — | `CopLogicBase.on_objective_unit_damaged` | 16 | 3 | 3 |  |
 | [ ] | keep | — | `CopLogicBase.on_objective_unit_destroyed` | 16 | 12 | 12 |  |
 | [ ] | keep | — | `CopLogicBase.queue_task` | 33 | 21 | 21 |  |
@@ -542,29 +542,30 @@ No function definitions (hook/overlay file).
 | [ ] | audit | — | `CopLogicTravel.queue_detection_update` | 7 | 0 | 0 |  |
 | [ ] | audit | — | `CopLogicTravel.queued_detection_update` | 16 | 0 | 0 |  |
 | [ ] | audit | — | `CopLogicTravel.update` | 7 | 0 | 0 |  |
+| [ ] | audit | — | `lies_count_wall_rsrv` | 36 | 0 | 0 |  |
 | [ ] | keep | — | `CopLogicTravel._begin_coarse_pathing` | 30 | 19 | 19 |  |
-| [ ] | keep | — | `CopLogicTravel._check_start_path_ahead` | 57 | 26 | 26 |  |
-| [ ] | keep | — | `CopLogicTravel._chk_begin_advance` | 72 | 36 | 36 |  |
-| [ ] | keep | — | `CopLogicTravel._chk_close_to_criminal` | 32 | 21 | 21 |  |
+| [ ] | keep | — | `CopLogicTravel._check_start_path_ahead` | 68 | 26 | 26 |  |
+| [ ] | keep | — | `CopLogicTravel._chk_begin_advance` | 83 | 36 | 36 |  |
+| [ ] | keep | — | `CopLogicTravel._chk_close_to_criminal` | 35 | 21 | 21 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_cover_height` | 10 | 17 | 17 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_request_action_walk_to_advance_pos` | 25 | 31 | 31 |  |
-| [ ] | keep | — | `CopLogicTravel._chk_start_pathing_to_next_nav_point` | 116 | 14 | 14 |  |
+| [ ] | keep | — | `CopLogicTravel._chk_start_pathing_to_next_nav_point` | 170 | 14 | 14 |  |
 | [ ] | keep | — | `CopLogicTravel._chk_stop_for_follow_unit` | 108 | 25 | 25 |  |
 | [ ] | keep | — | `CopLogicTravel._determine_destination_occupation` | 200 | 186 | 186 |  |
 | [ ] | keep | — | `CopLogicTravel._find_cover` | 47 | 42 | 42 |  |
 | [ ] | keep | — | `CopLogicTravel._get_exact_move_pos` | 138 | 98 | 98 |  |
-| [ ] | keep | — | `CopLogicTravel._get_pos_on_wall` | 73 | 75 | 75 |  |
+| [ ] | keep | — | `CopLogicTravel._get_pos_on_wall` | 77 | 75 | 75 |  |
 | [ ] | keep | — | `CopLogicTravel._on_destination_reached` | 28 | 29 | 29 |  |
 | [ ] | keep | — | `CopLogicTravel._upd_enemy_detection` | 83 | 62 | 62 |  |
-| [ ] | keep | — | `CopLogicTravel._upd_pathing` | 54 | 44 | 44 |  |
+| [ ] | keep | — | `CopLogicTravel._upd_pathing` | 57 | 44 | 44 |  |
 | [ ] | keep | — | `CopLogicTravel._update_cover` | 21 | 28 | 28 |  |
-| [ ] | keep | — | `CopLogicTravel.action_complete_clbk` | 138 | 104 | 104 |  |
+| [ ] | keep | — | `CopLogicTravel.action_complete_clbk` | 169 | 104 | 104 |  |
 | [ ] | keep | — | `CopLogicTravel.chk_group_ready_to_move` | 81 | 35 | 35 |  |
-| [ ] | keep | — | `CopLogicTravel.enter` | 160 | 150 | 150 |  |
+| [ ] | keep | — | `CopLogicTravel.enter` | 165 | 150 | 150 |  |
 | [ ] | keep | — | `CopLogicTravel.get_pathing_prio` | 50 | 14 | 14 |  |
 | [ ] | keep | — | `CopLogicTravel.is_available_for_assignment` | 13 | 19 | 19 |  |
 | [ ] | keep | — | `CopLogicTravel.queue_update` | 9 | 5 | 5 |  |
-| [ ] | keep | — | `CopLogicTravel.upd_advance` | 219 | 71 | 71 |  |
+| [ ] | keep | — | `CopLogicTravel.upd_advance` | 235 | 71 | 71 |  |
 
 ## lua/coplogics/coplogicidle.lua
 
@@ -684,7 +685,7 @@ No function definitions (hook/overlay file).
 
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
-| [ ] | keep | — | `CopLogicPhalanxMinion._calc_pos_on_phalanx_circle` | 17 | 6 | 6 |  |
+| [ ] | keep | — | `CopLogicPhalanxMinion._calc_pos_on_phalanx_circle` | 22 | 6 | 6 |  |
 | [ ] | keep | — | `CopLogicPhalanxMinion._reposition_phalanx` | 53 | 57 | 57 |  |
 | [ ] | keep | — | `CopLogicPhalanxMinion.calc_initial_phalanx_pos` | 15 | 17 | 17 |  |
 | [ ] | keep | — | `CopLogicPhalanxMinion.enter` | 59 | 65 | 65 |  |
@@ -833,11 +834,11 @@ No function definitions (hook/overlay file).
 | done | status | decision | function | mod L | old L | new L | note |
 |---:|---|---|---|---:|---:|---:|---|
 | [ ] | audit | — | `TeamAILogicAssault._chk_wants_to_take_cover` | 13 | 0 | 0 |  |
+| [ ] | audit | — | `TeamAILogicAssault._find_enemy_to_mark_from_data` | 50 | 0 | 0 |  |
 | [ ] | audit | — | `TeamAILogicAssault._on_player_slow_pos_rsrv_upd` | 27 | 0 | 0 |  |
 | [ ] | keep | — | `TeamAILogicAssault._upd_enemy_detection` | 96 | 72 | 72 |  |
 | [ ] | keep | — | `TeamAILogicAssault.action_complete_clbk` | 73 | 40 | 40 |  |
 | [ ] | keep | — | `TeamAILogicAssault.enter` | 41 | 40 | 40 |  |
-| [ ] | keep | — | `TeamAILogicAssault.find_enemy_to_mark` | 50 | 12 | 12 |  |
 | [ ] | keep | — | `TeamAILogicAssault.mark_enemy` | 21 | 25 | 25 |  |
 | [ ] | keep | — | `TeamAILogicAssault.update` | 173 | 68 | 68 |  |
 

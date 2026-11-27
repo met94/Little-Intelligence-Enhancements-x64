@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 Hooks:PreHook(GroupAIManager, "set_state", "lies_groupsetup", function(self, name)
 	tweak_data.group_ai:_LIES_setup()
 	

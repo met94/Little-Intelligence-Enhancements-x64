@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local mvec3_set = mvector3.set
 local mvec3_add = mvector3.add
 local mvec3_mul = mvector3.multiply
@@ -2516,7 +2519,7 @@ function CopLogicAttack._chk_start_action_move_out_of_the_way(data, my_data)
 	}
 
 	if not managers.navigation:is_pos_free(reservation) then
-		local to_pos = CopLogicTravel._get_pos_on_wall(my_tracker:position(), 500, nil, nil, nil, data.pos_rsrv_id)
+		local to_pos = CopLogicTravel._get_pos_on_wall(my_tracker:position(), 500, nil, nil, data.pos_rsrv_id)
 
 		if to_pos then
 			local path = {
@@ -2547,14 +2550,14 @@ function CopLogicAttack._chk_start_action_move_back(data, my_data, focus_enemy, 
 		local threat_head_pos = focus_enemy.m_head_pos
 		local max_walk_dis = 400
 		local vis_required = engage
-		local retreat_to, is_fail = CopLogicAttack._find_retreat_position(data, from_pos, focus_enemy.m_pos, threat_head_pos, threat_tracker, max_walk_dis, vis_required)
+		local retreat_to, is_fail = CopLogicAttack._find_retreat_position(from_pos, focus_enemy.m_pos, threat_head_pos, threat_tracker, max_walk_dis, vis_required, data)
 		
 		if retreat_to then
 			local to_pos = retreat_to
 			local second_retreat_pos, retry_is_fail
 			
 			if is_fail then
-				second_retreat_pos, retry_is_fail = CopLogicAttack._find_retreat_position(data, retreat_to, focus_enemy.m_pos, threat_head_pos, threat_tracker, max_walk_dis, vis_required)
+				second_retreat_pos, retry_is_fail = CopLogicAttack._find_retreat_position(retreat_to, focus_enemy.m_pos, threat_head_pos, threat_tracker, max_walk_dis, vis_required, data)
 				
 				if not retry_is_fail then
 					to_pos = second_retreat_pos
@@ -2618,7 +2621,9 @@ function CopLogicAttack._chk_start_action_move_back(data, my_data, focus_enemy, 
 	end
 end
 
-function CopLogicAttack._find_retreat_position(data, from_pos, threat_pos, threat_head_pos, threat_tracker, max_dist, vis_required)
+-- Game parameter order; `data` is the optional LIES-only trailing context. It
+-- carries the position reservation and the logic's retreat-confirmation callbacks.
+function CopLogicAttack._find_retreat_position(from_pos, threat_pos, threat_head_pos, threat_tracker, max_dist, vis_required, data)
 	local nav_manager = managers.navigation
 	local nr_rays = 9
 	local ray_dis = max_dist or 1000
@@ -2643,12 +2648,12 @@ function CopLogicAttack._find_retreat_position(data, from_pos, threat_pos, threa
 		tracker_from = from_tracker
 	}
 	local rsrv_desc = {
-		filter = data.pos_rsrv_id,
+		filter = data and data.pos_rsrv_id,
 		radius = 60
 	}
 	local fail_position = nil
-	local confirm_retreat_f = data.logic._confirm_retreat_position and data.logic._confirm_retreat_position or CopLogicAttack._confirm_retreat_position
-	local confirm_retreat_visless_f = data.logic._confirm_retreat_position_visless and data.logic._confirm_retreat_position_visless or CopLogicAttack._confirm_retreat_position_visless
+	local confirm_retreat_f = data and data.logic and data.logic._confirm_retreat_position or CopLogicAttack._confirm_retreat_position
+	local confirm_retreat_visless_f = data and data.logic and data.logic._confirm_retreat_position_visless or CopLogicAttack._confirm_retreat_position_visless
 
 	repeat
 		to_pos = mvector3.copy(from_pos)

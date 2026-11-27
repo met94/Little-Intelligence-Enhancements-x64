@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 function SecurityCamera:set_detection_enabled(state, settings, mission_element)
 	if self._destroyed then
 		return

@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local common_harasser_string = "ai_spawn_enemy_harasser"
 local instance_strings = {
 	harasser_norm = true,

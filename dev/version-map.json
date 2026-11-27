@@ -1,20 +1,35 @@
 {
-  "note": "Fork releases use <upstream-base>.<fork-patch>. Upstream 8.57 is the base of every release listed here; the patch counter restarts at 1 on a rebase to a new upstream release. `legacy` is the label that shipped in the GitHub release/tag and in logs before the 2026-11-03 relabel; published artifacts keep it.",
+  "note": "Fork releases use <upstream-base>.<fork-patch>. Upstream 8.57 is the base of every release listed here; the patch counter restarts at 1 on a rebase to a new upstream release. `legacy` is the label that shipped in the GitHub release/tag and in logs before the 2026-11-03 relabel; published artifacts keep it. Releases published after that relabel shipped no such label, so `legacy` is null from 8.57.31 on: only the pre-2026-11-03 releases 8.57.1-8.57.30 carry a label, and one is never invented to keep the list contiguous.",
   "upstreamBase": "8.57",
   "releases": [
     {
+      "version": "8.57.36",
+      "legacy": null,
+      "date": "2026-11-25"
+    },
+    {
+      "version": "8.57.35",
+      "legacy": null,
+      "date": "2026-11-24"
+    },
+    {
+      "version": "8.57.34",
+      "legacy": null,
+      "date": "2026-11-24"
+    },
+    {
       "version": "8.57.33",
-      "legacy": "V8.89_x64",
+      "legacy": null,
       "date": "2026-11-07"
     },
     {
       "version": "8.57.32",
-      "legacy": "V8.88_x64",
+      "legacy": null,
       "date": "2026-11-06"
     },
     {
       "version": "8.57.31",
-      "legacy": "V8.87_x64",
+      "legacy": null,
       "date": "2026-11-05"
     },
     {

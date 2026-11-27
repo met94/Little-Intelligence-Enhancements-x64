@@ -44,13 +44,18 @@ const USAGE = 'Usage: node dev/tools/door-watch-report.mjs <log...> [--ab <contr
 
 // Logs keep the version label the build shipped with, and the fork relabeled
 // every release on 2026-11-03 (`V8.86_x64` -> `8.57.30`, `dev/version-map.json`).
-// The version claim compares canonical versions so an old log is not failed for
-// the label it was written under; the raw label is still printed.
+// Releases published after that relabel shipped no label, so their `legacy` is
+// null and must not become a map key: a lookup with a missing or empty label
+// would otherwise resolve to that entry's version. The version claim compares
+// canonical versions so an old log is not failed for the label it was written
+// under; the raw label is still printed.
 export const LEGACY_VERSIONS = (() => {
   try {
     const raw = JSON.parse(fs.readFileSync(path.join(HERE, '..', 'version-map.json'), 'utf8'));
 
-    return new Map(raw.releases.map(entry => [entry.legacy, entry.version]));
+    return new Map(raw.releases
+      .filter(entry => entry.legacy)
+      .map(entry => [entry.legacy, entry.version]));
   } catch {
     return new Map();
   }

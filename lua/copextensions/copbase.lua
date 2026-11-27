@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local shotgun_groups = {
 	tac_swat_shotgun_rush = true,
 	tac_swat_shotgun_flank = true,

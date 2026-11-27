@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 Hooks:PostHook(ElementSpawnCivilian, "_finalize_values", "lies_finalize_values", function(self)
 	if self._values.team == "default" then
 		self._values.team = nil

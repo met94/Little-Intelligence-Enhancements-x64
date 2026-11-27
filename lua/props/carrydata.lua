@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 function CarryData:_chk_register_steal_SO()
 	if not Network:is_server() or not self._link_body or not self._AI_carry then
 		return

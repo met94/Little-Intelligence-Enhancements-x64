@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 Hooks:PostHook(CharacterTweakData, "init", "lies_fix_nosup", function(self, tweak_data)
 	self:fix_escort()
 	

@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 local temp_vec1 = Vector3()
 local temp_vec2 = Vector3()
 local temp_vec3 = Vector3()
@@ -133,10 +136,15 @@ function CopLogicTravel.enter(data, new_logic_name, enter_params)
 
 			my_data.coarse_path = path
 			my_data.coarse_path_index = CopLogicTravel.complete_coarse_path(data, my_data, path)
+			-- A replaced path can be shorter; a pending jump index from the old path
+			-- must not survive it (the walk action may still be running, so
+			-- `advancing` stays).
+			my_data.going_to_index = nil
 		elseif path_style == "coarse_complete" then
 			my_data.coarse_path_index = 1
 			my_data.coarse_path = deep_clone(objective.path_data)
 			my_data.coarse_path_index = CopLogicTravel.complete_coarse_path(data, my_data, my_data.coarse_path)
+			my_data.going_to_index = nil
 		end
 	end
 
@@ -243,7 +251,10 @@ function CopLogicTravel._chk_close_to_criminal(data, my_data)
 			if not u_data.status or u_data.status == "electrified" then
 				local u_data_seg = u_data.tracker:nav_segment()
 				
-				if my_area.nav_segs[u_data_seg] then
+				-- `get_area_from_nav_seg_id` can return nil (the nav segment may not be
+				-- mapped to an area yet, e.g. right after a spawn or on a streamed
+				-- segment); the next-area branch still runs in that case.
+				if my_area and my_area.nav_segs[u_data_seg] then
 					my_data.close_to_criminal = true
 					
 					break
@@ -280,7 +291,61 @@ function CopLogicTravel._chk_start_pathing_to_next_nav_point(data, my_data)
 		return
 	end
 
-	local nav_link = my_data.coarse_path[my_data.coarse_path_index + 1][3] --this is checking for the nav link
+	local path_len = my_data.coarse_path and #my_data.coarse_path or 0
+	local index = my_data.coarse_path_index
+
+	if not index or path_len == 0 then
+		-- No usable path at all (dropped by a reset, or the replacement never
+		-- arrived): drop what is left so the next update starts a fresh coarse path.
+		my_data.coarse_path = nil
+		my_data.coarse_path_index = nil
+		my_data.advance_path = nil
+		my_data.processing_advance_path = nil
+		LIES:Count("travel_index_reset")
+
+		return
+	elseif index == path_len then
+		-- Genuine end of the path: the unit is on the last point. This is arrival,
+		-- not the over-range case - `upd_advance` can reach this helper without its
+		-- own arrival check, and resetting here made a travelling bot re-path in a
+		-- loop instead of finishing the approach (revive diagnostic, Safe House
+		-- Raid: `travel_index_reset` 1 -> 4 while the bot oscillated).
+		LIES:Count("travel_index_end")
+		CopLogicTravel._on_destination_reached(data)
+
+		return
+	elseif index > path_len then
+		-- The path was replaced by a shorter one while a walk action was in flight;
+		-- the unit is not at the destination. Drop the path so the travel logic
+		-- re-paths from the unit's actual position instead of marking the objective
+		-- in place.
+		my_data.coarse_path = nil
+		my_data.coarse_path_index = nil
+		-- The pending advance belonged to the old path; leaving it set makes the
+		-- same action callback call `_chk_begin_advance` with a nil index.
+		my_data.advance_path = nil
+		my_data.processing_advance_path = nil
+		LIES:Count("travel_index_reset")
+
+		return
+	end
+
+	local next_entry = my_data.coarse_path[my_data.coarse_path_index + 1]
+
+	if not next_entry then
+		-- A hole in the middle of the path (end-of-path is handled above, so this
+		-- means the entry is genuinely missing): same recovery as an over-range
+		-- index, because there is nothing to walk towards.
+		my_data.coarse_path = nil
+		my_data.coarse_path_index = nil
+		my_data.advance_path = nil
+		my_data.processing_advance_path = nil
+		LIES:Count("travel_index_reset")
+
+		return
+	end
+
+	local nav_link = next_entry[3] --this is checking for the nav link
 	
 	if nav_link and alive(my_data.coarse_path[my_data.coarse_path_index + 1][3]) then --check if the navlink is alive
 		if nav_link:delay_time() > data.t then --check the delay
@@ -424,6 +489,9 @@ function CopLogicTravel._upd_pathing(data, my_data)
 			if path ~= "failed" then
 				my_data.coarse_path = path
 				my_data.coarse_path_index = 1
+				-- The new path can be shorter than the old one; drop a pending jump
+				-- index (the running walk action keeps `advancing`).
+				my_data.going_to_index = nil
 			elseif my_data.path_safely then
 				my_data.path_safely = nil
 			else
@@ -450,13 +518,24 @@ function CopLogicTravel._check_start_path_ahead(data)
 
 	local objective = data.objective
 	local coarse_path = my_data.coarse_path
+
+	if not coarse_path or not my_data.going_to_index then
+		return
+	end
+
 	local next_index = my_data.going_to_index + 1
 	local total_nav_points = #coarse_path
 
 	if next_index > total_nav_points then
 		return
 	end
-	
+
+	local next_entry = coarse_path[next_index]
+
+	if not next_entry then
+		return
+	end
+
 	local nav_link = my_data.coarse_path[next_index][3]
 	
 	if nav_link and alive(my_data.coarse_path[next_index][3]) then
@@ -506,7 +585,7 @@ function CopLogicTravel.chk_group_ready_to_move(data, my_data)
 
 	local my_objective = data.objective
 
-	if not my_objective.grp_objective or my_objective.grp_objective.type == "retire" or my_objective.type == "phalanx" then
+	if not my_objective.grp_objective or my_objective.grp_objective.type == "retire" or my_objective.type == "phalanx" or not my_objective.area then
 		return true
 	end
 	
@@ -582,6 +661,17 @@ function CopLogicTravel.chk_group_ready_to_move(data, my_data)
 end
 
 function CopLogicTravel._chk_begin_advance(data, my_data)
+	-- The coarse path (and its index) can be dropped by the travel-index reset;
+	-- the pending advance then belongs to a path that no longer exists. Bail before
+	-- any arithmetic on `coarse_path_index` and clear the stale advance so the next
+	-- update starts a fresh coarse path.
+	if not my_data.coarse_path or not my_data.coarse_path_index then
+		my_data.advance_path = nil
+		my_data.processing_advance_path = nil
+
+		return
+	end
+
 	if data.unit:movement():chk_action_forbidden("walk") then
 		return
 	end
@@ -777,6 +867,14 @@ function CopLogicTravel.upd_advance(data)
 	end
 
 	if my_data.warp_pos then
+		if not objective then
+			local wanted_state = data.logic._get_logic_state_from_reaction(data) or "idle"
+
+			CopLogicBase._exit(data.unit, wanted_state)
+
+			return
+		end
+
 		local action_desc = {
 			body_part = 1,
 			type = "warp",
@@ -824,7 +922,7 @@ function CopLogicTravel.upd_advance(data)
 		if objective then --gotta add a stop check here due to pathing complete clbk causing small amounts of discord when paired with action complete clbk due to function ordering here
 			if objective.nav_seg or objective.type == "follow" then
 				if my_data.coarse_path then
-					if my_data.coarse_path_index == #my_data.coarse_path then
+					if my_data.coarse_path_index >= #my_data.coarse_path then
 						CopLogicTravel._on_destination_reached(data)
 					end
 				end
@@ -850,7 +948,7 @@ function CopLogicTravel.upd_advance(data)
 		if objective then --gotta add a stop check here due to pathing complete clbk causing small amounts of discord when paired with action complete clbk due to function ordering here
 			if objective.nav_seg or objective.type == "follow" then
 				if my_data.coarse_path then
-					if my_data.coarse_path_index == #my_data.coarse_path then
+					if my_data.coarse_path_index >= #my_data.coarse_path then
 						CopLogicTravel._on_destination_reached(data)
 					end
 				end
@@ -885,8 +983,16 @@ function CopLogicTravel.upd_advance(data)
 					end
 				end
 			elseif my_data.coarse_path and not my_data.advancing then
-				CopLogicTravel._chk_start_pathing_to_next_nav_point(data, my_data)
-				
+				-- Mirror the arrival branch above: an index at the last point is
+				-- arrival. Calling the next-nav-point helper there made it reset the
+				-- path at every step (`travel_index_reset` 1 -> 4 in the revive run)
+				-- and the unit oscillated instead of finishing the approach.
+				if my_data.coarse_path_index == #my_data.coarse_path then
+					CopLogicTravel._on_destination_reached(data)
+				else
+					CopLogicTravel._chk_start_pathing_to_next_nav_point(data, my_data)
+				end
+
 				if my_data.waiting_for_navlink then
 					if data.attention_obj and AIAttentionObject.REACT_SCARED <= data.attention_obj.reaction and (not my_data.best_cover or not my_data.best_cover[4]) and not unit:anim_data().crouch and (not data.char_tweak.allowed_poses or data.char_tweak.allowed_poses.crouch) then
 						CopLogicAttack._chk_request_action_crouch(data)
@@ -898,7 +1004,7 @@ function CopLogicTravel.upd_advance(data)
 		if objective then
 			if objective.nav_seg or objective.type == "follow" then
 				if my_data.coarse_path then
-					if my_data.coarse_path_index == #my_data.coarse_path then
+					if my_data.coarse_path_index >= #my_data.coarse_path then
 						CopLogicTravel._on_destination_reached(data)
 					else
 						CopLogicTravel._chk_start_pathing_to_next_nav_point(data, my_data)
@@ -1366,7 +1472,7 @@ function CopLogicTravel._determine_destination_occupation(data, objective)
 					radius = objective.radius
 				}
 			else
-				near_pos = CopLogicTravel._get_pos_on_wall(near_pos, 700, nil, nil, nil, data.pos_rsrv_id)
+				near_pos = CopLogicTravel._get_pos_on_wall(near_pos, 700, nil, nil, data.pos_rsrv_id)
 				near_pos = managers.navigation:pad_out_position(near_pos, 4, data.char_tweak.wall_fwd_offset)
 				occupation = {
 					type = "defend",
@@ -1381,7 +1487,7 @@ function CopLogicTravel._determine_destination_occupation(data, objective)
 
 		logic.register_in_group_ai(data.unit)
 
-		local phalanx_circle_pos = logic.calc_initial_phalanx_pos(data, data.m_pos, objective)
+		local phalanx_circle_pos = logic.calc_initial_phalanx_pos(data.m_pos, objective, data)
 		
 		if data.unit:base()._tweak_table == "phalanx_minion" then
 			local rsrv_desc = {
@@ -1391,7 +1497,7 @@ function CopLogicTravel._determine_destination_occupation(data, objective)
 			}
 		
 			if not managers.navigation:is_pos_free(rsrv_desc) then
-				phalanx_circle_pos = CopLogicTravel._get_pos_on_wall(phalanx_circle_pos, 90, nil, nil, nil, data.pos_rsrv_id)
+				phalanx_circle_pos = CopLogicTravel._get_pos_on_wall(phalanx_circle_pos, 90, nil, nil, data.pos_rsrv_id)
 			end
 		end
 		
@@ -1442,7 +1548,7 @@ function CopLogicTravel._determine_destination_occupation(data, objective)
 				max_dist = 450
 			end
 
-			local to_pos = CopLogicTravel._get_pos_on_wall(follow_pos, max_dist, nil, nil, nil, data.pos_rsrv_id)
+			local to_pos = CopLogicTravel._get_pos_on_wall(follow_pos, max_dist, nil, nil, data.pos_rsrv_id)
 			to_pos = managers.navigation:pad_out_position(to_pos, 4, data.char_tweak.wall_fwd_offset)
 			occupation = {
 				type = "defend",
@@ -1593,14 +1699,42 @@ function CopLogicTravel.action_complete_clbk(data, action)
 
 	if action_type == "walk" then
 		if action:expired() and not my_data.starting_advance_action and my_data.coarse_path_index and not my_data.has_old_action and not my_data.old_action_advancing and my_data.advancing then
-			if my_data.going_to_index then
-				my_data.coarse_path_index = my_data.going_to_index
-			else
-				my_data.coarse_path_index = my_data.coarse_path_index + 1
-			end
+			-- Vanilla increments the index when the walk completes and clamps an
+			-- over-range result to the last point (`index > #path -> index = #path`),
+			-- which `upd_advance` then reads as arrival. Only a stale jump from a path
+			-- that was replaced by a shorter one is a reset: dropping the path on a
+			-- normal completion made a travelling bot re-path at the last point
+			-- forever (revive diagnostic: every loop `idx=3 len=2 going=nil`).
+			local path_len = my_data.coarse_path and #my_data.coarse_path or 0
+			local target = my_data.going_to_index or (my_data.coarse_path_index + 1)
 
-			if my_data.coarse_path_index > #my_data.coarse_path then
-				my_data.coarse_path_index = my_data.coarse_path_index - 1
+			if path_len == 0 or target < 1 then
+				-- Genuinely broken: no usable path, or an impossible index.
+				my_data.coarse_path = nil
+				my_data.coarse_path_index = nil
+				-- A pending advance belongs to the dropped path; keeping it makes
+				-- the following `upd_advance` enter `_chk_begin_advance` with a nil
+				-- index (crash at `coarse_path_index + 1`).
+				my_data.advance_path = nil
+				my_data.processing_advance_path = nil
+				LIES:Count("travel_index_reset")
+			elseif target > path_len then
+				if my_data.going_to_index then
+					-- Stale jump index from a path that was replaced by a shorter one:
+					-- the unit is not there, so re-path from its actual position.
+					my_data.coarse_path = nil
+					my_data.coarse_path_index = nil
+					my_data.advance_path = nil
+					my_data.processing_advance_path = nil
+					LIES:Count("travel_index_reset")
+				else
+					-- Normal completion at the last point: clamp like vanilla; the
+					-- arrival branch handles the rest. This is not a reset, so it does
+					-- not count `travel_index_reset`.
+					my_data.coarse_path_index = path_len
+				end
+			else
+				my_data.coarse_path_index = target
 			end
 		end
 
@@ -1624,7 +1758,10 @@ function CopLogicTravel.action_complete_clbk(data, action)
 				
 				if not data.objective.forced and LIES.settings.enemy_aggro_level < 3 then
 					if data.attention_obj and AIAttentionObject.REACT_COMBAT <= data.attention_obj.reaction or data.is_suppressed then
-						local cover_wait_time = my_data.coarse_path_index == #my_data.coarse_path - 1 and 0.3 or 0.6 + 0.4 * math.random()
+						-- The path may have been dropped by the index reset above this
+						-- block, so the length read has to tolerate nil.
+						local path_len = my_data.coarse_path and #my_data.coarse_path or 0
+						local cover_wait_time = my_data.coarse_path_index == path_len - 1 and 0.3 or 0.6 + 0.4 * math.random()
 						
 						my_data.cover_leave_t = data.t + cover_wait_time
 					end
@@ -1941,7 +2078,7 @@ function CopLogicTravel._get_exact_move_pos(data, nav_index)
 
 		if not to_pos then
 			to_pos = coarse_path[nav_index][2] or managers.navigation:find_random_position_in_segment(objective.nav_seg)
-			to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, nil, data.pos_rsrv_id)
+			to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, data.pos_rsrv_id)
 			to_pos = managers.navigation:pad_out_position(to_pos, 4, data.char_tweak.wall_fwd_offset)
 			wants_reservation = true
 		end
@@ -1990,7 +2127,7 @@ function CopLogicTravel._get_exact_move_pos(data, nav_index)
 				to_pos = coarse_path[nav_index][2] or area.pos
 				
 				if not data.cool then
-					to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, nil, data.pos_rsrv_id)
+					to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, data.pos_rsrv_id)
 				end
 			end
 			
@@ -2001,7 +2138,7 @@ function CopLogicTravel._get_exact_move_pos(data, nav_index)
 			}
 			
 			if not managers.navigation:is_pos_free(rsrv_desc) then
-				to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, nil, data.pos_rsrv_id)
+				to_pos = CopLogicTravel._get_pos_on_wall(to_pos, nil, nil, nil, data.pos_rsrv_id)
 			end
 			
 			wants_reservation = true
@@ -2042,7 +2179,62 @@ function CopLogicTravel.queue_update(data, my_data, delay)
 	CopLogicBase.queue_task(my_data, my_data.upd_task_key, CopLogicTravel.queued_update, data, data.t + delay, data.important and true)
 end
 
+-- Radius of the wall/fallback spot check. The reservation filter and both
+-- counter checks must use the same band, or the counterfactual would answer a
+-- different question than the search did.
+local WALL_RSRV_RADIUS = 60
+
+-- Counts a successful `_get_pos_on_wall` result against the unit's own
+-- reservation. Only a first-pass call counts: the outer frame returns the
+-- recursive result without counting anything itself, so counting inside the
+-- recursion would not double-report a search - deep-retry successes are simply
+-- not counted. The counter therefore reports first-pass outer successes, which
+-- is a slightly smaller denominator than "every success".
+--
+-- `recheck_own` is set for the `fail_position` exit, where the point was chosen
+-- up to nine raycasts before the return: a foreign reservation placed meanwhile
+-- would otherwise be read as the unit's own. The count always happens first, so
+-- such a search stays in the denominator and only loses the own-hit
+-- classification.
+local function lies_count_wall_rsrv(pos, pos_rsrv_id, is_outer, recheck_own)
+	if not is_outer or not pos_rsrv_id or not pos then
+		return
+	end
+
+	LIES:Count("wall_rsrv_hit")
+
+	if recheck_own and not managers.navigation:is_pos_free({
+			position = pos,
+			radius = WALL_RSRV_RADIUS,
+			filter = pos_rsrv_id
+		}) then
+		return
+	end
+
+	-- The point passed `is_pos_free` with the unit's own filter. Allocate a fresh
+	-- id, check the same point against it and release it again: the id belongs to
+	-- nobody and is never left holding a slot, so a failure means the only
+	-- reservations on the point belong to the unit itself (pre-8.57.36 those
+	-- points were rejected). This runs once per counted result, not per raycast.
+	local probe_id = managers.navigation:get_pos_reservation_id()
+
+	-- `get_pos_reservation_id` always returns the lowest free index, so the
+	-- classification cannot be skipped for lack of an id.
+	local is_own = not managers.navigation:is_pos_free({
+		position = pos,
+		radius = WALL_RSRV_RADIUS,
+		filter = probe_id
+	})
+
+	managers.navigation:release_pos_reservation_id(probe_id)
+
+	if is_own then
+		LIES:Count("wall_own_rsrv_hit")
+	end
+end
+
 function CopLogicTravel._get_pos_on_wall(from_pos, max_dist, step_offset, is_recurse, pos_rsrv_id)
+	local is_outer = is_recurse == nil
 	local is_recurse = is_recurse or 2
 	local nav_manager = managers.navigation
 	local nr_rays = 9
@@ -2068,7 +2260,7 @@ function CopLogicTravel._get_pos_on_wall(from_pos, max_dist, step_offset, is_rec
 	}
 	local rsrv_desc = {
 		filter = pos_rsrv_id,
-		radius = 60
+		radius = WALL_RSRV_RADIUS
 	}
 	local fail_position = nil
 
@@ -2086,6 +2278,7 @@ function CopLogicTravel._get_pos_on_wall(from_pos, max_dist, step_offset, is_rec
 
 			if is_free then
 				managers.navigation:destroy_nav_tracker(from_tracker)
+				lies_count_wall_rsrv(ray_params.trace[1], pos_rsrv_id, is_outer)
 
 				return ray_params.trace[1]
 			end
@@ -2106,6 +2299,8 @@ function CopLogicTravel._get_pos_on_wall(from_pos, max_dist, step_offset, is_rec
 	managers.navigation:destroy_nav_tracker(from_tracker)
 
 	if fail_position then
+		lies_count_wall_rsrv(fail_position, pos_rsrv_id, is_outer, true)
+
 		return fail_position
 	end
 

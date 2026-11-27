@@ -1,3 +1,6 @@
+local key = ModPath .. '	' .. RequiredScript
+if _G[key] then return else _G[key] = true end
+
 TeamAILogicIdle.global_last_cop_int_t = 0
 TeamAILogicIdle.global_last_advance_int_t = 0
 local tmp_vec1 = Vector3()

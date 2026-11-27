@@ -1,17 +1,17 @@
 ﻿# LIES 248.2 static gates
 
-Generated: 2026-11-07 06:56:24Z
+Generated: 2026-11-27 11:52:53Z
 
 ## Node tool tests
 
 Result: PASS
 
-ℹ pass 249
+ℹ pass 270
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 392.9638
+ℹ duration_ms 307.3479
 
 ## Test-harness Lua tests
 
@@ -19,8 +19,12 @@ Result: PASS
 
 PASS find_segment_doors.lua
   ok: NavigationManager:find_segment_doors contract
+PASS phalanx_signatures.lua
+  ok: CopLogicPhalanxMinion phalanx helper signatures
 PASS test_commands.lua
   ok: LIES test-harness parser
+PASS test_coplogictravel_warp_nil_objective.lua
+  ok: warp nil-objective guard (7 checks)
 PASS watch_settle_target.lua
   ok: the settled-facing target check reads the engine aim record
 
@@ -42,11 +46,11 @@ Findings: 0
 
 Result: PASS
 
-files=70 functions=586 errors=0 unhooked=3
-MOD_ONLY=221 MOD_ONLY_HOOK=42 LIES_EDIT_CLEAN=294 LIES_EDIT_VANILLA_CHANGED=23 VANISHED_IN_NEW=1 SAME_AS_OLD_VANILLA=3 SAME_AS_NEW_VANILLA=1 SAME_AS_OLD_VANILLA_LOCAL=1
+files=70 functions=587 errors=0 unhooked=3
+MOD_ONLY=223 MOD_ONLY_HOOK=42 LIES_EDIT_CLEAN=293 LIES_EDIT_VANILLA_CHANGED=23 VANISHED_IN_NEW=1 SAME_AS_OLD_VANILLA=3 SAME_AS_NEW_VANILLA=1 SAME_AS_OLD_VANILLA_LOCAL=1
 decisions: done=18 merge=0 keep=5 retire=0 parked=0 undecided=0
-wrote D:\Programowanie\payday\2\v2\mods\LIES\dev\port-248-ledger.md
-wrote D:\Programowanie\payday\2\v2\mods\LIES\dev\reports\port-248-ledger.json
+wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-lies-249\dev\port-248-ledger.md
+wrote D:\Programowanie\payday\2\v2\.worktrees\LIES-lies-249\dev\reports\port-248-ledger.json
 
 ## API audit
 
